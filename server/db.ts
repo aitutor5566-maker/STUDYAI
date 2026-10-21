@@ -1,0 +1,640 @@
+import { DatabaseSync } from 'node:sqlite';
+import path from 'node:path';
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+
+const DATA_DIR = process.env.STUDYAI_DATA_DIR || path.join(process.cwd(), 'data');
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+const DB_PATH = process.env.STUDYAI_DB_PATH || path.join(DATA_DIR, 'studyai.sqlite');
+export const db = new DatabaseSync(DB_PATH);
+
+export function hashSecret(secret: string): string {
+  return crypto.createHash('sha256').update(`studyai_salt_${secret}`).digest('hex');
+}
+
+export function initDatabase() {
+  db.exec(`
+    PRAGMA journal_mode = WAL;
+    PRAGMA foreign_keys = ON;
+
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      grade TEXT NOT NULL,
+      board TEXT NOT NULL,
+      avatar_url TEXT NOT NULL,
+      streak_days INTEGER NOT NULL DEFAULT 0,
+      parent_passcode_hash TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS parent_sessions (
+      token TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      expires_at INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS learning_preferences (
+      user_id TEXT PRIMARY KEY,
+      explanation_depth TEXT NOT NULL DEFAULT 'simple',
+      preferred_language TEXT NOT NULL DEFAULT 'English',
+      voice_speed REAL NOT NULL DEFAULT 1.0,
+      voice_name TEXT NOT NULL DEFAULT 'Nova (Teacher)',
+      daily_goal_minutes INTEGER NOT NULL DEFAULT 45,
+      daily_goal_topics INTEGER NOT NULL DEFAULT 2,
+      subjects_json TEXT NOT NULL,
+      notifications_enabled INTEGER NOT NULL DEFAULT 1,
+      reduced_motion INTEGER NOT NULL DEFAULT 0,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS study_goals (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      target_count INTEGER NOT NULL DEFAULT 1,
+      current_count INTEGER NOT NULL DEFAULT 0,
+      completed INTEGER NOT NULL DEFAULT 0,
+      due_date TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS tutor_conversations (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      level TEXT NOT NULL DEFAULT 'Grade 10',
+      mode TEXT NOT NULL DEFAULT 'simple',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS tutor_messages (
+      id TEXT PRIMARY KEY,
+      conversation_id TEXT NOT NULL,
+      role TEXT NOT NULL,
+      content TEXT NOT NULL,
+      structured_json TEXT,
+      media_json TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (conversation_id) REFERENCES tutor_conversations(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS notes (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      level TEXT NOT NULL DEFAULT 'Grade 10',
+      depth TEXT NOT NULL DEFAULT 'detailed',
+      notebook TEXT NOT NULL DEFAULT 'General',
+      content_markdown TEXT NOT NULL,
+      structured_json TEXT NOT NULL,
+      flashcards_json TEXT NOT NULL,
+      quiz_json TEXT NOT NULL,
+      source_type TEXT NOT NULL DEFAULT 'topic',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS library_resources (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      resource_type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      summary TEXT NOT NULL,
+      content_json TEXT NOT NULL,
+      media_url TEXT,
+      status TEXT NOT NULL DEFAULT 'ready',
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS generation_jobs (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      job_type TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      subject TEXT NOT NULL DEFAULT 'Science',
+      provider TEXT NOT NULL,
+      status TEXT NOT NULL,
+      progress INTEGER NOT NULL DEFAULT 0,
+      settings_json TEXT NOT NULL,
+      result_json TEXT,
+      error_message TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS quizzes (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      difficulty TEXT NOT NULL DEFAULT 'medium',
+      questions_json TEXT NOT NULL,
+      score INTEGER NOT NULL DEFAULT 0,
+      total_questions INTEGER NOT NULL DEFAULT 0,
+      accuracy INTEGER NOT NULL DEFAULT 0,
+      mistakes_json TEXT NOT NULL DEFAULT '[]',
+      completed INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      completed_at TEXT,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS game_sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      game_type TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      difficulty TEXT NOT NULL,
+      score INTEGER NOT NULL,
+      accuracy INTEGER NOT NULL,
+      correct_count INTEGER NOT NULL DEFAULT 0,
+      total_questions INTEGER NOT NULL DEFAULT 0,
+      stage_reached INTEGER NOT NULL DEFAULT 1,
+      duration_seconds INTEGER NOT NULL DEFAULT 60,
+      mistakes_json TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS learning_activity (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      activity_type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      duration_minutes INTEGER NOT NULL DEFAULT 5,
+      score_percent INTEGER,
+      resource_id TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS shared_topic_context (
+      user_id TEXT PRIMARY KEY,
+      active_topic TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      level TEXT NOT NULL,
+      explanation_mode TEXT NOT NULL,
+      last_conversation_id TEXT,
+      last_note_id TEXT,
+      updated_at TEXT NOT NULL
+    );
+  `);
+
+  seedInitialDataIfEmpty();
+}
+
+function seedInitialDataIfEmpty() {
+  const existing = db.prepare('SELECT id FROM users WHERE id = ?').get('student-vishwak') as { id: string } | undefined;
+  if (existing) return;
+
+  const now = new Date();
+  const iso = (hoursAgo: number) => new Date(now.getTime() - hoursAgo * 3600_000).toISOString();
+
+  // 1. Primary Student Profile (Vishwak Sai - Grade 10 CBSE) + New Student Profile for testing empty states
+  db.prepare(`
+    INSERT INTO users (id, name, email, grade, board, avatar_url, streak_days, parent_passcode_hash, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    'student-vishwak',
+    'Vishwak Sai',
+    'vishwak.sai@studyai.edu',
+    'Grade 10',
+    'CBSE',
+    '/avatars/vishwak.svg',
+    7,
+    hashSecret('2468'), // Default server-verified Parent Access Passcode: 2468
+    iso(24 * 14)
+  );
+
+  db.prepare(`
+    INSERT INTO users (id, name, email, grade, board, avatar_url, streak_days, parent_passcode_hash, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    'student-new',
+    'Aarav Sharma',
+    'aarav@studyai.edu',
+    'Grade 9',
+    'ICSE',
+    '/avatars/new.svg',
+    0,
+    hashSecret('2468'),
+    iso(1)
+  );
+
+  // 2. Learning Preferences
+  db.prepare(`
+    INSERT INTO learning_preferences (user_id, explanation_depth, preferred_language, voice_speed, voice_name, daily_goal_minutes, daily_goal_topics, subjects_json, notifications_enabled, reduced_motion)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    'student-vishwak',
+    'simple',
+    'English',
+    1.0,
+    'Nova (Teacher)',
+    60,
+    3,
+    JSON.stringify(['Science', 'Maths', 'English', 'Social Studies', 'Computer Science']),
+    1,
+    0
+  );
+
+  db.prepare(`
+    INSERT INTO learning_preferences (user_id, explanation_depth, preferred_language, voice_speed, voice_name, daily_goal_minutes, daily_goal_topics, subjects_json, notifications_enabled, reduced_motion)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    'student-new',
+    'simple',
+    'English',
+    1.0,
+    'Nova (Teacher)',
+    30,
+    2,
+    JSON.stringify(['Science', 'Maths', 'English']),
+    1,
+    0
+  );
+
+  // 3. Study Goals
+  const goals = [
+    { id: 'goal-1', title: 'Complete Photosynthesis Notes & 3D Cell Review', subject: 'Science', target: 2, current: 2, completed: 1, due: iso(-12) },
+    { id: 'goal-2', title: 'Solve 10 Quadratic Equations Practice Questions', subject: 'Maths', target: 10, current: 8, completed: 0, due: iso(-18) },
+    { id: 'goal-3', title: 'Master Fractions & Algebra in Answer Battle', subject: 'Maths', target: 1, current: 1, completed: 1, due: iso(-24) },
+    { id: 'goal-4', title: 'Review Human Heart 3D Chambers & Blood Flow', subject: 'Science', target: 1, current: 1, completed: 1, due: iso(-6) },
+    { id: 'goal-5', title: 'Revise World War II Timeline & Causes', subject: 'Social Studies', target: 2, current: 1, completed: 0, due: iso(-36) },
+    { id: 'goal-6', title: 'Complete Active & Passive Voice Grammar Quiz', subject: 'English', target: 1, current: 0, completed: 0, due: iso(-48) },
+  ];
+  const insertGoal = db.prepare(`
+    INSERT INTO study_goals (id, user_id, title, subject, target_count, current_count, completed, due_date, created_at)
+    VALUES (?, 'student-vishwak', ?, ?, ?, ?, ?, ?, ?)
+  `);
+  for (const g of goals) {
+    insertGoal.run(g.id, g.title, g.subject, g.target, g.current, g.completed, g.due, iso(48));
+  }
+
+  // 4. Initial Tutor Conversation (Photosynthesis — matching the UI screenshot)
+  const convId = 'conv-photosynthesis';
+  db.prepare(`
+    INSERT INTO tutor_conversations (id, user_id, topic, subject, level, mode, created_at, updated_at)
+    VALUES (?, 'student-vishwak', 'Photosynthesis', 'Science', 'Grade 10', 'simple', ?, ?)
+  `).run(convId, iso(2), iso(2));
+
+  const photosynthesisStructured = {
+    topic: 'Photosynthesis',
+    subject: 'Science',
+    introduction:
+      'Photosynthesis is the biochemical process by which green plants, algae, and certain bacteria convert light energy from the sun into chemical energy stored in glucose (food). It occurs primarily inside the chloroplasts of plant leaf cells using the green pigment chlorophyll.',
+    keySteps: [
+      'Light Absorption — Chlorophyll inside the thylakoid membranes captures sunlight energy.',
+      'Water Splitting (Photolysis) — Roots absorb water (H₂O) from the soil; light energy splits water molecules, releasing oxygen (O₂) gas.',
+      'Carbon Fixation (Calvin Cycle) — Carbon dioxide (CO₂) enters leaves through tiny pores called stomata and combines with hydrogen to synthesize glucose (C₆H₁₂O₆).'
+    ],
+    formula: {
+      equation: '6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂',
+      reactants: [
+        { symbol: '6CO₂', label: 'Carbon dioxide' },
+        { symbol: '6H₂O', label: 'Water' }
+      ],
+      products: [
+        { symbol: 'C₆H₁₂O₆', label: 'Glucose (food)' },
+        { symbol: '6O₂', label: 'Oxygen' }
+      ],
+      catalyst: 'Sunlight + Chlorophyll'
+    },
+    definitions: [
+      { term: 'Chloroplast', definition: 'Specialized plant cell organelle where photosynthesis takes place.' },
+      { term: 'Chlorophyll', definition: 'Green photosynthetic pigment that absorbs blue and red wavelengths of light.' },
+      { term: 'Stomata', definition: 'Microscopic pores on leaf surfaces regulated by guard cells for gas exchange.' }
+    ],
+    analogies: 'Think of a plant leaf as a solar-powered kitchen: sunlight is the electricity, CO₂ and water are the raw ingredients, chlorophyll is the chef, glucose is the meal prepared, and oxygen is the fresh air released.',
+    misconceptions: [
+      'Misconception: Plants only perform photosynthesis and do not respire. Reality: Plants perform cellular respiration 24 hours a day, and photosynthesis when light is available.',
+      'Misconception: Plants get most of their solid mass from soil. Reality: Most of a plant’s dry biomass comes from carbon dioxide in the air!'
+    ],
+    recap: 'Plants capture sunlight with chlorophyll to convert Carbon Dioxide (CO₂) and Water (H₂O) into Glucose (C₆H₁₂O₆) for energy and release Oxygen (O₂) into the atmosphere.',
+    diagramType: 'photosynthesis',
+    model3dType: 'chloroplast_molecule',
+    suggestedFollowUps: [
+      'What happens during the light-independent (Calvin) cycle?',
+      'How do desert plants perform photosynthesis without losing water?',
+      'Test me with a 5-question quiz on Photosynthesis'
+    ]
+  };
+
+  db.prepare(`
+    INSERT INTO tutor_messages (id, conversation_id, role, content, structured_json, media_json, created_at)
+    VALUES (?, ?, 'user', ?, NULL, NULL, ?)
+  `).run('msg-1', convId, 'Explain photosynthesis in simple terms', iso(2));
+
+  db.prepare(`
+    INSERT INTO tutor_messages (id, conversation_id, role, content, structured_json, media_json, created_at)
+    VALUES (?, ?, 'assistant', ?, ?, ?, ?)
+  `).run(
+    'msg-2',
+    convId,
+    `${photosynthesisStructured.introduction}\n\n### Key Steps:\n1. ${photosynthesisStructured.keySteps[0]}\n2. ${photosynthesisStructured.keySteps[1]}\n3. ${photosynthesisStructured.keySteps[2]}\n\n**Chemical Equation:** \`6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂\``,
+    JSON.stringify(photosynthesisStructured),
+    JSON.stringify({ diagramType: 'photosynthesis', hasAudio: true, model3dId: 'model-photosynthesis' }),
+    iso(2)
+  );
+
+  // 5. Initial Notes (matching the 5 Recent Notes in the reference UI)
+  const seedNotes = [
+    {
+      id: 'note-photosynthesis',
+      title: 'Photosynthesis',
+      subject: 'Science',
+      topic: 'Photosynthesis',
+      notebook: 'Biology',
+      hoursAgo: 2,
+      markdown: `# Photosynthesis — Complete Study Notes\n\n## 1. Introduction & Core Definition\n**Photosynthesis** is the physico-chemical process by which autotrophic organisms (green plants, algae, cyanobacteria) synthesize organic compounds (**glucose**) from inorganic raw materials (**CO₂** and **H₂O**) in the presence of **sunlight** and **chlorophyll**.\n\n## 2. Balanced Chemical Equation\n\`6CO₂ + 12H₂O —(Sunlight / Chlorophyll)→ C₆H₁₂O₆ + 6O₂ + 6H₂O\`\n\n## 3. Site of Photosynthesis\n- **Chloroplasts**: Double-membrane organelles found mainly in mesophyll cells of leaves.\n- **Grana (Thylakoids)**: Site of Light-Dependent Reactions (trapping light energy, ATP & NADPH synthesis).\n- **Stroma**: Site of Dark / Light-Independent Reactions (Calvin Cycle — carbon fixation into glucose).\n\n## 4. Step-by-Step Mechanism\n1. **Absorption of Light Energy** by chlorophyll-a and accessory pigments.\n2. **Conversion of Light Energy** into chemical energy and **photolysis of water** into H⁺, electrons, and O₂.\n3. **Reduction of Carbon Dioxide** into carbohydrates (glucose) using ATP and NADPH.\n\n## 5. Key Comparisons: Light vs Dark Reactions\n- **Light Reaction (Hill Reaction)**: Takes place in Grana; requires sunlight; produces ATP, NADPH, and O₂.\n- **Calvin Cycle (C3 Pathway)**: Takes place in Stroma; uses ATP and NADPH to fix CO₂ into Glucose.\n\n## 6. Revision Summary\n- Oxygen released during photosynthesis comes from **water (H₂O)**, not carbon dioxide.\n- Stomatal opening is regulated by turgor pressure changes in **guard cells**.`,
+      structured: {
+        summary: 'Complete biology notes covering light reactions, Calvin cycle, chloroplast structure, and balanced equation.',
+        keywords: ['Chloroplast', 'Chlorophyll', 'Photolysis', 'Calvin Cycle', 'Stomata', 'ATP & NADPH'],
+        formulas: ['6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂'],
+        faq: [
+          { q: 'Where does the oxygen released in photosynthesis come from?', a: 'It comes from the splitting (photolysis) of water (H₂O) molecules during the light-dependent reaction.' },
+          { q: 'Why do leaves appear green?', a: 'Chlorophyll absorbs mainly blue and red wavelengths of sunlight and reflects green light.' }
+        ]
+      },
+      flashcards: [
+        { front: 'What is the balanced equation for photosynthesis?', back: '6CO₂ + 6H₂O + Light Energy → C₆H₁₂O₆ + 6O₂' },
+        { front: 'Where do light-dependent reactions occur?', back: 'In the thylakoid membranes (grana) of the chloroplast.' },
+        { front: 'Where does the Calvin Cycle occur?', back: 'In the stroma of the chloroplast.' },
+        { front: 'Which gas is released as a byproduct of photolysis of water?', back: 'Oxygen (O₂)' }
+      ]
+    },
+    {
+      id: 'note-quadratic',
+      title: 'Quadratic Equations',
+      subject: 'Maths',
+      topic: 'Quadratic Equations',
+      notebook: 'Maths',
+      hoursAgo: 24,
+      markdown: `# Quadratic Equations — Formula & Roots Guide\n\n## 1. Standard Form\nA quadratic equation in variable $x$ is of the form:\n\`ax² + bx + c = 0\` where $a, b, c \\in \\mathbb{R}$ and $a \\neq 0$.\n\n## 2. Quadratic Formula (Sridharacharya Formula)\n\`x = (-b ± √(b² - 4ac)) / (2a)\`\n\n## 3. Nature of Roots & Discriminant (D)\nThe expression \`D = b² - 4ac\` is called the **Discriminant**:\n- **If D > 0**: Two distinct real roots.\n- **If D = 0**: Two equal real roots (\`x = -b / 2a\`).\n- **If D < 0**: No real roots (complex conjugate roots).\n\n## 4. Worked Example\nSolve \`2x² - 7x + 3 = 0\`:\n- Here $a = 2, b = -7, c = 3$\n- $D = (-7)² - 4(2)(3) = 49 - 24 = 25 > 0$\n- $x = (7 ± √25) / 4 = (7 ± 5) / 4$\n- Roots: \`x = 3\` and \`x = 1/2\`.`,
+      structured: {
+        summary: 'Standard form, quadratic formula, discriminant rules for nature of roots, and step-by-step worked examples.',
+        keywords: ['Discriminant', 'Roots', 'Factorization', 'Completing the Square', 'Parabola'],
+        formulas: ['ax² + bx + c = 0', 'D = b² - 4ac', 'x = (-b ± √D) / 2a'],
+        faq: [
+          { q: 'When does a quadratic equation have equal roots?', a: 'When the discriminant D = b² - 4ac equals zero.' }
+        ]
+      },
+      flashcards: [
+        { front: 'What is the discriminant of ax² + bx + c = 0?', back: 'D = b² - 4ac' },
+        { front: 'What is the sum and product of roots (α, β)?', back: 'Sum (α + β) = -b/a, Product (αβ) = c/a' }
+      ]
+    },
+    {
+      id: 'note-ww2',
+      title: 'World War II',
+      subject: 'Social Studies',
+      topic: 'World War II',
+      notebook: 'History',
+      hoursAgo: 48,
+      markdown: `# World War II (1939–1945) — Causes, Turning Points & Impact\n\n## 1. Overview\nWorld War II was a global conflict fought between two major alliances: the **Allied Powers** (Britain, USSR, USA, France, China) and the **Axis Powers** (Germany, Japan, Italy).\n\n## 2. Key Causes\n1. Treaty of Versailles (1919) and severe economic reparations.\n2. Rise of Fascism in Italy and Nazism in Germany.\n3. Failure of the League of Nations and policy of appeasement.\n4. Immediate trigger: German invasion of Poland on **1 September 1939**.\n\n## 3. Major Turning Points\n- **Battle of Stalingrad (1942–43)**: Halted Axis eastern expansion.\n- **Battle of Midway (1942)**: Shifted naval balance in the Pacific.\n- **D-Day / Operation Overlord (June 6, 1944)**: Allied liberation of Western Europe.\n\n## 4. Global Consequences\n- Establishment of the **United Nations (UN)** in October 1945.\n- Beginning of the Cold War bipolar order and decolonization in Asia & Africa.`,
+      structured: {
+        summary: 'Structured historical analysis of World War II causes, Axis vs Allies, key battles, and formation of the UN.',
+        keywords: ['Allied Powers', 'Axis Powers', 'Treaty of Versailles', 'D-Day', 'United Nations'],
+        formulas: [],
+        faq: [
+          { q: 'What event triggered the start of World War II in Europe?', a: 'Germany’s invasion of Poland on September 1, 1939.' }
+        ]
+      },
+      flashcards: [
+        { front: 'When did World War II begin and end?', back: 'September 1, 1939 to September 2, 1945' },
+        { front: 'What was Operation Overlord?', back: 'The Allied invasion of Normandy, France on June 6, 1944 (D-Day).' }
+      ]
+    },
+    {
+      id: 'note-water-cycle',
+      title: 'Water Cycle',
+      subject: 'Science',
+      topic: 'Water Cycle',
+      notebook: 'Science',
+      hoursAgo: 72,
+      markdown: `# The Hydrological (Water) Cycle\n\n## 1. Core Processes\n1. **Evaporation**: Solar radiation heats surface water in oceans, lakes, and rivers, turning liquid water into water vapor.\n2. **Transpiration**: Release of water vapor from plant leaves through stomata.\n3. **Condensation**: Rising warm vapor cools at higher altitudes to form clouds and water droplets.\n4. **Precipitation**: Condensed water falls back to Earth as rain, snow, sleet, or hail.\n5. **Infiltration & Percolation**: Water seeps into soil and replenishes groundwater aquifers.`,
+      structured: {
+        summary: 'Continuous movement of water across Earth’s atmosphere, land, and oceans through evaporation, condensation, and precipitation.',
+        keywords: ['Evaporation', 'Transpiration', 'Condensation', 'Precipitation', 'Aquifer'],
+        formulas: [],
+        faq: []
+      },
+      flashcards: [
+        { front: 'What drives the Earth’s water cycle?', back: 'Solar energy from the Sun and gravity.' }
+      ]
+    },
+    {
+      id: 'note-grammar',
+      title: 'Grammar Basics',
+      subject: 'English',
+      topic: 'Grammar Basics',
+      notebook: 'English',
+      hoursAgo: 96,
+      markdown: `# English Grammar Basics — Tenses, Active/Passive Voice & Clauses\n\n## 1. Active vs Passive Voice\n- **Active Voice**: Subject performs the action (*"Chlorophyll absorbs sunlight"*).\n- **Passive Voice**: Object receives the action (*"Sunlight is absorbed by chlorophyll"*).\n\n## 2. Subject-Verb Agreement Rules\n- Singular subjects take singular verbs; plural subjects take plural verbs.\n- Collective nouns take singular verbs when acting as a single unit.`,
+      structured: {
+        summary: 'Essential rules for sentence structure, active/passive transformation, and subject-verb concord.',
+        keywords: ['Active Voice', 'Passive Voice', 'Subject-Verb Concord', 'Clauses'],
+        formulas: ['Active: Subject + Verb + Object', 'Passive: Object + Auxiliary Verb + V3 + by + Subject'],
+        faq: []
+      },
+      flashcards: [
+        { front: 'Convert to Passive: "The student solved the equation."', back: '"The equation was solved by the student."' }
+      ]
+    }
+  ];
+
+  const insertNote = db.prepare(`
+    INSERT INTO notes (id, user_id, title, subject, topic, level, depth, notebook, content_markdown, structured_json, flashcards_json, quiz_json, source_type, created_at, updated_at)
+    VALUES (?, 'student-vishwak', ?, ?, ?, 'Grade 10', 'detailed', ?, ?, ?, ?, '[]', 'topic', ?, ?)
+  `);
+  for (const n of seedNotes) {
+    insertNote.run(
+      n.id,
+      n.title,
+      n.subject,
+      n.topic,
+      n.notebook,
+      n.markdown,
+      JSON.stringify(n.structured),
+      JSON.stringify(n.flashcards),
+      iso(n.hoursAgo),
+      iso(n.hoursAgo)
+    );
+  }
+
+  // 6. Seed Library Resources (matching Library screenshot: Human Heart 3D Model, Solar System Video, DNA Notes, Maths Quiz, plus saved notes/images/models)
+  const resources = [
+    {
+      id: 'res-heart-3d',
+      type: 'model3d',
+      title: 'Human Heart 3D Model',
+      subject: 'Science',
+      topic: 'Human Heart & Cardiac Cycle',
+      summary: 'Interactive 4-chamber cardiac visualization with Left/Right Atrium, Left/Right Ventricle, Aorta, and pulsatile blood-flow animation.',
+      content: { modelId: 'human_heart', verified: false, verificationLabel: 'Interactive Procedural Scientific Visualization (4 Chambers & Aortic Arch)' },
+      hoursAgo: 48
+    },
+    {
+      id: 'res-solar-video',
+      type: 'video',
+      title: 'Solar System Video',
+      subject: 'Science',
+      topic: 'Solar System & Planetary Orbits',
+      summary: 'Narrated multi-scene educational video exploring Kepler’s laws, inner rocky planets, gas giants, and orbital mechanics.',
+      content: {
+        durationSeconds: 45,
+        audience: 'Grade 10',
+        language: 'English',
+        style: 'Cinematic Scientific',
+        scenes: [
+          { title: 'The Sun — Gravitational Anchor', narration: 'At the center of our Solar System lies the Sun, containing 99.86% of the system’s total mass and binding eight planets in elliptical orbits.', duration: 11, visualTheme: 'sun_core' },
+          { title: 'Terrestrial Inner Planets', narration: 'Mercury, Venus, Earth, and Mars are rocky terrestrial worlds with high density and metallic cores.', duration: 11, visualTheme: 'inner_planets' },
+          { title: 'Jovian Gas & Ice Giants', narration: 'Beyond the asteroid belt orbit Jupiter, Saturn, Uranus, and Neptune — massive worlds with ring systems and dozens of moons.', duration: 12, visualTheme: 'gas_giants' },
+          { title: 'Kepler’s Laws of Orbital Motion', narration: 'Planets sweep equal areas in equal times, moving faster at perihelion and slower at aphelion.', duration: 11, visualTheme: 'kepler_orbits' }
+        ]
+      },
+      hoursAgo: 72
+    },
+    {
+      id: 'res-dna-notes',
+      type: 'note',
+      title: 'DNA Notes',
+      subject: 'Science',
+      topic: 'DNA Double Helix & Genetics',
+      summary: 'Nucleotide base pairing (Adenine-Thymine, Guanine-Cytosine), sugar-phosphate backbone, and replication forks.',
+      content: { noteId: 'note-photosynthesis', markdown: '# DNA Structure & Heredity\n\n- **Double Helix** discovered by Watson, Crick, Franklin, and Wilkins.\n- **Complementary Base Pairing**: Adenine (A) pairs with Thymine (T) via 2 hydrogen bonds; Guanine (G) pairs with Cytosine (C) via 3 hydrogen bonds.' },
+      hoursAgo: 96
+    },
+    {
+      id: 'res-maths-quiz',
+      type: 'quiz',
+      title: 'Maths Quiz - Fractions & Quadratics',
+      subject: 'Maths',
+      topic: 'Quadratic Equations',
+      summary: '10-question adaptive mastery assessment on algebraic fractions, roots, and discriminants (Score: 90%).',
+      content: { quizId: 'quiz-maths-1', score: 9, total: 10 },
+      hoursAgo: 120
+    },
+    {
+      id: 'res-photo-diagram',
+      type: 'image',
+      title: 'Photosynthesis Chloroplast Diagram',
+      subject: 'Science',
+      topic: 'Photosynthesis',
+      summary: 'Annotated scientific illustration showing Sunlight, CO₂ intake, H₂O absorption, Glucose synthesis, and O₂ release.',
+      content: { diagramType: 'photosynthesis', caption: 'Annotated Scientific Diagram — Verify stoichiometric details against textbook reference.' },
+      hoursAgo: 2
+    },
+    {
+      id: 'res-solar-3d',
+      type: 'model3d',
+      title: 'Solar System 3D Orbital Lab',
+      subject: 'Science',
+      topic: 'Solar System',
+      summary: 'Real-time 3D heliocentric orbital simulator with interactive planet labels, orbital speed controls, and zoom.',
+      content: { modelId: 'solar_system', verified: false, verificationLabel: 'Interactive Procedural 3D Orbital Simulation' },
+      hoursAgo: 18
+    },
+    {
+      id: 'res-dna-3d',
+      type: 'model3d',
+      title: 'DNA Double Helix 3D Structure',
+      subject: 'Science',
+      topic: 'DNA Structure',
+      summary: '3D molecular base-pair ladder showing A-T and G-C rungs and antiparallel sugar-phosphate strands.',
+      content: { modelId: 'dna_helix', verified: false, verificationLabel: 'Interactive Procedural Molecular Visualization' },
+      hoursAgo: 30
+    },
+    {
+      id: 'res-audio-photo',
+      type: 'audio',
+      title: 'Photosynthesis — Teacher Audio Lesson',
+      subject: 'Science',
+      topic: 'Photosynthesis',
+      summary: 'Natural teacher-style audio explanation of light reactions and Calvin cycle (2m 15s).',
+      content: { text: photosynthesisStructured.introduction + ' ' + photosynthesisStructured.keySteps.join(' ') + ' ' + photosynthesisStructured.recap, voice: 'Nova (Teacher)', speed: 1.0 },
+      hoursAgo: 2
+    }
+  ];
+
+  const insertResource = db.prepare(`
+    INSERT INTO library_resources (id, user_id, resource_type, title, subject, topic, summary, content_json, media_url, status, created_at)
+    VALUES (?, 'student-vishwak', ?, ?, ?, ?, ?, ?, NULL, 'ready', ?)
+  `);
+  for (const r of resources) {
+    insertResource.run(r.id, r.type, r.title, r.subject, r.topic, r.summary, JSON.stringify(r.content), iso(r.hoursAgo));
+  }
+
+  // 7. Seed Quizzes & Game Sessions
+  db.prepare(`
+    INSERT INTO quizzes (id, user_id, topic, subject, difficulty, questions_json, score, total_questions, accuracy, mistakes_json, completed, created_at, completed_at)
+    VALUES ('quiz-maths-1', 'student-vishwak', 'Quadratic Equations & Fractions', 'Maths', 'medium', '[]', 9, 10, 90, '[{"question":"Find discriminant of x²+2x+5=0","yourAnswer":"16","correctAnswer":"-16"}]', 1, ?, ?)
+  `).run(iso(4), iso(4));
+
+  db.prepare(`
+    INSERT INTO quizzes (id, user_id, topic, subject, difficulty, questions_json, score, total_questions, accuracy, mistakes_json, completed, created_at, completed_at)
+    VALUES ('quiz-science-1', 'student-vishwak', 'Photosynthesis & Cellular Respiration', 'Science', 'medium', '[]', 5, 5, 100, '[]', 1, ?, ?)
+  `).run(iso(2), iso(2));
+
+  db.prepare(`
+    INSERT INTO game_sessions (id, user_id, game_type, subject, topic, difficulty, score, accuracy, correct_count, total_questions, stage_reached, duration_seconds, mistakes_json, created_at)
+    VALUES ('game-1', 'student-vishwak', 'answer_battle', 'Science', 'Photosynthesis', 'medium', 1250, 92, 11, 12, 4, 95, '[]', ?)
+  `).run(iso(6));
+
+  db.prepare(`
+    INSERT INTO game_sessions (id, user_id, game_type, subject, topic, difficulty, score, accuracy, correct_count, total_questions, stage_reached, duration_seconds, mistakes_json, created_at)
+    VALUES ('game-2', 'student-vishwak', 'learning_runner', 'Maths', 'Quadratic Equations', 'medium', 980, 85, 6, 7, 3, 80, '[]', ?)
+  `).run(iso(14));
+
+  db.prepare(`
+    INSERT INTO game_sessions (id, user_id, game_type, subject, topic, difficulty, score, accuracy, correct_count, total_questions, stage_reached, duration_seconds, mistakes_json, created_at)
+    VALUES ('game-3', 'student-vishwak', 'space_shooter', 'Science', 'Solar System', 'medium', 1540, 94, 15, 16, 5, 110, '[]', ?)
+  `).run(iso(26));
+
+  // 8. Seed Real Persisted Learning Activity (used for Academic Overview, Subject Bars, Weekly Activity, Study Time)
+  const activities = [
+    { id: 'act-1', type: 'note', title: 'Photosynthesis Notes', subject: 'Science', topic: 'Photosynthesis', mins: 35, score: 92, resId: 'note-photosynthesis', hoursAgo: 2 },
+    { id: 'act-2', type: 'quiz', title: 'Maths Quiz - Fractions', subject: 'Maths', topic: 'Quadratic Equations & Fractions', mins: 25, score: 78, resId: 'quiz-maths-1', hoursAgo: 4 },
+    { id: 'act-3', type: 'video', title: 'Solar System Video', subject: 'Science', topic: 'Solar System & Planetary Orbits', mins: 20, score: 94, resId: 'res-solar-video', hoursAgo: 24 },
+    { id: 'act-4', type: 'model3d', title: 'Human Heart 3D Model', subject: 'Science', topic: 'Human Heart & Cardiac Cycle', mins: 30, score: 90, resId: 'res-heart-3d', hoursAgo: 48 },
+    { id: 'act-5', type: 'note', title: 'Grammar Basics & Voice', subject: 'English', topic: 'Grammar Basics', mins: 40, score: 68, resId: 'note-grammar', hoursAgo: 72 },
+    { id: 'act-6', type: 'note', title: 'World War II Timeline', subject: 'Social Studies', topic: 'World War II', mins: 35, score: 54, resId: 'note-ww2', hoursAgo: 96 },
+    { id: 'act-7', type: 'game', title: 'Answer Battle: Photosynthesis', subject: 'Science', topic: 'Photosynthesis', mins: 15, score: 92, resId: 'game-1', hoursAgo: 6 }
+  ];
+
+  const insertAct = db.prepare(`
+    INSERT INTO learning_activity (id, user_id, activity_type, title, subject, topic, duration_minutes, score_percent, resource_id, created_at)
+    VALUES (?, 'student-vishwak', ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  for (const a of activities) {
+    insertAct.run(a.id, a.type, a.title, a.subject, a.topic, a.mins, a.score, a.resId, iso(a.hoursAgo));
+  }
+
+  // 9. Shared Topic Context
+  db.prepare(`
+    INSERT INTO shared_topic_context (user_id, active_topic, subject, level, explanation_mode, last_conversation_id, last_note_id, updated_at)
+    VALUES ('student-vishwak', 'Photosynthesis', 'Science', 'Grade 10', 'simple', 'conv-photosynthesis', 'note-photosynthesis', ?)
+  `).run(iso(1));
+}
