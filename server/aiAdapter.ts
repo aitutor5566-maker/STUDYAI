@@ -256,8 +256,45 @@ function extractFirstJsonObject(raw: string): any | null {
 export async function callConfiguredLlmJson(
   systemPrompt: string,
   userPrompt: string,
-  timeoutMs = 11000
+  timeoutMs = 15000
 ): Promise<{ parsed: any; providerUsed: string } | null> {
+  // 0. Primary Local Teaching Engine: Ollama qwen2.5:7b (Master Rule: Local AI Tutor with qwen2.5:7b)
+  const ollamaUrl = process.env.OLLAMA_URL || 'http://127.0.0.1:11434';
+  const ollamaModel = process.env.OLLAMA_MODEL || 'qwen2.5:7b';
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const res = await fetch(`${ollamaUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: ollamaModel,
+        messages: [
+          { role: 'system', content: systemPrompt + '\nRespond strictly with a valid JSON object. No markdown fences.' },
+          { role: 'user', content: userPrompt }
+        ],
+        stream: false,
+        format: 'json',
+        options: {
+          temperature: 0.35,
+          top_p: 0.9
+        }
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timer);
+    if (res.ok) {
+      const data = (await res.json()) as any;
+      const raw = data?.message?.content;
+      const parsed = extractFirstJsonObject(raw);
+      if (parsed) {
+        return { parsed, providerUsed: `AI Tutor Local (${ollamaModel})` };
+      }
+    }
+  } catch {
+    // If Ollama is temporarily unavailable, fall back to configured cloud providers below
+  }
+
   // 1. Try Groq API (gsk_...)
   const groqKey = process.env.GROQ_API_KEY?.trim();
   if (groqKey && groqKey.length > 10) {
@@ -874,6 +911,8 @@ interface TutorRequestInput {
   mode: 'simple' | 'detailed';
   subject?: string;
   level?: string;
+  grade?: number;
+  language?: string;
   history?: Array<{ role: string; content: string }>;
   attachmentSummary?: string;
 }
@@ -888,15 +927,34 @@ export async function generateTutorExplanation(input: TutorRequestInput) {
   const isFollowUp = priorTurns.length > 0;
   const lower = (effectiveTopic + ' ' + cleanQuestion).toLowerCase();
 
-  // Attempt live configured LLM provider (Groq / Google Gemini / OpenAI)
-  const systemPrompt = `You are STUDYAI, a warm, brilliant, high-accuracy personal AI teacher for ${input.level || 'Grade 10'}.
-Adapt your explanation to ${input.mode.toUpperCase()} mode while always providing deep conceptual clarity, exact scientific/academic accuracy, definitions, key points, keywords, and a structured differences/comparison table.
+  const studentGrade = input.grade || (input.level ? parseInt(input.level.replace(/\D/g, ''), 10) || 10 : 10);
+  const lang = (input.language || 'English').toLowerCase();
+  const langDirective = lang.includes('telugu') || lang.includes('తెలుగు')
+    ? 'Teach and respond primarily in natural Telugu script (తెలుగు). Keep essential scientific/technical terms in English or with English in parentheses (e.g., కిరణజన్య సంయోగక్రియ (Photosynthesis)).'
+    : lang.includes('hindi') || lang.includes('हिंदी')
+    ? 'Teach and respond primarily in natural Hindi script (हिंदी). Keep essential scientific/technical terms in English or with English in parentheses (e.g., प्रकाश संश्लेषण (Photosynthesis)).'
+    : 'Teach and respond in articulate, natural English with utmost clarity.';
+
+  const gradePedagogy =
+    studentGrade <= 2
+      ? 'Grade 1–2 Foundational: Use small words, concrete objects, counting, short sentences, and joyful encouragement.'
+      : studentGrade <= 5
+      ? 'Grade 3–5 Elementary: Use relatable everyday examples, visual stories, simple step-by-step logic, and curiosity.'
+      : studentGrade <= 8
+      ? 'Grade 6–8 Middle School: Provide conceptual explanations, clear terminology, cause-and-effect relationships, and guided problem-solving.'
+      : 'Grade 9–10 High School: Provide rigorous academic terminology, derivations, balanced formulas, structured problem-solving, and examination readiness.';
+
+  // Attempt live configured LLM provider (Local Ollama qwen2.5:7b first, then Groq / Gemini / OpenAI)
+  const systemPrompt = `You are AI Tutor, an outstanding, patient, articulate, encouraging school teacher for Grade ${studentGrade}.
+${gradePedagogy}
+${langDirective}
+Adapt your explanation to ${input.mode.toUpperCase()} mode while always providing deep conceptual clarity, exact subject accuracy, definitions, key points, keywords, and a structured differences/comparison table.
 Answer the student's exact question ("${cleanQuestion}").
 If the student asks about desert plants and photosynthesis, explicitly explain CAM Photosynthesis (Crassulacean Acid Metabolism).
 If the topic is Photosynthesis, include the chemical formula "6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂" with Unicode subscripts.
 Respond strictly in valid JSON with the following keys:
 - "topic": string (the exact concise topic title of the student's question, e.g. "${effectiveTopic}")
-- "subject": string ("Science", "Maths", "English", "Social Studies", or "Computer Science")
+- "subject": string ("Science", "Maths", "English", "Social Studies", "Computer Science", "Telugu", or "Hindi")
 - "introduction": string (comprehensive, clear, accurate teacher explanation answering "${cleanQuestion}" in detail)
 - "keySteps": array of 4 to 5 strings (each key point / step formatted as "Key Point Title — Detailed explanation")
 - "keywords": array of 6 to 8 strings (essential exam keywords and scientific/subject terminology for this topic)

@@ -320,7 +320,9 @@ export function createAppServer() {
         const question = sanitizeText(body.question, 2000);
         const topic = sanitizeText(body.topic || question, 180);
         const mode: 'simple' | 'detailed' = body.mode === 'detailed' ? 'detailed' : 'simple';
-        const level = sanitizeText(body.level || 'Grade 10', 40);
+        const grade = typeof body.grade === 'number' ? body.grade : (body.level ? parseInt(String(body.level).replace(/\D/g, ''), 10) || 10 : 10);
+        const level = sanitizeText(body.level || `Grade ${grade}`, 40);
+        const language = sanitizeText(body.language || 'English', 30);
         const attachmentSummary = sanitizeText(body.attachmentSummary || '', 500);
 
         if (!question) {
@@ -372,6 +374,8 @@ export function createAppServer() {
           mode,
           subject,
           level,
+          grade,
+          language,
           history: historyRows,
           attachmentSummary
         });

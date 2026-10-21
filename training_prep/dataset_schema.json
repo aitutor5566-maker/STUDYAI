@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AITutorDatasetSchema",
+  "description": "Standardized schema for AI Tutor educational instruction tuning and SFT (Grades 1-10, Multilingual: EN/TE/HI)",
+  "type": "object",
+  "required": ["id", "grade", "subject", "language", "conversation", "metadata"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique record identifier"
+    },
+    "grade": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "School curriculum grade"
+    },
+    "subject": {
+      "type": "string",
+      "enum": ["Science", "Maths", "English", "Telugu", "Hindi", "Social Studies", "Computer Science"],
+      "description": "Curriculum subject area"
+    },
+    "language": {
+      "type": "string",
+      "enum": ["English", "Telugu", "Hindi"],
+      "description": "Instruction and teaching language"
+    },
+    "topic": {
+      "type": "string",
+      "description": "Curriculum topic title"
+    },
+    "pedagogical_band": {
+      "type": "string",
+      "enum": ["Foundational (Grades 1-2)", "Elementary (Grades 3-5)", "Middle School (Grades 6-8)", "High School (Grades 9-10)"]
+    },
+    "conversation": {
+      "type": "array",
+      "description": "Multi-turn ChatML conversation structure",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["role", "content"],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["system", "user", "assistant"]
+          },
+          "content": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["verified_by_educator", "teaching_sequence_followed", "includes_analogies", "includes_practice_question"],
+      "properties": {
+        "verified_by_educator": { "type": "boolean" },
+        "teaching_sequence_followed": { "type": "boolean" },
+        "includes_analogies": { "type": "boolean" },
+        "includes_practice_question": { "type": "boolean" },
+        "source": { "type": "string" }
+      }
+    }
+  }
+}
