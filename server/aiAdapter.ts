@@ -1574,24 +1574,38 @@ export interface QuizQuestion {
 export async function generateTopicQuestionsAsync(params: {
   topic: string;
   subject?: string;
+  chapter?: string;
+  grade?: number;
+  language?: string;
   difficulty?: string;
   count?: number;
 }): Promise<QuizQuestion[]> {
   const topic = (params.topic || 'Science').trim();
   const subject = params.subject || inferSubjectFromTopic(topic);
+  const grade = params.grade || 5;
+  const chapter = params.chapter || topic;
+  const language = params.language || 'English';
   const difficulty = params.difficulty || 'medium';
   const count = Math.min(Math.max(params.count || 6, 3), 15);
 
-  const systemPrompt = `You are an expert curriculum assessment designer for ${subject}.
-Generate ${count} multiple-choice questions specifically about "${topic}" at "${difficulty}" difficulty.
+  const langDirective =
+    language.toLowerCase().includes('telugu') || language.includes('తెలుగు')
+      ? 'Generate all questions, options, and explanations strictly in natural Telugu script (తెలుగు) with key scientific/mathematical terms in English or parentheses.'
+      : language.toLowerCase().includes('hindi') || language.includes('हिंदी')
+      ? 'Generate all questions, options, and explanations strictly in natural Hindi script (हिंदी) with key scientific/mathematical terms in English or parentheses.'
+      : 'Generate all questions, options, and explanations in articulate, age-appropriate English.';
+
+  const systemPrompt = `You are an expert curriculum assessment designer for Grade ${grade} ${subject}.
+${langDirective}
+Generate ${count} multiple-choice questions specifically about "${topic}" (Chapter: "${chapter}") at "${difficulty}" difficulty suitable for Grade ${grade}.
 Respond strictly in valid JSON with key "questions", which is an array of ${count} objects.
 Each question object MUST have:
-- "question": string (clear, specific question about ${topic})
+- "question": string (clear, age-appropriate question about ${topic})
 - "options": array of EXACTLY 4 distinct strings
 - "correctIndex": integer (0, 1, 2, or 3 indicating the exact correct option in "options")
-- "explanation": string (concise 1-sentence explanation of why that answer is correct)`;
+- "explanation": string (concise 1-sentence explanation of why that answer is correct in the requested language)`;
 
-  const userPrompt = `Topic: ${topic}\nSubject: ${subject}\nDifficulty: ${difficulty}\nQuestion Count: ${count}`;
+  const userPrompt = `Topic: ${topic}\nChapter: ${chapter}\nGrade: ${grade}\nSubject: ${subject}\nLanguage: ${language}\nDifficulty: ${difficulty}\nQuestion Count: ${count}`;
 
   const llm = await callConfiguredLlmJson(systemPrompt, userPrompt, 8500);
   if (llm && llm.parsed && Array.isArray(llm.parsed.questions) && llm.parsed.questions.length > 0) {

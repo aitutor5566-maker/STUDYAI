@@ -1,21 +1,41 @@
-import React, { useEffect, useState } from 'react';
-import { Gamepad2, Crosshair, Zap, Rocket, Trophy, RotateCcw, X, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, Sparkles } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import {
+  Gamepad2,
+  Crosshair,
+  Zap,
+  Rocket,
+  Trophy,
+  RotateCcw,
+  X,
+  CheckCircle2,
+  AlertTriangle,
+  Sparkles,
+  Volume2,
+  VolumeX,
+  Play,
+  Pause,
+  Award,
+  Globe,
+  GraduationCap,
+  BookOpen
+} from 'lucide-react';
 import { useLearning } from '../context/LearningContext';
-
-interface QuestionItem {
-  id: string;
-  question: string;
-  options: [string, string, string, string];
-  correctIndex: number;
-  explanation: string;
-}
-
-interface MistakeRecord {
-  question: string;
-  yourAnswer: string;
-  correctAnswer: string;
-  explanation: string;
-}
+import {
+  EducationalQuestion,
+  GameDifficulty,
+  GameFeedback,
+  GameLanguage,
+  GameMistakeRecord,
+  GameMode,
+  GameType,
+  OptionId,
+  SharedGameSettings
+} from '../games/types';
+import { QuestionEngine } from '../games/QuestionEngine';
+import { ProgressionController, LevelInfo } from '../games/ProgressionController';
+import { AnswerShooter3D } from './games/AnswerShooter3D';
+import { AnswerRunner3D } from './games/AnswerRunner3D';
+import { SpaceAnswerShooter3D } from './games/SpaceAnswerShooter3D';
 
 function inferClientSubject(topicText: string): string {
   const t = topicText.toLowerCase();
@@ -31,222 +51,210 @@ function inferClientSubject(topicText: string): string {
   return 'Science';
 }
 
-function getTopicVisualTheme(topicText: string, subjectText: string) {
-  const t = (topicText + ' ' + subjectText).toLowerCase();
-  if (/(heart|blood|cardiac|circulat|anatomy|digest|brain|cell|mitosis|dna|gene)/.test(t)) {
-    return { heroEmoji: '🧬', bossEmoji: '🦠', bossTitle: 'Bio-Reactor Core', projectile: '💉', accent: '#EF4444' };
-  }
-  if (/(solar|planet|space|star|orbit|galaxy|kepler|moon|astronomy|gravity|newton|force|physics)/.test(t)) {
-    return { heroEmoji: '🧑‍🚀', bossEmoji: '🪐', bossTitle: 'Cosmic Singularity', projectile: '⚡', accent: '#38BDF8' };
-  }
-  if (/(volcano|earth|water|climate|ocean|mountain|tectonic|weather)/.test(t)) {
-    return { heroEmoji: '🛡️', bossEmoji: '🌋', bossTitle: 'Magma Titan', projectile: '🌊', accent: '#F97316' };
-  }
-  if (/(quadratic|math|equation|algebra|geometry|calculus|fraction)/.test(t)) {
-    return { heroEmoji: '🧙‍♂️', bossEmoji: '📐', bossTitle: 'Matrix Guardian', projectile: '✨', accent: '#8B5CF6' };
-  }
-  if (/(war|history|empire|democracy|revolution|social)/.test(t)) {
-    return { heroEmoji: '⚔️', bossEmoji: '🏰', bossTitle: 'Chronos Citadel', projectile: '🏹', accent: '#F59E0B' };
-  }
-  if (/(grammar|english|verb|voice|tense|literature)/.test(t)) {
-    return { heroEmoji: '🦸', bossEmoji: '📜', bossTitle: 'Lexicon Sphinx', projectile: '✒️', accent: '#EC4899' };
-  }
-  return { heroEmoji: '🤖', bossEmoji: '👾', bossTitle: `${topicText.slice(0, 18)} Boss`, projectile: '🔥', accent: '#FF6A00' };
-}
-
 export const EducationalGamesModal: React.FC = () => {
   const { modalGames, closeGamesHub, apiFetch, triggerRefresh } = useLearning();
-  const [selectedGame, setSelectedGame] = useState<'answer_battle' | 'learning_runner' | 'space_shooter'>(
-    modalGames.initialGame || 'answer_battle'
-  );
-  const [topic, setTopic] = useState(modalGames.topic || 'Solar System');
-  const [subject, setSubject] = useState(modalGames.subject || 'Science');
-  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
 
-  const [questions, setQuestions] = useState<QuestionItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  // Settings State (Part 1)
+  const [selectedGame, setSelectedGame] = useState<GameType>('answer_shooter');
+  const [grade, setGrade] = useState<number>(5);
+  const [subject, setSubject] = useState<string>('Science');
+  const [chapter, setChapter] = useState<string>('Solar System');
+  const [topic, setTopic] = useState<string>('Planetary Orbits');
+  const [language, setLanguage] = useState<GameLanguage>('English');
+  const [startingDifficulty, setStartingDifficulty] = useState<GameDifficulty>('medium');
+  const [gameMode, setGameMode] = useState<GameMode>('practice');
+  const [sessionLength, setSessionLength] = useState<number>(10); // 10, 20, 30, or 0 (endless)
+
+  // Game Flow State
   const [gameState, setGameState] = useState<'setup' | 'playing' | 'finished'>('setup');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
+  const [pendingTopicChange, setPendingTopicChange] = useState<string | null>(null);
 
-  // Shared game progress state
-  const [qIndex, setQIndex] = useState(0);
-  const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(3);
-  const [combo, setCombo] = useState(1);
-  const [stage, setStage] = useState(1);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [mistakes, setMistakes] = useState<MistakeRecord[]>([]);
-  const [feedback, setFeedback] = useState<{ type: 'correct' | 'wrong'; text: string } | null>(null);
+  // Gameplay Progress State
+  const [currentQuestion, setCurrentQuestion] = useState<EducationalQuestion | null>(null);
+  const [score, setScore] = useState<number>(0);
+  const [lives, setLives] = useState<number>(3);
+  const [combo, setCombo] = useState<number>(1);
+  const [questionsAttempted, setQuestionsAttempted] = useState<number>(0);
+  const [correctCount, setCorrectCount] = useState<number>(0);
+  const [mistakes, setMistakes] = useState<GameMistakeRecord[]>([]);
+  const [feedback, setFeedback] = useState<GameFeedback | null>(null);
+  const [levelInfo, setLevelInfo] = useState<LevelInfo>({
+    level: 1,
+    difficulty: 'easy',
+    difficultyScore: 1,
+    title: 'Level 1 — Foundational Concepts',
+    speedMultiplier: 1.0,
+    targetAccuracy: 0.8
+  });
+  const [levelUpAlert, setLevelUpAlert] = useState<string | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
 
-  // Continuous animation clock (ticks every 50ms = 20fps React state + smooth CSS interpolation)
-  const [animTick, setAnimTick] = useState(0);
+  // Engine & Controller instances
+  const engineRef = useRef<QuestionEngine | null>(null);
+  const progressionRef = useRef<ProgressionController | null>(null);
 
-  // Game A: Answer Battle animations (projectile firing, boss hit explosion, floating score popup)
-  const [battleAttack, setBattleAttack] = useState<{
-    targetIdx: number;
-    isCorrect: boolean;
-    phase: 'firing' | 'impact';
-  } | null>(null);
-
-  // Game B: Learning Runner specific state (3 lanes: 0, 1, 2; gate Y progress 0..100)
-  const [runnerLane, setRunnerLane] = useState<number>(1);
-  const [gateProgress, setGateProgress] = useState<number>(10);
-  const [laneOptions, setLaneOptions] = useState<Array<{ optionIndex: number; text: string }>>([]);
-  const [runnerBurst, setRunnerBurst] = useState<'correct' | 'wrong' | null>(null);
-
-  // Game C: Space Quiz Shooter specific state (ship sector 0..3, laser firing animation, saucer descent)
-  const [shipSector, setShipSector] = useState<number>(1);
-  const [laserFiring, setLaserFiring] = useState<number | null>(null);
-  const [saucerExplosion, setSaucerExplosion] = useState<{ sector: number; isCorrect: boolean } | null>(null);
-  const [saucerDescent, setSaucerDescent] = useState<number>(14);
-
+  // Synchronize modal open props
   useEffect(() => {
     if (modalGames.open) {
-      const nextTopic = modalGames.topic || 'Solar System';
-      setTopic(nextTopic);
-      setSubject(modalGames.subject || inferClientSubject(nextTopic));
-      if (modalGames.initialGame) setSelectedGame(modalGames.initialGame);
+      const incomingTopic = modalGames.topic || 'Solar System';
+      const incomingSubject = modalGames.subject || inferClientSubject(incomingTopic);
+
+      // If already playing a game and topic changed externally, ask to restart (Part 1 guard)
+      if (gameState === 'playing' && incomingTopic.toLowerCase() !== topic.toLowerCase()) {
+        setIsPaused(true);
+        setPendingTopicChange(incomingTopic);
+        return;
+      }
+
+      setTopic(incomingTopic);
+      setChapter(incomingTopic);
+      setSubject(incomingSubject);
+
+      if (modalGames.initialGame) {
+        if (modalGames.initialGame === 'space_shooter') setSelectedGame('space_answer_shooter');
+        else if (modalGames.initialGame === 'learning_runner') setSelectedGame('answer_runner');
+        else setSelectedGame('answer_shooter');
+      }
       setGameState('setup');
     }
   }, [modalGames.open, modalGames.topic, modalGames.subject, modalGames.initialGame]);
 
-  // Continuous animation loop while playing any game
-  useEffect(() => {
-    if (gameState !== 'playing') return;
-    const timer = setInterval(() => {
-      setAnimTick((t) => t + 1);
-    }, 55);
-    return () => clearInterval(timer);
-  }, [gameState]);
-
-  const currentQ = questions[qIndex];
-  const theme = getTopicVisualTheme(topic, subject);
-
-  // Prepare 3 lane choices for Learning Runner whenever question changes
-  useEffect(() => {
-    if (!currentQ) return;
-    const correctOpt = { optionIndex: currentQ.correctIndex, text: currentQ.options[currentQ.correctIndex] };
-    const wrongOpts = currentQ.options
-      .map((text, idx) => ({ optionIndex: idx, text }))
-      .filter((o) => o.optionIndex !== currentQ.correctIndex)
-      .slice(0, 2);
-    const three = [correctOpt, ...wrongOpts];
-    const rotated = [
-      three[qIndex % 3],
-      three[(qIndex + 1) % 3],
-      three[(qIndex + 2) % 3]
-    ];
-    setLaneOptions(rotated);
-    setGateProgress(8);
-    setSaucerDescent(12);
-    setBattleAttack(null);
-    setRunnerBurst(null);
-    setSaucerExplosion(null);
-  }, [qIndex, currentQ]);
-
-  // Game B (Learning Runner) continuous forward sprint loop
-  useEffect(() => {
-    if (gameState !== 'playing' || selectedGame !== 'learning_runner' || !currentQ || feedback) return;
-    const speedStep = difficulty === 'hard' ? 2.4 : difficulty === 'medium' ? 1.8 : 1.3;
-    const timer = setInterval(() => {
-      setGateProgress((prev) => {
-        if (prev >= 84) {
-          return 84;
-        }
-        return prev + speedStep;
-      });
-    }, 75);
-    return () => clearInterval(timer);
-  }, [gameState, selectedGame, currentQ, feedback, difficulty]);
-
-  // Trigger lane gate collision when gate reaches runner (progress >= 84)
-  useEffect(() => {
-    if (gameState === 'playing' && selectedGame === 'learning_runner' && gateProgress >= 84 && !feedback && laneOptions.length === 3) {
-      const chosen = laneOptions[runnerLane];
-      if (chosen) {
-        setRunnerBurst(chosen.optionIndex === currentQ?.correctIndex ? 'correct' : 'wrong');
-        evaluateChoice(chosen.optionIndex);
-      }
-    }
-  }, [gateProgress, gameState, selectedGame, runnerLane, feedback, laneOptions, currentQ]);
-
-  // Game C (Space Shooter) saucer descent loop
-  useEffect(() => {
-    if (gameState !== 'playing' || selectedGame !== 'space_shooter' || !currentQ || feedback) return;
-    const speedStep = difficulty === 'hard' ? 1.5 : difficulty === 'medium' ? 1.1 : 0.8;
-    const timer = setInterval(() => {
-      setSaucerDescent((prev) => (prev < 74 ? prev + speedStep : prev));
-    }, 90);
-    return () => clearInterval(timer);
-  }, [gameState, selectedGame, currentQ, feedback, difficulty]);
-
-  // Keyboard controls for all 3 games
-  useEffect(() => {
-    if (gameState !== 'playing') return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (selectedGame === 'answer_battle') {
-        if (['1', 'a', 'A'].includes(e.key)) triggerBattleStrike(0);
-        if (['2', 'b', 'B'].includes(e.key)) triggerBattleStrike(1);
-        if (['3', 'c', 'C'].includes(e.key)) triggerBattleStrike(2);
-        if (['4', 'd', 'D'].includes(e.key)) triggerBattleStrike(3);
-      } else if (selectedGame === 'learning_runner') {
-        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-          setRunnerLane((l) => Math.max(0, l - 1));
-        } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-          setRunnerLane((l) => Math.min(2, l + 1));
-        }
-      } else if (selectedGame === 'space_shooter') {
-        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-          setShipSector((s) => Math.max(0, s - 1));
-        } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-          setShipSector((s) => Math.min(3, s + 1));
-        } else if (e.key === ' ' || e.key === 'Enter') {
-          e.preventDefault();
-          fireSpaceLaser(shipSector);
-        }
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [gameState, selectedGame, shipSector, feedback, currentQ]);
-
   if (!modalGames.open) return null;
 
-  const startGame = async (overrideTopic?: string) => {
-    const activeTopicStr = (overrideTopic ?? topic).trim() || 'Solar System';
-    const inferredSubj = inferClientSubject(activeTopicStr);
-    setTopic(activeTopicStr);
-    setSubject(inferredSubj);
+  // Start / Restart Game with clean state
+  const handleStartGame = async () => {
     setLoading(true);
+    setGameState('setup');
+
+    const settings: SharedGameSettings = {
+      grade,
+      subject,
+      chapter: chapter || topic,
+      topic,
+      language,
+      startingDifficulty,
+      gameMode,
+      sessionLength
+    };
+
+    const engine = new QuestionEngine(settings);
+    const progression = new ProgressionController(startingDifficulty, gameMode);
+
+    engineRef.current = engine;
+    progressionRef.current = progression;
+
     try {
-      const res = await apiFetch('/api/games/questions', {
-        method: 'POST',
-        body: JSON.stringify({
-          topic: activeTopicStr,
-          subject: inferredSubj,
-          difficulty,
-          count: 6
-        })
-      });
-      if (res.subject) setSubject(res.subject);
-      setQuestions(res.questions || []);
-      setQIndex(0);
+      await engine.loadQuestionBatch(apiFetch, 8);
+      const firstQ = engine.getNextQuestion(selectedGame);
+
+      setCurrentQuestion(firstQ);
       setScore(0);
-      setLives(3);
+      setLives(gameMode === 'challenge' ? 3 : 5);
       setCombo(1);
-      setStage(1);
+      setQuestionsAttempted(0);
       setCorrectCount(0);
       setMistakes([]);
       setFeedback(null);
-      setRunnerLane(1);
-      setShipSector(1);
+      setLevelInfo(progression.getLevelInfo());
+      setLevelUpAlert(null);
+      setIsPaused(false);
+      setPendingTopicChange(null);
       setGameState('playing');
     } finally {
       setLoading(false);
     }
   };
 
-  const finishAndSaveSession = async (finalScore: number, finalCorrect: number, finalMistakes: MistakeRecord[], finalStage: number) => {
+  // Evaluate Chosen Answer
+  const handleAnswerChosen = (chosenOptionId: OptionId) => {
+    if (!engineRef.current || !progressionRef.current || !currentQuestion || feedback) return;
+
+    const basePoints = selectedGame === 'space_answer_shooter' ? 250 : selectedGame === 'answer_runner' ? 200 : 150;
+    const evaluated = engineRef.current.evaluateAnswer(chosenOptionId, basePoints);
+    if (!evaluated) return;
+
+    const newAttempted = questionsAttempted + 1;
+    setQuestionsAttempted(newAttempted);
+
+    // Progression update
+    const progressionStep = progressionRef.current.recordAnswer(evaluated.isCorrect);
+    const nextLevelInfo = progressionRef.current.getLevelInfo();
+    setLevelInfo(nextLevelInfo);
+
+    if (evaluated.isCorrect) {
+      const addedPoints = evaluated.pointsEarned * combo;
+      setScore((prev) => prev + addedPoints);
+      setCorrectCount((prev) => prev + 1);
+      setCombo((prev) => prev + 1);
+
+      if (progressionStep.promoted) {
+        setLevelUpAlert(`🎉 LEVEL PROMOTION! Welcome to ${nextLevelInfo.title}`);
+        setTimeout(() => setLevelUpAlert(null), 3000);
+      }
+    } else {
+      setCombo(1);
+      const nextLives = lives - 1;
+      setLives(nextLives);
+
+      const mistakeRecord: GameMistakeRecord = {
+        questionId: currentQuestion.id,
+        question: currentQuestion.question,
+        chosenAnswer: evaluated.chosenText,
+        correctAnswer: evaluated.correctText,
+        explanation: evaluated.explanation,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      setMistakes((prev) => [...prev, mistakeRecord]);
+
+      if (nextLives <= 0) {
+        // Game Over
+        setFeedback(evaluated);
+        setTimeout(() => handleFinishSession(false), 2400);
+        return;
+      }
+    }
+
+    setFeedback(evaluated);
+
+    // Auto-advance or advance on button click
+    const delay = evaluated.isCorrect ? 1800 : 2800;
+    setTimeout(() => {
+      handleNextQuestion(newAttempted);
+    }, delay);
+  };
+
+  // Advance to next question in queue
+  const handleNextQuestion = (attemptedCount: number) => {
+    setFeedback(null);
+    if (!engineRef.current) return;
+
+    // Check if session length limit reached
+    if (sessionLength > 0 && attemptedCount >= sessionLength) {
+      handleFinishSession(true);
+      return;
+    }
+
+    // Prefetch if queue running low
+    if (engineRef.current.getQueueLength() <= 2) {
+      engineRef.current.loadQuestionBatch(apiFetch, 6);
+    }
+
+    const nextQ = engineRef.current.getNextQuestion(selectedGame);
+    if (!nextQ) {
+      handleFinishSession(true);
+      return;
+    }
+
+    setCurrentQuestion(nextQ);
+  };
+
+  // Complete and persist game session
+  const handleFinishSession = async (completedNormally: boolean) => {
     setGameState('finished');
+    const finalAccuracy = questionsAttempted > 0 ? Math.round((correctCount / questionsAttempted) * 100) : 0;
+
     try {
       await apiFetch('/api/games/sessions', {
         method: 'POST',
@@ -254,928 +262,585 @@ export const EducationalGamesModal: React.FC = () => {
           game_type: selectedGame,
           topic,
           subject,
-          difficulty,
-          score: finalScore,
-          correct_count: finalCorrect,
-          total_questions: questions.length || 6,
-          stage_reached: finalStage,
-          duration_seconds: 65,
-          mistakes: finalMistakes
+          difficulty: startingDifficulty,
+          score,
+          correct_count: correctCount,
+          total_questions: questionsAttempted || 1,
+          accuracy: finalAccuracy,
+          stage_reached: levelInfo.level,
+          duration_seconds: 60,
+          mistakes
         })
       });
       triggerRefresh();
     } catch {
-      // Non-blocking save
+      // Non-blocking persistence
     }
   };
 
-  const evaluateChoice = (chosenOptionIdx: number) => {
-    if (!currentQ || feedback) return;
-    const isCorrect = chosenOptionIdx === currentQ.correctIndex;
-    const pointBase = selectedGame === 'space_shooter' ? 250 : selectedGame === 'learning_runner' ? 200 : 150;
+  // Web Speech API: Speak explanation in selected language
+  const handleSpeakText = (text: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
 
-    let nextScore = score;
-    let nextCorrect = correctCount;
-    let nextLives = lives;
-    let nextCombo = combo;
-    let nextStage = stage;
-    const nextMistakes = [...mistakes];
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    const voices = window.speechSynthesis.getVoices();
 
-    if (isCorrect) {
-      nextScore = score + pointBase * combo;
-      nextCorrect = correctCount + 1;
-      nextCombo = combo + 1;
-      nextStage = stage + 1;
-      setScore(nextScore);
-      setCorrectCount(nextCorrect);
-      setCombo(nextCombo);
-      setStage(nextStage);
-      setFeedback({
-        type: 'correct',
-        text: `💥 DIRECT HIT! (+${pointBase * combo} pts) — ${currentQ.explanation}`
-      });
+    if (language === 'Telugu') {
+      const teVoice = voices.find((v) => v.lang.startsWith('te') || v.name.includes('Geeta'));
+      if (teVoice) utter.voice = teVoice;
+      utter.lang = 'te-IN';
+      utter.rate = 0.92;
+    } else if (language === 'Hindi') {
+      const hiVoice = voices.find((v) => v.lang.startsWith('hi') || v.name.includes('Lekha'));
+      if (hiVoice) utter.voice = hiVoice;
+      utter.lang = 'hi-IN';
+      utter.rate = 0.95;
     } else {
-      nextLives = lives - 1;
-      nextCombo = 1;
-      const mistakeItem: MistakeRecord = {
-        question: currentQ.question,
-        yourAnswer: currentQ.options[chosenOptionIdx] || 'Missed Target',
-        correctAnswer: currentQ.options[currentQ.correctIndex],
-        explanation: currentQ.explanation
-      };
-      nextMistakes.push(mistakeItem);
-      setLives(nextLives);
-      setCombo(1);
-      setMistakes(nextMistakes);
-      setFeedback({
-        type: 'wrong',
-        text: `⚠️ SHIELD HIT (-1 Shield)! Correct Target: "${currentQ.options[currentQ.correctIndex]}" — ${currentQ.explanation}`
-      });
+      const enVoice = voices.find((v) => v.lang === 'en-IN' || v.name.includes('Rishi') || v.name.includes('Aman'));
+      if (enVoice) utter.voice = enVoice;
+      utter.lang = 'en-IN';
+      utter.rate = 1.0;
     }
 
-    setTimeout(() => {
-      setFeedback(null);
-      setBattleAttack(null);
-      setRunnerBurst(null);
-      setSaucerExplosion(null);
-      if (nextLives <= 0 || qIndex + 1 >= questions.length) {
-        finishAndSaveSession(nextScore, nextCorrect, nextMistakes, nextStage);
-      } else {
-        setQIndex((prev) => prev + 1);
-      }
-    }, 1550);
+    utter.onstart = () => setIsSpeaking(true);
+    utter.onend = () => setIsSpeaking(false);
+    utter.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utter);
   };
-
-  const triggerBattleStrike = (idx: number) => {
-    if (!currentQ || feedback || battleAttack) return;
-    const isCorrect = idx === currentQ.correctIndex;
-    setBattleAttack({ targetIdx: idx, isCorrect, phase: 'firing' });
-    setTimeout(() => {
-      setBattleAttack({ targetIdx: idx, isCorrect, phase: 'impact' });
-      evaluateChoice(idx);
-    }, 260);
-  };
-
-  const fireSpaceLaser = (sectorIdx: number) => {
-    if (!currentQ || feedback || laserFiring !== null) return;
-    const isCorrect = sectorIdx === currentQ.correctIndex;
-    setShipSector(sectorIdx);
-    setLaserFiring(sectorIdx);
-    setTimeout(() => {
-      setLaserFiring(null);
-      setSaucerExplosion({ sector: sectorIdx, isCorrect });
-      evaluateChoice(sectorIdx);
-    }, 250);
-  };
-
-  const bossHpPercent = questions.length > 0 ? Math.max(0, Math.round(((questions.length - correctCount) / questions.length) * 100)) : 100;
 
   return (
-    <div className="glass-modal-overlay" role="dialog" aria-modal="true" aria-label="Educational Games Arcade">
-      <div className="glass-modal-content" style={{ maxWidth: 900 }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+    <div
+      role="dialog"
+      aria-modal="true"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        background: 'rgba(3, 7, 18, 0.75)',
+        backdropFilter: 'blur(12px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 16
+      }}
+    >
+      <div
+        className="glass-card"
+        style={{
+          width: '100%',
+          maxWidth: 960,
+          maxHeight: '94vh',
+          background: '#0B0F19',
+          border: '1.5px solid rgba(255, 106, 0, 0.45)',
+          borderRadius: 24,
+          overflowY: 'auto',
+          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.65)',
+          color: '#FFFFFF',
+          padding: 24,
+          position: 'relative'
+        }}
+      >
+        {/* Modal Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 42, height: 42, borderRadius: 14, background: '#FFF3E8', color: '#FF6A00', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Gamepad2 size={22} />
-            </div>
+            <Gamepad2 size={26} color="#FF6A00" />
             <div>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 800 }}>STUDYAI Animated Educational Games Arcade</h2>
-              <p style={{ fontSize: '0.8rem', color: '#6B7280' }}>Real-time animated action games generated dynamically for any topic you choose</p>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#F8FAFC' }}>
+                AI Tutor 3D Educational Games
+              </h2>
+              <span style={{ fontSize: '0.78rem', color: '#94A3B8' }}>
+                Loop-Based 3D Learning Arena • Grades 1–10 • English + Telugu + Hindi
+              </span>
             </div>
           </div>
-          <button type="button" onClick={closeGamesHub} className="btn-glass" style={{ padding: '6px 10px' }} aria-label="Close Games Arcade">
-            <X size={16} />
+          <button
+            type="button"
+            onClick={closeGamesHub}
+            aria-label="Close Games"
+            style={{
+              background: 'rgba(255,255,255,0.1)',
+              border: 'none',
+              borderRadius: '50%',
+              width: 36,
+              height: 36,
+              color: '#FFFFFF',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <X size={18} />
           </button>
-        </div>
-
-        {/* Game Mode Selector Tabs */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 14 }}>
-          {[
-            { id: 'answer_battle', title: 'Game A: Boss Battle Arena', desc: 'Animated Projectile Combat', icon: Crosshair },
-            { id: 'learning_runner', title: 'Game B: Speed Runner 3D', desc: 'Animated 3-Lane Highway Sprint', icon: Zap },
-            { id: 'space_shooter', title: 'Game C: Starfighter Defense', desc: 'Animated UFO Laser Shooter', icon: Rocket }
-          ].map((g) => {
-            const Icon = g.icon;
-            const active = selectedGame === g.id;
-            return (
-              <button
-                key={g.id}
-                type="button"
-                onClick={() => {
-                  setSelectedGame(g.id as any);
-                  if (gameState === 'finished') setGameState('setup');
-                }}
-                style={{
-                  padding: '11px 14px',
-                  borderRadius: 18,
-                  border: active ? '2px solid #FF6A00' : '1px solid rgba(0,0,0,0.1)',
-                  background: active ? '#FFF3E8' : '#FFFFFF',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10
-                }}
-              >
-                <div style={{ width: 36, height: 36, borderRadius: 12, background: active ? '#FF6A00' : '#F3F4F6', color: active ? '#FFF' : '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon size={18} />
-                </div>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: '0.86rem', color: '#202124' }}>{g.title}</div>
-                  <div style={{ fontSize: '0.73rem', color: '#6B7280' }}>{g.desc}</div>
-                </div>
-              </button>
-            );
-          })}
         </div>
 
         {/* SETUP SCREEN */}
         {gameState === 'setup' && (
-          <div style={{ padding: 20, borderRadius: 22, background: '#FFFDFB', border: '1px solid rgba(255,106,0,0.22)' }}>
-            {/* Quick Topic Launch Chips */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280' }}>Instant Topic Missions:</span>
-              {[
-                'Solar System & Orbits',
-                'Human Heart & Blood Flow',
-                'Quadratic Equations',
-                'Newton’s Laws of Motion',
-                'Volcanoes & Plate Tectonics',
-                'DNA Double Helix',
-                'World War II',
-                'English Passive Voice',
-                'Photosynthesis'
-              ].map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  disabled={loading}
-                  onClick={() => startGame(preset)}
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: 999,
-                    border: topic.toLowerCase() === preset.toLowerCase() ? '1.5px solid #FF6A00' : '1px solid rgba(0,0,0,0.12)',
-                    background: topic.toLowerCase() === preset.toLowerCase() ? '#FFF3E8' : '#FFFFFF',
-                    color: topic.toLowerCase() === preset.toLowerCase() ? '#E85D00' : '#374151',
-                    fontSize: '0.74rem',
-                    fontWeight: 700,
-                    cursor: 'pointer'
-                  }}
-                >
-                  ⚡ {preset}
-                </button>
-              ))}
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 18 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#6B7280', marginBottom: 6 }}>Custom Game Topic</label>
-                <div className="glass-input-wrap">
-                  <input
-                    className="glass-input"
-                    value={topic}
-                    onChange={(e) => {
-                      setTopic(e.target.value);
-                      setSubject(inferClientSubject(e.target.value));
+          <div style={{ display: 'grid', gap: 16 }}>
+            {/* 1. Game Selection Tabs */}
+            <div>
+              <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#FF6A00', marginBottom: 8 }}>
+                1. Choose 3D Game:
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                {(
+                  [
+                    { id: 'answer_shooter', title: 'Answer Shooter', desc: '3D Arena Target Combat', icon: <Crosshair size={20} color="#FF6A00" /> },
+                    { id: 'answer_runner', title: 'Answer Runner', desc: '3D 3-Lane Endless Sprint', icon: <Zap size={20} color="#38BDF8" /> },
+                    { id: 'space_answer_shooter', title: 'Space Answer Shooter', desc: '3D Cosmic Space Blaster', icon: <Rocket size={20} color="#A855F7" /> }
+                  ] as const
+                ).map((g) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => setSelectedGame(g.id)}
+                    style={{
+                      padding: '14px 12px',
+                      borderRadius: 16,
+                      border: selectedGame === g.id ? '2px solid #FF6A00' : '1px solid rgba(255,255,255,0.12)',
+                      background: selectedGame === g.id ? 'rgba(255, 106, 0, 0.15)' : 'rgba(15, 23, 42, 0.6)',
+                      color: '#FFFFFF',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
                     }}
-                    placeholder="Enter ANY topic (e.g., Gravity, Fractions, Volcanoes)..."
-                  />
-                </div>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#6B7280', marginBottom: 6 }}>Subject</label>
-                <select
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  style={{ width: '100%', padding: '12px 14px', borderRadius: 999, border: '1px solid rgba(0,0,0,0.12)', fontWeight: 600 }}
-                >
-                  <option value="Science">Science</option>
-                  <option value="Maths">Maths</option>
-                  <option value="English">English</option>
-                  <option value="Social Studies">Social Studies</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#6B7280', marginBottom: 6 }}>Difficulty & Animation Speed</label>
-                <select
-                  value={difficulty}
-                  onChange={(e) => setDifficulty(e.target.value as any)}
-                  style={{ width: '100%', padding: '12px 14px', borderRadius: 999, border: '1px solid rgba(0,0,0,0.12)', fontWeight: 600 }}
-                >
-                  <option value="easy">Easy (Foundation Speed)</option>
-                  <option value="medium">Medium (Arcade Standard)</option>
-                  <option value="hard">Hard (Turbo Challenge)</option>
-                </select>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-              <div style={{ fontSize: '0.84rem', color: '#374151', fontWeight: 600 }}>
-                {selectedGame === 'answer_battle' && `${theme.heroEmoji} Battle the ${theme.bossTitle} (${theme.bossEmoji})! Strike the moving energy orbs to fire plasma bolts and drain the Boss HP bar!`}
-                {selectedGame === 'learning_runner' && '🏃 Sprint down the animated 3-lane cyber highway (Arrow keys or Lane buttons) and crash through the glowing answer portal!'}
-                {selectedGame === 'space_shooter' && '🚀 Pilot your starfighter across 4 space sectors and fire twin plasma lasers at the weaving alien saucers!'}
-              </div>
-              <button type="button" onClick={() => startGame()} className="btn-orange" disabled={loading}>
-                <Sparkles size={16} />
-                <span>{loading ? `Generating "${topic}" Arena...` : 'Launch Animated Game →'}</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* PLAYING SCREEN */}
-        {gameState === 'playing' && currentQ && (
-          <div>
-            {/* HUD Bar */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderRadius: 16, background: '#0F172A', color: '#FFFFFF', marginBottom: 12, flexWrap: 'wrap', gap: 10, border: '1px solid #334155' }}>
-              <div style={{ fontWeight: 800, color: '#FF6A00', fontSize: '0.95rem' }}>
-                ⚡ SCORE: {score} PTS <span style={{ color: '#38BDF8', fontSize: '0.8rem', marginLeft: 6 }}>({combo}x COMBO🔥)</span>
-              </div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#F8FAFC' }}>
-                Wave {qIndex + 1} / {questions.length} • {topic} ({subject})
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: '0.8rem', color: '#CBD5E1' }}>Shields:</span>
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <span key={i} style={{ opacity: i < lives ? 1 : 0.2, transform: i < lives ? `scale(${1 + Math.sin(animTick * 0.25 + i) * 0.08})` : 'scale(0.85)', display: 'inline-block' }}>
-                    🛡️
-                  </span>
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      {g.icon}
+                      <span style={{ fontWeight: 800, fontSize: '0.92rem' }}>{g.title}</span>
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: '#94A3B8' }}>{g.desc}</div>
+                  </button>
                 ))}
               </div>
             </div>
 
-            {/* Active Question Banner */}
-            <div style={{ padding: '12px 18px', borderRadius: 18, background: 'linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)', border: '2px solid #FF6A00', marginBottom: 12, boxShadow: '0 6px 18px rgba(255,106,0,0.12)' }}>
-              <div style={{ fontSize: '0.73rem', fontWeight: 800, color: '#EA580C', textTransform: 'uppercase', marginBottom: 3 }}>
-                🎯 MISSION QUESTION {qIndex + 1} • {topic.toUpperCase()}
+            {/* 2. Educational Settings Form */}
+            <div style={{ background: 'rgba(15, 23, 42, 0.7)', padding: 18, borderRadius: 18, border: '1px solid rgba(255,255,255,0.08)', display: 'grid', gap: 14 }}>
+              <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#38BDF8' }}>
+                2. Curriculum &amp; Language Settings:
               </div>
-              <div style={{ fontSize: '1.04rem', fontWeight: 800, color: '#202124' }}>{currentQ.question}</div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+                {/* Language */}
+                <div>
+                  <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+                    <Globe size={14} color="#FF6A00" /> Language:
+                  </label>
+                  <select
+                    aria-label="Language"
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value as GameLanguage)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 10, background: '#1E293B', border: '1px solid rgba(255,255,255,0.2)', color: '#FFFFFF', fontSize: '0.84rem', fontWeight: 700 }}
+                  >
+                    <option value="English">English</option>
+                    <option value="Telugu">తెలుగు (Telugu)</option>
+                    <option value="Hindi">हिंदी (Hindi)</option>
+                  </select>
+                </div>
+
+                {/* Grade */}
+                <div>
+                  <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+                    <GraduationCap size={14} color="#FF6A00" /> Grade (1–10):
+                  </label>
+                  <select
+                    aria-label="Grade"
+                    value={grade}
+                    onChange={(e) => setGrade(parseInt(e.target.value, 10))}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 10, background: '#1E293B', border: '1px solid rgba(255,255,255,0.2)', color: '#FFFFFF', fontSize: '0.84rem', fontWeight: 700 }}
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((g) => (
+                      <option key={g} value={g}>
+                        Grade {g}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Subject */}
+                <div>
+                  <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+                    <BookOpen size={14} color="#FF6A00" /> Subject:
+                  </label>
+                  <select
+                    aria-label="Subject"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 10, background: '#1E293B', border: '1px solid rgba(255,255,255,0.2)', color: '#FFFFFF', fontSize: '0.84rem', fontWeight: 700 }}
+                  >
+                    {['Science', 'Maths', 'English', 'Telugu', 'Hindi', 'Social Studies', 'Computer Science'].map((sub) => (
+                      <option key={sub} value={sub}>
+                        {sub}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Topic */}
+                <div>
+                  <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
+                    Topic Title:
+                  </label>
+                  <input
+                    aria-label="Topic"
+                    value={topic}
+                    onChange={(e) => {
+                      setTopic(e.target.value);
+                      setChapter(e.target.value);
+                    }}
+                    placeholder="e.g. Solar System, Fractions, Electricity"
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 10, background: '#1E293B', border: '1px solid rgba(255,255,255,0.2)', color: '#FFFFFF', fontSize: '0.84rem', fontWeight: 700 }}
+                  />
+                </div>
+              </div>
+
+              {/* Game Mode & Difficulty */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginTop: 4 }}>
+                {/* Starting Difficulty */}
+                <div>
+                  <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
+                    Starting Difficulty:
+                  </label>
+                  <select
+                    aria-label="Difficulty"
+                    value={startingDifficulty}
+                    onChange={(e) => setStartingDifficulty(e.target.value as GameDifficulty)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 10, background: '#1E293B', border: '1px solid rgba(255,255,255,0.2)', color: '#FFFFFF', fontSize: '0.84rem', fontWeight: 700 }}
+                  >
+                    <option value="easy">Easy (Introductory)</option>
+                    <option value="medium">Medium (Standard)</option>
+                    <option value="hard">Hard (Advanced)</option>
+                  </select>
+                </div>
+
+                {/* Game Mode */}
+                <div>
+                  <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
+                    Game Mode:
+                  </label>
+                  <select
+                    aria-label="Mode"
+                    value={gameMode}
+                    onChange={(e) => setGameMode(e.target.value as GameMode)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 10, background: '#1E293B', border: '1px solid rgba(255,255,255,0.2)', color: '#FFFFFF', fontSize: '0.84rem', fontWeight: 700 }}
+                  >
+                    <option value="practice">Practice Mode (Generous Time &amp; Hints)</option>
+                    <option value="challenge">Challenge Mode (Strict Shields &amp; Combos)</option>
+                  </select>
+                </div>
+
+                {/* Session Length */}
+                <div>
+                  <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#94A3B8', marginBottom: 4, display: 'block' }}>
+                    Session Length:
+                  </label>
+                  <select
+                    aria-label="Session Length"
+                    value={sessionLength}
+                    onChange={(e) => setSessionLength(parseInt(e.target.value, 10))}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 10, background: '#1E293B', border: '1px solid rgba(255,255,255,0.2)', color: '#FFFFFF', fontSize: '0.84rem', fontWeight: 700 }}
+                  >
+                    <option value={10}>10 Questions</option>
+                    <option value={20}>20 Questions</option>
+                    <option value={30}>30 Questions</option>
+                    <option value={0}>Endless Mode</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
-            {/* Feedback Toast */}
+            {/* Launch Game Button */}
+            <button
+              type="button"
+              disabled={loading}
+              onClick={handleStartGame}
+              className="btn-orange"
+              style={{
+                padding: '14px 28px',
+                fontSize: '1.05rem',
+                fontWeight: 900,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                borderRadius: 16,
+                boxShadow: '0 8px 24px rgba(255, 106, 0, 0.4)'
+              }}
+            >
+              <Play size={20} />
+              <span>{loading ? 'Preparing 3D Arena...' : 'Start 3D Educational Game'}</span>
+            </button>
+          </div>
+        )}
+
+        {/* ACTIVE PLAYING SCREEN */}
+        {gameState === 'playing' && (
+          <div style={{ position: 'relative' }}>
+            {/* Level Promotion Toast */}
+            {levelUpAlert && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 10,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  zIndex: 20,
+                  background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                  color: '#FFFFFF',
+                  padding: '10px 24px',
+                  borderRadius: 999,
+                  fontWeight: 900,
+                  fontSize: '0.92rem',
+                  boxShadow: '0 8px 24px rgba(16, 185, 129, 0.5)'
+                }}
+              >
+                {levelUpAlert}
+              </div>
+            )}
+
+            {/* Active 3D Game Renderers */}
+            {selectedGame === 'answer_shooter' && (
+              <AnswerShooter3D
+                question={currentQuestion}
+                onAnswerChosen={handleAnswerChosen}
+                levelInfo={levelInfo}
+                feedback={feedback}
+                lives={lives}
+                score={score}
+                combo={combo}
+                isPaused={isPaused}
+              />
+            )}
+
+            {selectedGame === 'answer_runner' && (
+              <AnswerRunner3D
+                question={currentQuestion}
+                onAnswerChosen={handleAnswerChosen}
+                levelInfo={levelInfo}
+                feedback={feedback}
+                lives={lives}
+                score={score}
+                combo={combo}
+                isPaused={isPaused}
+              />
+            )}
+
+            {selectedGame === 'space_answer_shooter' && (
+              <SpaceAnswerShooter3D
+                question={currentQuestion}
+                onAnswerChosen={handleAnswerChosen}
+                levelInfo={levelInfo}
+                feedback={feedback}
+                lives={lives}
+                score={score}
+                combo={combo}
+                isPaused={isPaused}
+              />
+            )}
+
+            {/* Educational Feedback Overlay (Part 8) */}
             {feedback && (
               <div
                 style={{
-                  padding: '10px 16px',
-                  borderRadius: 14,
-                  marginBottom: 12,
-                  background: feedback.type === 'correct' ? '#ECFDF5' : '#FEF2F2',
-                  color: feedback.type === 'correct' ? '#047857' : '#DC2626',
-                  border: feedback.type === 'correct' ? '1.5px solid #10B981' : '1.5px solid #EF4444',
-                  fontWeight: 800,
-                  fontSize: '0.86rem'
+                  marginTop: 14,
+                  padding: '14px 18px',
+                  borderRadius: 16,
+                  background: feedback.isCorrect ? 'rgba(6, 78, 59, 0.95)' : 'rgba(127, 29, 29, 0.95)',
+                  border: `2px solid ${feedback.isCorrect ? '#10B981' : '#EF4444'}`,
+                  color: '#FFFFFF',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)'
                 }}
               >
-                {feedback.text}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 900, fontSize: '1rem' }}>
+                    {feedback.isCorrect ? (
+                      <>
+                        <CheckCircle2 size={20} color="#34D399" />
+                        <span style={{ color: '#34D399' }}>DIRECT HIT! Correct Answer (+{feedback.pointsEarned * combo} pts)</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertTriangle size={20} color="#F87171" />
+                        <span style={{ color: '#F87171' }}>SHIELD HIT! (-1 Shield) — Target: {feedback.correctText}</span>
+                      </>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleSpeakText(feedback.explanation)}
+                    style={{
+                      background: 'rgba(255,255,255,0.15)',
+                      border: 'none',
+                      borderRadius: 999,
+                      padding: '4px 12px',
+                      color: '#FFFFFF',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4
+                    }}
+                  >
+                    {isSpeaking ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                    <span>Listen</span>
+                  </button>
+                </div>
+                <p style={{ margin: 0, fontSize: '0.88rem', lineHeight: 1.5, color: '#F1F5F9' }}>
+                  {feedback.explanation}
+                </p>
+                {feedback.hint && !feedback.isCorrect && (
+                  <div style={{ marginTop: 6, fontSize: '0.8rem', color: '#FDE047', fontWeight: 600 }}>
+                    💡 Concept Hint: {feedback.hint}
+                  </div>
+                )}
               </div>
             )}
 
-            {/* =====================================================================
-                GAME A: ANIMATED BOSS BATTLE & MOVING TARGET ARENA
-               ===================================================================== */}
-            {selectedGame === 'answer_battle' && (
+            {/* Mid-Game Topic Change Confirmation Modal (Part 1 Guard) */}
+            {pendingTopicChange && (
               <div
                 style={{
-                  borderRadius: 22,
-                  background: 'radial-gradient(circle at 50% 25%, #1E1B4B 0%, #090D16 100%)',
-                  border: '2px solid #FF6A00',
-                  padding: 18,
-                  color: '#FFFFFF',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  boxShadow: '0 14px 32px rgba(15, 23, 42, 0.4)'
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'rgba(3, 7, 18, 0.85)',
+                  backdropFilter: 'blur(8px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 24,
+                  zIndex: 30
                 }}
               >
-                {/* Animated Cyber Battle Stage (Hero vs Boss Guardian) */}
-                <div
-                  style={{
-                    position: 'relative',
-                    height: 128,
-                    borderRadius: 18,
-                    background: 'linear-gradient(90deg, rgba(56,189,248,0.14) 0%, rgba(15,23,42,0.85) 50%, rgba(239,68,68,0.18) 100%)',
-                    border: '1px solid rgba(255,255,255,0.14)',
-                    marginBottom: 16,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0 28px',
-                    overflow: 'hidden'
-                  }}
-                >
-                  {/* Animated Grid Floor Lines */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(180deg, rgba(255,255,255,0.05) 1px, transparent 1px)',
-                      backgroundSize: '32px 32px',
-                      backgroundPositionX: `${-(animTick * 3) % 32}px`,
-                      pointerEvents: 'none'
-                    }}
-                  />
-
-                  {/* Left: Animated Student Hero Avatar */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, zIndex: 2 }}>
-                    <div
-                      style={{
-                        width: 68,
-                        height: 68,
-                        borderRadius: '50%',
-                        background: 'radial-gradient(circle, #38BDF8 0%, #0284C7 100%)',
-                        border: '3px solid #E0F2FE',
-                        boxShadow: '0 0 22px rgba(56,189,248,0.65)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '2rem',
-                        transform: `translateY(${Math.sin(animTick * 0.22) * 6}px)`
+                <div style={{ background: '#1E293B', border: '2px solid #FF6A00', borderRadius: 20, padding: 24, maxWidth: 440, textAlign: 'center' }}>
+                  <AlertTriangle size={36} color="#FF6A00" style={{ marginBottom: 8 }} />
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: '0 0 8px 0' }}>
+                    Topic Changed to &ldquo;{pendingTopicChange}&rdquo;
+                  </h3>
+                  <p style={{ fontSize: '0.86rem', color: '#94A3B8', marginBottom: 16 }}>
+                    Would you like to restart the 3D game using this new topic, or continue your current lesson?
+                  </p>
+                  <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTopic(pendingTopicChange);
+                        setChapter(pendingTopicChange);
+                        setSubject(inferClientSubject(pendingTopicChange));
+                        setPendingTopicChange(null);
+                        handleStartGame();
                       }}
+                      className="btn-orange"
+                      style={{ padding: '8px 18px', fontSize: '0.86rem' }}
                     >
-                      {theme.heroEmoji}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#38BDF8', textTransform: 'uppercase' }}>STUDENT DEFENDER</div>
-                      <div style={{ fontSize: '0.96rem', fontWeight: 800, color: '#FFFFFF' }}>Combo Power: {combo}x</div>
-                      <div style={{ width: 120, height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.18)', marginTop: 6, overflow: 'hidden' }}>
-                        <div style={{ width: `${(lives / 3) * 100}%`, height: '100%', background: '#22C55E', transition: 'width 0.3s ease' }} />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Center: Live Projectile & Explosion Animation */}
-                  <div style={{ flex: 1, position: 'relative', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3 }}>
-                    {!battleAttack && (
-                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#FDBA74', textAlign: 'center', opacity: 0.85 }}>
-                        ⚡ Strike any moving target orb below to fire {theme.projectile} plasma!
-                      </div>
-                    )}
-                    {battleAttack && battleAttack.phase === 'firing' && (
-                      <div
-                        style={{
-                          width: '80%',
-                          height: 8,
-                          borderRadius: 999,
-                          background: 'linear-gradient(90deg, #38BDF8 0%, #FF6A00 50%, #FACC15 100%)',
-                          boxShadow: '0 0 24px #FF6A00',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'flex-end',
-                          fontSize: '1.6rem'
-                        }}
-                      >
-                        {theme.projectile}
-                      </div>
-                    )}
-                    {battleAttack && battleAttack.phase === 'impact' && (
-                      <div
-                        style={{
-                          padding: '8px 18px',
-                          borderRadius: 999,
-                          background: battleAttack.isCorrect ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.28)',
-                          border: `2px solid ${battleAttack.isCorrect ? '#22C55E' : '#EF4444'}`,
-                          color: '#FFFFFF',
-                          fontWeight: 900,
-                          fontSize: '1rem',
-                          transform: 'scale(1.12)',
-                          boxShadow: `0 0 28px ${battleAttack.isCorrect ? '#22C55E' : '#EF4444'}`
-                        }}
-                      >
-                        {battleAttack.isCorrect ? `💥 CRITICAL HIT! +${150 * combo} PTS!` : '🛡️ BOSS COUNTER-ATTACK!'}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Right: Animated Topic Boss Guardian */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, zIndex: 2 }}>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#FCA5A5', textTransform: 'uppercase' }}>{theme.bossTitle}</div>
-                      <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#FFFFFF' }}>Boss HP: {bossHpPercent}%</div>
-                      <div style={{ width: 130, height: 9, borderRadius: 999, background: 'rgba(255,255,255,0.18)', marginTop: 6, overflow: 'hidden' }}>
-                        <div style={{ width: `${bossHpPercent}%`, height: '100%', background: 'linear-gradient(90deg, #F97316, #EF4444)', transition: 'width 0.35s ease' }} />
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        width: 72,
-                        height: 72,
-                        borderRadius: '50%',
-                        background: 'radial-gradient(circle, #EF4444 0%, #7F1D1D 100%)',
-                        border: '3px solid #FCA5A5',
-                        boxShadow: '0 0 26px rgba(239,68,68,0.75)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '2.1rem',
-                        transform:
-                          battleAttack?.phase === 'impact' && battleAttack.isCorrect
-                            ? 'scale(1.25) rotate(14deg)'
-                            : `translateY(${Math.cos(animTick * 0.22) * 7}px) rotate(${Math.sin(animTick * 0.12) * 6}deg)`
+                      Restart with New Topic
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPendingTopicChange(null);
+                        setIsPaused(false);
                       }}
+                      className="btn-glass"
+                      style={{ padding: '8px 18px', fontSize: '0.86rem' }}
                     >
-                      {theme.bossEmoji}
-                    </div>
+                      Continue Current Game
+                    </button>
                   </div>
-                </div>
-
-                {/* 4 Animated Oscillating Target Orbs */}
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
-                    gap: 14
-                  }}
-                >
-                  {currentQ.options.map((opt, idx) => {
-                    const offsetX = Math.sin(animTick * 0.16 + idx * 1.6) * 5;
-                    const offsetY = Math.cos(animTick * 0.18 + idx * 1.3) * 4;
-                    const isTargeted = battleAttack?.targetIdx === idx;
-                    const isCorrectOpt = idx === currentQ.correctIndex;
-
-                    let borderCol = '#FF6A00';
-                    let bgCol = 'rgba(30, 41, 59, 0.92)';
-                    if (feedback && isCorrectOpt) {
-                      borderCol = '#22C55E';
-                      bgCol = 'rgba(20, 83, 45, 0.9)';
-                    } else if (isTargeted && ! isCorrectOpt && feedback) {
-                      borderCol = '#EF4444';
-                      bgCol = 'rgba(127, 29, 29, 0.9)';
-                    }
-
-                    return (
-                      <button
-                        key={idx}
-                        type="button"
-                        disabled={Boolean(feedback || battleAttack)}
-                        onClick={() => triggerBattleStrike(idx)}
-                        style={{
-                          padding: '16px 16px',
-                          borderRadius: 20,
-                          border: `2px solid ${borderCol}`,
-                          background: bgCol,
-                          color: '#FFFFFF',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 12,
-                          boxShadow: isTargeted ? `0 0 24px ${borderCol}` : '0 8px 20px rgba(0,0,0,0.35)',
-                          transform: `translate(${offsetX}px, ${offsetY}px)`,
-                          transition: 'background 0.2s ease, border-color 0.2s ease'
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 44,
-                            height: 44,
-                            borderRadius: '50%',
-                            background: 'radial-gradient(circle, #FF6A00 0%, #9A3412 100%)',
-                            border: '2px solid #FDBA74',
-                            color: '#FFFFFF',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 900,
-                            fontSize: '0.95rem',
-                            flexShrink: 0,
-                            boxShadow: '0 0 12px rgba(255,106,0,0.6)'
-                          }}
-                        >
-                          🎯 {String.fromCharCode(65 + idx)}
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#FDBA74', letterSpacing: '0.04em' }}>
-                            MOVING ORB {String.fromCharCode(65 + idx)} [KEY {idx + 1}]
-                          </div>
-                          <div style={{ fontSize: '0.93rem', fontWeight: 700, color: '#F8FAFC', marginTop: 2 }}>{opt}</div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* =====================================================================
-                GAME B: LEARNING RUNNER (ANIMATED 3-LANE CYBER HIGHWAY SPRINT)
-               ===================================================================== */}
-            {selectedGame === 'learning_runner' && (
-              <div>
-                <div
-                  style={{
-                    position: 'relative',
-                    height: 300,
-                    borderRadius: 22,
-                    background: 'linear-gradient(180deg, #090D16 0%, #1E1B4B 45%, #0F172A 100%)',
-                    overflow: 'hidden',
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(3, 1fr)',
-                    border: '2px solid #38BDF8',
-                    marginBottom: 12,
-                    boxShadow: '0 14px 32px rgba(15, 23, 42, 0.45)'
-                  }}
-                >
-                  {/* Scrolling Horizon Speed Banner */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 8,
-                      right: 14,
-                      zIndex: 5,
-                      padding: '4px 10px',
-                      borderRadius: 999,
-                      background: 'rgba(15,23,42,0.85)',
-                      border: '1px solid #38BDF8',
-                      color: '#38BDF8',
-                      fontSize: '0.72rem',
-                      fontWeight: 800
-                    }}
-                  >
-                    ⚡ SPEED: {28 + combo * 4} KM/H • DISTANCE: {animTick * 3}m
-                  </div>
-
-                  {[0, 1, 2].map((laneIdx) => {
-                    const gateOpt = laneOptions[laneIdx];
-                    const isRunnerHere = runnerLane === laneIdx;
-                    const gateScale = 0.72 + (gateProgress / 100) * 0.34;
-                    return (
-                      <div
-                        key={laneIdx}
-                        onClick={() => setRunnerLane(laneIdx)}
-                        style={{
-                          position: 'relative',
-                          cursor: 'pointer',
-                          background: isRunnerHere
-                            ? 'linear-gradient(180deg, rgba(255,106,0,0.05) 0%, rgba(255,106,0,0.22) 100%)'
-                            : 'transparent',
-                          borderRight: laneIdx < 2 ? 'none' : undefined
-                        }}
-                      >
-                        {/* Animated Scrolling Dashed Highway Divider */}
-                        {laneIdx < 2 && (
-                          <div
-                            style={{
-                              position: 'absolute',
-                              top: 0,
-                              bottom: 0,
-                              right: 0,
-                              width: 4,
-                              backgroundImage: 'linear-gradient(180deg, #38BDF8 50%, transparent 50%)',
-                              backgroundSize: '4px 36px',
-                              backgroundPositionY: `${(animTick * 12) % 36}px`,
-                              opacity: 0.55
-                            }}
-                          />
-                        )}
-
-                        <div style={{ textAlign: 'center', padding: 8, fontSize: '0.74rem', color: '#94A3B8', fontWeight: 800 }}>
-                          LANE {laneIdx + 1}
-                        </div>
-
-                        {/* Approaching Glowing Answer Portal Gate */}
-                        {gateOpt && (
-                          <div
-                            style={{
-                              position: 'absolute',
-                              left: 12,
-                              right: 12,
-                              top: `${gateProgress}%`,
-                              transform: `translateY(-50%) scale(${gateScale})`,
-                              padding: '12px 10px',
-                              borderRadius: 16,
-                              background: 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)',
-                              border: '2px solid #FDE047',
-                              color: '#FFFFFF',
-                              fontSize: '0.8rem',
-                              fontWeight: 800,
-                              textAlign: 'center',
-                              boxShadow: '0 0 22px rgba(255,106,0,0.65)',
-                              zIndex: 3
-                            }}
-                          >
-                            <div style={{ fontSize: '0.65rem', color: '#FEF08A', textTransform: 'uppercase', marginBottom: 2 }}>
-                              ⚡ ENERGY GATE {laneIdx + 1}
-                            </div>
-                            {gateOpt.text}
-                          </div>
-                        )}
-
-                        {/* Animated Player Runner Avatar at bottom of lane */}
-                        {isRunnerHere && (
-                          <div
-                            style={{
-                              position: 'absolute',
-                              bottom: 14,
-                              left: '50%',
-                              transform: `translateX(-50%) translateY(${Math.abs(Math.sin(animTick * 0.45)) * -10}px)`,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              zIndex: 4
-                            }}
-                          >
-                            {runnerBurst && (
-                              <div
-                                style={{
-                                  marginBottom: 4,
-                                  padding: '3px 10px',
-                                  borderRadius: 999,
-                                  background: runnerBurst === 'correct' ? '#22C55E' : '#EF4444',
-                                  color: '#FFF',
-                                  fontSize: '0.72rem',
-                                  fontWeight: 900
-                                }}
-                              >
-                                {runnerBurst === 'correct' ? '✨ PORTAL BOOST!' : '💥 CRASH!'}
-                              </div>
-                            )}
-                            <div
-                              style={{
-                                width: 52,
-                                height: 52,
-                                borderRadius: '50%',
-                                background: 'radial-gradient(circle, #22C55E 0%, #15803D 100%)',
-                                border: '3px solid #BBF7D0',
-                                boxShadow: '0 0 24px #22C55E',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '1.65rem'
-                              }}
-                            >
-                              🏃
-                            </div>
-                            <div
-                              style={{
-                                marginTop: 3,
-                                padding: '2px 10px',
-                                borderRadius: 999,
-                                background: '#22C55E',
-                                color: '#052E16',
-                                fontWeight: 900,
-                                fontSize: '0.68rem'
-                              }}
-                            >
-                              SPRINTER
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Touch / Desktop Lane Controls */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  <button
-                    type="button"
-                    onClick={() => setRunnerLane((l) => Math.max(0, l - 1))}
-                    className="btn-glass"
-                    aria-label="Move Left Lane"
-                  >
-                    <ArrowLeft size={16} /> Move Left
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const chosen = laneOptions[runnerLane];
-                      if (chosen) {
-                        setRunnerBurst(chosen.optionIndex === currentQ?.correctIndex ? 'correct' : 'wrong');
-                        evaluateChoice(chosen.optionIndex);
-                      }
-                    }}
-                    className="btn-orange"
-                  >
-                    ⚡ Turbo Dash Through Lane {runnerLane + 1}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRunnerLane((l) => Math.min(2, l + 1))}
-                    className="btn-glass"
-                    aria-label="Move Right Lane"
-                  >
-                    Move Right <ArrowRight size={16} />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* =====================================================================
-                GAME C: SPACE QUIZ SHOOTER (ANIMATED STARFIELD & UFO FLEET)
-               ===================================================================== */}
-            {selectedGame === 'space_shooter' && (
-              <div>
-                <div
-                  style={{
-                    position: 'relative',
-                    height: 300,
-                    borderRadius: 22,
-                    background: 'radial-gradient(circle at 50% 20%, #1E1B4B 0%, #090D16 100%)',
-                    overflow: 'hidden',
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(4, 1fr)',
-                    border: '2px solid #818CF8',
-                    marginBottom: 12,
-                    boxShadow: '0 14px 32px rgba(15, 23, 42, 0.5)'
-                  }}
-                >
-                  {/* Scrolling Animated Starfield Overlay */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      backgroundImage: 'radial-gradient(#FFFFFF 1.5px, transparent 1.5px), radial-gradient(#38BDF8 1px, transparent 1px)',
-                      backgroundSize: '48px 48px, 32px 32px',
-                      backgroundPosition: `0px ${(animTick * 4) % 48}px, 16px ${(animTick * 7) % 32}px`,
-                      opacity: 0.3,
-                      pointerEvents: 'none'
-                    }}
-                  />
-
-                  {currentQ.options.map((opt, idx) => {
-                    const isShipHere = shipSector === idx;
-                    const isLaserHere = laserFiring === idx;
-                    const isExploding = saucerExplosion?.sector === idx;
-                    const saucerWaveX = Math.sin(animTick * 0.22 + idx * 1.4) * 7;
-
-                    return (
-                      <div
-                        key={idx}
-                        onClick={() => fireSpaceLaser(idx)}
-                        style={{
-                          position: 'relative',
-                          borderRight: idx < 3 ? '1px dashed rgba(255,255,255,0.14)' : 'none',
-                          cursor: 'crosshair',
-                          padding: 8,
-                          zIndex: 2
-                        }}
-                      >
-                        <div style={{ textAlign: 'center', fontSize: '0.68rem', fontWeight: 800, color: '#818CF8' }}>
-                          SECTOR {idx + 1}
-                        </div>
-
-                        {/* Descending Weaving Alien Saucer Target */}
-                        <div
-                          style={{
-                            position: 'absolute',
-                            left: 8,
-                            right: 8,
-                            top: `${saucerDescent}%`,
-                            transform: `translateX(${saucerWaveX}px) scale(${isExploding ? 1.25 : 1})`,
-                            padding: '10px 8px',
-                            borderRadius: 16,
-                            background: isExploding
-                              ? saucerExplosion?.isCorrect
-                                ? 'rgba(34, 197, 94, 0.85)'
-                                : 'rgba(239, 68, 68, 0.85)'
-                              : 'rgba(15, 23, 42, 0.88)',
-                            border: `2px solid ${isExploding ? '#FACC15' : '#38BDF8'}`,
-                            color: '#F8FAFC',
-                            fontSize: '0.76rem',
-                            fontWeight: 700,
-                            textAlign: 'center',
-                            boxShadow: isExploding ? '0 0 28px #FACC15' : '0 0 16px rgba(56,189,248,0.35)',
-                            transition: 'transform 0.15s ease'
-                          }}
-                        >
-                          <div style={{ fontSize: '1.25rem', marginBottom: 2 }}>
-                            {isExploding ? (saucerExplosion?.isCorrect ? '💥🌟💥' : '💥⚠️💥') : '🛸'}
-                          </div>
-                          {opt}
-                        </div>
-
-                        {/* Twin Plasma Laser Beam */}
-                        {isLaserHere && (
-                          <div
-                            style={{
-                              position: 'absolute',
-                              left: '50%',
-                              top: `${saucerDescent}%`,
-                              bottom: 54,
-                              width: 8,
-                              transform: 'translateX(-50%)',
-                              background: 'linear-gradient(180deg, #FACC15 0%, #FF6A00 100%)',
-                              boxShadow: '0 0 22px #FF6A00',
-                              borderRadius: 999
-                            }}
-                          />
-                        )}
-
-                        {/* Animated Starship Fighter at bottom */}
-                        {isShipHere && (
-                          <div
-                            style={{
-                              position: 'absolute',
-                              bottom: 10,
-                              left: '50%',
-                              transform: `translateX(-50%) translateY(${Math.sin(animTick * 0.35) * 4}px)`,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center'
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: 48,
-                                height: 48,
-                                borderRadius: '50%',
-                                background: 'radial-gradient(circle, #FF6A00 0%, #9A3412 100%)',
-                                border: '2px solid #FDE047',
-                                boxShadow: '0 0 20px #FF6A00',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '1.5rem'
-                              }}
-                            >
-                              🚀
-                            </div>
-                            <div style={{ fontSize: '0.75rem', marginTop: -2, opacity: 0.8 + (animTick % 2) * 0.2 }}>🔥</div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  <button type="button" onClick={() => setShipSector((s) => Math.max(0, s - 1))} className="btn-glass">
-                    <ArrowLeft size={15} /> Sector Left
-                  </button>
-                  <button type="button" onClick={() => fireSpaceLaser(shipSector)} className="btn-orange">
-                    🔥 Fire Twin Plasma Lasers (Sector {shipSector + 1})
-                  </button>
-                  <button type="button" onClick={() => setShipSector((s) => Math.min(3, s + 1))} className="btn-glass">
-                    Sector Right <ArrowRight size={15} />
-                  </button>
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {/* FINISHED / RESULTS & MISTAKE REVIEW SCREEN */}
+        {/* FINISHED / LEARNING REPORT SCREEN */}
         {gameState === 'finished' && (
-          <div style={{ padding: 24, borderRadius: 22, background: '#FFFDFB', border: '1.5px solid rgba(255,106,0,0.3)' }}>
-            <div style={{ textAlign: 'center', marginBottom: 18 }}>
-              <Trophy size={42} color="#FF6A00" />
-              <h3 style={{ fontSize: '1.35rem', fontWeight: 800, marginTop: 8 }}>
-                Mission Complete on "{topic}"! Score: {score} pts
-              </h3>
-              <p style={{ color: '#6B7280', fontSize: '0.9rem' }}>
-                Correct Answers: {correctCount} / {questions.length} • Stage Reached: {stage} • Saved to your Library & Progress
-              </p>
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <Trophy size={54} color="#FACC15" style={{ marginBottom: 10 }} />
+            <h2 style={{ fontSize: '1.45rem', fontWeight: 900, margin: '0 0 6px 0', color: '#F8FAFC' }}>
+              {lives > 0 ? 'Mission Accomplished!' : 'Game Over — Great Effort!'}
+            </h2>
+            <p style={{ fontSize: '0.88rem', color: '#94A3B8', marginBottom: 20 }}>
+              {topic} • Grade {grade} • {subject} ({language})
+            </p>
+
+            {/* Stats Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, maxWidth: 640, margin: '0 auto 24px auto' }}>
+              <div style={{ background: '#1E293B', padding: 14, borderRadius: 14, border: '1px solid rgba(255,255,255,0.1)' }}>
+                <div style={{ fontSize: '0.74rem', color: '#94A3B8', fontWeight: 700 }}>Final Score</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#FACC15' }}>{score}</div>
+              </div>
+              <div style={{ background: '#1E293B', padding: 14, borderRadius: 14, border: '1px solid rgba(255,255,255,0.1)' }}>
+                <div style={{ fontSize: '0.74rem', color: '#94A3B8', fontWeight: 700 }}>Accuracy</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#10B981' }}>
+                  {questionsAttempted > 0 ? Math.round((correctCount / questionsAttempted) * 100) : 0}%
+                </div>
+              </div>
+              <div style={{ background: '#1E293B', padding: 14, borderRadius: 14, border: '1px solid rgba(255,255,255,0.1)' }}>
+                <div style={{ fontSize: '0.74rem', color: '#94A3B8', fontWeight: 700 }}>Correct / Total</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#38BDF8' }}>
+                  {correctCount} / {questionsAttempted}
+                </div>
+              </div>
+              <div style={{ background: '#1E293B', padding: 14, borderRadius: 14, border: '1px solid rgba(255,255,255,0.1)' }}>
+                <div style={{ fontSize: '0.74rem', color: '#94A3B8', fontWeight: 700 }}>Stage Reached</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#FF6A00' }}>
+                  Level {levelInfo.level}
+                </div>
+              </div>
             </div>
 
-            {mistakes.length > 0 ? (
-              <div style={{ marginBottom: 18 }}>
-                <div style={{ fontWeight: 800, fontSize: '0.92rem', marginBottom: 8, color: '#DC2626', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <AlertTriangle size={16} /> Review Mistakes & Explanations ({mistakes.length})
+            {/* Mistakes Review */}
+            {mistakes.length > 0 && (
+              <div style={{ maxWidth: 680, margin: '0 auto 24px auto', textAlign: 'left', background: 'rgba(15, 23, 42, 0.7)', padding: 18, borderRadius: 18, border: '1px solid rgba(255,255,255,0.1)' }}>
+                <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#EF4444', marginBottom: 10 }}>
+                  Review Identified Mistakes ({mistakes.length}):
                 </div>
-                <div style={{ display: 'grid', gap: 10 }}>
-                  {mistakes.map((m, idx) => (
-                    <div key={idx} style={{ padding: 12, borderRadius: 14, background: '#FFF', border: '1px solid rgba(220,38,38,0.2)', fontSize: '0.84rem' }}>
-                      <div style={{ fontWeight: 700, color: '#202124' }}>{m.question}</div>
-                      <div style={{ color: '#DC2626', marginTop: 3 }}>Your choice: {m.yourAnswer}</div>
-                      <div style={{ color: '#15803D', fontWeight: 700 }}>Correct answer: {m.correctAnswer}</div>
-                      <div style={{ color: '#6B7280', marginTop: 4 }}>{m.explanation}</div>
+                <div style={{ display: 'grid', gap: 8, maxHeight: 180, overflowY: 'auto' }}>
+                  {mistakes.map((m, i) => (
+                    <div key={i} style={{ background: '#1E293B', padding: 10, borderRadius: 10, fontSize: '0.8rem' }}>
+                      <div style={{ fontWeight: 700, color: '#FFFFFF', marginBottom: 2 }}>{m.question}</div>
+                      <div style={{ color: '#EF4444' }}>❌ Your target: {m.chosenAnswer}</div>
+                      <div style={{ color: '#10B981' }}>✅ Correct target: {m.correctAnswer}</div>
+                      <div style={{ color: '#94A3B8', marginTop: 2 }}>💡 {m.explanation}</div>
                     </div>
                   ))}
                 </div>
               </div>
-            ) : (
-              <div style={{ padding: 14, borderRadius: 14, background: '#ECFDF5', color: '#047857', fontWeight: 700, textAlign: 'center', marginBottom: 18 }}>
-                <CheckCircle2 size={18} style={{ verticalAlign: 'middle', marginRight: 6 }} />
-                Flawless Run! Zero mistakes on {topic}!
-              </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
-              <button type="button" onClick={() => startGame()} className="btn-orange">
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button
+                type="button"
+                onClick={handleStartGame}
+                className="btn-orange"
+                style={{ padding: '12px 24px', fontSize: '0.92rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6 }}
+              >
                 <RotateCcw size={16} /> Play Again
               </button>
-              <button type="button" onClick={() => setGameState('setup')} className="btn-glass">
-                Change Game or Topic
+              <button
+                type="button"
+                onClick={() => setGameState('setup')}
+                className="btn-glass"
+                style={{ padding: '12px 24px', fontSize: '0.92rem', fontWeight: 800 }}
+              >
+                Change Settings
+              </button>
+              <button
+                type="button"
+                onClick={closeGamesHub}
+                className="btn-glass"
+                style={{ padding: '12px 24px', fontSize: '0.92rem', fontWeight: 800 }}
+              >
+                Return to AI Tutor
               </button>
             </div>
           </div>

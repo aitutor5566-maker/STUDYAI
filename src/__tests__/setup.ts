@@ -1,4 +1,24 @@
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
+import { vi } from 'vitest';
+import * as THREE from 'three';
+
+// Mock WebGLRenderer for Headless Vitest Testing
+vi.mock('three', async (importOriginal) => {
+  const actual = await importOriginal<typeof THREE>();
+  class MockWebGLRenderer {
+    domElement = document.createElement('canvas');
+    shadowMap = { enabled: false };
+    setSize = vi.fn();
+    setPixelRatio = vi.fn();
+    render = vi.fn();
+    dispose = vi.fn();
+    constructor() {}
+  }
+  return {
+    ...actual,
+    WebGLRenderer: MockWebGLRenderer,
+  };
+});
 
 // Mock Web Speech API SpeechSynthesis
 if (typeof window !== 'undefined') {

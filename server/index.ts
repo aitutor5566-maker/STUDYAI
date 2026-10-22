@@ -1184,10 +1184,13 @@ export function createAppServer() {
           inferredSubj !== 'Science' ? inferredSubj : body.subject || inferredSubj,
           60
         );
+        const chapter = sanitizeText(body.chapter || topic, 120);
+        const grade = typeof body.grade === 'number' ? body.grade : (body.level ? parseInt(String(body.level).replace(/\D/g, ''), 10) || 5 : 5);
+        const language = sanitizeText(body.language || 'English', 30);
         const difficulty = body.difficulty === 'easy' || body.difficulty === 'hard' ? body.difficulty : 'medium';
         const count = Math.min(Math.max(Number(body.count) || 8, 4), 15);
-        const questions = await generateTopicQuestionsAsync({ topic, subject, difficulty, count });
-        sendJson(res, 200, { topic, subject, difficulty, questions });
+        const questions = await generateTopicQuestionsAsync({ topic, subject, chapter, grade, language, difficulty, count });
+        sendJson(res, 200, { topic, subject, chapter, grade, language, difficulty, questions });
         return;
       }
 
