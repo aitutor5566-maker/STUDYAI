@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: studyai-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-studyai_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-studyai_secure_pass_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-studyai_production}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../../database/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-studyai_user} -d ${POSTGRES_DB:-studyai_production}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/Dockerfile.backend
+    container_name: studyai-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: production
+      PORT: 8000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-studyai_user}:${POSTGRES_PASSWORD:-studyai_secure_pass_2026}@postgres:5432/${POSTGRES_DB:-studyai_production}
+      SUPABASE_URL: ${SUPABASE_URL:-http://localhost:8000}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-demo_anon_key}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-demo_service_key}
+      FEATURE_VIDEO_GENERATION: "false"
+      CORS_ORIGINS: "http://localhost:3000,http://localhost:3002,https://studyai.com,https://admin.studyai.com"
+    ports:
+      - "8000:8000"
+
+  student_app:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/Dockerfile.student
+    container_name: studyai-student-app
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+  admin_portal:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/Dockerfile.admin
+    container_name: studyai-admin-portal
+    restart: unless-stopped
+    ports:
+      - "3002:80"
+    depends_on:
+      - backend
+
+  superadmin_portal:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/Dockerfile.superadmin
+    container_name: studyai-superadmin-portal
+    restart: unless-stopped
+    ports:
+      - "3003:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+    driver: local

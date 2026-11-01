@@ -1,0 +1,120 @@
+{
+  "executedAt": "2026-11-01T02:57:55.310Z",
+  "baseUrl": "http://localhost:3001",
+  "summary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0
+  },
+  "tests": {
+    "test1_topic_dna": {
+      "passed": true,
+      "noteId": "note-9a4e1952",
+      "title": "Create detailed notes on DNA",
+      "sectionsCount": 4,
+      "definitionsCount": 4,
+      "abbreviationsCount": 2,
+      "hasDnaFullForm": true,
+      "hasRnaFullForm": true,
+      "hasComparisonTable": true,
+      "imagesCount": 2,
+      "has7PartWalkthroughs": true,
+      "persistedInSqlite": true
+    },
+    "test2_long_pdf": {
+      "passed": true,
+      "noteId": "note-89482c56",
+      "totalPagesDetected": 5,
+      "pagesProcessed": 5,
+      "coveragePercent": 100,
+      "citesAll5Pages": true,
+      "sectionsGenerated": 5,
+      "imagesCount": 2
+    },
+    "test3_youtube_lecture": {
+      "passed": true,
+      "noteId": "note-b9bf6dd7",
+      "videoId": "8kK2zwjRV0M",
+      "timestampSegmentsProcessed": 4,
+      "coveragePercent": 100,
+      "hasTimestampCitations": true,
+      "imagesCount": 2
+    },
+    "test4_multi_source_contradictions": {
+      "passed": true,
+      "noteId": "note-63095ca6",
+      "sourcesProcessed": 3,
+      "agreementsCount": 1,
+      "complementaryCount": 3,
+      "contradictionsDetected": [
+        {
+          "aspect": "Total ATP Yield per Glucose Molecule",
+          "claimA": {
+            "sourceTitle": "Classical_Biochemistry_Textbook.pdf",
+            "locator": "Page 1",
+            "statement": "Classical_Biochemistry_Textbook.pdf states theoretical maximum yield of 36–38 ATP per glucose."
+          },
+          "claimB": {
+            "sourceTitle": "Cellular Respiration ATP Synthesis Lecture",
+            "locator": "Timestamp 00:00",
+            "statement": "Cellular Respiration ATP Synthesis Lecture states modern measured yield of 30–32 ATP due to proton leak and transport costs."
+          },
+          "resolutionNote": "Both statements are preserved separately: 36–38 ATP is the older theoretical stoichiometry, whereas 30–32 ATP reflects modern experimental measurements."
+        },
+        {
+          "aspect": "Total ATP Yield per Glucose Molecule",
+          "claimA": {
+            "sourceTitle": "Classical_Biochemistry_Textbook.pdf",
+            "locator": "Page 1",
+            "statement": "Classical_Biochemistry_Textbook.pdf states theoretical maximum yield of 36–38 ATP per glucose."
+          },
+          "claimB": {
+            "sourceTitle": "Modern Bioenergetics Journal Review",
+            "locator": "Section 1 (https://bioenergetics.example.edu/atp-yield)",
+            "statement": "Modern Bioenergetics Journal Review states modern measured yield of 30–32 ATP due to proton leak and transport costs."
+          },
+          "resolutionNote": "Both statements are preserved separately: 36–38 ATP is the older theoretical stoichiometry, whereas 30–32 ATP reflects modern experimental measurements."
+        }
+      ]
+    },
+    "test5_editing_persistence": {
+      "passed": true,
+      "noteId": "note-9a4e1952",
+      "updatedTitle": "DNA Structure & Replication — Edited Master Notebook",
+      "updatedFirstSectionHeading": "1. Edited Section: Molecular Architecture of DNA Double Helix",
+      "tableRowsCountAfterEdit": 5,
+      "reopenedSuccessfully": true
+    },
+    "test6_study_tools_and_grounded_qa": {
+      "passed": true,
+      "flashcardsCount": 7,
+      "quizQuestionsCount": 5,
+      "hasStudyGuide": true,
+      "hasAudioOverviewScript": true,
+      "qaCitationsReturned": [
+        "[Comprehensive_Biology_5_Chapters.pdf, Page 3]",
+        "[Comprehensive_Biology_5_Chapters.pdf, Page 2]",
+        "[Comprehensive_Biology_5_Chapters.pdf, Page 4]"
+      ],
+      "separatesGroundedFromSupplemental": true
+    },
+    "test7_exports": {
+      "passed": true,
+      "htmlByteLength": 30451,
+      "docByteLength": 30451,
+      "mdByteLength": 13753,
+      "htmlHasWhitePageAndImages": true,
+      "docHasContent": true,
+      "mdHasContent": true
+    },
+    "test8_failure_handling": {
+      "passed": true,
+      "inaccessibleSourceStatus": 422,
+      "inaccessibleSourceError": "This YouTube video is private, unavailable, or has disabled captions/transcripts. Please upload the lecture transcript or PDF slides directly. STUDYAI will not fabricate notes for an inaccessible video.",
+      "imageFailureStatus": 503,
+      "imageFailureCode": "MANDATORY_IMAGE_FAILURE",
+      "interruptedStatus": 503,
+      "interruptedCode": "PIPELINE_INTERRUPTED"
+    }
+  }
+}

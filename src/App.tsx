@@ -12,6 +12,7 @@ import { NotesPage } from './pages/NotesPage';
 import { TutorPage } from './pages/TutorPage';
 import { LibraryPage } from './pages/LibraryPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { SuperAdminPage } from './pages/SuperAdminPage';
 
 class AppErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -67,6 +68,7 @@ export const App: React.FC = () => {
               <Route path="/tutor" element={<TutorPage />} />
               <Route path="/library" element={<LibraryPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/superadmin" element={<SuperAdminPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
 

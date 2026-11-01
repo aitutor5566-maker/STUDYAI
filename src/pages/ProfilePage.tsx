@@ -293,6 +293,35 @@ export const ProfilePage: React.FC = () => {
               <ChevronRight size={20} color="#FF6A00" />
             </div>
           </section>
+
+          {/* Super Admin Enterprise Console Entry Card */}
+          <a
+            href="/superadmin"
+            className="glass-card glass-card-interactive"
+            style={{
+              padding: 20,
+              textDecoration: 'none',
+              display: 'block',
+              background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(255, 107, 0, 0.08) 100%)',
+              border: '1px solid rgba(124, 58, 237, 0.25)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ width: 46, height: 46, borderRadius: 14, background: '#7C3AED', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 14px rgba(124,58,237,0.3)' }}>
+                  <Shield size={22} />
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#202124', margin: 0 }}>Super Admin Console</h3>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#7C3AED', backgroundColor: 'rgba(124,58,237,0.12)', padding: '2px 6px', borderRadius: 4 }}>MFA REQUIRED</span>
+                  </div>
+                  <p style={{ fontSize: '0.82rem', color: '#6B7280', margin: '4px 0 0 0' }}>Platform governance, AI costs, and security audit logs</p>
+                </div>
+              </div>
+              <ChevronRight size={20} color="#7C3AED" />
+            </div>
+          </a>
         </div>
 
         {/* Right Column: Preferences, Goals, Achievements, Help & Logout */}

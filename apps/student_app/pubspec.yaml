@@ -1,0 +1,24 @@
+name: student_app
+description: STUDYAI Multiplatform Student Learning Application
+version: 1.0.0+1
+publish_to: none
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.19.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  shared_models:
+    path: ../../packages/shared_models
+  shared_ui:
+    path: ../../packages/shared_ui
+  shared_services:
+    path: ../../packages/shared_services
+  flutter_studyai_visual:
+    path: ../../visual_learning/flutter_studyai_visual
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

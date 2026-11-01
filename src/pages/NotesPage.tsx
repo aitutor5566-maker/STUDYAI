@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useEffect, useState, useRef } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   FileText,
   Search,
@@ -13,13 +13,52 @@ import {
   Download,
   ChevronRight,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  BookOpen,
+  Youtube,
+  Globe,
+  Plus,
+  Undo2,
+  Redo2,
+  ArrowUp,
+  ArrowDown,
+  MessageSquare,
+  ExternalLink,
+  Printer,
+  Edit3,
+  Table,
+  Image as ImageIcon,
+  GraduationCap
 } from 'lucide-react';
 import { TopBrandBar } from '../components/GlassNav';
 import { useLearning } from '../context/LearningContext';
 
+interface PendingSourceItem {
+  id: string;
+  sourceType: 'topic' | 'pdf' | 'youtube' | 'web' | 'docx' | 'txt';
+  title: string;
+  url?: string;
+  fileName?: string;
+  content?: string;
+  base64Content?: string;
+}
+
+const PIPELINE_STEP_LABELS = [
+  '1. Import Source',
+  '2. Extract Content',
+  '3. Build Coverage Inventory',
+  '4. Segment Sections',
+  '5. Analyze Concepts & Terms',
+  '6. Generate Structured Notes',
+  '7. Generate & Validate Diagrams',
+  '8. Verify 100% Source Coverage',
+  '9. Render White-Page Notebook',
+  '10. Persist to SQLite'
+];
+
 export const NotesPage: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { apiFetch, activeTopic, setTopicContext, startAudioLesson, openQuizModal, refreshTick, triggerRefresh } = useLearning();
 
   const [notes, setNotes] = useState<any[]>([]);
@@ -27,24 +66,46 @@ export const NotesPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Active Note Editor State
+  // Active Note & White-Page Digital Notebook Editor State
   const [activeNote, setActiveNote] = useState<any | null>(null);
   const [editTitle, setEditTitle] = useState<string>('');
   const [editSubject, setEditSubject] = useState<string>('Science');
   const [editNotebook, setEditNotebook] = useState<string>('Biology');
   const [editMarkdown, setEditMarkdown] = useState<string>('');
+  const [editStructured, setEditStructured] = useState<any | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [activeTab, setActiveTab] = useState<'editor' | 'preview' | 'flashcards'>('preview');
+  const [activeTab, setActiveTab] = useState<'notebook' | 'ask-sources' | 'study-tools' | 'flashcards' | 'editor'>('notebook');
   const [flippedCards, setFlippedCards] = useState<Record<number, boolean>>({});
 
-  // Note Generation Form State
+  // Undo / Redo History Stack for White-Page Notebook Editing
+  const [historyStack, setHistoryStack] = useState<Array<{ title: string; markdown: string; structured: any }>>([]);
+  const [redoStack, setRedoStack] = useState<Array<{ title: string; markdown: string; structured: any }>>([]);
+  const [editingSectionIdx, setEditingSectionIdx] = useState<number | null>(null);
+  const [newKeyNoteText, setNewKeyNoteText] = useState<string>('');
+  const autosaveTimerRef = useRef<number | null>(null);
+
+  // Multi-Source Notebook Generator State
   const [showGenerator, setShowGenerator] = useState<boolean>(false);
   const [genTopic, setGenTopic] = useState<string>(searchParams.get('topic') || activeTopic || '');
   const [genSubject, setGenSubject] = useState<string>('Science');
   const [genDepth, setGenDepth] = useState<'concise' | 'detailed' | 'exam-prep'>('detailed');
   const [genSourceText, setGenSourceText] = useState<string>('');
+  const [youtubeUrlInput, setYoutubeUrlInput] = useState<string>('');
+  const [webUrlInput, setWebUrlInput] = useState<string>('');
+  const [pendingSources, setPendingSources] = useState<PendingSourceItem[]>([]);
   const [uploadStatus, setUploadStatus] = useState<{ type: 'ok' | 'err'; message: string } | null>(null);
   const [generating, setGenerating] = useState<boolean>(false);
+  const [pipelineStepIdx, setPipelineStepIdx] = useState<number>(0);
+
+  // Source-Grounded Q&A State
+  const [selectedSourceIds, setSelectedSourceIds] = useState<string[]>([]);
+  const [qaQuestion, setQaQuestion] = useState<string>('');
+  const [qaLoading, setQaLoading] = useState<boolean>(false);
+  const [qaHistory, setQaHistory] = useState<any[]>([]);
+
+  // Study Tools State
+  const [studyToolsData, setStudyToolsData] = useState<any | null>(null);
+  const [studyToolsLoading, setStudyToolsLoading] = useState<boolean>(false);
 
   const fetchNotes = async () => {
     setLoading(true);
@@ -61,6 +122,11 @@ export const NotesPage: React.FC = () => {
         if (found) selectNoteForEditing(found);
       } else if (!activeNote && list.length > 0) {
         selectNoteForEditing(list[0]);
+      } else if (activeNote) {
+        const refreshed = list.find((n) => n.id === activeNote.id);
+        if (refreshed) {
+          setActiveNote(refreshed);
+        }
       }
     } finally {
       setLoading(false);
@@ -73,43 +139,154 @@ export const NotesPage: React.FC = () => {
 
   const selectNoteForEditing = (note: any) => {
     setActiveNote(note);
-    setEditTitle(note.title);
-    setEditSubject(note.subject);
-    setEditNotebook(note.notebook || note.subject);
-    setEditMarkdown(note.content_markdown);
+    setEditTitle(note.title || '');
+    setEditSubject(note.subject || 'Science');
+    setEditNotebook(note.notebook || note.subject || 'Science');
+    setEditMarkdown(note.content_markdown || '');
+    const structuredCopy = note.structured ? JSON.parse(JSON.stringify(note.structured)) : {};
+    setEditStructured(structuredCopy);
+    setHistoryStack([]);
+    setRedoStack([]);
+    setEditingSectionIdx(null);
     setSaveStatus('idle');
     setFlippedCards({});
+    setQaHistory([]);
+    setStudyToolsData(null);
+    const srcIds = (structuredCopy?.sourceRecords || []).map((s: any) => s.id);
+    setSelectedSourceIds(srcIds);
   };
 
-  const handleGenerateNote = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const pushUndoSnapshot = () => {
+    setHistoryStack((prev) => [
+      ...prev.slice(-19),
+      {
+        title: editTitle,
+        markdown: editMarkdown,
+        structured: editStructured ? JSON.parse(JSON.stringify(editStructured)) : {}
+      }
+    ]);
+    setRedoStack([]);
+  };
+
+  const handleUndo = () => {
+    if (historyStack.length === 0) return;
+    const last = historyStack[historyStack.length - 1];
+    setRedoStack((prev) => [
+      ...prev,
+      {
+        title: editTitle,
+        markdown: editMarkdown,
+        structured: editStructured ? JSON.parse(JSON.stringify(editStructured)) : {}
+      }
+    ]);
+    setHistoryStack((prev) => prev.slice(0, -1));
+    setEditTitle(last.title);
+    setEditMarkdown(last.markdown);
+    setEditStructured(last.structured);
+    scheduleAutosave(last.title, editSubject, editNotebook, last.markdown, last.structured);
+  };
+
+  const handleRedo = () => {
+    if (redoStack.length === 0) return;
+    const next = redoStack[redoStack.length - 1];
+    setHistoryStack((prev) => [
+      ...prev,
+      {
+        title: editTitle,
+        markdown: editMarkdown,
+        structured: editStructured ? JSON.parse(JSON.stringify(editStructured)) : {}
+      }
+    ]);
+    setRedoStack((prev) => prev.slice(0, -1));
+    setEditTitle(next.title);
+    setEditMarkdown(next.markdown);
+    setEditStructured(next.structured);
+    scheduleAutosave(next.title, editSubject, editNotebook, next.markdown, next.structured);
+  };
+
+  const scheduleAutosave = (
+    nextTitle: string,
+    nextSubject: string,
+    nextNotebook: string,
+    nextMarkdown: string,
+    nextStructured: any
+  ) => {
+    if (!activeNote) return;
+    if (autosaveTimerRef.current) {
+      window.clearTimeout(autosaveTimerRef.current);
+    }
+    setSaveStatus('saving');
+    autosaveTimerRef.current = window.setTimeout(async () => {
+      try {
+        const updated = await apiFetch(`/api/notes/${activeNote.id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            title: nextTitle,
+            subject: nextSubject,
+            notebook: nextNotebook,
+            content_markdown: nextMarkdown,
+            structured: nextStructured
+          })
+        });
+        setActiveNote(updated);
+        setSaveStatus('saved');
+      } catch {
+        setSaveStatus('error');
+      }
+    }, 900);
+  };
+
+  const handleAddYouTubeSource = () => {
+    if (!youtubeUrlInput.trim()) return;
+    const url = youtubeUrlInput.trim();
+    setPendingSources((prev) => [
+      ...prev,
+      {
+        id: `yt-${Date.now()}`,
+        sourceType: 'youtube',
+        title: `YouTube Lecture (${url})`,
+        url,
+        content: genSourceText.trim() || undefined
+      }
+    ]);
     if (!genTopic.trim()) {
-      setUploadStatus({ type: 'err', message: 'Please enter a topic title to generate structured notes.' });
-      return;
+      setGenTopic('YouTube Video Lecture Study Notes');
     }
-    setGenerating(true);
-    setUploadStatus(null);
-    try {
-      const created = await apiFetch('/api/notes/generate', {
-        method: 'POST',
-        body: JSON.stringify({
-          topic: genTopic.trim(),
-          subject: genSubject,
-          depth: genDepth,
-          sourceText: genSourceText,
-          sourceType: genSourceText ? 'uploaded_or_pasted' : 'topic'
-        })
-      });
-      await setTopicContext(created.topic, created.subject);
-      setShowGenerator(false);
-      setGenSourceText('');
-      triggerRefresh();
-      selectNoteForEditing(created);
-    } catch (err: any) {
-      setUploadStatus({ type: 'err', message: err?.message || 'Failed to generate notes.' });
-    } finally {
-      setGenerating(false);
+    setYoutubeUrlInput('');
+    setUploadStatus({ type: 'ok', message: `Added YouTube source "${url}" to notebook queue.` });
+  };
+
+  const handleAddWebSource = () => {
+    if (!webUrlInput.trim()) return;
+    const url = webUrlInput.trim();
+    setPendingSources((prev) => [
+      ...prev,
+      {
+        id: `web-${Date.now()}`,
+        sourceType: 'web',
+        title: `Web Article (${url})`,
+        url,
+        content: genSourceText.trim() || undefined
+      }
+    ]);
+    if (!genTopic.trim()) {
+      setGenTopic('Web Article Study Notes');
     }
+    setWebUrlInput('');
+    setUploadStatus({ type: 'ok', message: `Added Web Link "${url}" to notebook queue.` });
+  };
+
+  const readFileAsBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = String(reader.result || '');
+        const commaIdx = result.indexOf(',');
+        resolve(commaIdx >= 0 ? result.slice(commaIdx + 1) : result);
+      };
+      reader.onerror = () => reject(new Error('Failed to read file bytes'));
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,30 +296,130 @@ export const NotesPage: React.FC = () => {
 
     try {
       let textContent = '';
-      if (file.type.startsWith('text/') || file.name.endsWith('.md') || file.name.endsWith('.txt') || file.name.endsWith('.json')) {
+      let base64Content = '';
+      const lowerName = file.name.toLowerCase();
+      if (
+        file.type.startsWith('text/') ||
+        lowerName.endsWith('.md') ||
+        lowerName.endsWith('.txt') ||
+        lowerName.endsWith('.json') ||
+        lowerName.endsWith('.csv')
+      ) {
         textContent = await file.text();
+      } else {
+        base64Content = await readFileAsBase64(file);
       }
+
       const res = await apiFetch('/api/notes/upload', {
         method: 'POST',
         body: JSON.stringify({
           fileName: file.name,
           fileSize: file.size,
           fileType: file.type,
-          content: textContent
+          content: textContent,
+          base64Content
         })
       });
-      setGenTopic(res.inferredTopic || file.name);
-      setGenSourceText(res.extractedSummary || '');
+
+      const extType: PendingSourceItem['sourceType'] = lowerName.endsWith('.pdf')
+        ? 'pdf'
+        : lowerName.endsWith('.docx')
+          ? 'docx'
+          : 'txt';
+
+      setPendingSources((prev) => [
+        ...prev,
+        {
+          id: `file-${Date.now()}`,
+          sourceType: extType,
+          title: file.name,
+          fileName: file.name,
+          content: res.fullExtractedText || textContent || res.extractedSummary || '',
+          base64Content: base64Content || undefined
+        }
+      ]);
+
+      if (!genTopic.trim()) {
+        setGenTopic(res.inferredTopic || file.name.replace(/\.[^.]+$/, ''));
+      }
       setShowGenerator(true);
       setUploadStatus({
         type: 'ok',
-        message: `Validated "${file.name}" (${Math.round(file.size / 1024)} KB). Ready to synthesize structured notes!`
+        message: `Imported "${file.name}" (${res.inventory?.totalUnits || 1} ${res.inventory?.unitType || 'section'}(s), 100% extracted). Ready to generate notebook!`
       });
     } catch (err: any) {
       setUploadStatus({
         type: 'err',
-        message: err?.message || 'Unsupported or invalid file upload.'
+        message: err?.message || 'Unsupported or unreadable file upload.'
       });
+    }
+  };
+
+  const handleGenerateNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!genTopic.trim() && pendingSources.length === 0 && !youtubeUrlInput.trim() && !webUrlInput.trim()) {
+      setUploadStatus({ type: 'err', message: 'Please enter a topic, upload a PDF/document, or add a YouTube/Web link.' });
+      return;
+    }
+
+    setGenerating(true);
+    setPipelineStepIdx(0);
+    setUploadStatus(null);
+
+    const stepInterval = window.setInterval(() => {
+      setPipelineStepIdx((prev) => (prev < PIPELINE_STEP_LABELS.length - 1 ? prev + 1 : prev));
+    }, 350);
+
+    try {
+      const sourcesPayload: any[] = [...pendingSources];
+      if (youtubeUrlInput.trim()) {
+        sourcesPayload.push({
+          sourceType: 'youtube',
+          title: `YouTube Lecture (${youtubeUrlInput.trim()})`,
+          url: youtubeUrlInput.trim(),
+          content: genSourceText.trim() || undefined
+        });
+      }
+      if (webUrlInput.trim()) {
+        sourcesPayload.push({
+          sourceType: 'web',
+          title: `Web Article (${webUrlInput.trim()})`,
+          url: webUrlInput.trim(),
+          content: genSourceText.trim() || undefined
+        });
+      }
+
+      const effectiveTopic =
+        genTopic.trim() ||
+        sourcesPayload[0]?.title ||
+        'Comprehensive Study Notebook';
+
+      const created = await apiFetch('/api/notes/generate', {
+        method: 'POST',
+        body: JSON.stringify({
+          topic: effectiveTopic,
+          subject: genSubject,
+          depth: genDepth,
+          sourceText: genSourceText,
+          sourceType: sourcesPayload.length > 0 ? sourcesPayload[0].sourceType : genSourceText ? 'txt' : 'topic',
+          sources: sourcesPayload.length > 0 ? sourcesPayload : undefined
+        })
+      });
+
+      await setTopicContext(created.topic, created.subject);
+      setShowGenerator(false);
+      setGenSourceText('');
+      setYoutubeUrlInput('');
+      setWebUrlInput('');
+      setPendingSources([]);
+      triggerRefresh();
+      selectNoteForEditing(created);
+      setActiveTab('notebook');
+    } catch (err: any) {
+      setUploadStatus({ type: 'err', message: err?.message || 'Failed to generate notebook.' });
+    } finally {
+      window.clearInterval(stepInterval);
+      setGenerating(false);
     }
   };
 
@@ -156,7 +433,8 @@ export const NotesPage: React.FC = () => {
           title: editTitle,
           subject: editSubject,
           notebook: editNotebook,
-          content_markdown: editMarkdown
+          content_markdown: editMarkdown,
+          structured: editStructured
         })
       });
       setActiveNote(updated);
@@ -168,97 +446,214 @@ export const NotesPage: React.FC = () => {
   };
 
   const handleDeleteNote = async (noteId: string) => {
-    if (!window.confirm('Are you sure you want to permanently delete this note?')) return;
+    if (!window.confirm('Are you sure you want to permanently delete this notebook?')) return;
     await apiFetch(`/api/notes/${noteId}`, { method: 'DELETE' });
     setActiveNote(null);
     triggerRefresh();
   };
 
-  const handleExportMarkdown = () => {
-    if (!activeNote) return;
-    const blob = new Blob([editMarkdown], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${editTitle.replace(/\s+/g, '_')}.md`;
-    a.click();
-    URL.revokeObjectURL(url);
+  // White-Page Notebook Section & Visual Editing Handlers
+  const handleUpdateSectionField = (idx: number, field: 'heading' | 'body' | 'plainExplanation', value: string) => {
+    if (!editStructured) return;
+    pushUndoSnapshot();
+    const next = JSON.parse(JSON.stringify(editStructured));
+    if (!Array.isArray(next.sections)) next.sections = [];
+    if (next.sections[idx]) {
+      next.sections[idx][field] = value;
+      if (field === 'body') {
+        next.sections[idx].plainExplanation = value;
+      }
+    }
+    setEditStructured(next);
+    scheduleAutosave(editTitle, editSubject, editNotebook, editMarkdown, next);
   };
 
-  // Safe Markdown Renderer (Section 8 requirement: never execute arbitrary HTML or scripts)
-  const renderSafeMarkdown = (md: string) => {
-    return md.split('\n').map((line, i) => {
-      if (line.startsWith('# ')) {
-        return (
-          <h2 key={i} style={{ fontSize: '1.3rem', fontWeight: 800, color: '#202124', marginTop: 12, marginBottom: 8 }}>
-            {line.slice(2)}
-          </h2>
-        );
-      }
-      if (line.startsWith('## ')) {
-        return (
-          <h3 key={i} style={{ fontSize: '1.05rem', fontWeight: 800, color: '#FF6A00', marginTop: 14, marginBottom: 6 }}>
-            {line.slice(3)}
-          </h3>
-        );
-      }
-      if (line.startsWith('- ') || line.startsWith('* ')) {
-        return (
-          <li key={i} style={{ marginLeft: 20, marginBottom: 5, fontSize: '0.92rem', lineHeight: 1.55, color: '#202124' }}>
-            {line.slice(2)}
-          </li>
-        );
-      }
-      if (/^\d+\.\s/.test(line)) {
-        return (
-          <div key={i} style={{ marginBottom: 6, fontSize: '0.92rem', lineHeight: 1.55, fontWeight: 500, color: '#202124' }}>
-            {line}
-          </div>
-        );
-      }
-      if (line.startsWith('`') && line.endsWith('`')) {
-        return (
-          <div
-            key={i}
-            style={{
-              padding: '10px 14px',
-              borderRadius: 12,
-              background: '#FFF3E8',
-              border: '1px solid rgba(255,106,0,0.3)',
-              fontFamily: 'monospace',
-              fontWeight: 700,
-              color: '#E85D00',
-              margin: '8px 0'
-            }}
-          >
-            {line.slice(1, -1)}
-          </div>
-        );
-      }
-      if (!line.trim()) return <div key={i} style={{ height: 6 }} />;
-      return (
-        <p key={i} style={{ fontSize: '0.92rem', lineHeight: 1.6, color: '#202124', marginBottom: 6 }}>
-          {line}
-        </p>
-      );
+  const handleAddSection = () => {
+    if (!editStructured) return;
+    pushUndoSnapshot();
+    const next = JSON.parse(JSON.stringify(editStructured));
+    if (!Array.isArray(next.sections)) next.sections = [];
+    const newSecNum = next.sections.length + 1;
+    next.sections.push({
+      id: `sec-custom-${Date.now()}`,
+      heading: `${newSecNum}. Additional Study Section`,
+      body: 'Write your custom notes, examples, or classroom takeaways here.',
+      plainExplanation: 'Write your custom notes, examples, or classroom takeaways here.',
+      keyPoints: ['Important concept takeaway'],
+      terms: [],
+      citations: ['[Student Custom Section]']
     });
+    setEditStructured(next);
+    setEditingSectionIdx(next.sections.length - 1);
+    scheduleAutosave(editTitle, editSubject, editNotebook, editMarkdown, next);
   };
 
-  const categories = ['All', 'Science', 'Maths', 'English', 'Social Studies'];
+  const handleDeleteSection = (idx: number) => {
+    if (!editStructured?.sections) return;
+    pushUndoSnapshot();
+    const next = JSON.parse(JSON.stringify(editStructured));
+    next.sections.splice(idx, 1);
+    setEditStructured(next);
+    setEditingSectionIdx(null);
+    scheduleAutosave(editTitle, editSubject, editNotebook, editMarkdown, next);
+  };
+
+  const handleMoveImage = (idx: number, direction: -1 | 1) => {
+    if (!editStructured?.images) return;
+    const targetIdx = idx + direction;
+    if (targetIdx < 0 || targetIdx >= editStructured.images.length) return;
+    pushUndoSnapshot();
+    const next = JSON.parse(JSON.stringify(editStructured));
+    const temp = next.images[idx];
+    next.images[idx] = next.images[targetIdx];
+    next.images[targetIdx] = temp;
+    setEditStructured(next);
+    scheduleAutosave(editTitle, editSubject, editNotebook, editMarkdown, next);
+  };
+
+  const handleAddComparisonRow = () => {
+    if (!editStructured) return;
+    pushUndoSnapshot();
+    const next = JSON.parse(JSON.stringify(editStructured));
+    if (!next.differences) {
+      next.differences = {
+        title: `${editTitle} — Comparison Table`,
+        columns: ['Feature / Criterion', 'Concept A', 'Concept B'],
+        rows: []
+      };
+    }
+    next.differences.rows.push(['New Criterion', 'Primary Mechanism Detail', 'Contrast / Secondary Detail']);
+    setEditStructured(next);
+    scheduleAutosave(editTitle, editSubject, editNotebook, editMarkdown, next);
+  };
+
+  const handleAddKeyNote = () => {
+    if (!newKeyNoteText.trim() || !editStructured) return;
+    pushUndoSnapshot();
+    const next = JSON.parse(JSON.stringify(editStructured));
+    if (!Array.isArray(next.summaryPoints)) next.summaryPoints = [];
+    next.summaryPoints.push(newKeyNoteText.trim());
+    setNewKeyNoteText('');
+    setEditStructured(next);
+    scheduleAutosave(editTitle, editSubject, editNotebook, editMarkdown, next);
+  };
+
+  // Source-Grounded Q&A Handler
+  const handleAskSourceQuestion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeNote || !qaQuestion.trim()) return;
+    setQaLoading(true);
+    try {
+      const response = await apiFetch(`/api/notes/${activeNote.id}/ask`, {
+        method: 'POST',
+        body: JSON.stringify({
+          question: qaQuestion.trim(),
+          selectedSourceIds
+        })
+      });
+      setQaHistory((prev) => [response, ...prev]);
+      setQaQuestion('');
+    } catch (err: any) {
+      setUploadStatus({ type: 'err', message: err?.message || 'Failed to answer question from notebook sources.' });
+    } finally {
+      setQaLoading(false);
+    }
+  };
+
+  // Study Tools Generator Handler
+  const handleGenerateStudyTools = async () => {
+    if (!activeNote) return;
+    setStudyToolsLoading(true);
+    try {
+      const res = await apiFetch(`/api/notes/${activeNote.id}/study-tools`, {
+        method: 'POST',
+        body: JSON.stringify({ toolType: 'all' })
+      });
+      setStudyToolsData(res);
+      triggerRefresh();
+    } catch (err: any) {
+      setUploadStatus({ type: 'err', message: err?.message || 'Failed to generate study tools.' });
+    } finally {
+      setStudyToolsLoading(false);
+    }
+  };
+
+  // Export Handler (HTML / PDF Print / DOC / Markdown)
+  const handleExportFormat = async (format: 'html' | 'doc' | 'md') => {
+    if (!activeNote) return;
+    try {
+      const res = await fetch(`/api/notes/${activeNote.id}/export?format=${format}`);
+      const content = await res.text();
+      const mimeType =
+        format === 'html'
+          ? 'text/html;charset=utf-8'
+          : format === 'doc'
+            ? 'application/msword;charset=utf-8'
+            : 'text/markdown;charset=utf-8';
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${editTitle.replace(/[^a-zA-Z0-9_-]+/g, '_')}.${format}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // Fallback client download for markdown
+      const blob = new Blob([editMarkdown], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${editTitle.replace(/\s+/g, '_')}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const scrollToNotebookAnchor = (elementId: string) => {
+    const el = document.getElementById(elementId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const categories = ['All', 'Science', 'Maths', 'English', 'Social Studies', 'Computer Science'];
+
+  const structured = editStructured || activeNote?.structured || {};
+  const sourceRecords: any[] = structured?.sourceRecords || [];
+  const sections: any[] = structured?.sections || [];
+  const images: any[] = structured?.images || [];
+  const definitions: any[] = structured?.definitions || [];
+  const abbreviations: any[] = structured?.abbreviations || [];
+  const differences = structured?.differences;
+  const formula = structured?.formula;
+  const examQuestions: any[] = structured?.examQuestions || [];
+  const sourceComparison = structured?.sourceComparison;
+  const coverageVerification = structured?.coverageVerification;
 
   return (
     <div className="studyai-container">
       <TopBrandBar showBack />
 
-      {/* Studio Title */}
+      {/* Studio Header */}
       <section style={{ marginBottom: 18 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 42, height: 42, borderRadius: 14, background: '#FFF3E8', color: '#FF6A00', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <FileText size={22} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 42, height: 42, borderRadius: 14, background: '#FFF3E8', color: '#FF6A00', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <BookOpen size={22} />
+            </div>
+            <div>
+              <h1 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#202124' }}>AI Notes & Source-Grounded Notebook Studio</h1>
+              <p style={{ fontSize: '0.86rem', color: '#6B7280' }}>
+                Transform Topics, Long PDFs, YouTube Lectures & Web Articles into Illustrated White-Page Digital Notebooks
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#202124' }}>AI Notes Studio</h1>
-            <p style={{ fontSize: '0.86rem', color: '#6B7280' }}>Create, edit and organize your study notes with AI</p>
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button type="button" onClick={() => setShowGenerator((s) => !s)} className="btn-orange">
+              <Sparkles size={16} />
+              <span>{showGenerator ? 'Hide Source Studio' : '+ New Multi-Source Notebook'}</span>
+            </button>
           </div>
         </div>
       </section>
@@ -271,7 +666,7 @@ export const NotesPage: React.FC = () => {
             className="glass-input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search notes, topics or subjects..."
+            placeholder="Search notebooks, topics, definitions, or cited sources..."
             aria-label="Search notes"
           />
         </div>
@@ -290,122 +685,212 @@ export const NotesPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Prominent Generate New Notes Action Card */}
-      <section className="hero-glass-banner" style={{ padding: 20, marginBottom: 22 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 48, height: 48, borderRadius: 16, background: '#FFFFFF', color: '#FF6A00', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 16px rgba(255,106,0,0.15)' }}>
-              <Sparkles size={24} />
-            </div>
-            <div>
-              <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#202124' }}>Generate New Notes</h2>
-              <p style={{ fontSize: '0.84rem', color: '#6B7280' }}>Turn any topic, pasted text, or uploaded document into structured study notes</p>
-            </div>
+      {/* Multi-Source Import & Notebook Generator Card */}
+      {showGenerator && (
+        <section className="hero-glass-banner" style={{ padding: 22, marginBottom: 22 }}>
+          <div style={{ marginBottom: 14 }}>
+            <h2 style={{ fontSize: '1.12rem', fontWeight: 800, color: '#202124' }}>
+              Create Source-Grounded Digital Notebook (Topic • PDF/DOCX • YouTube • Web Links)
+            </h2>
+            <p style={{ fontSize: '0.84rem', color: '#4B5563' }}>
+              Attach one or multiple sources. Every page, chapter, and timestamp is inventoried and converted into structured white-page notes with validated educational diagrams.
+            </p>
           </div>
 
-          <button type="button" onClick={() => setShowGenerator((s) => !s)} className="btn-orange">
-            <span>{showGenerator ? 'Hide Generator' : 'New AI Note →'}</span>
-          </button>
-        </div>
-
-        {showGenerator && (
-          <form onSubmit={handleGenerateNote} style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(255,106,0,0.2)', display: 'grid', gap: 12 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+          <form onSubmit={handleGenerateNote} style={{ display: 'grid', gap: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
               <input
                 value={genTopic}
                 onChange={(e) => setGenTopic(e.target.value)}
-                placeholder="Enter topic (e.g., Newton's Laws, Cell Division, Trigonometry)..."
-                style={{ padding: '11px 14px', borderRadius: 14, border: '1px solid rgba(255,106,0,0.35)', fontSize: '0.92rem' }}
+                placeholder="Notebook Topic / Title (e.g., DNA Structure & Replication, Photosynthesis)..."
+                style={{ padding: '11px 14px', borderRadius: 14, border: '1px solid rgba(255,106,0,0.35)', fontSize: '0.92rem', background: '#FFFFFF' }}
                 aria-label="New Note Topic"
               />
               <select
                 value={genSubject}
                 onChange={(e) => setGenSubject(e.target.value)}
-                style={{ padding: '11px 14px', borderRadius: 14, border: '1px solid rgba(0,0,0,0.12)', fontWeight: 600 }}
+                style={{ padding: '11px 14px', borderRadius: 14, border: '1px solid rgba(0,0,0,0.12)', fontWeight: 600, background: '#FFFFFF' }}
                 aria-label="Note Subject"
               >
-                <option value="Science">Science</option>
-                <option value="Maths">Maths</option>
+                <option value="Science">Science (Biology / Physics / Chemistry)</option>
+                <option value="Maths">Mathematics</option>
+                <option value="Computer Science">Computer Science</option>
                 <option value="English">English</option>
                 <option value="Social Studies">Social Studies</option>
-                <option value="Computer Science">Computer Science</option>
               </select>
               <select
                 value={genDepth}
                 onChange={(e) => setGenDepth(e.target.value as any)}
-                style={{ padding: '11px 14px', borderRadius: 14, border: '1px solid rgba(0,0,0,0.12)', fontWeight: 600 }}
+                style={{ padding: '11px 14px', borderRadius: 14, border: '1px solid rgba(0,0,0,0.12)', fontWeight: 600, background: '#FFFFFF' }}
                 aria-label="Note Depth"
               >
-                <option value="concise">Concise Summary</option>
-                <option value="detailed">Detailed Curriculum Notes</option>
-                <option value="exam-prep">Board Exam Revision Sheet</option>
+                <option value="detailed">Complete Illustrated Digital Notebook</option>
+                <option value="exam-prep">Board & Competitive Exam Master Sheet</option>
+                <option value="concise">High-Yield Revision Notebook</option>
               </select>
+            </div>
+
+            {/* YouTube & Web Link Inputs */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: '#FFFFFF', padding: '0 12px', borderRadius: 12, border: '1px solid rgba(0,0,0,0.12)' }}>
+                  <Youtube size={18} color="#DC2626" />
+                  <input
+                    value={youtubeUrlInput}
+                    onChange={(e) => setYoutubeUrlInput(e.target.value)}
+                    placeholder="Paste YouTube Lecture URL (https://youtube.com/watch?v=...)"
+                    style={{ width: '100%', padding: '10px 0', border: 'none', outline: 'none', fontSize: '0.85rem' }}
+                  />
+                </div>
+                <button type="button" onClick={handleAddYouTubeSource} className="btn-glass" style={{ padding: '8px 12px', fontSize: '0.8rem' }}>
+                  + Add Video
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: '#FFFFFF', padding: '0 12px', borderRadius: 12, border: '1px solid rgba(0,0,0,0.12)' }}>
+                  <Globe size={18} color="#0284C7" />
+                  <input
+                    value={webUrlInput}
+                    onChange={(e) => setWebUrlInput(e.target.value)}
+                    placeholder="Paste Educational Web Article URL (https://...)"
+                    style={{ width: '100%', padding: '10px 0', border: 'none', outline: 'none', fontSize: '0.85rem' }}
+                  />
+                </div>
+                <button type="button" onClick={handleAddWebSource} className="btn-glass" style={{ padding: '8px 12px', fontSize: '0.8rem' }}>
+                  + Add Link
+                </button>
+              </div>
             </div>
 
             <textarea
               value={genSourceText}
               onChange={(e) => setGenSourceText(e.target.value)}
               rows={3}
-              placeholder="Optional: Paste textbook excerpt, lecture notes, or upload a file below..."
-              style={{ width: '100%', padding: 12, borderRadius: 14, border: '1px solid rgba(0,0,0,0.12)', fontFamily: 'inherit', fontSize: '0.88rem' }}
+              placeholder="Optional: Paste full chapter text, timestamped lecture transcript (e.g. [00:00] Intro...), or multi-page document excerpt..."
+              style={{ width: '100%', padding: 12, borderRadius: 14, border: '1px solid rgba(0,0,0,0.12)', fontFamily: 'inherit', fontSize: '0.88rem', background: '#FFFFFF' }}
             />
+
+            {/* Queued Multi-Sources List */}
+            {pendingSources.length > 0 && (
+              <div style={{ padding: 12, borderRadius: 14, background: '#FFFFFF', border: '1px solid rgba(255,106,0,0.25)' }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#EA580C', textTransform: 'uppercase', marginBottom: 8 }}>
+                  Attached Notebook Sources ({pendingSources.length}) — Multi-Source Synthesis & Contradiction Detection Active
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {pendingSources.map((src) => (
+                    <div
+                      key={src.id}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '6px 12px',
+                        borderRadius: 999,
+                        background: '#FFF3E8',
+                        border: '1px solid rgba(255,106,0,0.3)',
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        color: '#111827'
+                      }}
+                    >
+                      <span>[{src.sourceType.toUpperCase()}] {src.title}</span>
+                      <button
+                        type="button"
+                        onClick={() => setPendingSources((prev) => prev.filter((p) => p.id !== src.id))}
+                        style={{ border: 'none', background: 'transparent', color: '#DC2626', cursor: 'pointer', fontWeight: 800 }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 10-Step Pipeline Progress Bar during Generation */}
+            {generating && (
+              <div style={{ padding: 14, borderRadius: 14, background: '#FFFFFF', border: '1.5px solid #FF6A00' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: '0.82rem', fontWeight: 800, color: '#EA580C' }}>
+                  <span>Running 10-Step Source-to-Notebook Pipeline...</span>
+                  <span>{PIPELINE_STEP_LABELS[pipelineStepIdx]}</span>
+                </div>
+                <div style={{ height: 8, borderRadius: 999, background: '#F3F4F6', overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      height: '100%',
+                      width: `${((pipelineStepIdx + 1) / PIPELINE_STEP_LABELS.length) * 100}%`,
+                      background: 'linear-gradient(90deg, #FF6A00, #F59E0B)',
+                      transition: 'width 0.3s ease'
+                    }}
+                  />
+                </div>
+              </div>
+            )}
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
               <label className="btn-glass" style={{ cursor: 'pointer' }}>
                 <Upload size={15} />
-                <span>Upload Document / Image (.txt, .md, .pdf, .png)</span>
-                <input type="file" accept=".txt,.md,.pdf,.png,.jpg,.jpeg,.json" onChange={handleFileUpload} style={{ display: 'none' }} />
+                <span>Upload PDF / DOCX / PPTX / TXT / MD</span>
+                <input
+                  type="file"
+                  accept=".pdf,.docx,.pptx,.txt,.md,.csv,.json"
+                  onChange={handleFileUpload}
+                  style={{ display: 'none' }}
+                />
               </label>
 
               <button type="submit" className="btn-orange" disabled={generating}>
                 <Sparkles size={16} />
-                <span>{generating ? 'Synthesizing Structured Notes...' : 'Generate Structured Notes'}</span>
+                <span>{generating ? 'Building White-Page Notebook...' : 'Generate Complete Digital Notebook'}</span>
               </button>
             </div>
           </form>
-        )}
+        </section>
+      )}
 
-        {uploadStatus && (
-          <div
-            style={{
-              marginTop: 12,
-              padding: '10px 14px',
-              borderRadius: 12,
-              background: uploadStatus.type === 'ok' ? '#ECFDF5' : '#FEF2F2',
-              color: uploadStatus.type === 'ok' ? '#047857' : '#DC2626',
-              fontSize: '0.84rem',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8
-            }}
-          >
-            {uploadStatus.type === 'ok' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-            <span>{uploadStatus.message}</span>
-          </div>
-        )}
-      </section>
+      {uploadStatus && (
+        <div
+          style={{
+            marginBottom: 18,
+            padding: '10px 14px',
+            borderRadius: 12,
+            background: uploadStatus.type === 'ok' ? '#ECFDF5' : '#FEF2F2',
+            color: uploadStatus.type === 'ok' ? '#047857' : '#DC2626',
+            fontSize: '0.84rem',
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
+          }}
+        >
+          {uploadStatus.type === 'ok' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+          <span>{uploadStatus.message}</span>
+        </div>
+      )}
 
-      {/* Main Split Workspace: Recent Notes List + Full Note Editor */}
+      {/* Main Split Workspace: Saved Notebooks Sidebar + Dedicated White-Page Digital Notebook */}
       <div className="dashboard-grid">
-        {/* Left: Recent Notes List + Tools Grid */}
-        <div style={{ display: 'grid', gap: 20, alignContent: 'start' }}>
-          <section className="glass-card" style={{ padding: 20 }}>
+        {/* Left Sidebar: Saved Notebooks + Quick Study Actions */}
+        <div style={{ display: 'grid', gap: 18, alignContent: 'start' }}>
+          <section className="glass-card" style={{ padding: 18 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 800 }}>Recent Notes ({notes.length})</h3>
-              <span style={{ fontSize: '0.78rem', color: '#FF6A00', fontWeight: 700 }}>Persisted in SQLite</span>
+              <h3 style={{ fontSize: '1.02rem', fontWeight: 800 }}>Saved Notebooks ({notes.length})</h3>
+              <span style={{ fontSize: '0.75rem', color: '#15803D', fontWeight: 700 }}>✓ SQLite Synced</span>
             </div>
 
             {loading ? (
-              <div style={{ padding: 20, textAlign: 'center', color: '#6B7280' }}>Loading saved notes...</div>
+              <div style={{ padding: 20, textAlign: 'center', color: '#6B7280' }}>Loading saved notebooks...</div>
             ) : notes.length === 0 ? (
               <div style={{ padding: 20, textAlign: 'center', color: '#6B7280', fontSize: '0.88rem' }}>
-                No notes match your filter. Click "New AI Note" above to create one!
+                No notebooks match your filter. Click "+ New Multi-Source Notebook" above!
               </div>
             ) : (
-              <div style={{ display: 'grid', gap: 10 }}>
+              <div style={{ display: 'grid', gap: 10, maxHeight: 420, overflowY: 'auto' }}>
                 {notes.map((n) => {
                   const isSelected = activeNote?.id === n.id;
+                  const imgCount = n.structured?.images?.length || (n.structured?.imageUrl ? 1 : 0);
+                  const srcCount = n.structured?.sourceRecords?.length || 1;
                   return (
                     <div
                       key={n.id}
@@ -438,9 +923,9 @@ export const NotesPage: React.FC = () => {
                           <FileText size={18} />
                         </div>
                         <div>
-                          <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#202124' }}>{n.title}</div>
-                          <div style={{ fontSize: '0.76rem', color: '#6B7280' }}>
-                            {n.notebook || n.subject} • {n.flashcards?.length || 0} flashcards
+                          <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#111827' }}>{n.title}</div>
+                          <div style={{ fontSize: '0.74rem', color: '#6B7280' }}>
+                            {n.subject} • {srcCount} source(s) • {imgCount} diagram(s)
                           </div>
                         </div>
                       </div>
@@ -452,114 +937,176 @@ export const NotesPage: React.FC = () => {
             )}
           </section>
 
-          {/* Tools Grid (matching reference UI bottom-left section) */}
-          <section className="glass-card" style={{ padding: 20 }}>
-            <h3 style={{ fontSize: '1.02rem', fontWeight: 800, marginBottom: 12 }}>Tools</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+          {/* Notebook Tools & Export Studio */}
+          <section className="glass-card" style={{ padding: 18 }}>
+            <h3 style={{ fontSize: '0.98rem', fontWeight: 800, marginBottom: 10 }}>Notebook Actions & Export</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => setActiveTab('ask-sources')}
+                className="quick-tile"
+              >
+                <MessageSquare size={18} color="#FF6A00" />
+                <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>Ask Sources (Q&A)</span>
+              </button>
               <button
                 type="button"
                 onClick={() => {
-                  setGenDepth('concise');
-                  setShowGenerator(true);
+                  setActiveTab('study-tools');
+                  if (!studyToolsData) handleGenerateStudyTools();
                 }}
                 className="quick-tile"
               >
-                <FileText size={20} color="#FF6A00" />
-                <span style={{ fontSize: '0.76rem', fontWeight: 700 }}>Summarize</span>
+                <GraduationCap size={18} color="#7C3AED" />
+                <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>Study Guide & Quiz</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('flashcards')}
                 className="quick-tile"
               >
-                <Layers size={20} color="#D97706" />
-                <span style={{ fontSize: '0.76rem', fontWeight: 700 }}>Flashcards</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => openQuizModal(activeNote?.topic || activeTopic, activeNote?.subject || 'Science')}
-                className="quick-tile"
-              >
-                <HelpCircle size={20} color="#16A34A" />
-                <span style={{ fontSize: '0.76rem', fontWeight: 700 }}>Practice Questions</span>
+                <Layers size={18} color="#D97706" />
+                <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>Flashcards ({activeNote?.flashcards?.length || 0})</span>
               </button>
               <button
                 type="button"
                 onClick={() =>
                   startAudioLesson({
                     topic: activeNote?.title || activeTopic,
-                    text: editMarkdown.replace(/[#*`]/g, '')
+                    text:
+                      structured?.simpleIntroduction
+                        ? `${activeNote?.title}. ${structured.simpleIntroduction}. ${(structured.summaryPoints || []).join(' ')}`
+                        : editMarkdown.replace(/[#*`]/g, '')
                   })
                 }
                 className="quick-tile"
               >
-                <Volume2 size={20} color="#0284C7" />
-                <span style={{ fontSize: '0.76rem', fontWeight: 700 }}>Convert to Audio</span>
+                <Volume2 size={18} color="#0284C7" />
+                <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>Audio Overview</span>
               </button>
               <button
                 type="button"
-                onClick={() => setShowGenerator(true)}
+                onClick={() => handleExportFormat('html')}
                 className="quick-tile"
               >
-                <Upload size={20} color="#7C3AED" />
-                <span style={{ fontSize: '0.76rem', fontWeight: 700 }}>Upload File</span>
+                <Printer size={18} color="#16A34A" />
+                <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>Export White-Page HTML/PDF</span>
               </button>
               <button
                 type="button"
-                onClick={handleExportMarkdown}
+                onClick={() => handleExportFormat('doc')}
                 className="quick-tile"
               >
-                <Download size={20} color="#EA580C" />
-                <span style={{ fontSize: '0.76rem', fontWeight: 700 }}>More (Export)</span>
+                <Download size={18} color="#EA580C" />
+                <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>Export Word (.doc)</span>
               </button>
             </div>
           </section>
         </div>
 
-        {/* Right: Structured Rich Note Editor & Flashcards */}
-        <section className="glass-card" style={{ padding: 22 }}>
+        {/* Right: Dedicated White-Page Digital Notebook Canvas & Grounded Workspace */}
+        <section style={{ minWidth: 0 }}>
           {!activeNote ? (
-            <div style={{ padding: 40, textAlign: 'center', color: '#6B7280' }}>
-              Select a note from the list or generate a new note to open the studio editor.
+            <div className="glass-card" style={{ padding: 40, textAlign: 'center', color: '#6B7280' }}>
+              Select a saved notebook on the left or click "+ New Multi-Source Notebook" to generate one.
             </div>
           ) : (
-            <div>
-              {/* Editor Top Controls */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {(['preview', 'editor', 'flashcards'] as const).map((tab) => (
+            <div style={{ display: 'grid', gap: 14 }}>
+              {/* Top Workspace Control Bar */}
+              <div
+                className="glass-card"
+                style={{
+                  padding: '12px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: 10
+                }}
+              >
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {(
+                    [
+                      { id: 'notebook', label: '📖 White-Page Notebook' },
+                      { id: 'ask-sources', label: `💬 Ask Sources (${sourceRecords.length || 1})` },
+                      { id: 'study-tools', label: '🎓 Study Guide & Audio' },
+                      { id: 'flashcards', label: `🗂️ Flashcards (${activeNote.flashcards?.length || 0})` },
+                      { id: 'editor', label: '✏️ Raw Markdown' }
+                    ] as const
+                  ).map((tab) => (
                     <button
-                      key={tab}
+                      key={tab.id}
                       type="button"
-                      onClick={() => setActiveTab(tab)}
+                      onClick={() => {
+                        setActiveTab(tab.id);
+                        if (tab.id === 'study-tools' && !studyToolsData) {
+                          handleGenerateStudyTools();
+                        }
+                      }}
                       style={{
-                        padding: '6px 14px',
+                        padding: '7px 13px',
                         borderRadius: 999,
                         border: 'none',
-                        background: activeTab === tab ? '#FF6A00' : '#FFF3E8',
-                        color: activeTab === tab ? '#FFFFFF' : '#E85D00',
+                        background: activeTab === tab.id ? '#FF6A00' : '#FFF3E8',
+                        color: activeTab === tab.id ? '#FFFFFF' : '#E85D00',
                         fontWeight: 700,
-                        fontSize: '0.8rem',
-                        cursor: 'pointer',
-                        textTransform: 'capitalize'
+                        fontSize: '0.79rem',
+                        cursor: 'pointer'
                       }}
                     >
-                      {tab === 'preview' ? 'Structured View' : tab === 'editor' ? 'Edit Note' : `Flashcards (${activeNote.flashcards?.length || 0})`}
+                      {tab.label}
                     </button>
                   ))}
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {/* Undo / Redo / Save / Export Controls */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={handleUndo}
+                    disabled={historyStack.length === 0}
+                    className="btn-glass"
+                    style={{ padding: '6px 10px', opacity: historyStack.length === 0 ? 0.45 : 1 }}
+                    title="Undo"
+                  >
+                    <Undo2 size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRedo}
+                    disabled={redoStack.length === 0}
+                    className="btn-glass"
+                    style={{ padding: '6px 10px', opacity: redoStack.length === 0 ? 0.45 : 1 }}
+                    title="Redo"
+                  >
+                    <Redo2 size={14} />
+                  </button>
+
                   {saveStatus === 'saved' && (
-                    <span style={{ fontSize: '0.78rem', color: '#15803D', fontWeight: 700 }}>✓ Saved</span>
+                    <span style={{ fontSize: '0.76rem', color: '#15803D', fontWeight: 700 }}>✓ Saved</span>
+                  )}
+                  {saveStatus === 'saving' && (
+                    <span style={{ fontSize: '0.76rem', color: '#D97706', fontWeight: 700 }}>Autosaving...</span>
                   )}
                   {saveStatus === 'error' && (
-                    <span style={{ fontSize: '0.78rem', color: '#DC2626', fontWeight: 700 }}>Save failed — Retry</span>
+                    <span style={{ fontSize: '0.76rem', color: '#DC2626', fontWeight: 700 }}>Save error</span>
                   )}
+
                   <button type="button" onClick={handleSaveNote} className="btn-orange" style={{ padding: '7px 14px', fontSize: '0.8rem' }}>
                     <Save size={14} />
-                    <span>{saveStatus === 'saving' ? 'Saving...' : 'Save Changes'}</span>
+                    <span>Save Notebook</span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleExportFormat('md')}
+                    className="btn-glass"
+                    style={{ padding: '7px 10px', fontSize: '0.78rem' }}
+                    title="Download Markdown (.md)"
+                  >
+                    .MD
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => handleDeleteNote(activeNote.id)}
@@ -572,111 +1119,1135 @@ export const NotesPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Editable Title & Metadata Bar */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, marginBottom: 14 }}>
-                <input
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  aria-label="Note Title"
-                  style={{ padding: '8px 12px', borderRadius: 12, border: '1px solid rgba(0,0,0,0.1)', fontWeight: 800, fontSize: '1.02rem' }}
-                />
-                <input
-                  value={editNotebook}
-                  onChange={(e) => setEditNotebook(e.target.value)}
-                  aria-label="Notebook Name"
-                  placeholder="Notebook"
-                  style={{ width: 110, padding: '8px 10px', borderRadius: 12, border: '1px solid rgba(0,0,0,0.1)', fontSize: '0.82rem', fontWeight: 600 }}
-                />
-                <select
-                  value={editSubject}
-                  onChange={(e) => setEditSubject(e.target.value)}
-                  aria-label="Subject"
-                  style={{ padding: '8px 10px', borderRadius: 12, border: '1px solid rgba(0,0,0,0.1)', fontSize: '0.82rem', fontWeight: 600 }}
+              {/* =====================================================================
+                  TAB 1: DEDICATED WHITE-PAGE DIGITAL NOTEBOOK EDITOR
+                  ===================================================================== */}
+              {activeTab === 'notebook' && (
+                <div
+                  id="white-page-notebook-sheet"
+                  style={{
+                    background: '#FFFFFF',
+                    color: '#111827',
+                    borderRadius: 16,
+                    border: '1px solid #D1D5DB',
+                    boxShadow: '0 12px 32px rgba(17, 24, 39, 0.08)',
+                    padding: '36px 40px',
+                    fontFamily: "Georgia, 'Times New Roman', serif",
+                    lineHeight: 1.72
+                  }}
                 >
-                  <option value="Science">Science</option>
-                  <option value="Maths">Maths</option>
-                  <option value="English">English</option>
-                  <option value="Social Studies">Social Studies</option>
-                  <option value="Computer Science">Computer Science</option>
-                </select>
-              </div>
+                  {/* White-Page Document Header & Editable Title */}
+                  <header style={{ borderBottom: '2px solid #111827', paddingBottom: 18, marginBottom: 20 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 8, fontFamily: 'Inter, system-ui, sans-serif' }}>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <span style={{ padding: '3px 10px', borderRadius: 4, background: '#F3F4F6', color: '#111827', fontSize: '0.73rem', fontWeight: 800, textTransform: 'uppercase' }}>
+                          {editSubject} Notebook
+                        </span>
+                        {coverageVerification && (
+                          <span style={{ padding: '3px 10px', borderRadius: 4, background: '#ECFDF5', color: '#047857', fontSize: '0.73rem', fontWeight: 800 }}>
+                            ✓ {coverageVerification.coveragePercent || 100}% Source Coverage Verified ({coverageVerification.processedSourceUnits || 1}/{coverageVerification.totalSourceUnits || 1} units)
+                          </span>
+                        )}
+                        {structured?.providerName && (
+                          <span style={{ padding: '3px 10px', borderRadius: 4, background: '#EFF6FF', color: '#1D4ED8', fontSize: '0.73rem', fontWeight: 700 }}>
+                            Synthesized via {structured.providerName}
+                          </span>
+                        )}
+                      </div>
 
-              {/* Tab 1: Structured Safe Markdown Preview */}
-              {activeTab === 'preview' && (
-                <div style={{ padding: 18, borderRadius: 18, background: '#FFFFFF', border: '1px solid rgba(255,106,0,0.18)', maxHeight: 580, overflowY: 'auto' }}>
-                  {activeNote.structured?.keywords?.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12, alignItems: 'center' }}>
-                      {activeNote.structured?.providerName && (
-                        <span style={{ padding: '3px 10px', borderRadius: 999, background: '#ECFDF5', color: '#047857', fontSize: '0.73rem', fontWeight: 700 }}>
-                          ✨ {activeNote.structured.providerName}
-                        </span>
-                      )}
-                      {activeNote.structured.keywords.map((kw: string) => (
-                        <span key={kw} style={{ padding: '3px 10px', borderRadius: 999, background: '#FFF3E8', color: '#E85D00', fontSize: '0.73rem', fontWeight: 700 }}>
-                          #{kw}
-                        </span>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/tutor?topic=${encodeURIComponent(activeNote.topic || editTitle)}`)}
+                          style={{
+                            padding: '5px 11px',
+                            borderRadius: 6,
+                            border: '1px solid #D1D5DB',
+                            background: '#FFFFFF',
+                            color: '#111827',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5
+                          }}
+                        >
+                          <ExternalLink size={12} />
+                          <span>Open in AI Tutor</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => window.print()}
+                          style={{
+                            padding: '5px 11px',
+                            borderRadius: 6,
+                            border: '1px solid #D1D5DB',
+                            background: '#FFFFFF',
+                            color: '#111827',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5
+                          }}
+                        >
+                          <Printer size={12} />
+                          <span>Print White Page</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <input
+                      value={editTitle}
+                      onChange={(e) => {
+                        pushUndoSnapshot();
+                        setEditTitle(e.target.value);
+                        scheduleAutosave(e.target.value, editSubject, editNotebook, editMarkdown, editStructured);
+                      }}
+                      aria-label="Note Title"
+                      style={{
+                        width: '100%',
+                        border: 'none',
+                        outline: 'none',
+                        background: 'transparent',
+                        fontSize: '1.85rem',
+                        fontWeight: 800,
+                        color: '#111827',
+                        fontFamily: "Georgia, 'Times New Roman', serif",
+                        padding: '4px 0'
+                      }}
+                    />
+
+                    {/* Keywords Row */}
+                    {structured?.keywords?.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8, fontFamily: 'Inter, system-ui, sans-serif' }}>
+                        {structured.keywords.map((kw: string) => (
+                          <span
+                            key={kw}
+                            style={{
+                              padding: '2px 9px',
+                              borderRadius: 4,
+                              background: '#F9FAFB',
+                              border: '1px solid #E5E7EB',
+                              color: '#374151',
+                              fontSize: '0.74rem',
+                              fontWeight: 600
+                            }}
+                          >
+                            {kw}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </header>
+
+                  {/* Table of Contents (TOC) Quick Jump Bar */}
+                  <nav
+                    aria-label="Notebook Table of Contents"
+                    style={{
+                      background: '#F9FAFB',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: 10,
+                      padding: '12px 16px',
+                      marginBottom: 26,
+                      fontFamily: 'Inter, system-ui, sans-serif'
+                    }}
+                  >
+                    <div style={{ fontSize: '0.74rem', fontWeight: 800, textTransform: 'uppercase', color: '#4B5563', marginBottom: 8 }}>
+                      Table of Contents — Click to Jump to Section
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {[
+                        { id: 'nb-overview', label: '1. Overview & Objectives' },
+                        { id: 'nb-definitions', label: `2. Definitions (${definitions.length})` },
+                        { id: 'nb-abbreviations', label: `3. Full Forms (${abbreviations.length})` },
+                        { id: 'nb-sections', label: `4. Detailed Topic Notes (${sections.length})` },
+                        { id: 'nb-images', label: `5. Visual Diagrams (${images.length})` },
+                        { id: 'nb-comparison', label: '6. Comparison Table' },
+                        { id: 'nb-formula', label: '7. Formulas & Examples' },
+                        { id: 'nb-exam', label: `8. Exam Q&A (${examQuestions.length})` },
+                        ...(sourceComparison ? [{ id: 'nb-multisource', label: '9. Multi-Source Comparison' }] : []),
+                        { id: 'nb-sources', label: '10. Source Inventory & Citations' }
+                      ].map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => scrollToNotebookAnchor(item.id)}
+                          style={{
+                            padding: '5px 10px',
+                            borderRadius: 6,
+                            border: '1px solid #D1D5DB',
+                            background: '#FFFFFF',
+                            color: '#111827',
+                            fontSize: '0.76rem',
+                            fontWeight: 600,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {item.label}
+                        </button>
                       ))}
                     </div>
-                  )}
-                  {activeNote.structured?.imageUrl && (
-                    <div style={{ marginBottom: 14, borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,106,0,0.2)', background: '#FFFBF7' }}>
-                      <img
-                        src={activeNote.structured.imageUrl}
-                        alt={activeNote.title}
-                        style={{ width: '100%', maxHeight: 280, objectFit: 'contain', display: 'block' }}
-                      />
-                    </div>
-                  )}
-                  {renderSafeMarkdown(editMarkdown)}
-                </div>
-              )}
+                  </nav>
 
-              {/* Tab 2: Raw Structured Editor */}
-              {activeTab === 'editor' && (
-                <textarea
-                  value={editMarkdown}
-                  onChange={(e) => setEditMarkdown(e.target.value)}
-                  aria-label="Note Markdown Content Editor"
-                  rows={18}
-                  style={{
-                    width: '100%',
-                    padding: 16,
-                    borderRadius: 18,
-                    border: '1.5px solid rgba(255,106,0,0.35)',
-                    fontFamily: 'monospace',
-                    fontSize: '0.88rem',
-                    lineHeight: 1.55,
-                    background: '#FFFDFB'
-                  }}
-                />
-              )}
-
-              {/* Tab 3: Interactive Flashcards */}
-              {activeTab === 'flashcards' && (
-                <div style={{ display: 'grid', gap: 12 }}>
-                  {(activeNote.flashcards || []).map((card: any, idx: number) => {
-                    const isFlipped = Boolean(flippedCards[idx]);
-                    return (
-                      <div
-                        key={idx}
-                        onClick={() => setFlippedCards((prev) => ({ ...prev, [idx]: !prev[idx] }))}
+                  {/* Notebook Editor Toolbar (Add Section, Add Table Row, Add Highlight) */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 8,
+                      alignItems: 'center',
+                      padding: '10px 14px',
+                      borderRadius: 8,
+                      background: '#F9FAFB',
+                      border: '1px solid #E5E7EB',
+                      marginBottom: 26,
+                      fontFamily: 'Inter, system-ui, sans-serif'
+                    }}
+                  >
+                    <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#374151', marginRight: 4 }}>
+                      Notebook Tools:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleAddSection}
+                      style={{
+                        padding: '5px 10px',
+                        borderRadius: 6,
+                        border: '1px solid #D1D5DB',
+                        background: '#FFFFFF',
+                        color: '#111827',
+                        fontSize: '0.76rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4
+                      }}
+                    >
+                      <Plus size={13} />
+                      <span>Add Section</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleAddComparisonRow}
+                      style={{
+                        padding: '5px 10px',
+                        borderRadius: 6,
+                        border: '1px solid #D1D5DB',
+                        background: '#FFFFFF',
+                        color: '#111827',
+                        fontSize: '0.76rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4
+                      }}
+                    >
+                      <Table size={13} />
+                      <span>Add Table Row</span>
+                    </button>
+                    <div style={{ display: 'flex', gap: 6, flex: 1, minWidth: 220 }}>
+                      <input
+                        value={newKeyNoteText}
+                        onChange={(e) => setNewKeyNoteText(e.target.value)}
+                        placeholder="Add custom highlight or revision takeaway..."
                         style={{
-                          padding: 18,
-                          borderRadius: 18,
-                          background: isFlipped ? '#FFF3E8' : '#FFFFFF',
-                          border: '1.5px solid rgba(255,106,0,0.3)',
+                          flex: 1,
+                          padding: '5px 10px',
+                          borderRadius: 6,
+                          border: '1px solid #D1D5DB',
+                          fontSize: '0.76rem'
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddKeyNote}
+                        style={{
+                          padding: '5px 10px',
+                          borderRadius: 6,
+                          border: '1px solid #111827',
+                          background: '#111827',
+                          color: '#FFFFFF',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
                           cursor: 'pointer'
                         }}
                       >
-                        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#FF6A00', textTransform: 'uppercase', marginBottom: 4 }}>
-                          {isFlipped ? 'Answer (Click to flip)' : `Flashcard ${idx + 1} — Question (Click to reveal answer)`}
-                        </div>
-                        <div style={{ fontSize: '0.96rem', fontWeight: 700, color: '#202124' }}>
-                          {isFlipped ? card.back : card.front}
-                        </div>
+                        + Add Takeaway
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* SECTION 1: OVERVIEW, SIMPLE EXPLANATION & LEARNING OBJECTIVES */}
+                  <section id="nb-overview" style={{ marginBottom: 30 }}>
+                    <h2 style={{ fontSize: '1.28rem', fontWeight: 800, color: '#111827', borderBottom: '1px solid #E5E7EB', paddingBottom: 6, marginBottom: 12 }}>
+                      1. Simple Introduction & Learning Objectives
+                    </h2>
+                    <p style={{ fontSize: '1rem', color: '#1F2937', marginBottom: 14 }}>
+                      {structured?.simpleIntroduction || structured?.overview || activeNote.summary}
+                    </p>
+                    {structured?.plainLanguageOverview && structured.plainLanguageOverview !== structured.simpleIntroduction && (
+                      <div style={{ padding: '12px 16px', background: '#F9FAFB', borderLeft: '4px solid #111827', borderRadius: 6, marginBottom: 14 }}>
+                        <strong style={{ fontFamily: 'Inter, system-ui, sans-serif', fontSize: '0.82rem', textTransform: 'uppercase', color: '#374151' }}>
+                          Intuitive Everyday Analogy:
+                        </strong>
+                        <p style={{ margin: '4px 0 0 0', fontSize: '0.95rem', color: '#1F2937' }}>{structured.plainLanguageOverview}</p>
                       </div>
-                    );
-                  })}
+                    )}
+
+                    {Array.isArray(structured?.learningObjectives) && structured.learningObjectives.length > 0 && (
+                      <div style={{ marginTop: 12 }}>
+                        <div style={{ fontFamily: 'Inter, system-ui, sans-serif', fontSize: '0.82rem', fontWeight: 800, textTransform: 'uppercase', color: '#374151', marginBottom: 6 }}>
+                          Learning Objectives
+                        </div>
+                        <ul style={{ margin: 0, paddingLeft: 22 }}>
+                          {structured.learningObjectives.map((obj: string, i: number) => (
+                            <li key={i} style={{ marginBottom: 4, color: '#111827', fontSize: '0.95rem' }}>
+                              {obj}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </section>
+
+                  {/* SECTION 2: CORE DEFINITIONS */}
+                  {definitions.length > 0 && (
+                    <section id="nb-definitions" style={{ marginBottom: 30 }}>
+                      <h2 style={{ fontSize: '1.28rem', fontWeight: 800, color: '#111827', borderBottom: '1px solid #E5E7EB', paddingBottom: 6, marginBottom: 12 }}>
+                        2. Important Terms & Definitions
+                      </h2>
+                      <div style={{ display: 'grid', gap: 10 }}>
+                        {definitions.map((d: any, idx: number) => (
+                          <div key={idx} style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #E5E7EB', background: '#FFFFFF' }}>
+                            <div style={{ fontWeight: 800, fontSize: '0.98rem', color: '#111827' }}>{d.term}</div>
+                            <div style={{ fontSize: '0.94rem', color: '#1F2937', marginTop: 2 }}>{d.definition || d.meaning}</div>
+                            {d.simpleExplanation && d.simpleExplanation !== (d.definition || d.meaning) && (
+                              <div style={{ fontSize: '0.86rem', color: '#4B5563', marginTop: 4, fontStyle: 'italic' }}>
+                                Plain-language note: {d.simpleExplanation}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {/* SECTION 3: FULL FORMS & ABBREVIATIONS GLOSSARY */}
+                  {abbreviations.length > 0 && (
+                    <section id="nb-abbreviations" style={{ marginBottom: 30 }}>
+                      <h2 style={{ fontSize: '1.28rem', fontWeight: 800, color: '#111827', borderBottom: '1px solid #E5E7EB', paddingBottom: 6, marginBottom: 12 }}>
+                        3. Full Forms & Scientific Abbreviations
+                      </h2>
+                      <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'Inter, system-ui, sans-serif', fontSize: '0.88rem' }}>
+                          <thead>
+                            <tr style={{ background: '#F3F4F6', textAlign: 'left' }}>
+                              <th style={{ padding: '10px 12px', border: '1px solid #D1D5DB', fontWeight: 800, color: '#111827' }}>Abbreviation</th>
+                              <th style={{ padding: '10px 12px', border: '1px solid #D1D5DB', fontWeight: 800, color: '#111827' }}>Full Expanded Form</th>
+                              <th style={{ padding: '10px 12px', border: '1px solid #D1D5DB', fontWeight: 800, color: '#111827' }}>Simple Meaning & Role</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {abbreviations.map((item: any, idx: number) => (
+                              <tr key={idx} style={{ background: idx % 2 === 0 ? '#FFFFFF' : '#F9FAFB' }}>
+                                <td style={{ padding: '9px 12px', border: '1px solid #D1D5DB', fontWeight: 800, color: '#111827' }}>
+                                  {item.abbr || item.shortForm}
+                                </td>
+                                <td style={{ padding: '9px 12px', border: '1px solid #D1D5DB', fontWeight: 700, color: '#1F2937' }}>
+                                  {item.fullForm}
+                                </td>
+                                <td style={{ padding: '9px 12px', border: '1px solid #D1D5DB', color: '#374151' }}>
+                                  {item.simpleDefinition || item.meaning || item.simpleMeaning}
+                                  {item.roleInTopic ? ` (${item.roleInTopic})` : ''}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </section>
+                  )}
+
+                  {/* SECTION 4: DETAILED NUMBERED SECTIONS WITH INLINE CITATIONS & EDITING */}
+                  <section id="nb-sections" style={{ marginBottom: 32 }}>
+                    <h2 style={{ fontSize: '1.28rem', fontWeight: 800, color: '#111827', borderBottom: '1px solid #E5E7EB', paddingBottom: 6, marginBottom: 16 }}>
+                      4. Detailed Topic & Source-Grounded Sections
+                    </h2>
+
+                    <div style={{ display: 'grid', gap: 22 }}>
+                      {sections.map((sec: any, idx: number) => {
+                        const isEditing = editingSectionIdx === idx;
+                        const pairedImage = images[idx];
+                        const headingVal = sec.heading || sec.title || `Section ${idx + 1}`;
+                        const bodyVal = sec.body || sec.detailedExplanation || '';
+                        const citationsList =
+                          Array.isArray(sec.citations) && sec.citations.length > 0
+                            ? sec.citations
+                            : Array.isArray(sec.sourceCitations)
+                              ? sec.sourceCitations.map((c: any) => `[${c.sourceTitle}, ${c.locator}]`)
+                              : [];
+                        return (
+                          <article
+                            key={sec.id || idx}
+                            id={`nb-sec-${idx + 1}`}
+                            style={{
+                              padding: '18px 20px',
+                              borderRadius: 10,
+                              border: '1px solid #E5E7EB',
+                              background: '#FFFFFF'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 8 }}>
+                              {isEditing ? (
+                                <input
+                                  value={headingVal}
+                                  onChange={(e) => handleUpdateSectionField(idx, 'heading', e.target.value)}
+                                  style={{
+                                    flex: 1,
+                                    padding: '6px 10px',
+                                    fontSize: '1.1rem',
+                                    fontWeight: 800,
+                                    border: '1px solid #111827',
+                                    borderRadius: 6
+                                  }}
+                                />
+                              ) : (
+                                <h3 style={{ fontSize: '1.12rem', fontWeight: 800, color: '#111827', margin: 0 }}>
+                                  {headingVal}
+                                </h3>
+                              )}
+
+                              <div style={{ display: 'flex', gap: 6, fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingSectionIdx(isEditing ? null : idx)}
+                                  style={{
+                                    padding: '4px 9px',
+                                    borderRadius: 6,
+                                    border: '1px solid #D1D5DB',
+                                    background: isEditing ? '#111827' : '#FFFFFF',
+                                    color: isEditing ? '#FFFFFF' : '#374151',
+                                    fontSize: '0.73rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 4
+                                  }}
+                                >
+                                  <Edit3 size={12} />
+                                  <span>{isEditing ? 'Done' : 'Edit Section'}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    navigate(`/tutor?topic=${encodeURIComponent(`${activeNote.topic || editTitle}: ${headingVal}`)}`)
+                                  }
+                                  style={{
+                                    padding: '4px 9px',
+                                    borderRadius: 6,
+                                    border: '1px solid #D1D5DB',
+                                    background: '#F9FAFB',
+                                    color: '#111827',
+                                    fontSize: '0.73rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  Ask AI Tutor
+                                </button>
+                                {sections.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteSection(idx)}
+                                    style={{
+                                      padding: '4px 8px',
+                                      borderRadius: 6,
+                                      border: '1px solid #FECACA',
+                                      background: '#FEF2F2',
+                                      color: '#DC2626',
+                                      fontSize: '0.73rem',
+                                      fontWeight: 700,
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    Delete
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Source / Page / Timestamp Citation Badges */}
+                            {citationsList.length > 0 && (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                {citationsList.map((cit: string, cIdx: number) => (
+                                  <span
+                                    key={cIdx}
+                                    style={{
+                                      padding: '2px 8px',
+                                      borderRadius: 4,
+                                      background: '#F3F4F6',
+                                      color: '#374151',
+                                      fontSize: '0.72rem',
+                                      fontWeight: 700
+                                    }}
+                                  >
+                                    📌 {cit}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            {isEditing ? (
+                              <textarea
+                                value={bodyVal}
+                                onChange={(e) => handleUpdateSectionField(idx, 'body', e.target.value)}
+                                rows={5}
+                                style={{
+                                  width: '100%',
+                                  padding: 10,
+                                  borderRadius: 8,
+                                  border: '1px solid #111827',
+                                  fontFamily: 'inherit',
+                                  fontSize: '0.96rem',
+                                  lineHeight: 1.65,
+                                  marginBottom: 10
+                                }}
+                              />
+                            ) : (
+                              <p style={{ fontSize: '0.98rem', color: '#111827', margin: '0 0 10px 0', whiteSpace: 'pre-line' }}>
+                                {bodyVal}
+                              </p>
+                            )}
+
+                            {Array.isArray(sec.keyPoints) && sec.keyPoints.length > 0 && (
+                              <ul style={{ margin: '8px 0 0 0', paddingLeft: 20 }}>
+                                {sec.keyPoints.map((kp: string, kIdx: number) => (
+                                  <li key={kIdx} style={{ fontSize: '0.92rem', color: '#374151', marginBottom: 4 }}>
+                                    {kp}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+
+                            {/* Inline Section-Paired Diagram Preview */}
+                            {pairedImage && (
+                              <figure
+                                style={{
+                                  margin: '16px 0 4px 0',
+                                  padding: 14,
+                                  borderRadius: 8,
+                                  border: '1px solid #D1D5DB',
+                                  background: '#FAFAFA'
+                                }}
+                              >
+                                <img
+                                  src={pairedImage.imageUrl}
+                                  alt={pairedImage.altText || pairedImage.title}
+                                  style={{ width: '100%', maxHeight: 300, objectFit: 'contain', display: 'block', background: '#FFFFFF', borderRadius: 6 }}
+                                />
+                                <figcaption style={{ marginTop: 8, fontSize: '0.84rem', color: '#374151', fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                  <strong>{pairedImage.title}:</strong> {pairedImage.caption}
+                                </figcaption>
+                              </figure>
+                            )}
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </section>
+
+                  {/* SECTION 5: EDUCATIONAL DIAGRAMS & 7-PART IMAGE WALKTHROUGHS */}
+                  {images.length > 0 && (
+                    <section id="nb-images" style={{ marginBottom: 32 }}>
+                      <h2 style={{ fontSize: '1.28rem', fontWeight: 800, color: '#111827', borderBottom: '1px solid #E5E7EB', paddingBottom: 6, marginBottom: 16 }}>
+                        5. Educational Visual Diagrams & Step-by-Step Image Walkthroughs ({images.length})
+                      </h2>
+                      <div style={{ display: 'grid', gap: 20 }}>
+                        {images.map((img: any, idx: number) => {
+                          const exp = img.explanation || {};
+                          return (
+                            <div
+                              key={img.id || idx}
+                              style={{
+                                padding: 18,
+                                borderRadius: 10,
+                                border: '1px solid #D1D5DB',
+                                background: '#FFFFFF'
+                              }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                <div>
+                                  <span style={{ fontSize: '0.73rem', fontWeight: 800, textTransform: 'uppercase', color: '#4B5563' }}>
+                                    Figure {idx + 1} • {img.provider || 'Programmatic Scientific SVG Diagram Renderer'}
+                                  </span>
+                                  <h3 style={{ fontSize: '1.08rem', fontWeight: 800, color: '#111827', margin: '2px 0 0 0' }}>
+                                    {img.title}
+                                  </h3>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: 6 }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMoveImage(idx, -1)}
+                                    disabled={idx === 0}
+                                    style={{
+                                      padding: '4px 8px',
+                                      borderRadius: 6,
+                                      border: '1px solid #D1D5DB',
+                                      background: '#FFFFFF',
+                                      cursor: idx === 0 ? 'not-allowed' : 'pointer',
+                                      opacity: idx === 0 ? 0.4 : 1
+                                    }}
+                                    title="Move Diagram Up"
+                                  >
+                                    <ArrowUp size={13} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMoveImage(idx, 1)}
+                                    disabled={idx === images.length - 1}
+                                    style={{
+                                      padding: '4px 8px',
+                                      borderRadius: 6,
+                                      border: '1px solid #D1D5DB',
+                                      background: '#FFFFFF',
+                                      cursor: idx === images.length - 1 ? 'not-allowed' : 'pointer',
+                                      opacity: idx === images.length - 1 ? 0.4 : 1
+                                    }}
+                                    title="Move Diagram Down"
+                                  >
+                                    <ArrowDown size={13} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      navigate(`/tutor?topic=${encodeURIComponent(`${activeNote.topic || editTitle} — ${img.title}`)}`)
+                                    }
+                                    style={{
+                                      padding: '4px 10px',
+                                      borderRadius: 6,
+                                      border: '1px solid #111827',
+                                      background: '#111827',
+                                      color: '#FFFFFF',
+                                      fontSize: '0.73rem',
+                                      fontWeight: 700,
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    Explain in AI Tutor
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div style={{ border: '1px solid #E5E7EB', borderRadius: 8, padding: 12, background: '#FFFFFF', marginBottom: 12 }}>
+                                <img
+                                  src={img.imageUrl}
+                                  alt={img.altText || img.title}
+                                  style={{ width: '100%', maxHeight: 340, objectFit: 'contain', display: 'block' }}
+                                />
+                              </div>
+
+                              <p style={{ fontSize: '0.9rem', color: '#374151', marginBottom: 10 }}>
+                                <strong>Caption:</strong> {img.caption}
+                              </p>
+
+                              {/* 7-Part Structured Image Walkthrough */}
+                              <div
+                                style={{
+                                  display: 'grid',
+                                  gap: 6,
+                                  padding: 14,
+                                  borderRadius: 8,
+                                  background: '#F9FAFB',
+                                  border: '1px solid #E5E7EB',
+                                  fontFamily: 'Inter, system-ui, sans-serif',
+                                  fontSize: '0.84rem',
+                                  color: '#1F2937'
+                                }}
+                              >
+                                <div style={{ fontWeight: 800, color: '#111827', textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                                  How to Read This Visual Diagram (7-Part Walkthrough)
+                                </div>
+                                {exp.whatItShows && <div><strong>1. What this shows:</strong> {exp.whatItShows}</div>}
+                                {Array.isArray(exp.majorParts) && exp.majorParts.length > 0 && (
+                                  <div><strong>2. Major labeled parts:</strong> {exp.majorParts.join(' • ')}</div>
+                                )}
+                                {Array.isArray(exp.WhatEachLabelMeans) && exp.WhatEachLabelMeans.length > 0 && (
+                                  <div><strong>3. Label meanings:</strong> {exp.WhatEachLabelMeans.join(' | ')}</div>
+                                )}
+                                {exp.stepByStepProcess && <div><strong>4. Step-by-step flow:</strong> {exp.stepByStepProcess}</div>}
+                                {exp.howToRead && <div><strong>5. Reading order:</strong> {exp.howToRead}</div>}
+                                {exp.whatToNoticeFirst && <div><strong>6. Notice first:</strong> {exp.whatToNoticeFirst}</div>}
+                                {exp.connectionToTopic && <div><strong>7. Exam & lesson connection:</strong> {exp.connectionToTopic}</div>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  )}
+
+                  {/* SECTION 6: DIFFERENCES & COMPARISON TABLE */}
+                  {differences && Array.isArray(differences.rows) && differences.rows.length > 0 && (
+                    <section id="nb-comparison" style={{ marginBottom: 32 }}>
+                      <h2 style={{ fontSize: '1.28rem', fontWeight: 800, color: '#111827', borderBottom: '1px solid #E5E7EB', paddingBottom: 6, marginBottom: 12 }}>
+                        6. {differences.title || `${differences.titleA || 'Concept A'} vs. ${differences.titleB || 'Concept B'} — Comparison Table`}
+                      </h2>
+                      <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'Inter, system-ui, sans-serif', fontSize: '0.88rem' }}>
+                          <thead>
+                            <tr style={{ background: '#F3F4F6', textAlign: 'left' }}>
+                              {(
+                                differences.columns || [
+                                  'Comparison Criterion',
+                                  differences.titleA || 'Concept A',
+                                  differences.titleB || 'Concept B'
+                                ]
+                              ).map((col: string, cIdx: number) => (
+                                <th key={cIdx} style={{ padding: '10px 12px', border: '1px solid #D1D5DB', fontWeight: 800, color: '#111827' }}>
+                                  {col}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {differences.rows.map((row: any, rIdx: number) => {
+                              const cells = Array.isArray(row) ? row : [row.aspect, row.itemA, row.itemB];
+                              return (
+                                <tr key={rIdx} style={{ background: rIdx % 2 === 0 ? '#FFFFFF' : '#F9FAFB' }}>
+                                  {cells.map((cell: string, cIdx: number) => (
+                                    <td
+                                      key={cIdx}
+                                      style={{
+                                        padding: '9px 12px',
+                                        border: '1px solid #D1D5DB',
+                                        fontWeight: cIdx === 0 ? 700 : 400,
+                                        color: '#111827'
+                                      }}
+                                    >
+                                      {cell}
+                                    </td>
+                                  ))}
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </section>
+                  )}
+
+                  {/* SECTION 7: FORMULAS, VARIABLES & WORKED NUMERICAL EXAMPLE */}
+                  {formula && (
+                    <section id="nb-formula" style={{ marginBottom: 32 }}>
+                      <h2 style={{ fontSize: '1.28rem', fontWeight: 800, color: '#111827', borderBottom: '1px solid #E5E7EB', paddingBottom: 6, marginBottom: 12 }}>
+                        7. Core Formula / Governing Equation & Worked Example
+                      </h2>
+                      <div style={{ padding: 16, borderRadius: 8, border: '1px solid #D1D5DB', background: '#F9FAFB', fontFamily: 'Inter, system-ui, sans-serif' }}>
+                        <div style={{ fontSize: '1.08rem', fontWeight: 800, fontFamily: 'monospace', color: '#111827', marginBottom: 8 }}>
+                          {formula.equation || formula.expression || (typeof formula === 'string' ? formula : '')}
+                        </div>
+                        {Array.isArray(formula.variables) && formula.variables.length > 0 && (
+                          <ul style={{ margin: '0 0 10px 0', paddingLeft: 20, fontSize: '0.88rem', color: '#374151' }}>
+                            {formula.variables.map((v: any, idx: number) => (
+                              <li key={idx}>
+                                <strong>{v.symbol}:</strong> {v.meaning || v.label} {v.unit ? `(${v.unit})` : ''}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {formula.workedExample && (
+                          <div style={{ fontSize: '0.88rem', color: '#1F2937', borderTop: '1px solid #E5E7EB', paddingTop: 8 }}>
+                            <strong>Worked Example:</strong> {formula.workedExample}
+                          </div>
+                        )}
+                      </div>
+                    </section>
+                  )}
+
+                  {/* SECTION 8: EXAM QUESTIONS & MODEL ANSWERS */}
+                  {examQuestions.length > 0 && (
+                    <section id="nb-exam" style={{ marginBottom: 32 }}>
+                      <h2 style={{ fontSize: '1.28rem', fontWeight: 800, color: '#111827', borderBottom: '1px solid #E5E7EB', paddingBottom: 6, marginBottom: 12 }}>
+                        8. High-Yield Exam Questions & Model Answers
+                      </h2>
+                      <div style={{ display: 'grid', gap: 12 }}>
+                        {examQuestions.map((eq: any, idx: number) => (
+                          <div key={idx} style={{ padding: 14, borderRadius: 8, border: '1px solid #E5E7EB', background: '#FFFFFF' }}>
+                            <div style={{ fontWeight: 800, color: '#111827', fontSize: '0.96rem', marginBottom: 4 }}>
+                              Q{idx + 1}. {eq.question}
+                            </div>
+                            <div style={{ fontSize: '0.92rem', color: '#1F2937' }}>
+                              <strong>Model Answer:</strong> {eq.modelAnswer || eq.answer}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {/* SECTION 9: MULTI-SOURCE SYNTHESIS & CONTRADICTION DETECTION */}
+                  {sourceComparison && (
+                    <section id="nb-multisource" style={{ marginBottom: 32 }}>
+                      <h2 style={{ fontSize: '1.28rem', fontWeight: 800, color: '#111827', borderBottom: '1px solid #E5E7EB', paddingBottom: 6, marginBottom: 12 }}>
+                        9. Multi-Source Synthesis (Agreements, Complementary Details & Contradictions)
+                      </h2>
+                      <div style={{ display: 'grid', gap: 12, fontFamily: 'Inter, system-ui, sans-serif', fontSize: '0.88rem' }}>
+                        {Array.isArray(sourceComparison.agreements) && sourceComparison.agreements.length > 0 && (
+                          <div style={{ padding: 12, borderRadius: 8, background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#065F46' }}>
+                            <strong>✓ Cross-Source Agreements:</strong>
+                            <ul style={{ margin: '6px 0 0 0', paddingLeft: 20 }}>
+                              {sourceComparison.agreements.map((a: any, i: number) => (
+                                <li key={i}>{typeof a === 'string' ? a : `${a.topic}: ${a.summary}`}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {Array.isArray(sourceComparison.complementaryDetails) && sourceComparison.complementaryDetails.length > 0 && (
+                          <div style={{ padding: 12, borderRadius: 8, background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1E40AF' }}>
+                            <strong>➕ Complementary Source Details:</strong>
+                            <ul style={{ margin: '6px 0 0 0', paddingLeft: 20 }}>
+                              {sourceComparison.complementaryDetails.map((c: any, i: number) => (
+                                <li key={i}>
+                                  {typeof c === 'string' ? c : `${c.sourceTitle}: ${c.uniqueContribution} (${c.citation})`}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {Array.isArray(sourceComparison.contradictions) && sourceComparison.contradictions.length > 0 && (
+                          <div style={{ padding: 12, borderRadius: 8, background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B' }}>
+                            <strong>⚠️ Detected Source Contradictions / Discrepancies:</strong>
+                            <ul style={{ margin: '6px 0 0 0', paddingLeft: 20 }}>
+                              {sourceComparison.contradictions.map((con: any, i: number) => (
+                                <li key={i}>
+                                  {typeof con === 'string'
+                                    ? con
+                                    : con.aspect
+                                      ? `${con.aspect}: ${con.claimA?.statement} vs. ${con.claimB?.statement} — ${con.resolutionNote}`
+                                      : `${con.topic}: ${con.sourceAClaim} vs. ${con.sourceBClaim} — ${con.explanation}`}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </section>
+                  )}
+
+                  {/* SECTION 10: REVISION SUMMARY & SOURCE INVENTORY */}
+                  <section id="nb-sources" style={{ borderTop: '2px solid #111827', paddingTop: 18 }}>
+                    <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#111827', marginBottom: 10 }}>
+                      10. Revision Summary & Grounded Source Inventory
+                    </h2>
+                    {Array.isArray(structured?.summaryPoints) && structured.summaryPoints.length > 0 && (
+                      <ul style={{ marginBottom: 16, paddingLeft: 22 }}>
+                        {structured.summaryPoints.map((pt: string, i: number) => (
+                          <li key={i} style={{ fontSize: '0.94rem', color: '#111827', marginBottom: 4 }}>
+                            {pt}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {sourceRecords.length > 0 && (
+                      <div style={{ padding: 12, borderRadius: 8, background: '#F9FAFB', border: '1px solid #E5E7EB', fontFamily: 'Inter, system-ui, sans-serif', fontSize: '0.82rem' }}>
+                        <div style={{ fontWeight: 800, color: '#111827', marginBottom: 6 }}>
+                          Verified Source Provenance ({sourceRecords.length} source(s)):
+                        </div>
+                        {sourceRecords.map((src: any, idx: number) => (
+                          <div key={src.id || idx} style={{ color: '#374151', marginBottom: 4 }}>
+                            • <strong>[{src.sourceType?.toUpperCase()}] {src.title}</strong> — {src.inventory?.unitsProcessed || 1}/{src.inventory?.totalUnits || 1} {src.inventory?.unitType || 'unit'}(s) processed ({src.inventory?.coveragePercent || 100}% coverage)
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                </div>
+              )}
+
+              {/* =====================================================================
+                  TAB 2: ASK NOTEBOOK SOURCES (SOURCE-GROUNDED Q&A WITH CITATIONS)
+                  ===================================================================== */}
+              {activeTab === 'ask-sources' && (
+                <div className="glass-card" style={{ padding: 22 }}>
+                  <h2 style={{ fontSize: '1.18rem', fontWeight: 800, color: '#111827', marginBottom: 6 }}>
+                    Ask Your Notebook Sources (Source-Grounded Q&A)
+                  </h2>
+                  <p style={{ fontSize: '0.86rem', color: '#4B5563', marginBottom: 16 }}>
+                    Select which attached sources to query. Every answer separates <strong>Source-Grounded Evidence (with Page/Timestamp Citations)</strong> from <strong>Supplemental AI Tutor Context</strong>.
+                  </p>
+
+                  {/* Source Selection Checkboxes */}
+                  {sourceRecords.length > 0 && (
+                    <div style={{ marginBottom: 16, padding: 14, borderRadius: 12, background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.08)' }}>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', textTransform: 'uppercase', marginBottom: 8 }}>
+                        Active Sources for Grounding ({selectedSourceIds.length}/{sourceRecords.length} selected)
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                        {sourceRecords.map((src: any) => {
+                          const checked = selectedSourceIds.includes(src.id);
+                          return (
+                            <label
+                              key={src.id}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                padding: '6px 12px',
+                                borderRadius: 8,
+                                background: checked ? '#FFF3E8' : '#F9FAFB',
+                                border: checked ? '1.5px solid #FF6A00' : '1px solid #D1D5DB',
+                                fontSize: '0.82rem',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => {
+                                  setSelectedSourceIds((prev) =>
+                                    prev.includes(src.id) ? prev.filter((id) => id !== src.id) : [...prev, src.id]
+                                  );
+                                }}
+                              />
+                              <span>[{src.sourceType?.toUpperCase()}] {src.title}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleAskSourceQuestion} style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
+                    <input
+                      value={qaQuestion}
+                      onChange={(e) => setQaQuestion(e.target.value)}
+                      placeholder="Ask a question about this notebook (e.g., What does Chapter 3 say about ATP? What is the formula?)..."
+                      style={{
+                        flex: 1,
+                        padding: '12px 14px',
+                        borderRadius: 12,
+                        border: '1.5px solid rgba(255,106,0,0.35)',
+                        fontSize: '0.92rem',
+                        background: '#FFFFFF'
+                      }}
+                    />
+                    <button type="submit" className="btn-orange" disabled={qaLoading}>
+                      <MessageSquare size={16} />
+                      <span>{qaLoading ? 'Searching Sources...' : 'Ask Notebook'}</span>
+                    </button>
+                  </form>
+
+                  {qaHistory.length === 0 ? (
+                    <div style={{ padding: 24, textAlign: 'center', background: '#FFFFFF', borderRadius: 12, color: '#6B7280', fontSize: '0.88rem' }}>
+                      Ask any question above to retrieve exact cited answers from your notebook sources.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gap: 14 }}>
+                      {qaHistory.map((item, idx) => (
+                        <div key={idx} style={{ padding: 18, borderRadius: 14, background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+                          <div style={{ fontWeight: 800, color: '#111827', fontSize: '0.98rem', marginBottom: 10 }}>
+                            Q: {item.question}
+                          </div>
+
+                          <div style={{ padding: 12, borderRadius: 10, background: '#ECFDF5', border: '1px solid #A7F3D0', marginBottom: 10 }}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase', marginBottom: 4 }}>
+                              ✓ Source-Grounded Answer
+                            </div>
+                            <div style={{ fontSize: '0.92rem', color: '#065F46', lineHeight: 1.6 }}>
+                              {item.sourceGroundedAnswer}
+                            </div>
+                            {Array.isArray(item.citations) && item.citations.length > 0 && (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                                {item.citations.map((cit: any, cIdx: number) => (
+                                  <span
+                                    key={cIdx}
+                                    style={{
+                                      padding: '2px 8px',
+                                      borderRadius: 4,
+                                      background: '#FFFFFF',
+                                      border: '1px solid #6EE7B7',
+                                      color: '#047857',
+                                      fontSize: '0.74rem',
+                                      fontWeight: 700
+                                    }}
+                                  >
+                                    📌 {cit.citationLabel || `${cit.sourceTitle} (${cit.locator})`}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {item.aiSupplementalExplanation && (
+                            <div style={{ padding: 12, borderRadius: 10, background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
+                              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1D4ED8', textTransform: 'uppercase', marginBottom: 4 }}>
+                                💡 AI Tutor Supplemental Explanation (Beyond Direct Source Text)
+                              </div>
+                              <div style={{ fontSize: '0.88rem', color: '#1E3A8A', lineHeight: 1.55 }}>
+                                {item.aiSupplementalExplanation}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* =====================================================================
+                  TAB 3: STUDY GUIDE, QUIZ & NARRATED AUDIO OVERVIEW
+                  ===================================================================== */}
+              {activeTab === 'study-tools' && (
+                <div className="glass-card" style={{ padding: 22 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
+                    <div>
+                      <h2 style={{ fontSize: '1.18rem', fontWeight: 800, color: '#111827' }}>
+                        Notebook Study Guide, Practice Quiz & Audio Overview
+                      </h2>
+                      <p style={{ fontSize: '0.84rem', color: '#4B5563' }}>
+                        Generated directly from your notebook sections, definitions, and cited sources.
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          startAudioLesson({
+                            topic: activeNote.title,
+                            text:
+                              studyToolsData?.audioOverviewScript ||
+                              `${activeNote.title}. ${structured?.simpleIntroduction || ''}. ${(structured?.summaryPoints || []).join(' ')}`
+                          })
+                        }
+                        className="btn-orange"
+                      >
+                        <Volume2 size={15} />
+                        <span>Play Audio Overview</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openQuizModal(activeNote.topic || editTitle, activeNote.subject || 'Science')}
+                        className="btn-glass"
+                      >
+                        <HelpCircle size={15} />
+                        <span>Launch Interactive Quiz</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {studyToolsLoading ? (
+                    <div style={{ padding: 24, textAlign: 'center', color: '#6B7280' }}>
+                      Synthesizing Study Guide, Audio Overview Script, Flashcards & Practice Questions...
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gap: 16 }}>
+                      {studyToolsData?.studyGuide && (
+                        <div style={{ padding: 18, borderRadius: 14, background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+                          <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#111827', marginBottom: 8 }}>
+                            📋 Executive Study Guide Summary
+                          </h3>
+                          <p style={{ fontSize: '0.92rem', color: '#1F2937', lineHeight: 1.65, marginBottom: 12 }}>
+                            {studyToolsData.studyGuide.executiveSummary}
+                          </p>
+                          {Array.isArray(studyToolsData.studyGuide.keyTakeaways) && (
+                            <ul style={{ paddingLeft: 20, margin: 0 }}>
+                              {studyToolsData.studyGuide.keyTakeaways.map((tk: string, i: number) => (
+                                <li key={i} style={{ fontSize: '0.88rem', color: '#374151', marginBottom: 4 }}>
+                                  {tk}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+
+                      {studyToolsData?.audioOverviewScript && (
+                        <div style={{ padding: 18, borderRadius: 14, background: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+                          <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#111827', marginBottom: 6 }}>
+                            🎙️ Narrated Audio Overview Script (Spoken Full Forms Enabled)
+                          </h3>
+                          <p style={{ fontSize: '0.9rem', color: '#374151', lineHeight: 1.65 }}>
+                            {studyToolsData.audioOverviewScript}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* =====================================================================
+                  TAB 4: INTERACTIVE FLASHCARDS
+                  ===================================================================== */}
+              {activeTab === 'flashcards' && (
+                <div className="glass-card" style={{ padding: 22 }}>
+                  <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#111827', marginBottom: 12 }}>
+                    Active Recall Flashcards ({activeNote.flashcards?.length || 0})
+                  </h2>
+                  <div style={{ display: 'grid', gap: 12 }}>
+                    {(activeNote.flashcards || []).map((card: any, idx: number) => {
+                      const isFlipped = Boolean(flippedCards[idx]);
+                      return (
+                        <div
+                          key={idx}
+                          onClick={() => setFlippedCards((prev) => ({ ...prev, [idx]: !prev[idx] }))}
+                          style={{
+                            padding: 18,
+                            borderRadius: 16,
+                            background: isFlipped ? '#FFF3E8' : '#FFFFFF',
+                            border: '1.5px solid rgba(255,106,0,0.3)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#FF6A00', textTransform: 'uppercase', marginBottom: 4 }}>
+                            {isFlipped ? 'Answer (Click to flip)' : `Flashcard ${idx + 1} — Question (Click to reveal answer)`}
+                          </div>
+                          <div style={{ fontSize: '0.96rem', fontWeight: 700, color: '#111827' }}>
+                            {isFlipped ? card.back : card.front}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* =====================================================================
+                  TAB 5: RAW MARKDOWN EDITOR
+                  ===================================================================== */}
+              {activeTab === 'editor' && (
+                <div className="glass-card" style={{ padding: 22 }}>
+                  <textarea
+                    value={editMarkdown}
+                    onChange={(e) => {
+                      pushUndoSnapshot();
+                      setEditMarkdown(e.target.value);
+                      scheduleAutosave(editTitle, editSubject, editNotebook, e.target.value, editStructured);
+                    }}
+                    aria-label="Note Markdown Content Editor"
+                    rows={22}
+                    style={{
+                      width: '100%',
+                      padding: 16,
+                      borderRadius: 14,
+                      border: '1.5px solid #D1D5DB',
+                      fontFamily: 'monospace',
+                      fontSize: '0.88rem',
+                      lineHeight: 1.6,
+                      background: '#FFFFFF',
+                      color: '#111827'
+                    }}
+                  />
                 </div>
               )}
             </div>

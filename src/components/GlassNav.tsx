@@ -14,6 +14,10 @@ export const GlassNav: React.FC = () => {
     { path: '/profile', label: 'Profile', ariaLabel: 'Student Profile and Parent Dashboard', iconName: 'profile' }
   ];
 
+  if (location.pathname.startsWith('/superadmin')) {
+    return null;
+  }
+
   return (
     <nav className="floating-nav-wrapper" aria-label="Primary Navigation">
       <div className="floating-glass-nav" role="menubar">

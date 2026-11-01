@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { createAppServer } from '../server/index.ts';
+import { db } from '../server/db.ts';
 
 const serverInstance = createAppServer();
 
@@ -55,7 +56,8 @@ test('1. Health & AI Provider Status report honest configuration without leaking
   assert.equal(status, 200);
   assert.equal(data.status, 'ok');
   assert.ok(data.providers.llm);
-  assert.ok(data.providers.video.message.includes('VIDEO_API_KEY') || data.providers.video.configured);
+  assert.equal(data.providers.video.status, 'strictly_disabled');
+  assert.equal(data.providers.video.configured, false);
 });
 
 test('2. Home Dashboard returns real persisted data for Vishwak and honest empty state for New Student', async () => {
@@ -65,6 +67,9 @@ test('2. Home Dashboard returns real persisted data for Vishwak and honest empty
   assert.ok(populated.data.stats.overallProgress > 0);
   assert.ok(populated.data.subjectPerformance.length >= 4);
   assert.ok(populated.data.recentActivity.length > 0);
+
+  db.prepare("DELETE FROM learning_activity WHERE user_id = 'student-new'").run();
+  db.prepare("DELETE FROM game_sessions WHERE user_id = 'student-new'").run();
 
   const emptyState = await api('/api/dashboard', {}, 'student-new');
   assert.equal(emptyState.status, 200);
@@ -212,9 +217,10 @@ test('7. AI Image, Video Studio, and 3D Lab generate validated assets and save t
     method: 'POST',
     body: JSON.stringify({ topic: 'Solar System', audience: 'Grade 10', durationSeconds: 40 })
   });
-  assert.equal(vidRes.status, 201);
-  assert.equal(vidRes.data.status, 'completed');
-  assert.ok(vidRes.data.scenes.length >= 4);
+  // Video generation is strictly disabled in production per Section I
+  assert.equal(vidRes.status, 403);
+  assert.equal(vidRes.data.code, 'FEATURE_DISABLED');
+  assert.equal(vidRes.data.disabled, true);
 
   const modelRes = await api('/api/media/model3d', {
     method: 'POST',

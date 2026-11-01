@@ -334,51 +334,53 @@ export const EducationalGamesModal: React.FC = () => {
         className="glass-card"
         style={{
           width: '100%',
-          maxWidth: 960,
-          maxHeight: '94vh',
+          maxWidth: selectedGame === 'space_answer_shooter' && gameState === 'playing' ? 1040 : 960,
+          maxHeight: '96vh',
           background: '#0B0F19',
-          border: '1.5px solid rgba(255, 106, 0, 0.45)',
+          border: selectedGame === 'space_answer_shooter' ? '2px solid rgba(56, 189, 248, 0.55)' : '1.5px solid rgba(255, 106, 0, 0.45)',
           borderRadius: 24,
           overflowY: 'auto',
-          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.65)',
+          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.75)',
           color: '#FFFFFF',
-          padding: 24,
+          padding: selectedGame === 'space_answer_shooter' && gameState === 'playing' ? 0 : 24,
           position: 'relative'
         }}
       >
         {/* Modal Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Gamepad2 size={26} color="#FF6A00" />
-            <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#F8FAFC' }}>
-                AI Tutor 3D Educational Games
-              </h2>
-              <span style={{ fontSize: '0.78rem', color: '#94A3B8' }}>
-                Loop-Based 3D Learning Arena • Grades 1–10 • English + Telugu + Hindi
-              </span>
+        {!(selectedGame === 'space_answer_shooter' && gameState === 'playing') && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Gamepad2 size={26} color="#FF6A00" />
+              <div>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#F8FAFC' }}>
+                  AI Tutor 3D Educational Games
+                </h2>
+                <span style={{ fontSize: '0.78rem', color: '#94A3B8' }}>
+                  Loop-Based 3D Learning Arena • Grades 1–10 • English + Telugu + Hindi
+                </span>
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={closeGamesHub}
+              aria-label="Close Games"
+              style={{
+                background: 'rgba(255,255,255,0.1)',
+                border: 'none',
+                borderRadius: '50%',
+                width: 36,
+                height: 36,
+                color: '#FFFFFF',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <X size={18} />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={closeGamesHub}
-            aria-label="Close Games"
-            style={{
-              background: 'rgba(255,255,255,0.1)',
-              border: 'none',
-              borderRadius: '50%',
-              width: 36,
-              height: 36,
-              color: '#FFFFFF',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <X size={18} />
-          </button>
-        </div>
+        )}
 
         {/* SETUP SCREEN */}
         {gameState === 'setup' && (
@@ -393,7 +395,7 @@ export const EducationalGamesModal: React.FC = () => {
                   [
                     { id: 'answer_shooter', title: 'Answer Shooter', desc: '3D Arena Target Combat', icon: <Crosshair size={20} color="#FF6A00" /> },
                     { id: 'answer_runner', title: 'Answer Runner', desc: '3D 3-Lane Endless Sprint', icon: <Zap size={20} color="#38BDF8" /> },
-                    { id: 'space_answer_shooter', title: 'Space Answer Shooter', desc: '3D Cosmic Space Blaster', icon: <Rocket size={20} color="#A855F7" /> }
+                    { id: 'space_answer_shooter', title: 'Space Answer Shooter', desc: 'STUDYAI Space Battle — 3D Arcade Shooter', icon: <Rocket size={20} color="#38BDF8" /> }
                   ] as const
                 ).map((g) => (
                   <button
@@ -642,11 +644,17 @@ export const EducationalGamesModal: React.FC = () => {
                 score={score}
                 combo={combo}
                 isPaused={isPaused}
+                questionIndex={questionsAttempted + 1}
+                totalQuestions={sessionLength || 5}
+                subject={subject}
+                chapter={chapter || topic}
+                onTogglePause={() => setIsPaused((prev) => !prev)}
+                onExit={() => setGameState('setup')}
               />
             )}
 
             {/* Educational Feedback Overlay (Part 8) */}
-            {feedback && (
+            {feedback && selectedGame !== 'space_answer_shooter' && (
               <div
                 style={{
                   marginTop: 14,

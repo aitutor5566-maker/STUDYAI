@@ -17,6 +17,7 @@ from .ollama_client import (
     stream_ollama_chat,
 )
 from .prompt import build_ai_tutor_system_prompt
+from backend.app.api.v1.router import api_v1_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("ai_tutor_fastapi")
@@ -34,6 +35,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Register Central Phase 2 Production API Router
+app.include_router(api_v1_router, prefix="/api/v1")
 
 
 class ChatMessage(BaseModel):

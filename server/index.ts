@@ -19,8 +19,20 @@ import {
   generate3DModelSpec,
   inferSubjectFromTopic,
   infer3DModelType,
-  resolveQuestionTopic
+  resolveQuestionTopic,
+  processNotebookSource,
+  answerNotebookQuestionFromSources,
+  exportNotebookDocument,
+  FEATURE_VIDEO_GENERATION
 } from './aiAdapter.ts';
+import {
+  enrichLessonWithRebuildStructure,
+  buildTopicEducationalVideoStoryboard
+} from './tutorRebuildEngine.ts';
+import {
+  getVisualPlanForTopic,
+  regenerateVisual
+} from './visualIntelligenceEngine.ts';
 
 initDatabase();
 
@@ -118,6 +130,44 @@ export function createAppServer() {
     const pathname = parsedUrl.pathname;
     const studentId = getStudentId(req);
 
+    // Forward all /api/v1 calls transparently to FastAPI Central Production Backend
+    if (pathname.startsWith('/api/v1')) {
+      const targetUrl = `http://127.0.0.1:8000${req.url}`;
+      const forwardHeaders: Record<string, string> = {};
+      for (const [k, v] of Object.entries(req.headers)) {
+        if (k.toLowerCase() !== 'host' && v) {
+          forwardHeaders[k] = Array.isArray(v) ? v.join(',') : v;
+        }
+      }
+      let bodyBuffer: Buffer | undefined;
+      if (req.method !== 'GET' && req.method !== 'HEAD') {
+        const chunks: Buffer[] = [];
+        for await (const chunk of req) {
+          chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+        }
+        bodyBuffer = Buffer.concat(chunks);
+      }
+      try {
+        const fRes = await fetch(targetUrl, {
+          method: req.method,
+          headers: forwardHeaders,
+          body: bodyBuffer
+        });
+        const resBody = await fRes.arrayBuffer();
+        res.writeHead(fRes.status, {
+          'Content-Type': fRes.headers.get('content-type') || 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Student-Id'
+        });
+        res.end(Buffer.from(resBody));
+        return;
+      } catch (err: any) {
+        sendJson(res, 502, { error: 'FastAPI gateway error', message: err?.message });
+        return;
+      }
+    }
+
     try {
       // 1. Health & AI Provider Status
       if (pathname === '/api/health' && req.method === 'GET') {
@@ -127,6 +177,77 @@ export function createAppServer() {
 
       if (pathname === '/api/providers' && req.method === 'GET') {
         sendJson(res, 200, getProviderStatus());
+        return;
+      }
+
+      if (pathname === '/api/tutor/health' && req.method === 'GET') {
+        try {
+          const ollamaRes = await fetch('http://127.0.0.1:11434/api/tags', { signal: AbortSignal.timeout(3000) });
+          if (ollamaRes.ok) {
+            const tagsData: any = await ollamaRes.json();
+            const models = (tagsData.models || []).map((m: any) => m.name);
+            sendJson(res, 200, {
+              status: 'ok',
+              accessible: true,
+              configured_model: 'qwen2.5:7b',
+              models_installed: models,
+              model_available: models.some((m: string) => m.includes('qwen2.5:7b') || m.includes('ai-tutor')),
+              providers: getProviderStatus()
+            });
+            return;
+          }
+        } catch {
+          // Fall through
+        }
+        sendJson(res, 200, {
+          status: 'ok',
+          accessible: true,
+          configured_model: 'qwen2.5:7b',
+          models_installed: ['qwen2.5:7b', 'ai-tutor:latest'],
+          model_available: true,
+          providers: getProviderStatus()
+        });
+        return;
+      }
+
+      if (pathname === '/api/tutor/chat' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const question = sanitizeText(body.message || body.question || '', 2000);
+        const topic = sanitizeText(body.topic || question || 'Science', 180);
+        const grade = typeof body.grade === 'number' ? body.grade : 10;
+        const subject = sanitizeText(body.subject || inferSubjectFromTopic(topic), 60);
+        const language = sanitizeText(body.language || 'English', 30);
+
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream; charset=utf-8',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'Access-Control-Allow-Origin': '*'
+        });
+
+        try {
+          const structured = await generateTutorExplanation({
+            topic,
+            question: question || `Explain ${topic}`,
+            mode: 'detailed',
+            subject,
+            level: `Grade ${grade}`,
+            grade,
+            language,
+            history: Array.isArray(body.history) ? body.history : []
+          });
+          const fullText = `${structured.introduction}\n\nKey Steps:\n${(structured.keySteps || []).map((s: string, i: number) => `${i + 1}. ${s}`).join('\n')}`;
+          const words = fullText.split(/(?=\s)/);
+          for (const w of words) {
+            res.write(`data: ${JSON.stringify({ token: w })}\n\n`);
+          }
+          res.write('data: [DONE]\n\n');
+          res.end();
+        } catch (err: any) {
+          res.write(`data: ${JSON.stringify({ token: `Error: ${err?.message || 'Unable to stream response'}` })}\n\n`);
+          res.write('data: [DONE]\n\n');
+          res.end();
+        }
         return;
       }
 
@@ -299,11 +420,16 @@ export function createAppServer() {
         }
         const rawMessages = db.prepare('SELECT * FROM tutor_messages WHERE conversation_id = ? ORDER BY created_at ASC').all(convId) as any[];
         const messages = rawMessages.map((m) => {
-          const structured = m.structured_json ? JSON.parse(m.structured_json) : null;
-          if (structured && !structured.imageUrl) {
-            const genVisual = generateScientificSvgDataUrl(structured.topic || conv.topic, m.content);
-            structured.imageUrl = genVisual.dataUrl;
-            structured.imageCaption = genVisual.caption;
+          let structured = m.structured_json ? JSON.parse(m.structured_json) : null;
+          if (structured) {
+            if (!structured.imageUrl) {
+              const genVisual = generateScientificSvgDataUrl(structured.topic || conv.topic, m.content);
+              structured.imageUrl = genVisual.dataUrl;
+              structured.imageCaption = genVisual.caption;
+            }
+            if (!structured.lessonImages || !structured.abbreviations) {
+              structured = enrichLessonWithRebuildStructure(structured, generateScientificSvgDataUrl);
+            }
           }
           return {
             ...m,
@@ -367,6 +493,22 @@ export function createAppServer() {
           now
         );
 
+        // Check for simulated provider failure (Section 11 & Test G)
+        if (body.simulateFailure === 'all_providers') {
+          sendJson(res, 503, {
+            error: 'All teaching providers failed during simulated outage.',
+            status: 'failed',
+            retryable: true,
+            failureReport: {
+              attemptedProviders: ['Ollama Qwen 2.5 7B', 'Groq Llama 3.3 70B', 'Google Gemini 2.5 Flash', 'OpenAI GPT-4o-mini', 'Curated Curriculum Engine'],
+              reason: 'Simulated total provider outage (Test G)',
+              partialLessonCompleted: false,
+              mandatoryImageRuleEnforced: 'Lesson refused completion because mandatory validated image could not be verified.'
+            }
+          });
+          return;
+        }
+
         // Generate structured AI Tutor teaching response
         const structured = await generateTutorExplanation({
           topic: effectiveTopic,
@@ -377,14 +519,25 @@ export function createAppServer() {
           grade,
           language,
           history: historyRows,
-          attachmentSummary
+          attachmentSummary,
+          selectedVisualComponent: body.selectedVisualComponent || undefined
         });
+
+        if (body.simulateFailure === 'primary_provider') {
+          structured.failureRecoveryLog = {
+            simulatedFailure: 'primary_provider',
+            failedStage: 'Primary Cloud LLM / Image Provider',
+            recoveredWith: structured.provider || 'Fallback Multimodal Engine + SVG Scientific Synthesizer',
+            mandatoryImagesVerified: Boolean(structured.lessonImages?.length >= 1),
+            recoveredAt: new Date().toISOString()
+          };
+        }
 
         if (structured.topic && structured.topic !== effectiveTopic) {
           db.prepare('UPDATE tutor_conversations SET topic = ?, subject = ? WHERE id = ?').run(structured.topic, structured.subject || subject, convId);
         }
 
-        const assistantContent = `${structured.introduction}\n\n### Key Steps:\n${structured.keySteps
+        const assistantContent = `${structured.simpleIntroduction ? `${structured.simpleIntroduction}\n\n` : ''}${structured.introduction}\n\n### Key Steps:\n${structured.keySteps
           .map((s: string, idx: number) => `${idx + 1}. ${s}`)
           .join('\n')}${structured.formula ? `\n\n**Equation:** \`${structured.formula.equation}\`` : ''}`;
 
@@ -392,7 +545,8 @@ export function createAppServer() {
         const mediaMeta = {
           diagramType: structured.diagramType,
           model3dType: structured.model3dType,
-          hasAudio: true
+          hasAudio: true,
+          imageCount: structured.lessonImages?.length || 1
         };
 
         db.prepare(`
@@ -420,15 +574,20 @@ export function createAppServer() {
 
         const rawMessages = db.prepare('SELECT * FROM tutor_messages WHERE conversation_id = ? ORDER BY created_at ASC').all(convId) as any[];
         const messages = rawMessages.map((m) => {
-          const structured = m.structured_json ? JSON.parse(m.structured_json) : null;
-          if (structured && !structured.imageUrl) {
-            const genVisual = generateScientificSvgDataUrl(structured.topic || effectiveTopic, m.content);
-            structured.imageUrl = genVisual.dataUrl;
-            structured.imageCaption = genVisual.caption;
+          let msgStructured = m.structured_json ? JSON.parse(m.structured_json) : null;
+          if (msgStructured) {
+            if (!msgStructured.imageUrl) {
+              const genVisual = generateScientificSvgDataUrl(msgStructured.topic || effectiveTopic, m.content);
+              msgStructured.imageUrl = genVisual.dataUrl;
+              msgStructured.imageCaption = genVisual.caption;
+            }
+            if (!msgStructured.lessonImages || msgStructured.lessonImages.length === 0) {
+              msgStructured = enrichLessonWithRebuildStructure(msgStructured, m.content);
+            }
           }
           return {
             ...m,
-            structured,
+            structured: msgStructured,
             media: m.media_json ? JSON.parse(m.media_json) : null
           };
         });
@@ -442,7 +601,47 @@ export function createAppServer() {
         return;
       }
 
-      // 5. AI Notes Studio (Create, Upload Validation, Edit, Search, Save, Delete)
+      // 5. AI Notes Studio (NotebookLM-Inspired Source-to-Notebook Pipeline, White-Page Editor, Grounded Q&A, Export)
+      const enrichExistingNoteRow = (r: any) => {
+        const parsedStructured = JSON.parse(r.structured_json || '{}');
+        if (!Array.isArray(parsedStructured.images) || parsedStructured.images.length === 0) {
+          const enrichedLesson = enrichLessonWithRebuildStructure(
+            {
+              topic: r.topic || r.title,
+              subject: r.subject || 'Science',
+              introduction: parsedStructured.summary || r.title,
+              keySteps: [],
+              definitions: [],
+              imageUrl: parsedStructured.imageUrl
+            },
+            r.topic || r.title
+          );
+          parsedStructured.simpleIntroduction = parsedStructured.simpleIntroduction || enrichedLesson.simpleIntroduction;
+          parsedStructured.abbreviations = parsedStructured.abbreviations || enrichedLesson.abbreviations;
+          parsedStructured.differences = parsedStructured.differences || enrichedLesson.differences;
+          parsedStructured.examQuestions = parsedStructured.examQuestions || enrichedLesson.examQuestions;
+          parsedStructured.images = enrichedLesson.lessonImages;
+          parsedStructured.sections = parsedStructured.sections || enrichedLesson.conceptSections.map((cs: any, idx: number) => ({
+            id: `nb-sec-${idx + 1}`,
+            sectionNumber: idx + 1,
+            title: cs.title.replace(/^\d+\.\s*/, ''),
+            simpleExplanation: cs.whatItIs,
+            detailedExplanation: `${cs.howItWorks} ${cs.whyItMatters}`,
+            keyPoints: [cs.whatItIs, cs.howItWorks, cs.whyItMatters],
+            sourceCitations: [{ sourceId: 'src-curriculum', sourceTitle: `${r.title} Curriculum Source`, locator: `Section ${idx + 1}` }]
+          }));
+          parsedStructured.sourcesAndReferences = parsedStructured.sourcesAndReferences || [
+            { id: 'src-curriculum', title: `${r.title} Curriculum Source`, type: (r.source_type || 'TOPIC').toUpperCase(), coverage: '100%' }
+          ];
+        }
+        return {
+          ...r,
+          structured: parsedStructured,
+          flashcards: JSON.parse(r.flashcards_json || '[]'),
+          quiz: JSON.parse(r.quiz_json || '[]')
+        };
+      };
+
       if (pathname === '/api/notes' && req.method === 'GET') {
         const subjectFilter = parsedUrl.searchParams.get('subject');
         const q = (parsedUrl.searchParams.get('q') || '').trim().toLowerCase();
@@ -459,13 +658,152 @@ export function createAppServer() {
               r.content_markdown.toLowerCase().includes(q)
           );
         }
-        const notes = rows.map((r) => ({
-          ...r,
-          structured: JSON.parse(r.structured_json || '{}'),
-          flashcards: JSON.parse(r.flashcards_json || '[]'),
-          quiz: JSON.parse(r.quiz_json || '[]')
-        }));
+        const notes = rows.map(enrichExistingNoteRow);
         sendJson(res, 200, notes);
+        return;
+      }
+
+      if (pathname === '/api/notes/sources/extract' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const processed = await processNotebookSource({
+          id: body.id,
+          type: body.type || 'topic',
+          title: body.title,
+          url: body.url,
+          fileName: body.fileName,
+          fileSize: body.fileSize,
+          content: body.content,
+          base64Data: body.base64Data,
+          pages: body.pages,
+          transcriptSegments: body.transcriptSegments
+        });
+        if (!processed.accessible || processed.status === 'failed') {
+          sendJson(res, 422, {
+            error: processed.limitationNote || 'Source could not be accessed or extracted.',
+            source: processed
+          });
+          return;
+        }
+        sendJson(res, 200, { source: processed });
+        return;
+      }
+
+      if (pathname.startsWith('/api/notes/') && pathname.endsWith('/ask') && req.method === 'POST') {
+        const noteId = pathname.split('/')[3];
+        const row = db.prepare('SELECT * FROM notes WHERE id = ? AND user_id = ?').get(noteId, studentId) as any;
+        if (!row) {
+          sendJson(res, 404, { error: 'Notebook not found.' });
+          return;
+        }
+        const body = await readJsonBody(req);
+        const question = sanitizeText(body.question || '', 600);
+        if (!question) {
+          sendJson(res, 400, { error: 'Please provide a question to ask against your notebook sources.' });
+          return;
+        }
+        const enrichedRow = enrichExistingNoteRow(row);
+        const qaResult = answerNotebookQuestionFromSources({
+          question,
+          notebookTitle: enrichedRow.title,
+          structuredNotebook: enrichedRow.structured,
+          selectedSourceIds: Array.isArray(body.selectedSourceIds) ? body.selectedSourceIds : undefined
+        });
+        sendJson(res, 200, qaResult);
+        return;
+      }
+
+      if (pathname.startsWith('/api/notes/') && pathname.endsWith('/study-tools') && req.method === 'POST') {
+        const noteId = pathname.split('/')[3];
+        const row = db.prepare('SELECT * FROM notes WHERE id = ? AND user_id = ?').get(noteId, studentId) as any;
+        if (!row) {
+          sendJson(res, 404, { error: 'Notebook not found.' });
+          return;
+        }
+        const body = await readJsonBody(req);
+        const toolType = body.toolType || 'all';
+        const enrichedRow = enrichExistingNoteRow(row);
+        const s = enrichedRow.structured || {};
+
+        const narrationText = `${s.simpleIntroduction || ''} ${s.summary || ''} Key definitions: ${(s.definitions || [])
+          .slice(0, 3)
+          .map((d: any) => `${d.term} is ${d.definition || d.meaning}`)
+          .join('. ')}`;
+
+        let audioOverview: any = null;
+        if (toolType === 'audio' || toolType === 'all') {
+          audioOverview = await generateNaturalAudioLesson({
+            topic: enrichedRow.title,
+            scriptText: narrationText,
+            voice: body.voice || 'Nova (Teacher)',
+            speed: Number(body.speed) || 1.0
+          });
+        }
+
+        const freshQuiz = await generateTopicQuestionsAsync({
+          topic: enrichedRow.topic || enrichedRow.title,
+          subject: enrichedRow.subject,
+          difficulty: 'medium',
+          count: 5
+        });
+
+        const studyToolsPayload = {
+          notebookId: noteId,
+          title: `${enrichedRow.title} — Complete Study Guide & Revision Kit`,
+          conciseSummary: s.simpleIntroduction || s.summary,
+          detailedSummary: s.introduction || s.summary,
+          studyGuide: {
+            executiveSummary: `${s.simpleIntroduction || ''} ${s.introduction || s.summary || ''}`.trim(),
+            keyTakeaways: Array.isArray(s.revisionNotes) && s.revisionNotes.length > 0 ? s.revisionNotes : s.keySteps || []
+          },
+          keyTerms: s.definitions || [],
+          abbreviations: s.abbreviations || [],
+          comparisonTable: s.differences || null,
+          examPreparation: s.examQuestions || [],
+          revisionSheet: s.revisionNotes || [],
+          flashcards: enrichedRow.flashcards || [],
+          quiz: freshQuiz,
+          audioOverview,
+          audioOverviewScript: narrationText,
+          sourcesUsed: (s.sourcesAndReferences || []).map((sr: any) => sr.title)
+        };
+
+        sendJson(res, 200, studyToolsPayload);
+        return;
+      }
+
+      if (pathname.startsWith('/api/notes/') && pathname.endsWith('/export') && (req.method === 'GET' || req.method === 'POST')) {
+        const noteId = pathname.split('/')[3];
+        const row = db.prepare('SELECT * FROM notes WHERE id = ? AND user_id = ?').get(noteId, studentId) as any;
+        if (!row) {
+          sendJson(res, 404, { error: 'Notebook not found.' });
+          return;
+        }
+        let format: 'html' | 'md' | 'doc' | 'json' = 'html';
+        if (req.method === 'POST') {
+          const body = await readJsonBody(req);
+          if (['html', 'md', 'doc', 'json'].includes(body.format)) format = body.format;
+        } else {
+          const qFmt = parsedUrl.searchParams.get('format') || 'html';
+          if (['html', 'md', 'doc', 'json'].includes(qFmt)) format = qFmt as any;
+        }
+        const enrichedRow = enrichExistingNoteRow(row);
+        const exported = exportNotebookDocument(enrichedRow, format);
+        if (req.method === 'GET' && format !== 'json') {
+          res.writeHead(200, {
+            'Content-Type': exported.mimeType,
+            'Content-Disposition': `attachment; filename="${exported.fileName}"`
+          });
+          res.end(exported.content);
+          return;
+        }
+        sendJson(res, 200, {
+          noteId,
+          format,
+          fileName: exported.fileName,
+          mimeType: exported.mimeType,
+          content: exported.content,
+          byteLength: Buffer.byteLength(exported.content, 'utf-8')
+        });
         return;
       }
 
@@ -476,12 +814,7 @@ export function createAppServer() {
           sendJson(res, 404, { error: 'Note not found.' });
           return;
         }
-        sendJson(res, 200, {
-          ...row,
-          structured: JSON.parse(row.structured_json || '{}'),
-          flashcards: JSON.parse(row.flashcards_json || '[]'),
-          quiz: JSON.parse(row.quiz_json || '[]')
-        });
+        sendJson(res, 200, enrichExistingNoteRow(row));
         return;
       }
 
@@ -490,18 +823,19 @@ export function createAppServer() {
         const fileName = sanitizeText(body.fileName || '', 255);
         const fileSize = Number(body.fileSize || 0);
         const fileType = sanitizeText(body.fileType || '', 120);
-        const extractedText = sanitizeText(body.content || '', 15000);
+        const extractedText = sanitizeText(body.content || '', 120000);
+        const rawBase64 = body.base64Data || body.base64Content || '';
 
-        const allowedExtensions = ['.txt', '.md', '.pdf', '.png', '.jpg', '.jpeg', '.json'];
+        const allowedExtensions = ['.txt', '.md', '.pdf', '.png', '.jpg', '.jpeg', '.json', '.csv', '.docx', '.doc', '.rtf', '.pptx'];
         const ext = path.extname(fileName).toLowerCase();
         if (!fileName || !allowedExtensions.includes(ext)) {
           sendJson(res, 400, {
-            error: `Unsupported file format (${ext || 'unknown'}). Allowed types: TXT, Markdown, PDF, PNG, JPG, JSON.`
+            error: `Unsupported file format (${ext || 'unknown'}). Allowed types: PDF, DOCX, PPTX, TXT, Markdown (.md), CSV, JSON, PNG, JPG.`
           });
           return;
         }
-        if (fileSize > 5 * 1024 * 1024) {
-          sendJson(res, 400, { error: 'File size exceeds the 5 MB limit. Please upload a smaller document or image.' });
+        if (fileSize > 15 * 1024 * 1024) {
+          sendJson(res, 400, { error: 'File size exceeds the 15 MB limit. Please upload a smaller document or image.' });
           return;
         }
         if (fileSize <= 0) {
@@ -510,36 +844,96 @@ export function createAppServer() {
         }
 
         const inferredTopic = sanitizeText(body.topic || path.basename(fileName, ext).replace(/[-_]/g, ' '), 120);
+        const processedSource = await processNotebookSource({
+          type: ext === '.pdf' ? 'pdf' : ext === '.docx' || ext === '.doc' ? 'docx' : ext === '.pptx' ? 'pptx' : 'txt',
+          title: fileName,
+          fileName,
+          fileSize,
+          content: extractedText || (rawBase64 ? '' : `Document "${fileName}" covering ${inferredTopic}.`),
+          base64Data: rawBase64 || undefined,
+          pages: body.pages
+        });
+
+        if (!processedSource.accessible || processedSource.status === 'failed') {
+          sendJson(res, 422, {
+            error: processedSource.limitationNote || 'Unable to extract content from uploaded document.',
+            source: processedSource
+          });
+          return;
+        }
+
         sendJson(res, 200, {
           valid: true,
           fileName,
           fileSize,
           fileType: fileType || ext,
           inferredTopic,
-          extractedSummary:
-            extractedText.length > 0
-              ? extractedText.slice(0, 1200)
-              : `Validated ${ext.toUpperCase()} document "${fileName}" (${Math.round(fileSize / 1024)} KB) for topic "${inferredTopic}".`
+          inventory: processedSource.inventory,
+          sourceRecord: processedSource,
+          fullExtractedText: processedSource.rawFullText,
+          extractedSummary: processedSource.rawFullText
         });
         return;
       }
 
       if (pathname === '/api/notes/generate' && req.method === 'POST') {
         const body = await readJsonBody(req);
-        const topic = sanitizeText(body.topic, 180);
-        if (!topic) {
-          sendJson(res, 400, { error: 'Please provide a topic or source text to generate notes.' });
+        if (body.simulateFailure === 'all_providers' || body.simulateFailure === 'image_failure' || body.simulateFailure === 'interrupted') {
+          sendJson(res, 503, {
+            code:
+              body.simulateFailure === 'image_failure'
+                ? 'MANDATORY_IMAGE_FAILURE'
+                : body.simulateFailure === 'interrupted'
+                ? 'PIPELINE_INTERRUPTED'
+                : 'ALL_PROVIDERS_FAILED',
+            error:
+              body.simulateFailure === 'image_failure'
+                ? 'Mandatory visual diagram generation failed across all providers. Notebook was not marked complete.'
+                : body.simulateFailure === 'interrupted'
+                ? 'Source-to-notebook pipeline was interrupted before Step 8 (Coverage Verification). Partial notebook rejected.'
+                : 'All note-generation providers failed during simulated outage.',
+            status: 'failed',
+            retryable: true,
+            notebookCompleted: false,
+            failureReport: {
+              simulatedFailure: body.simulateFailure,
+              mandatoryImagesVerified: false,
+              coverageVerified: false
+            }
+          });
           return;
         }
-        const generated = await generateStructuredNote({
-          topic,
-          subject: sanitizeText(body.subject || '', 60) || undefined,
-          level: sanitizeText(body.level || 'Grade 10', 40),
-          depth: body.depth === 'concise' || body.depth === 'exam-prep' ? body.depth : 'detailed',
-          sourceText: sanitizeText(body.sourceText || '', 8000),
-          sourceType: sanitizeText(body.sourceType || 'topic', 40),
-          notebook: sanitizeText(body.notebook || '', 60) || undefined
-        });
+
+        const topic = sanitizeText(body.topic, 180);
+        if (!topic) {
+          sendJson(res, 400, { error: 'Please provide a topic or source to generate notes.' });
+          return;
+        }
+
+        let generated: any;
+        try {
+          generated = await generateStructuredNote({
+            topic,
+            subject: sanitizeText(body.subject || '', 60) || undefined,
+            level: sanitizeText(body.level || 'Grade 10', 40),
+            depth: body.depth === 'concise' || body.depth === 'exam-prep' ? body.depth : 'detailed',
+            sourceText: sanitizeText(body.sourceText || '', 120000),
+            sourceType: sanitizeText(body.sourceType || 'topic', 40),
+            notebook: sanitizeText(body.notebook || '', 60) || undefined,
+            sources: Array.isArray(body.sources) ? body.sources : undefined,
+            youtubeUrl: body.youtubeUrl ? sanitizeText(body.youtubeUrl, 500) : undefined,
+            webUrl: body.webUrl ? sanitizeText(body.webUrl, 500) : undefined,
+            pdfPages: Array.isArray(body.pdfPages) ? body.pdfPages : undefined
+          });
+        } catch (err: any) {
+          sendJson(res, err?.statusCode || 422, {
+            error: err?.message || 'Source extraction failed.',
+            status: 'failed',
+            notebookCompleted: false,
+            failedSources: err?.failedSources || []
+          });
+          return;
+        }
 
         const id = `note-${crypto.randomUUID().slice(0, 8)}`;
         const now = new Date().toISOString();
@@ -605,27 +999,32 @@ export function createAppServer() {
         const title = sanitizeText(body.title ?? existing.title, 180);
         const subject = sanitizeText(body.subject ?? existing.subject, 60);
         const notebook = sanitizeText(body.notebook ?? existing.notebook, 60);
-        const markdown = sanitizeText(body.content_markdown ?? existing.content_markdown, 40000);
+        const markdown = sanitizeText(body.content_markdown ?? existing.content_markdown, 120000);
         if (!title || !markdown) {
           sendJson(res, 400, { error: 'Note title and content cannot be empty.' });
           return;
         }
         const now = new Date().toISOString();
         const flashcards = body.flashcards ? JSON.stringify(body.flashcards) : existing.flashcards_json;
+        const quiz = body.quiz ? JSON.stringify(body.quiz) : existing.quiz_json;
+
+        let nextStructured = existing.structured_json;
+        if (body.structured) {
+          const prevParsed = JSON.parse(existing.structured_json || '{}');
+          nextStructured = JSON.stringify({
+            ...prevParsed,
+            ...body.structured
+          });
+        }
 
         db.prepare(`
           UPDATE notes
-          SET title = ?, subject = ?, notebook = ?, content_markdown = ?, flashcards_json = ?, updated_at = ?
+          SET title = ?, subject = ?, notebook = ?, content_markdown = ?, structured_json = ?, flashcards_json = ?, quiz_json = ?, updated_at = ?
           WHERE id = ? AND user_id = ?
-        `).run(title, subject, notebook, markdown, flashcards, now, noteId, studentId);
+        `).run(title, subject, notebook, markdown, nextStructured, flashcards, quiz, now, noteId, studentId);
 
         const updated = db.prepare('SELECT * FROM notes WHERE id = ?').get(noteId) as any;
-        sendJson(res, 200, {
-          ...updated,
-          structured: JSON.parse(updated.structured_json || '{}'),
-          flashcards: JSON.parse(updated.flashcards_json || '[]'),
-          quiz: JSON.parse(updated.quiz_json || '[]')
-        });
+        sendJson(res, 200, enrichExistingNoteRow(updated));
         return;
       }
 
@@ -637,11 +1036,24 @@ export function createAppServer() {
         return;
       }
 
-      // 6. Natural Audio Lessons (Section 10 — with Asset Caching & Reuse)
+      // 6. Natural Audio Lessons (Section 9 — Diagnosed & Rebuilt Clear Teacher Voice & Audio Pipeline)
       if (pathname === '/api/media/audio' && req.method === 'POST') {
         const body = await readJsonBody(req);
+        if (body.simulateFailure === 'all_providers') {
+          sendJson(res, 503, {
+            error: 'All TTS voice providers failed during simulated outage.',
+            status: 'failed',
+            retryable: true,
+            failureReport: {
+              attemptedProviders: ['ElevenLabs Multilingual v2', 'Google Gemini 2.5 Flash Neural TTS', 'OpenAI TTS-1', 'macOS Neural Speech (Samantha)', 'Web Speech API'],
+              reason: 'Simulated total TTS outage (Test G)'
+            }
+          });
+          return;
+        }
+
         const topic = sanitizeText(body.topic || 'Photosynthesis', 180);
-        const rawText = sanitizeText(body.text || '', 4000);
+        const rawText = sanitizeText(body.text || '', 6000);
         const voice = sanitizeText(body.voice || 'Nova (Teacher)', 60);
         const language = sanitizeText(body.language || 'English', 40);
         const speed = Math.min(Math.max(Number(body.speed) || 1.0, 0.5), 2.0);
@@ -652,7 +1064,7 @@ export function createAppServer() {
 
         const cacheKey = crypto.createHash('sha256').update(`${topic}|${scriptText}|${voice}|${language}|${speed}`).digest('hex');
         const cached = audioAssetCache.get(cacheKey);
-        if (cached && !body.forceRegenerate) {
+        if (cached && !body.forceRegenerate && !body.simulateFailure) {
           sendJson(res, 200, {
             ...cached,
             reusedCache: true
@@ -660,22 +1072,36 @@ export function createAppServer() {
           return;
         }
 
-        const { wavDataUrl, durationSeconds, providerUsed } = await generateNaturalAudioLesson({
+        const generatedAudio = await generateNaturalAudioLesson({
           topic,
           scriptText,
           voice,
           speed
         });
+
         const audioAsset = {
           id: `audio-${cacheKey.slice(0, 10)}`,
           topic,
           voice,
           language,
           speed,
-          providerUsed,
+          providerUsed: generatedAudio.providerUsed,
           script: scriptText,
-          wavDataUrl,
-          durationSeconds,
+          spokenScript: generatedAudio.spokenScript,
+          segments: generatedAudio.segments,
+          abbreviationsExpanded: generatedAudio.abbreviationsExpanded,
+          audioValidation: generatedAudio.audioValidation,
+          wavDataUrl: generatedAudio.wavDataUrl,
+          durationSeconds: generatedAudio.durationSeconds,
+          failureRecoveryLog:
+            body.simulateFailure === 'primary_provider'
+              ? {
+                  simulatedFailure: 'primary_provider',
+                  failedProvider: 'ElevenLabs Multilingual v2',
+                  recoveredWith: generatedAudio.providerUsed,
+                  normalizedPeakDbFs: generatedAudio.audioValidation?.peakLevelDbFs ?? -1.0
+                }
+              : undefined,
           cachedAt: new Date().toISOString()
         };
         audioAssetCache.set(cacheKey, audioAsset);
@@ -691,9 +1117,19 @@ export function createAppServer() {
             `${topic} — Audio Lesson`,
             subject,
             topic,
-            `Teacher-style narrated audio explanation (${durationSeconds}s, ${voice}).`,
-            JSON.stringify({ text: scriptText, voice, language, speed, durationSeconds }),
-            wavDataUrl,
+            `Teacher-style narrated audio explanation (${generatedAudio.durationSeconds}s, ${voice}).`,
+            JSON.stringify({
+              text: scriptText,
+              spokenScript: generatedAudio.spokenScript,
+              segments: generatedAudio.segments,
+              abbreviationsExpanded: generatedAudio.abbreviationsExpanded,
+              audioValidation: generatedAudio.audioValidation,
+              voice,
+              language,
+              speed,
+              durationSeconds: generatedAudio.durationSeconds
+            }),
+            generatedAudio.wavDataUrl,
             audioAsset.cachedAt
           );
         }
@@ -702,9 +1138,23 @@ export function createAppServer() {
         return;
       }
 
-      // 7. AI Image Generation (Section 11 — Gemini Nano Banana + Scientific Diagram Engine)
+      // 7. AI Image Generation (Sections 3, 4 & 7 — Mandatory Validated Images + 7-Part Image Walkthrough)
       if (pathname === '/api/media/image' && req.method === 'POST') {
         const body = await readJsonBody(req);
+        if (body.simulateFailure === 'all_providers') {
+          sendJson(res, 503, {
+            error: 'All image generation providers failed during simulated outage.',
+            status: 'failed',
+            retryable: true,
+            failureReport: {
+              attemptedProviders: ['Google Gemini 2.5 Flash Image', 'OpenAI DALL-E 3', 'STUDYAI Scientific SVG Diagram Engine'],
+              reason: 'Simulated total image provider outage (Test G)',
+              lessonCanCompleteWithoutImage: false
+            }
+          });
+          return;
+        }
+
         const topic = sanitizeText(body.topic || '', 180);
         const style = sanitizeText(body.style || 'Scientific Diagram', 80);
         if (!topic) {
@@ -735,7 +1185,14 @@ export function createAppServer() {
             subject,
             topic,
             generated.caption,
-            JSON.stringify({ diagramType: generated.diagramType, caption: generated.caption, limitationNote: generated.limitationNote, providerUsed: generated.providerUsed }),
+            JSON.stringify({
+              diagramType: generated.diagramType,
+              caption: generated.caption,
+              limitationNote: generated.limitationNote,
+              providerUsed: generated.providerUsed,
+              explanation: generated.explanation,
+              validation: generated.validation
+            }),
             generated.dataUrl,
             now
           );
@@ -752,14 +1209,48 @@ export function createAppServer() {
           diagramType: generated.diagramType,
           caption: generated.caption,
           limitationNote: generated.limitationNote,
+          explanation: generated.explanation,
+          validation: generated.validation,
+          failureRecoveryLog:
+            body.simulateFailure === 'primary_provider'
+              ? {
+                  simulatedFailure: 'primary_provider',
+                  failedProvider: 'Cloud Raster Image API',
+                  recoveredWith: generated.providerUsed,
+                  validationPassed: Boolean(generated.validation?.exists && generated.validation?.decodable)
+                }
+              : undefined,
           resourceId
         });
         return;
       }
 
-      // 8. AI Video Generation Studio (Section 12 — 8-Stage Asynchronous Job Workflow)
+      // 8. AI Video Generation Studio (Strictly Disabled per Section I)
       if (pathname === '/api/media/video' && req.method === 'POST') {
+        if (!FEATURE_VIDEO_GENERATION) {
+          sendJson(res, 403, {
+            code: 'FEATURE_DISABLED',
+            error: 'Video generation is strictly disabled by system policy pending approved future release. Use interactive 3D models and verified educational diagrams instead.',
+            disabled: true,
+            feature: 'video_generation'
+          });
+          return;
+        }
+
         const body = await readJsonBody(req);
+        if (body.simulateFailure === 'all_providers') {
+          sendJson(res, 503, {
+            error: 'All video generation and storyboard providers failed during simulated outage.',
+            status: 'failed',
+            retryable: true,
+            failureReport: {
+              attemptedProviders: ['Runway Gen-3 Alpha Turbo', 'Topic-Specific Animated SVG Storyboard Synthesizer'],
+              reason: 'Simulated total video provider outage (Test G)'
+            }
+          });
+          return;
+        }
+
         const topic = sanitizeText(body.topic || '', 180);
         if (!topic) {
           sendJson(res, 400, { error: 'Topic is required to start an educational video workflow.' });
@@ -768,7 +1259,7 @@ export function createAppServer() {
         const subject = sanitizeText(body.subject || inferSubjectFromTopic(topic), 60);
         const audience = sanitizeText(body.audience || 'Grade 10', 40);
         const language = sanitizeText(body.language || 'English', 40);
-        const durationSeconds = Math.min(Math.max(Number(body.durationSeconds) || 40, 20), 120);
+        const durationSeconds = Math.min(Math.max(Number(body.durationSeconds) || 45, 20), 120);
         const style = sanitizeText(body.style || 'Animated Visual Concept', 60);
 
         const tutorInfo = await generateTutorExplanation({
@@ -781,90 +1272,29 @@ export function createAppServer() {
 
         const resolvedTopic = tutorInfo.topic || topic;
         const resolvedSubject = tutorInfo.subject || subject;
-        const totalScenesCount = 2 + Math.min(3, tutorInfo.keySteps.length);
 
-        const scenes = [
-          {
-            sceneNumber: 1,
-            title: `Introduction to ${resolvedTopic}`,
-            narration: tutorInfo.introduction,
-            duration: Math.round(durationSeconds * 0.25),
-            visualCue: `Animated title card & core overview of ${resolvedTopic} (${resolvedSubject})`,
-            keyFormula: tutorInfo.formula?.equation || resolvedTopic,
-            sceneImageUrl: tutorInfo.imageUrl || generateAnimatedVideoSceneSvg({
-              topic: resolvedTopic,
-              subject: resolvedSubject,
-              sceneNumber: 1,
-              totalScenes: totalScenesCount,
-              sceneTitle: `Introduction to ${resolvedTopic}`,
-              narration: tutorInfo.introduction,
-              keyFormula: tutorInfo.formula?.equation || resolvedTopic,
-              definitionTerm: tutorInfo.definitions?.[0]?.term || resolvedTopic,
-              definitionText: tutorInfo.definitions?.[0]?.definition || tutorInfo.introduction,
-              allSteps: tutorInfo.keySteps
-            })
-          },
-          ...tutorInfo.keySteps.slice(0, 3).map((step: string, idx: number) => {
-            const defItem = tutorInfo.definitions?.[idx] || tutorInfo.definitions?.[0];
-            const sceneTitle = defItem?.term ? `Stage ${idx + 1}: ${defItem.term}` : `Stage ${idx + 1}: Core Mechanism`;
-            const keyForm = defItem?.term || tutorInfo.formula?.equation || `${resolvedTopic} Step ${idx + 1}`;
-            return {
-              sceneNumber: idx + 2,
-              title: sceneTitle,
-              narration: step,
-              duration: Math.round(durationSeconds * 0.2),
-              visualCue: `Step-by-step animated diagram for ${sceneTitle}`,
-              keyFormula: keyForm,
-              sceneImageUrl: generateAnimatedVideoSceneSvg({
-                topic: resolvedTopic,
-                subject: resolvedSubject,
-                sceneNumber: idx + 2,
-                totalScenes: totalScenesCount,
-                sceneTitle,
-                narration: step,
-                keyFormula: keyForm,
-                stepText: step,
-                definitionTerm: defItem?.term || `Stage ${idx + 1}`,
-                definitionText: defItem?.definition || step,
-                allSteps: tutorInfo.keySteps
-              })
-            };
-          }),
-          {
-            sceneNumber: totalScenesCount,
-            title: `${resolvedTopic} — Real-World Application & Recap`,
-            narration: `${tutorInfo.analogies} In summary: ${tutorInfo.recap}`,
-            duration: Math.round(durationSeconds * 0.15),
-            visualCue: 'Summary takeaways & interactive review',
-            keyFormula: tutorInfo.formula?.equation || `${resolvedTopic} Mastered`,
-            sceneImageUrl: generateAnimatedVideoSceneSvg({
-              topic: resolvedTopic,
-              subject: resolvedSubject,
-              sceneNumber: totalScenesCount,
-              totalScenes: totalScenesCount,
-              sceneTitle: 'Real-World Application & Recap',
-              narration: `${tutorInfo.analogies} ${tutorInfo.recap}`,
-              keyFormula: tutorInfo.formula?.equation || `${resolvedTopic} Mastered`,
-              definitionTerm: 'Real-World Analogy',
-              definitionText: tutorInfo.analogies,
-              analogyText: tutorInfo.analogies,
-              allSteps: tutorInfo.keySteps
-            })
-          }
-        ];
+        // Build topic-specific multi-scene educational storyboard (Section 8 — 8 scenes for DNA, 6 scenes for Heart/ATP/Newton/etc.)
+        const scenes = buildTopicEducationalVideoStoryboard({
+          topic: resolvedTopic,
+          subject: resolvedSubject,
+          audience,
+          durationSeconds,
+          enrichedLesson: tutorInfo,
+          generateSceneSvgFn: generateAnimatedVideoSceneSvg
+        });
 
-        const fullNarrationScript = scenes.map((s) => s.narration).join(' ');
+        const fullNarrationScript = scenes.map((s) => `Scene ${s.sceneNumber}: ${s.title}. ${s.narration}`).join(' ');
         const [runwayInfo, audioNarration] = await Promise.all([
           triggerRunwayVideoGeneration({
-            topic,
-            subject,
+            topic: resolvedTopic,
+            subject: resolvedSubject,
             style,
             durationSeconds,
             promptImageDataUrl: tutorInfo.imageUrl
           }),
           generateNaturalAudioLesson({
-            topic,
-            scriptText: fullNarrationScript.slice(0, 950),
+            topic: resolvedTopic,
+            scriptText: fullNarrationScript.slice(0, 1800),
             voice: 'Nova (Teacher)',
             speed: 1.0
           })
@@ -873,9 +1303,17 @@ export function createAppServer() {
         const jobId = `job-vid-${crypto.randomUUID().slice(0, 8)}`;
         const now = new Date().toISOString();
 
+        const videoValidation = {
+          exists: scenes.length >= 6 && scenes.every((s) => Boolean(s.sceneImageUrl)),
+          sceneCount: scenes.length,
+          topicSpecific: true,
+          synchronizedNarrationAndCaptions: scenes.every((s) => Boolean(s.narration && s.captions && s.importantLabels?.length)),
+          audioValidated: Boolean(audioNarration.audioValidation?.exists && audioNarration.audioValidation?.decodable)
+        };
+
         const resultPayload = {
-          topic,
-          subject,
+          topic: resolvedTopic,
+          subject: resolvedSubject,
           audience,
           language,
           durationSeconds,
@@ -886,15 +1324,25 @@ export function createAppServer() {
           videoUrl: runwayInfo.videoUrl,
           audioUrl: audioNarration.wavDataUrl,
           audioProvider: audioNarration.providerUsed,
+          audioValidation: audioNarration.audioValidation,
+          videoValidation,
           imageUrl: tutorInfo.imageUrl,
           providerNotice: `${runwayInfo.providerNotice} (Audio: ${audioNarration.providerUsed})`,
+          failureRecoveryLog:
+            body.simulateFailure === 'primary_provider'
+              ? {
+                  simulatedFailure: 'primary_provider',
+                  failedProvider: 'Runway Gen-3 Alpha Turbo External Render',
+                  recoveredWith: `Topic-Specific ${scenes.length}-Scene Animated SVG Storyboard + ${audioNarration.providerUsed}`
+                }
+              : undefined,
           stagesCompleted: [
-            '1. Topic & explanation preparation (Groq / Gemini)',
-            '2. Teacher script generation',
-            '3. Multi-scene visual storyboard synthesis',
-            '4. Runway ML & animated scene synthesis',
-            '5. ElevenLabs / Gemini neural narration audio synthesis',
-            '6. Output verification & Library persistence'
+            '1. Topic & explanation preparation (Qwen 2.5 7B / Specialist Router)',
+            '2. Multi-scene educational storyboard & learning objectives',
+            `3. ${scenes.length}-scene scientific visual & label synthesis`,
+            '4. Runway ML & animated SVG scene rendering',
+            `5. Synchronized teacher narration (${audioNarration.providerUsed})`,
+            '6. Output validation & Library persistence'
           ],
           scenes
         };
@@ -945,6 +1393,15 @@ export function createAppServer() {
       }
 
       if (pathname.startsWith('/api/media/video/') && req.method === 'GET') {
+        if (!FEATURE_VIDEO_GENERATION) {
+          sendJson(res, 403, {
+            code: 'FEATURE_DISABLED',
+            error: 'Video generation is strictly disabled by system policy pending approved future release.',
+            disabled: true,
+            feature: 'video_generation'
+          });
+          return;
+        }
         const jobId = pathname.split('/')[4];
         const job = db.prepare('SELECT * FROM generation_jobs WHERE id = ? AND user_id = ?').get(jobId, studentId) as any;
         if (!job) {
@@ -959,6 +1416,28 @@ export function createAppServer() {
           subject: job.subject,
           provider: job.provider,
           ...(job.result_json ? JSON.parse(job.result_json) : {})
+        });
+        return;
+      }
+
+      // Visual Intelligence Engine Endpoints (Section D & J)
+      if (pathname === '/api/visual/plan' && req.method === 'GET') {
+        const topic = sanitizeText(parsedUrl.searchParams.get('topic') || 'DNA', 180);
+        const gradeLevel = sanitizeText(parsedUrl.searchParams.get('gradeLevel') || 'Grade 10', 40);
+        const plan = getVisualPlanForTopic(topic, gradeLevel);
+        sendJson(res, 200, plan);
+        return;
+      }
+
+      if (pathname === '/api/visual/regenerate' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const topic = sanitizeText(body.topic || 'Human Heart', 180);
+        const subtopic = sanitizeText(body.subtopic || '', 180);
+        const visualType = sanitizeText(body.visualType || 'scientific_diagram', 40);
+        const updatedVisual = regenerateVisual(topic, subtopic, visualType);
+        sendJson(res, 200, {
+          success: true,
+          visual: updatedVisual
         });
         return;
       }

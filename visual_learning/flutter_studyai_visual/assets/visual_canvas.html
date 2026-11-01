@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>STUDYAI Visual 3D Engine</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #0b0f19;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    #hud-overlay {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      pointer-events: none;
+      color: #94a3b8;
+      font-size: 11px;
+      font-family: monospace;
+      z-index: 10;
+    }
+    .hud-badge {
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 4px 8px;
+      border-radius: 6px;
+      backdrop-filter: blur(8px);
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+  </style>
+  <!-- Unified official Three.js runtime bundled from visual_learning/three.js -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "/visual_learning/three.js/build/three.module.js",
+        "three/addons/": "/visual_learning/three.js/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div id="hud-overlay">
+    <div id="fps-badge" class="hud-badge">60 FPS • 0 Triangles</div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    let scene, camera, renderer, controls;
+    let currentModelGroup = null;
+    let animationId = null;
+    let isAnimating = true;
+    let clock = new THREE.Clock();
+
+    // Two-way messaging bridge back to Flutter
+    function postFlutterMessage(eventType, payload) {
+      const msg = JSON.stringify({ type: eventType, payload, timestamp: Date.now() });
+      if (window.StudyAiVisualBridge && typeof window.StudyAiVisualBridge.postMessage === 'function') {
+        window.StudyAiVisualBridge.postMessage(msg);
+      } else if (window.parent && window.parent !== window) {
+        window.parent.postMessage(msg, '*');
+      }
+    }
+
+    function init() {
+      const container = document.getElementById('canvas-container');
+      const width = container.clientWidth || window.innerWidth;
+      const height = container.clientHeight || window.innerHeight;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0b0f19);
+
+      camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+      camera.position.set(0, 2, 7);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.0;
+      renderer.shadowMap.enabled = true;
+      container.appendChild(renderer.domElement);
+
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxDistance = 20;
+      controls.minDistance = 1;
+
+      // Scientific lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+      scene.add(ambientLight);
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+      keyLight.position.set(5, 8, 5);
+      scene.add(keyLight);
+
+      const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.6);
+      fillLight.position.set(-5, -2, -3);
+      scene.add(fillLight);
+
+      window.addEventListener('resize', onWindowResize);
+      setupInteraction();
+      animate();
+
+      postFlutterMessage('onModelLoaded', { status: 'ready', engine: 'Three.js 0.170.0' });
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById('canvas-container');
+      const width = container.clientWidth || window.innerWidth;
+      const height = container.clientHeight || window.innerHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    }
+
+    function setupInteraction() {
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+
+      window.addEventListener('pointerdown', (e) => {
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+        if (currentModelGroup) {
+          const intersects = raycaster.intersectObjects(currentModelGroup.children, true);
+          if (intersects.length > 0) {
+            let hit = intersects[0].object;
+            while (hit && !hit.userData?.id && hit.parent && hit.parent !== currentModelGroup) {
+              hit = hit.parent;
+            }
+            if (hit && hit.userData?.id) {
+              postFlutterMessage('onComponentSelected', {
+                id: hit.userData.id,
+                label: hit.userData.label || hit.userData.id,
+                role: hit.userData.role || '',
+                color: hit.userData.color || '#38bdf8'
+              });
+            }
+          }
+        }
+      });
+    }
+
+    // Procedural Anatomical & Scientific Generators
+    function loadProceduralTopic(topic) {
+      if (currentModelGroup) {
+        scene.remove(currentModelGroup);
+        currentModelGroup = null;
+      }
+
+      currentModelGroup = new THREE.Group();
+      currentModelGroup.name = topic;
+
+      const norm = (topic || '').toLowerCase();
+      if (norm.includes('heart')) {
+        buildHeart(currentModelGroup);
+      } else if (norm.includes('dna')) {
+        buildDna(currentModelGroup);
+      } else if (norm.includes('photo') || norm.includes('chloro')) {
+        buildChloroplast(currentModelGroup);
+      } else if (norm.includes('atom')) {
+        buildAtom(currentModelGroup);
+      } else if (norm.includes('solar') || norm.includes('planet')) {
+        buildSolarSystem(currentModelGroup);
+      } else {
+        buildDefaultScientificModel(currentModelGroup, topic);
+      }
+
+      scene.add(currentModelGroup);
+      camera.position.set(0, 1.5, 6);
+      controls.target.set(0, 0, 0);
+      controls.update();
+
+      postFlutterMessage('onModelLoaded', {
+        topic,
+        componentCount: currentModelGroup.children.length,
+        timestamp: Date.now()
+      });
+    }
+
+    function buildHeart(group) {
+      // Left Ventricle (high pressure muscular pump)
+      const lvGeo = new THREE.SphereGeometry(1.0, 32, 24);
+      lvGeo.scale(0.8, 1.3, 0.85);
+      const lvMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.35, metalness: 0.1 });
+      const lv = new THREE.Mesh(lvGeo, lvMat);
+      lv.position.set(0.45, -0.4, 0);
+      lv.userData = { id: 'left_ventricle', label: 'Left Ventricle', role: 'Pumps oxygenated blood to systemic circulation via aorta', color: '#ef4444' };
+      group.add(lv);
+
+      // Right Ventricle (pulmonary pump)
+      const rvGeo = new THREE.SphereGeometry(0.85, 32, 24);
+      rvGeo.scale(0.7, 1.15, 0.75);
+      const rvMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.35, metalness: 0.1 });
+      const rv = new THREE.Mesh(rvGeo, rvMat);
+      rv.position.set(-0.55, -0.35, 0.1);
+      rv.userData = { id: 'right_ventricle', label: 'Right Ventricle', role: 'Pumps deoxygenated blood to pulmonary arteries', color: '#3b82f6' };
+      group.add(rv);
+
+      // Aortic Arch
+      const curve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0.3, 0.6, 0),
+        new THREE.Vector3(0.2, 1.6, 0.1),
+        new THREE.Vector3(-0.4, 1.9, 0),
+        new THREE.Vector3(-0.9, 1.4, -0.2)
+      ]);
+      const aortaGeo = new THREE.TubeGeometry(curve, 32, 0.22, 16, false);
+      const aortaMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.3 });
+      const aorta = new THREE.Mesh(aortaGeo, aortaMat);
+      aorta.userData = { id: 'aortic_arch', label: 'Aorta', role: 'Main arterial trunk delivering systemic blood', color: '#dc2626' };
+      group.add(aorta);
+
+      // SA Node pacemaker
+      const saGeo = new THREE.SphereGeometry(0.12, 16, 16);
+      const saMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xfacc15, emissiveIntensity: 0.8 });
+      const sa = new THREE.Mesh(saGeo, saMat);
+      sa.position.set(-0.7, 0.9, 0.4);
+      sa.userData = { id: 'sa_node', label: 'SA Node', role: 'Natural cardiac pacemaker initiating rhythmic electrical depolarization', color: '#facc15' };
+      group.add(sa);
+    }
+
+    function buildDna(group) {
+      const strandCount = 20;
+      const radius = 1.0;
+      const heightStep = 0.22;
+      const twistStep = 0.38;
+
+      const backboneMat1 = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.3 });
+      const backboneMat2 = new THREE.MeshStandardMaterial({ color: 0x818cf8, roughness: 0.3 });
+
+      for (let i = 0; i < strandCount; i++) {
+        const y = (i - strandCount / 2) * heightStep;
+        const angle = i * twistStep;
+        const x1 = Math.cos(angle) * radius;
+        const z1 = Math.sin(angle) * radius;
+        const x2 = -x1;
+        const z2 = -z1;
+
+        // Base 1 node
+        const n1 = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), backboneMat1);
+        n1.position.set(x1, y, z1);
+        group.add(n1);
+
+        // Base 2 node
+        const n2 = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), backboneMat2);
+        n2.position.set(x2, y, z2);
+        group.add(n2);
+
+        // Base pair hydrogen bond rung
+        const rungGeo = new THREE.CylinderGeometry(0.04, 0.04, radius * 2, 8);
+        rungGeo.rotateZ(Math.PI / 2);
+        rungGeo.rotateY(-angle);
+        const rungMat = new THREE.MeshStandardMaterial({
+          color: i % 2 === 0 ? 0x22c55e : 0xf59e0b,
+          roughness: 0.4
+        });
+        const rung = new THREE.Mesh(rungGeo, rungMat);
+        rung.position.set(0, y, 0);
+        rung.userData = {
+          id: i % 2 === 0 ? 'base_pair_at' : 'base_pair_gc',
+          label: i % 2 === 0 ? 'Adenine = Thymine (2 H-Bonds)' : 'Guanine ≡ Cytosine (3 H-Bonds)',
+          role: 'Complementary base pairing stabilizing the genetic double helix',
+          color: i % 2 === 0 ? '#22c55e' : '#f59e0b'
+        };
+        group.add(rung);
+      }
+    }
+
+    function buildChloroplast(group) {
+      // Outer membrane
+      const memGeo = new THREE.SphereGeometry(1.6, 32, 24);
+      memGeo.scale(1.4, 0.9, 0.9);
+      const memMat = new THREE.MeshStandardMaterial({ color: 0x15803d, transparent: true, opacity: 0.45, roughness: 0.2 });
+      const mem = new THREE.Mesh(memGeo, memMat);
+      mem.userData = { id: 'chloroplast_membrane', label: 'Double Membrane Envelope', role: 'Regulates passage of metabolites into the stroma', color: '#15803d' };
+      group.add(mem);
+
+      // Thylakoid Granum Stack
+      for (let stack = -1; stack <= 1; stack++) {
+        for (let disc = 0; disc < 4; disc++) {
+          const dGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.08, 16);
+          const dMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.3 });
+          const discMesh = new THREE.Mesh(dGeo, dMat);
+          discMesh.position.set(stack * 0.9, (disc - 1.5) * 0.16, 0);
+          discMesh.userData = {
+            id: 'thylakoid_disc_' + stack + '_' + disc,
+            label: 'Thylakoid Membrane & Lumen',
+            role: 'Site of light-dependent reactions, photolysis of water, and ATP/NADPH synthesis',
+            color: '#22c55e'
+          };
+          group.add(discMesh);
+        }
+      }
+    }
+
+    function buildAtom(group) {
+      // Nucleus
+      const nucGroup = new THREE.Group();
+      for (let i = 0; i < 8; i++) {
+        const isProton = i % 2 === 0;
+        const pGeo = new THREE.SphereGeometry(0.18, 16, 16);
+        const pMat = new THREE.MeshStandardMaterial({ color: isProton ? 0xef4444 : 0x64748b, roughness: 0.3 });
+        const p = new THREE.Mesh(pGeo, pMat);
+        p.position.set(
+          (Math.random() - 0.5) * 0.35,
+          (Math.random() - 0.5) * 0.35,
+          (Math.random() - 0.5) * 0.35
+        );
+        p.userData = {
+          id: isProton ? 'proton' : 'neutron',
+          label: isProton ? 'Proton (Z=+1)' : 'Neutron (N=0)',
+          role: isProton ? 'Determines atomic number and chemical element identity' : 'Provides nuclear binding force preventing electrostatic repulsion',
+          color: isProton ? '#ef4444' : '#64748b'
+        };
+        nucGroup.add(p);
+      }
+      group.add(nucGroup);
+
+      // Electron orbitals
+      const orbitalR = [1.2, 1.8];
+      orbitalR.forEach((r, idx) => {
+        const ringGeo = new THREE.RingGeometry(r - 0.015, r + 0.015, 64);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = Math.PI / (idx + 2);
+        group.add(ring);
+
+        // Electron
+        const eGeo = new THREE.SphereGeometry(0.08, 16, 16);
+        const eMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x06b6d4, emissiveIntensity: 0.8 });
+        const e = new THREE.Mesh(eGeo, eMat);
+        e.position.set(r, 0, 0);
+        e.userData = { id: 'electron_shell_' + idx, label: 'Valence Electron (e-)', role: 'Quantized energy state participating in covalent and ionic chemical bonding', color: '#06b6d4' };
+        group.add(e);
+      });
+    }
+
+    function buildSolarSystem(group) {
+      // Sun
+      const sunGeo = new THREE.SphereGeometry(0.9, 32, 24);
+      const sunMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xf59e0b, emissiveIntensity: 0.9 });
+      const sun = new THREE.Mesh(sunGeo, sunMat);
+      sun.userData = { id: 'sun', label: 'The Sun (G-type Main-Sequence)', role: 'Center of gravitational potential well and primary solar energy source', color: '#fbbf24' };
+      group.add(sun);
+
+      const orbits = [
+        { name: 'Mercury', r: 1.5, size: 0.12, color: 0x94a3b8 },
+        { name: 'Venus', r: 2.2, size: 0.18, color: 0xf59e0b },
+        { name: 'Earth', r: 3.0, size: 0.22, color: 0x38bdf8 },
+        { name: 'Mars', r: 3.8, size: 0.16, color: 0xef4444 }
+      ];
+
+      orbits.forEach(o => {
+        const pGeo = new THREE.SphereGeometry(o.size, 20, 20);
+        const pMat = new THREE.MeshStandardMaterial({ color: o.color, roughness: 0.4 });
+        const planet = new THREE.Mesh(pGeo, pMat);
+        planet.position.set(o.r, 0, 0);
+        planet.userData = { id: 'planet_' + o.name.toLowerCase(), label: o.name, role: 'Orbital radius ' + o.r + ' AU', color: '#' + o.color.toString(16) };
+        group.add(planet);
+      });
+    }
+
+    function buildDefaultScientificModel(group, title) {
+      const g = new THREE.TorusKnotGeometry(0.9, 0.28, 64, 16);
+      const m = new THREE.MeshStandardMaterial({ color: 0x6366f1, roughness: 0.35, metalness: 0.2 });
+      const mesh = new THREE.Mesh(g, m);
+      mesh.userData = { id: 'model_core', label: title || 'Scientific Concept', role: 'Interactive 3D representation', color: '#6366f1' };
+      group.add(mesh);
+    }
+
+    function animate() {
+      animationId = requestAnimationFrame(animate);
+      if (controls) controls.update();
+
+      if (isAnimating && currentModelGroup) {
+        currentModelGroup.rotation.y += 0.005;
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    // Bridge command handler from Flutter
+    window.handleFlutterBridgeAction = function(actionJson) {
+      try {
+        const action = typeof actionJson === 'string' ? JSON.parse(actionJson) : actionJson;
+        switch (action.type) {
+          case 'loadModel':
+            loadProceduralTopic(action.payload?.topic || action.payload?.modelPath || 'dna');
+            break;
+          case 'selectComponent':
+            // Highlighting logic
+            if (currentModelGroup) {
+              currentModelGroup.traverse(obj => {
+                if (obj.userData?.id === action.payload?.componentId && obj.material) {
+                  if (obj.material.emissive) {
+                    obj.material.emissive.setHex(0x38bdf8);
+                    obj.material.emissiveIntensity = 0.8;
+                  }
+                }
+              });
+            }
+            break;
+          case 'setCameraZoom':
+            if (camera && action.payload?.zoom) {
+              camera.zoom = action.payload.zoom;
+              camera.updateProjectionMatrix();
+            }
+            break;
+          case 'resetCamera':
+            if (camera && controls) {
+              camera.position.set(0, 1.5, 6);
+              camera.zoom = 1.0;
+              camera.updateProjectionMatrix();
+              controls.target.set(0, 0, 0);
+              controls.update();
+            }
+            break;
+          case 'toggleAnimation':
+            isAnimating = !isAnimating;
+            break;
+          case 'dispose':
+            if (animationId) cancelAnimationFrame(animationId);
+            if (renderer) renderer.dispose();
+            break;
+        }
+      } catch (err) {
+        postFlutterMessage('onRenderingError', { error: err.toString() });
+      }
+    };
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>

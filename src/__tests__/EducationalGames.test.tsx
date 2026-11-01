@@ -141,7 +141,7 @@ describe('3D Educational Games Hub & Question Engine UI', () => {
     expect(screen.getByRole('button', { name: /Lane 3/i })).toBeInTheDocument();
   });
 
-  it('starts Space Answer Shooter game with alien blaster targets', async () => {
+  it('starts Space Answer Shooter game with alien fleet and arcade fire controls', async () => {
     renderGameApp();
     fireEvent.click(screen.getByRole('button', { name: /Open Space Game/i }));
 
@@ -152,8 +152,8 @@ describe('3D Educational Games Hub & Question Engine UI', () => {
       expect(screen.getByText(/Space Answer Shooter/i)).toBeInTheDocument();
     });
 
-    // Expect blaster sector buttons
-    const blasterBtns = screen.getAllByRole('button', { name: /Blaster \[[A-D]\]/i });
-    expect(blasterBtns.length).toBe(4);
+    // Expect arcade controls
+    expect(screen.getByRole('button', { name: /FIRE/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Pause Game/i })).toBeInTheDocument();
   });
 });

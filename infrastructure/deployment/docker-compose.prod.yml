@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # 1. Reverse Proxy & Edge TLS
+  edge_gateway:
+    image: nginx:alpine
+    container_name: studyai_edge_gateway
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - fastapi_backend
+      - student_app
+      - admin_portal
+      - superadmin_portal
+    networks:
+      - studyai_prod_net
+
+  # 2. Production FastAPI Core
+  fastapi_backend:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.backend
+    container_name: studyai_fastapi_prod
+    restart: always
+    environment:
+      - ENVIRONMENT=production
+      - PORT=8000
+      - DATABASE_URL=${DATABASE_URL}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - FEATURE_VIDEO_GENERATION=false
+    networks:
+      - studyai_prod_net
+
+  # 3. Separately Hosted Student App
+  student_app:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.student
+    container_name: studyai_student_prod
+    restart: always
+    networks:
+      - studyai_prod_net
+
+  # 4. Separately Hosted Admin Portal
+  admin_portal:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.admin
+    container_name: studyai_admin_prod
+    restart: always
+    networks:
+      - studyai_prod_net
+
+  # 5. Separately Hosted Super Admin Enterprise Console
+  superadmin_portal:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.superadmin
+    container_name: studyai_superadmin_prod
+    restart: always
+    networks:
+      - studyai_prod_net
+
+networks:
+  studyai_prod_net:
+    driver: bridge

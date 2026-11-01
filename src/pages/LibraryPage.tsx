@@ -7,6 +7,7 @@ import {
   Video,
   Box,
   Gamepad2,
+  Rocket,
   HelpCircle,
   Volume2,
   Trash2,
@@ -27,6 +28,7 @@ export const LibraryPage: React.FC = () => {
     openGamesHub,
     openQuizModal,
     startAudioLesson,
+    activeTopic,
     refreshTick,
     triggerRefresh
   } = useLearning();
@@ -337,37 +339,75 @@ export const LibraryPage: React.FC = () => {
         </div>
       )}
 
-      {/* Bottom 3D Lab Banner Card (matching reference UI screenshot) */}
-      <section className="hero-glass-banner" style={{ padding: 22 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div
-              style={{
-                width: 52,
-                height: 52,
-                borderRadius: 16,
-                background: 'linear-gradient(135deg, #FF8533 0%, #FF6A00 100%)',
-                color: '#FFFFFF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 8px 20px rgba(255,106,0,0.28)'
-              }}
+      {/* Space Battle & 3D Lab Feature Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
+        <section className="hero-glass-banner" style={{ padding: 22, border: '1.5px solid rgba(56, 189, 248, 0.45)', background: 'linear-gradient(135deg, rgba(8, 18, 44, 0.08) 0%, rgba(56, 189, 248, 0.08) 100%)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: 16,
+                  background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                  color: '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 8px 20px rgba(56, 189, 248, 0.35)'
+                }}
+              >
+                <Rocket size={26} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#202124' }}>STUDYAI Space Battle</h3>
+                <p style={{ fontSize: '0.86rem', color: '#6B7280' }}>
+                  Vertical 3D arcade space shooter — shoot enemy fleets carrying correct answers &amp; dodge attacks
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => openGamesHub(activeTopic || 'Human Body', 'Biology', 'space_shooter')}
+              className="btn-orange"
+              style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', boxShadow: '0 6px 18px rgba(3, 105, 161, 0.35)' }}
             >
-              <Box size={26} />
-            </div>
-            <div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#202124' }}>3D Lab</h3>
-              <p style={{ fontSize: '0.86rem', color: '#6B7280' }}>
-                Explore interactive 3D models — Human Heart, Solar System, DNA Helix & Chloroplasts
-              </p>
-            </div>
+              <span>Play Space Battle 🚀</span>
+            </button>
           </div>
-          <button type="button" onClick={() => open3DLab('Human Heart & Cardiac Cycle', 'human_heart')} className="btn-orange">
-            <span>Explore</span>
-          </button>
-        </div>
-      </section>
+        </section>
+
+        <section className="hero-glass-banner" style={{ padding: 22 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: 16,
+                  background: 'linear-gradient(135deg, #FF8533 0%, #FF6A00 100%)',
+                  color: '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 8px 20px rgba(255,106,0,0.28)'
+                }}
+              >
+                <Box size={26} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#202124' }}>3D Lab</h3>
+                <p style={{ fontSize: '0.86rem', color: '#6B7280' }}>
+                  Explore interactive 3D models — Human Heart, Solar System, DNA Helix &amp; Chloroplasts
+                </p>
+              </div>
+            </div>
+            <button type="button" onClick={() => open3DLab('Human Heart & Cardiac Cycle', 'human_heart')} className="btn-orange">
+              <span>Explore</span>
+            </button>
+          </div>
+        </section>
+      </div>
     </div>
   );
 };

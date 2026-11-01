@@ -517,6 +517,85 @@ export const CURRICULUM_QUESTION_BANK: EducationalQuestion[] = [
     correct_option_id: 'B',
     explanation: 'Photolysis of water (splitting of H₂O by light energy) releases oxygen gas and protons.',
     hint: 'Water is split during the light reaction phase.'
+  },
+  // ==========================================
+  // Biology & Human Body — Circulatory System & Organs (English)
+  // ==========================================
+  {
+    id: 'g7-bio-body-1',
+    grade: 7,
+    subject: 'Biology',
+    chapter: 'Human Body',
+    topic: 'Circulatory System',
+    language: 'English',
+    difficulty: 2,
+    question: 'Which organ pumps blood throughout the human body?',
+    options: [
+      { id: 'A', text: 'Lungs' },
+      { id: 'B', text: 'Heart' },
+      { id: 'C', text: 'Liver' },
+      { id: 'D', text: 'Stomach' }
+    ],
+    correct_option_id: 'B',
+    explanation: 'The heart is the primary muscular organ that circulates blood through blood vessels to all parts of the human body.',
+    hint: 'A muscular organ located in the center-left of the chest.'
+  },
+  {
+    id: 'g7-bio-body-2',
+    grade: 7,
+    subject: 'Biology',
+    chapter: 'Human Body',
+    topic: 'Respiratory System',
+    language: 'English',
+    difficulty: 2,
+    question: 'Which organs are responsible for gas exchange, absorbing oxygen and expelling carbon dioxide?',
+    options: [
+      { id: 'A', text: 'Lungs' },
+      { id: 'B', text: 'Kidneys' },
+      { id: 'C', text: 'Liver' },
+      { id: 'D', text: 'Heart' }
+    ],
+    correct_option_id: 'A',
+    explanation: 'The lungs facilitate respiration by allowing oxygen to enter red blood cells in the alveoli while expelling carbon dioxide.',
+    hint: 'Paired spongy organs located inside the thoracic rib cage.'
+  },
+  {
+    id: 'g7-bio-body-3',
+    grade: 7,
+    subject: 'Biology',
+    chapter: 'Human Body',
+    topic: 'Nervous System',
+    language: 'English',
+    difficulty: 2,
+    question: 'Which organ serves as the central control unit for thoughts, memory, and voluntary movement?',
+    options: [
+      { id: 'A', text: 'Brain' },
+      { id: 'B', text: 'Spinal Cord' },
+      { id: 'C', text: 'Heart' },
+      { id: 'D', text: 'Pancreas' }
+    ],
+    correct_option_id: 'A',
+    explanation: 'The brain coordinates sensory processing, cognitive function, homeostasis, and motor control.',
+    hint: 'Protected inside the human cranium/skull.'
+  },
+  {
+    id: 'g7-bio-body-4',
+    grade: 7,
+    subject: 'Biology',
+    chapter: 'Human Body',
+    topic: 'Excretory System',
+    language: 'English',
+    difficulty: 2,
+    question: 'Which pair of bean-shaped organs filters metabolic waste products from the blood to produce urine?',
+    options: [
+      { id: 'A', text: 'Kidneys' },
+      { id: 'B', text: 'Liver' },
+      { id: 'C', text: 'Spleen' },
+      { id: 'D', text: 'Lungs' }
+    ],
+    correct_option_id: 'A',
+    explanation: 'The kidneys filter blood through nephrons, regulating fluid balance and extracting urea into urine.',
+    hint: 'Bean-shaped organs located in the posterior abdominal wall.'
   }
 ];
 

@@ -1,0 +1,153 @@
+{
+  "timestamp": "2026-10-28T01:15:48.629Z",
+  "results": {
+    "testA_DNA": {
+      "passed": true,
+      "topic": "DNA structure, complementary base pairing, replication, and gene expression",
+      "imageCount": 2,
+      "imageTitles": [
+        "DNA structure, complementary base pairing, replication, and gene expression — Primary Structural & Concept Diagram",
+        "DNA Nucleotide Structure, Base-Pairing Rules & Central Dogma Flow"
+      ],
+      "abbreviationsExpanded": [
+        "DNA (Deoxyribonucleic Acid)",
+        "RNA (Ribonucleic Acid)",
+        "ADP (Adenosine Diphosphate)",
+        "CPU (Central Processing Unit)"
+      ],
+      "videoSceneCount": 8,
+      "videoSceneTitles": [
+        "Scene 1: 1. What DNA Is (Deoxyribonucleic Acid)",
+        "Scene 2: 2. Where DNA Is Found Inside Cells",
+        "Scene 3: 3. What the Double Helix Looks Like",
+        "Scene 4: 4. The 3 Components of a DNA Nucleotide",
+        "Scene 5: 5. Complementary Base Pairing (A=T, G≡C)",
+        "Scene 6: 6. How Genetic Information Is Used (DNA → RNA → Protein)",
+        "Scene 7: 7. Why DNA Replication & Accuracy Matter",
+        "Scene 8: 8. Complete DNA Recap & Exam Takeaways"
+      ],
+      "model3dType": "dna_helix",
+      "examQuestionsCount": 4
+    },
+    "testB_ATP": {
+      "passed": true,
+      "topic": "ATP? Explain its full form, molecular structure, function, and ATP-ADP energy cycle",
+      "fullForms": [
+        "DNA = Deoxyribonucleic Acid",
+        "RNA = Ribonucleic Acid",
+        "ATP = Adenosine Triphosphate",
+        "ADP = Adenosine Diphosphate",
+        "NADPH = Nicotinamide Adenine Dinucleotide Phosphate (Reduced Form)",
+        "RuBisCO = Ribulose-1,5-Bisphosphate Carboxylase-Oxygenase"
+      ],
+      "primaryDiagramType": "atp_structure",
+      "labeledPartsExplained": [
+        {
+          "label": "Adenine",
+          "description": "Blue nitrogenous base on the left that forms the core identifier of the molecule."
+        },
+        {
+          "label": "Ribose",
+          "description": "Green 5-carbon pentose sugar in the center connecting Adenine to the phosphate tail."
+        },
+        {
+          "label": "Adenosine (Adenine + Ribose)",
+          "description": "Combined nucleoside base formed when Adenine attaches to Ribose."
+        },
+        {
+          "label": "P₁ (α), P₂ (β), P₃ (γ)",
+          "description": "Chain of three negatively charged phosphate groups; P₃ (Gamma) is the terminal group released during energy transfer."
+        },
+        {
+          "label": "High-Energy Phosphoanhydride Bond",
+          "description": "Wavy bond between P₂ (β) and P₃ (γ) that splits during hydrolysis to release ~30.5 kJ/mol of energy."
+        }
+      ],
+      "formula": "ATP + H₂O → ADP + Pi + energy"
+    },
+    "testC_HumanHeart": {
+      "passed": true,
+      "simpleIntroduction": "Your heart is a tireless muscular double-pump about the size of your fist. Its right side sends oxygen-poor blood to your lungs to pick up f...",
+      "imageCount": 2,
+      "model3dType": "human_heart",
+      "videoSceneCount": 6,
+      "videoSceneTitles": [
+        "Scene 1: 1. The Human Heart as a Muscular Double Pump",
+        "Scene 2: 2. Deoxygenated Blood Enters the Right Atrium",
+        "Scene 3: 3. Pulmonary Circulation to the Lungs",
+        "Scene 4: 4. Oxygen-Rich Return to the Left Atrium & Left Ventricle",
+        "Scene 5: 5. Systemic Delivery via the Aorta & SA Node Pacemaker",
+        "Scene 6: 6. Complete Double Circulation Recap"
+      ]
+    },
+    "testD_Physics": {
+      "passed": true,
+      "topic": "Newton's Three Laws of Motion with free-body diagrams, real-life examples, and exam questi",
+      "diagramTypes": [
+        "newton_physics",
+        "process_flow_diagram"
+      ],
+      "realLifeExamplesCount": 2,
+      "examQuestionsCount": 4
+    },
+    "testE_Mathematics": {
+      "passed": true,
+      "topic": "Quadratic Equations",
+      "primaryDiagramType": "quadratic_parabola",
+      "interactivePlotSpec": {
+        "type": "quadratic_parabola_interactive",
+        "defaultCoefficients": {
+          "a": 1,
+          "b": -5,
+          "c": 6
+        },
+        "formulaText": "y = ax² + bx + c",
+        "description": "Drag the sliders for coefficients a, b, and c to observe how the Parabola curvature, Vertex (-b/2a, -D/4a), Discriminant (D = b² - 4ac), and Real Roots (x₁, x₂) update in real time."
+      },
+      "practiceQuestionsCount": 3
+    },
+    "testF_Voice": {
+      "passed": true,
+      "providerUsed": "macOS Neural Speech (Samantha • 22.05kHz 16-bit PCM Normalized)",
+      "abbreviationsExpanded": [
+        "DNA → D-N-A (Deoxyribonucleic Acid)",
+        "ATP → A-T-P (Adenosine Triphosphate)",
+        "NADPH → N-A-D-P-H"
+      ],
+      "segmentCount": 3,
+      "spokenScriptPreview": "In photosynthesis, six molecules of Carbon Dioxide plus six molecules of Water yield one molecule of Glucose plus six molecules of Oxygen inside the chloroplast. Light energy charges A-T-P (Adenosine Triphosphate) and N-...",
+      "audioValidation": {
+        "durationSeconds": 26.6,
+        "sampleRateHz": 22050,
+        "peakLevelDbFs": -1,
+        "rmsLevelDbFs": -15.7,
+        "clippedSamples": 0,
+        "sentenceCount": 3,
+        "isRealSpeech": true
+      }
+    },
+    "testG_FailureRecovery": {
+      "passed": true,
+      "imagePrimaryFailureRecovery": {
+        "simulatedFailure": "primary_provider",
+        "failedProvider": "Cloud Raster Image API",
+        "recoveredWith": "Gemini Nano Banana / STUDYAI Scientific Visual Engine",
+        "validationPassed": true
+      },
+      "videoPrimaryFailureRecovery": {
+        "simulatedFailure": "primary_provider",
+        "failedProvider": "Runway Gen-3 Alpha Turbo External Render",
+        "recoveredWith": "Topic-Specific 6-Scene Animated SVG Storyboard + macOS Neural Speech (Samantha • 22.05kHz 16-bit PCM Normalized)"
+      },
+      "audioPrimaryFailureRecovery": {
+        "simulatedFailure": "primary_provider",
+        "failedProvider": "ElevenLabs Multilingual v2",
+        "recoveredWith": "ElevenLabs Neural TTS (eleven_multilingual_v2)",
+        "normalizedPeakDbFs": -1
+      },
+      "allProvidersOutageImageStatus": 503,
+      "allProvidersOutageTutorStatus": 503,
+      "mandatoryImageEnforcement": "Lesson refused completion because mandatory validated image could not be verified."
+    }
+  }
+}

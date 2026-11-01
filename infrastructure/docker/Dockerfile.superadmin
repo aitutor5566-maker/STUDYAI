@@ -1,0 +1,22 @@
+# Stage 1: Build Flutter Web Super Admin Console (Isolated Environment)
+FROM ghcr.io/cirruslabs/flutter:stable AS builder
+
+WORKDIR /workspace
+
+# Copy shared packages and superadmin source only
+COPY packages /workspace/packages
+COPY apps/superadmin_portal /workspace/apps/superadmin_portal
+
+WORKDIR /workspace/apps/superadmin_portal
+RUN flutter pub get
+RUN flutter build web --release --dart-define=DEPLOY_ENV=production --dart-define=API_HOST=https://api.studyai.com
+
+# Stage 2: Production Isolated Nginx Server
+FROM nginx:alpine
+
+COPY infrastructure/docker/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /workspace/apps/superadmin_portal/build/web /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

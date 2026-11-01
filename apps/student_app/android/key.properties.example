@@ -1,0 +1,7 @@
+# STUDYAI Android Release Keystore Configuration Template
+# DO NOT COMMIT ACTUAL PRODUCTION KEYSTORE PASSWORDS TO GIT!
+# Copy to key.properties for local signing builds.
+storePassword=CHANGE_ME_PRODUCTION_KEYSTORE_PASSWORD
+keyPassword=CHANGE_ME_PRODUCTION_KEY_PASSWORD
+keyAlias=studyai-release
+storeFile=/path/to/studyai-release.keystore

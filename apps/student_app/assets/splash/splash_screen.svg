@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" width="1080" height="1920">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="50%" stop-color="#FFF8F0"/>
+      <stop offset="100%" stop-color="#F5F0E8"/>
+    </radialGradient>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6B00"/>
+      <stop offset="100%" stop-color="#E05300"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1080" height="1920" fill="url(#bgGlow)"/>
+
+  <!-- Centered Logo -->
+  <g transform="translate(416, 760)">
+    <rect width="248" height="248" rx="56" fill="url(#logoGrad)"/>
+    <!-- Icon elements -->
+    <polygon points="124,50 204,90 124,130 44,90" fill="#FFFFFF"/>
+    <path d="M68,105 L68,140 C68,175 180,175 180,140 L180,105" fill="none" stroke="#FFFFFF" stroke-width="8"/>
+  </g>
+
+  <!-- Typography -->
+  <text x="540" y="1080" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif" font-size="44" font-weight="800" fill="#1C1C1E" text-anchor="middle" letter-spacing="4">STUDYAI</text>
+  <text x="540" y="1130" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="20" font-weight="500" fill="#8E8E93" text-anchor="middle" letter-spacing="1">Intelligent Visual Education</text>
+</svg>

@@ -4,6 +4,21 @@ export interface AudioLessonState {
   id: string;
   topic: string;
   script: string;
+  spokenScript?: string;
+  segments?: string[];
+  abbreviationsExpanded?: string[];
+  audioValidation?: {
+    exists: boolean;
+    decodable: boolean;
+    isRealSpeech: boolean;
+    durationSeconds: number;
+    peakLevelDbFs: number;
+    rmsLevelDbFs: number;
+    clippedSamples: number;
+    sampleRateHz: number;
+    byteLength: number;
+    providerUsed: string;
+  };
   wavDataUrl: string;
   durationSeconds: number;
   voice: string;

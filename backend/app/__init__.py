@@ -1,0 +1,1 @@
+"""STUDYAI Central FastAPI Application."""

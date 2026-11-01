@@ -1,0 +1,23 @@
+name: flutter_studyai_visual
+description: Official Flutter visual learning integration for STUDYAI with Three.js WebGL 3D scenes across Web, Android and iOS.
+version: 1.0.0
+homepage: https://github.com/mrdoob/three.js
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  webview_flutter: ^4.7.0
+  pointer_interceptor: ^0.10.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  assets:
+    - assets/visual_canvas.html

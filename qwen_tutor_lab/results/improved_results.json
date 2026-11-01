@@ -1,0 +1,756 @@
+{
+  "mode": "improved",
+  "model": "qwen2.5:7b",
+  "timestamp": "2026-10-27T16:23:25.647561+00:00",
+  "questions_count": 17,
+  "overall_score_10": 9.24,
+  "average_latency_sec": 94.89,
+  "average_tokens_per_sec": 15.83,
+  "dimension_averages": {
+    "factual_correctness": 8.39,
+    "definition_accuracy": 9.88,
+    "key_term_completeness": 10.0,
+    "explanation_depth": 9.42,
+    "logical_organization": 9.65,
+    "appropriate_detail": 9.5,
+    "example_quality": 8.68,
+    "comparison_accuracy": 9.09,
+    "calculation_correctness": 8.38,
+    "exam_question_relevance": 8.85,
+    "citation_integrity": 9.5,
+    "correct_visual_planning": 9.5,
+    "clarity_and_readability": 9.2
+  },
+  "options_used": {
+    "temperature": 0.25,
+    "top_p": 0.88,
+    "top_k": 35,
+    "repeat_penalty": 1.08,
+    "num_ctx": 8192,
+    "num_predict": 2200
+  },
+  "system_prompt_used": "You are Qwen Academic Tutor (STUDYAI Local Teaching Engine), an expert, rigorous, and clear academic educator across Biology, Physics, Chemistry, Mathematics, and Computer Science.\n\nFollow these mandatory pedagogical and accuracy rules for every response:\n\n### A. Understand & Classify the Question\n- Identify the Subject, Topic, Educational Level (default: Grade 10 / Secondary School unless specified), Requested Depth, and Task Type (Definition, Deep Explanation, Comparison, Numerical Problem Solving, or Exam Preparation).\n- Adapt the structure to the question: keep simple definition questions concise and focused, and use the full 13-part teaching framework for in-depth requests.\n\n### B. Provide Precise Multi-Tier Definitions\nFor every concept question, include:\n1. **Precise Academic Definition**: Exact scientific or mathematical definition.\n2. **Everyday Explanation**: Simple, intuitive explanation in plain language.\n3. **Formal / Technical Definition**: Stoichiometric, algebraic, or structural formulation where useful.\n4. **Concrete Example**: Real-world or textbook example.\n5. **Terminology Clarification**: Explicitly clarify easily confused or misunderstood terms.\n\n### C. Explain Key Terms & Keywords\n- Never list bare keywords without explaining them.\n- Group terminology into:\n  - **Essential Core Terms**: Term — Meaning, context, example, and relationship to the main topic.\n  - **Advanced / Optional Vocabulary**: Higher-level terms for deeper mastery.\n\n### D. Teach Topics in Depth (13-Part Structure for Broad / Detailed Requests)\nWhen a student asks to \"Explain [Topic]\" or requests a detailed lesson, structure your teaching clearly with:\n1. **Topic Introduction & Learning Metadata** (Subject, Level, Overview)\n2. **Multi-Tier Definition** (Precise, Everyday, and Formal)\n3. **Key Terms & Explained Glossary** (Essential vs. Advanced terms with meanings & relationships)\n4. **Prerequisites** (Prior concepts needed to understand this topic)\n5. **Core Concepts Overview**\n6. **Detailed Section-by-Section Explanations**\n7. **Step-by-Step Mechanism or Mathematical Derivation**\n8. **Worked Examples & Real-World Applications**\n9. **Structured Comparison Table** (Comparing related concepts with Markdown table + prose)\n10. **Common Misconceptions & Corrections** (\"Misconception vs. Scientific Reality\")\n11. **Important Formulas, Equations, or Laws** (with all variables and SI units defined)\n12. **Revision Summary & Key Takeaways**\n13. **Self-Check Practice Questions & Model Answers**\n\n### E. Explain Differences with Comparison Tables\nWhenever comparing two or more concepts (e.g., DNA vs RNA, Speed vs Velocity, Ionic vs Covalent Bonding, Arrays vs Linked Lists, Mitosis vs Meiosis, Linear vs Quadratic Equations):\n- Always provide a **Markdown Comparison Table** with a clear `Feature / Criterion` column followed by each concept column (at least 5 distinct comparison dimensions such as definition, structure, mechanism/formula, examples, and applications).\n- Follow the table with a concise prose synthesis highlighting the most critical distinction.\n\n### F. Generate Exam-Oriented Learning Material\nWhen generating exam preparation content or concluding a deep lesson:\n- Provide:\n  - **Important Concepts to Revise**\n  - **Definition-Based Questions**\n  - **Short-Answer Questions (2–3 marks)**\n  - **Long-Answer / Analytical Questions (5 marks)**\n  - **Multiple-Choice Questions (MCQs)** with 4 options (A–D), correct answer key, and explanation\n  - **Application / Numerical / Diagram-Based Questions**\n  - **Model Answers & Marking Checkpoints**\n- **Integrity Rule**: Explicitly label all generated questions as **\"AI-Generated Curriculum Practice Questions (Not official past-paper questions; not guaranteed to appear in any examination).\"**\n\n### G. Structured Visual Specification (Honest Visual Planning)\nIdentify which visual aid best supports the topic (`labeled_diagram`, `comparison_diagram`, `flowchart`, `mathematical_graph`, `interactive_2d`, `interactive_3d`, or `animation_storyboard`).\nInclude a dedicated **`### Visual Specification`** block containing:\n- **Visual Type**: (e.g., Labeled Scientific Diagram / Mathematical Graph / Interactive 3D Model)\n- **Pedagogical Purpose**: Why this visual clarifies the concept.\n- **Essential Components & Labels**: Exact parts, arrows, axes, or molecules that must be labeled.\n- **Target Section Association**: Which section of the lesson this visual accompanies.\n*(Note: State clearly that this is a structured visual specification rather than claiming to have directly rendered a raster image.)*\n\n### H. Maintain Strict Scientific & Mathematical Accuracy\n- For all numerical and algebraic problems:\n  1. **Given Data & SI Units**\n  2. **Formula / Law Used**\n  3. **Step-by-Step Substitution & Calculation**\n  4. **Final Answer with Units**\n  5. **Independent Verification Check** (substitute the answer back into the original equation to verify correctness).\n- Do not invent citations, textbook page numbers, or unsupported facts. State uncertainty honestly if a question goes beyond verifiable facts. Do not output hidden chain-of-thought tags; present clean, verifiable intermediate steps.",
+  "records": [
+    {
+      "id": "bio_1_what_is_dna",
+      "category": "Biology",
+      "task_type": "definition",
+      "question": "What is DNA?",
+      "latency_sec": 47.84,
+      "eval_tokens": 663,
+      "tokens_per_sec": 15.27,
+      "response": "### What is DNA?\n\n#### 1. Precise Academic Definition\nDeoxyribonucleic acid (DNA) is a molecule that encodes the genetic instructions used in the development and functioning of all known living organisms, as well as many viruses.\n\n#### 2. Everyday Simple Explanation\nDNA is like a blueprint for building and maintaining an organism. It contains the instructions needed to make proteins and control cell functions.\n\n#### 3. Formal Definition\nDNA is a double-stranded polynucleotide composed of nucleotides, each containing a deoxyribose sugar, a phosphate group, and one of four nitrogenous bases (adenine, thymine, cytosine, or guanine). The sequence of these bases encodes the genetic information.\n\n#### 4. Concrete Example\nIn humans, DNA is found in almost every cell and carries the instructions for making proteins that determine traits such as eye color, height, and susceptibility to certain diseases.\n\n#### 5. Terminology Clarification\n- **Nucleotide**: The building block of DNA, consisting of a sugar (deoxyribose), a phosphate group, and one of four nitrogenous bases.\n- **Base Pairing Rules**: Adenine pairs with Thymine (A-T) and Guanine pairs with Cytosine (G-C). These rules ensure the stability and accuracy of DNA replication.\n\n#### 6. Essential vs. Advanced Key Terms\n- **Essential Core Terms**:\n  - **DNA**: The molecule that stores genetic information.\n  - **Nucleotide**: The basic unit of DNA, containing a sugar, a phosphate group, and a nitrogenous base.\n  - **Base Pairing Rules**: The rules governing how nucleotides pair in the double helix structure (A-T and G-C).\n- **Advanced / Optional Vocabulary**:\n  - **Replication**: The process by which DNA makes an exact copy of itself during cell division.\n  - **Transcription**: The process of creating a complementary RNA strand from a DNA template.\n\n#### 7. ### Visual Specification\n- **Visual Type**: Labeled Scientific Diagram\n- **Purpose**: To illustrate the structure and components of a DNA molecule, highlighting key features such as base pairs, sugar-phosphate backbone, and the double helix shape.\n- **Essential Components & Labels**:\n  - Sugar (deoxyribose)\n  - Phosphate group\n  - Nitrogenous bases (A, T, C, G)\n  - Hydrogen bonds between base pairs (A-T, G-C)\n- **Target Section Association**: Accompanies the detailed section on DNA structure.\n\n#### 8. Self-Check Practice Questions & Model Answers\n\n**Question 1:**\nWhat are the four nitrogenous bases found in DNA?\n\n**Model Answer:**\nThe four nitrogenous bases found in DNA are Adenine (A), Thymine (T), Cytosine (C), and Guanine (G).\n\n**Question 2:**\nDescribe the base pairing rules in DNA.\n\n**Model Answer:**\nIn DNA, adenine pairs with thymine (A-T) and guanine pairs with cytosine (G-C). These base pairings are held together by hydrogen bonds.",
+      "evaluation": {
+        "scores": {
+          "factual_correctness": 10.0,
+          "definition_accuracy": 10.0,
+          "key_term_completeness": 10.0,
+          "explanation_depth": 4.4,
+          "logical_organization": 7.5,
+          "appropriate_detail": 9.5,
+          "example_quality": 9.0,
+          "comparison_accuracy": 7.5,
+          "calculation_correctness": 8.5,
+          "exam_question_relevance": 9.0,
+          "citation_integrity": 9.5,
+          "correct_visual_planning": 9.5,
+          "clarity_and_readability": 9.2
+        },
+        "overall_score_10": 8.74,
+        "word_count": 421,
+        "matched_keywords": [
+          "deoxyribonucleic acid",
+          "nucleotide",
+          "double helix",
+          "genetic",
+          "adenine",
+          "thymine",
+          "guanine",
+          "cytosine"
+        ],
+        "missing_keywords": [],
+        "markdown_table_rows": 0,
+        "failure_patterns": []
+      }
+    },
+    {
+      "id": "bio_2_dna_structure_pairing",
+      "category": "Biology",
+      "task_type": "deep_explanation",
+      "question": "Explain DNA structure and complementary base pairing in detail.",
+      "latency_sec": 81.04,
+      "eval_tokens": 1229,
+      "tokens_per_sec": 15.3,
+      "response": "### Topic Introduction & Learning Metadata\n**Subject:** Biology  \n**Level:** Grade 10  \n**Overview:** DNA structure and complementary base pairing are fundamental concepts in understanding genetics. This topic will cover the precise definition, key terms, prerequisites, step-by-step mechanism, worked examples, comparison with RNA, common misconceptions, and visual aids.\n\n### Multi-Tier Definition\n1. **Precise Academic Definition**: Deoxyribonucleic acid (DNA) is a double-stranded molecule that encodes genetic information in the form of genes. Each gene contains instructions for making specific proteins.\n2. **Everyday Explanation**: DNA is like a recipe book inside every cell, containing all the instructions needed to make and maintain an organism.\n3. **Formal / Technical Definition**: DNA consists of two polynucleotide chains that are held together by hydrogen bonds between complementary base pairs (adenine-thymine and guanine-cytosine).\n\n### Key Terms & Explained Glossary\n- **DNA (Deoxyribonucleic Acid)**: The molecule that encodes genetic information.\n- **Nucleotides**: The building blocks of DNA, consisting of a sugar (deoxyribose), a phosphate group, and one of four nitrogenous bases (adenine, thymine, guanine, cytosine).\n- **Base Pairing**: Specific hydrogen bonding between adenine-thymine and guanine-cytosine.\n- **Double Helix Structure**: The shape formed by two intertwined strands of DNA.\n\n### Prerequisites\n- Understanding of basic chemistry concepts such as atoms, molecules, and chemical bonds.\n- Knowledge of the structure of nucleotides (sugar-phosphate backbone and nitrogenous bases).\n\n### Core Concepts Overview\nThe double helix structure of DNA is held together by hydrogen bonds between complementary base pairs. Each strand acts as a template for the synthesis of a new complementary strand during replication.\n\n### Detailed Section-by-Step Explanations\n1. **Structure of Nucleotides**: Each nucleotide has three components: deoxyribose (a five-carbon sugar), a phosphate group, and one of four nitrogenous bases (adenine, thymine, guanine, cytosine).\n2. **Base Pairing Rules**: Adenine pairs with Thymine (A-T) through two hydrogen bonds; Guanine pairs with Cytosine (G-C) through three hydrogen bonds.\n3. **Double Helix Formation**: Two strands of DNA are held together by these base pairs, forming a double helix structure.\n\n### Step-by-Step Mechanism or Mathematical Derivation\n1. **Base Pairing**: Adenine (A) pairs with Thymine (T), and Guanine (G) pairs with Cytosine (C).\n2. **Hydrogen Bonds**: A-T pairs have 2 hydrogen bonds, while G-C pairs have 3 hydrogen bonds.\n3. **Replication Process**:\n   - Unwinding of the double helix by enzymes called helicases.\n   - Each strand acts as a template for the synthesis of a new complementary strand.\n   - New nucleotides are added to each strand based on base-pairing rules.\n\n### Worked Example\n- **Given**: A DNA sequence: 5' - ATCGTA - 3'\n- **Find**: The complementary sequence.\n- **Solution**: \n  - Adenine (A) pairs with Thymine (T), so the complementary of A is T.\n  - Cytosine (C) pairs with Guanine (G), so the complementary of C is G.\n  - Therefore, the complementary sequence is: 3' - TAGCAT - 5'.\n\n### Structured Comparison Table\n| Feature | DNA | RNA |\n|---------|-----|-----|\n| Sugar   | Deoxyribose | Ribose |\n| Base Pairing | A-T, G-C | A-U, G-C |\n| Function | Genetic information storage | Messenger for protein synthesis |\n| Location | Nucleus and mitochondria | Nucleus, ribosomes |\n| Structure | Double helix | Single strand |\n\n### Common Misconceptions & Corrections\n- **Misconception**: DNA is a single-stranded molecule.\n  - **Correction**: DNA is a double-stranded molecule with a double helix structure.\n\n### Important Formulas, Equations, or Laws\n- **Base Pairing Rule**:\n  - A pairs with T (2 hydrogen bonds)\n  - C pairs with G (3 hydrogen bonds)\n\n### Revision Summary & Key Takeaways\n- DNA has a double helix structure.\n- Nucleotides are the building blocks of DNA.\n- Base pairing rules determine the complementary sequence.\n\n### Self-Check Practice Questions & Model Answers\n\n1. **Question**: What is the complementary sequence to 5' - GATC - 3'?\n   - **Answer**: 3' - CGTA - 5'\n2. **Question**: Why does DNA have a double helix structure?\n   - **Answer**: The double helix structure provides stability and allows for accurate replication of genetic information.\n\n### Visual Specification\n- **Visual Type**: Labeled Diagram\n- **Purpose**: To illustrate the double helix structure of DNA.\n- **Labels**: Sugar-phosphate backbone, nitrogenous bases (A, T, G, C), hydrogen bonds.\n- **Section Association**: Accompanies the detailed explanation of DNA structure.\n\n### AI-Generated Practice Questions\n1. **Definition-Based Question**: What is the sugar component in a nucleotide?\n   - **Answer**: Deoxyribose.\n2. **Short-Answer Question (2–3 marks)**: Explain how base pairing occurs in DNA.\n   - **Answer**: Adenine pairs with Thymine through two hydrogen bonds, and Guanine pairs with Cytosine through three hydrogen bonds.\n\nThese questions are AI-generated practice questions for exam preparation and should not be considered official past-paper questions.",
+      "evaluation": {
+        "scores": {
+          "factual_correctness": 7.2,
+          "definition_accuracy": 10.0,
+          "key_term_completeness": 10.0,
+          "explanation_depth": 10.0,
+          "logical_organization": 10.0,
+          "appropriate_detail": 9.5,
+          "example_quality": 9.0,
+          "comparison_accuracy": 9.5,
+          "calculation_correctness": 8.5,
+          "exam_question_relevance": 9.0,
+          "citation_integrity": 9.5,
+          "correct_visual_planning": 9.5,
+          "clarity_and_readability": 9.2
+        },
+        "overall_score_10": 9.3,
+        "word_count": 759,
+        "matched_keywords": [
+          "sugar-phosphate",
+          "hydrogen bond",
+          "adenine",
+          "thymine",
+          "guanine",
+          "cytosine"
+        ],
+        "missing_keywords": [
+          "antiparallel",
+          "purine",
+          "pyrimidine",
+          "chargaff"
+        ],
+        "markdown_table_rows": 7,
+        "failure_patterns": []
+      }
+    },
+    {
+      "id": "bio_3_dna_vs_rna",
+      "category": "Biology",
+      "task_type": "comparison",
+      "question": "Explain DNA vs RNA with a clear comparison.",
+      "latency_sec": 65.93,
+      "eval_tokens": 999,
+      "tokens_per_sec": 15.33,
+      "response": "### DNA vs RNA: Explanation and Comparison\n\n#### 1. Multi-Tier Definitions\n**Precise Academic Definition**: \n- **DNA (Deoxyribonucleic Acid)**: A molecule that encodes the genetic instructions used in the development and functioning of all known living organisms.\n- **RNA (Ribonucleic Acid)**: A single-stranded nucleic acid involved in various biological processes, including protein synthesis.\n\n**Everyday Explanation**: \n- **DNA**: Think of DNA as a blueprint for building an organism. It contains the instructions needed to make proteins and control cell functions.\n- **RNA**: RNA is like a messenger that carries out the instructions from the DNA. It helps in making proteins by translating the genetic code into amino acids.\n\n**Formal / Technical Definition**: \n- **DNA**: Composed of nucleotides with deoxyribose sugar, it has a double helix structure.\n- **RNA**: Consists of ribose sugar and is single-stranded, often forming a variety of secondary structures like hairpins and loops.\n\n#### 2. Key Terms & Explained Glossary\n**Essential Core Terms**:\n- **Nucleotide**: The basic unit of DNA and RNA, consisting of a nitrogenous base, a five-carbon sugar (deoxyribose for DNA, ribose for RNA), and a phosphate group.\n- **Base Pairing**: In DNA, adenine pairs with thymine, and cytosine pairs with guanine. In RNA, uracil replaces thymine and pairs with adenine.\n\n**Advanced / Optional Vocabulary**:\n- **Transcription**: The process of making an RNA copy from a DNA template.\n- **Translation**: The process by which the genetic code in mRNA is converted into a sequence of amino acids to form proteins.\n\n#### 3. Prerequisites\nBefore understanding DNA and RNA, students should be familiar with basic genetics concepts such as chromosomes, genes, and the central dogma of molecular biology (DNA → RNA → Protein).\n\n#### 4. Step-by-Step Mechanism/Derivation & Formula/Equation\n**Mechanism**: \n1. **Transcription**: In this process, a segment of DNA is copied into an RNA molecule.\n2. **Translation**: The RNA then moves to the ribosome where it is translated into proteins.\n\n**Formula/Equation**: \n- **Central Dogma**: DNA → RNA → Protein\n\n#### 5. Worked Example\n**Example**: \n- **Transcription**: A gene on a chromosome is transcribed into an mRNA molecule.\n- **Translation**: The mRNA moves to the ribosome and is translated into a specific sequence of amino acids.\n\n#### 6. Markdown Comparison Table\n| Feature | DNA (Deoxyribonucleic Acid) | RNA (Ribonucleic Acid) |\n| --- | --- | --- |\n| Structure | Double-stranded, double helix | Single-stranded, various secondary structures |\n| Sugar | Deoxyribose | Ribose |\n| Base Pairing | A-T, C-G | A-U, C-G (A-A in some cases) |\n| Function | Genetic information storage and transmission | Messenger for gene expression; catalytic role in ribozymes |\n| Location | Nucleus, mitochondria, chloroplasts | Nucleus, cytoplasm |\n\n#### 7. Common Misconceptions\n- **Misconception**: DNA is the only genetic material.\n- **Scientific Reality**: Both DNA and RNA are involved in genetic processes, with RNA playing a crucial role in gene expression.\n\n#### 8. ### Visual Specification\n**Visual Type**: Labeled Diagram\n**Purpose**: To illustrate the structural differences between DNA and RNA.\n**Labels**: Deoxyribose vs Ribose, Base Pairs (A-T/C-G for DNA; A-U/C-G for RNA), Double Helix vs Single Strand.\n**Section Association**: Accompanies the section on structure and function.\n\n#### 9. Summary & Practice Questions\n- **Summary**: DNA is a double-stranded molecule that stores genetic information, while RNA is single-stranded and serves as a messenger in gene expression.\n- **Practice Questions**:\n1. **Short-Answer Question (2–3 marks)**: What are the main differences between DNA and RNA?\n   - **Model Answer**: DNA is double-stranded with deoxyribose sugar and A-T, C-G base pairing; RNA is single-stranded with ribose sugar and A-U, C-G base pairing.\n   \n2. **Long-Answer / Analytical Question (5 marks)**: Explain the process of transcription and translation in molecular biology.\n   - **Model Answer**: Transcription involves copying a segment of DNA into mRNA, while translation converts the mRNA sequence into a protein.\n\n**AI-Generated Practice Questions (Not official past-paper questions; not guaranteed to appear in any examination).**",
+      "evaluation": {
+        "scores": {
+          "factual_correctness": 9.1,
+          "definition_accuracy": 10.0,
+          "key_term_completeness": 10.0,
+          "explanation_depth": 10.0,
+          "logical_organization": 9.1,
+          "appropriate_detail": 9.5,
+          "example_quality": 9.0,
+          "comparison_accuracy": 9.5,
+          "calculation_correctness": 8.5,
+          "exam_question_relevance": 9.0,
+          "citation_integrity": 9.5,
+          "correct_visual_planning": 9.5,
+          "clarity_and_readability": 9.2
+        },
+        "overall_score_10": 9.38,
+        "word_count": 642,
+        "matched_keywords": [
+          "deoxyribose",
+          "ribose",
+          "uracil",
+          "thymine",
+          "double-stranded",
+          "single-stranded",
+          "mRNA"
+        ],
+        "missing_keywords": [
+          "tRNA"
+        ],
+        "markdown_table_rows": 7,
+        "failure_patterns": []
+      }
+    },
+    {
+      "id": "bio_4_photosynthesis",
+      "category": "Biology",
+      "task_type": "deep_explanation",
+      "question": "Explain photosynthesis in detail, including its balanced chemical equation and stages.",
+      "latency_sec": 101.73,
+      "eval_tokens": 1564,
+      "tokens_per_sec": 15.52,
+      "response": "### Topic Introduction & Learning Metadata\n**Subject:** Biology  \n**Level:** Grade 10  \n**Overview:** Photosynthesis is a fundamental biological process by which plants, algae, and some bacteria convert light energy into chemical energy stored in glucose. This process is essential for life on Earth as it provides the primary source of organic compounds and oxygen.\n\n### Multi-Tier Definition\n1. **Precise Academic Definition**: Photosynthesis is a biochemical process used by plants to synthesize organic compounds from carbon dioxide, water, and light energy.\n2. **Everyday Explanation**: Think of photosynthesis as how plants make their own food using sunlight, air, and water.\n3. **Formal / Technical Definition**: The overall reaction can be represented by the equation: 6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂.\n\n### Key Terms & Explained Glossary\n- **Photosynthesis (Term)**: The process by which green plants, algae, and some bacteria convert light energy into chemical energy stored in glucose.\n- **Chlorophyll (Term)**: A green pigment found in the chloroplasts of plant cells that absorbs light energy for photosynthesis.\n- **Stomata (Term)**: Small pores on the surface of leaves that allow gases to enter and exit, facilitating gas exchange during photosynthesis.\n\n### Prerequisites\nBefore understanding photosynthesis, students should be familiar with:\n- Basic cell structure, particularly chloroplasts.\n- The structure and function of plant cells.\n- The role of light in energy transfer.\n\n### Core Concepts Overview\nPhotosynthesis occurs in two main stages: the Light-dependent Reactions and the Calvin Cycle (Light-independent Reactions).\n\n### Detailed Section-by-Step Explanations\n1. **Light-dependent Reactions**:\n   - Occur in the thylakoid membranes of chloroplasts.\n   - Use light energy to produce ATP and NADPH, which are used for energy storage and reduction power respectively.\n\n2. **Calvin Cycle (Light-independent Reactions)**:\n   - Takes place in the stroma of chloroplasts.\n   - Uses the ATP and NADPH produced by the Light-dependent Reactions to convert CO₂ into glucose through a series of enzymatic reactions.\n\n### Step-by-Step Mechanism or Mathematical Derivation\n1. **Light Absorption**: Chlorophyll absorbs light energy, exciting electrons to a higher energy state.\n2. **Water Splitting (Photolysis)**: The excited electrons are used to split water molecules into oxygen and hydrogen ions.\n3. **ATP & NADPH Production**: The high-energy electrons from the splitting of water drive the synthesis of ATP and NADPH through the electron transport chain.\n4. **Calvin Cycle**:\n   - CO₂ is fixed by the enzyme RuBisCO, forming a 5-carbon sugar (RuBP).\n   - The 3-carbon product is reduced using electrons from NADPH and energy from ATP to form glucose.\n\n### Worked Example\nConsider a simplified version of the photosynthesis equation: \n\\[ \\text{6 CO}_2 + \\text{6 H}_2\\text{O} + \\text{light energy} \\rightarrow \\text{C}_6\\text{H}_{12}\\text{O}_6 + \\text{6 O}_2 \\]\n\nIf a plant produces 360 grams of glucose (C₆H₁₂O₆) during photosynthesis, how much CO₂ and H₂O are required?\n\n**Solution:**\n- Given the balanced equation, 1 mole of C₆H₁₂O₆ is produced from 6 moles of CO₂ and 6 moles of H₂O.\n- The molar mass of glucose (C₆H₁₂O₆) is approximately 180 g/mol.\n\n\\[ \\text{360 grams of C}_6\\text{H}_{12}\\text{O}_6 = \\frac{360}{180} = 2 \\text{ moles of C}_6\\text{H}_{12}\\text{O}_6 \\]\n\n- Therefore, the plant requires:\n  - \\( 2 \\times 6 = 12 \\) moles of CO₂.\n  - \\( 2 \\times 6 = 12 \\) moles of H₂O.\n\n### Structured Comparison Table\n| Feature | Light-dependent Reactions | Calvin Cycle (Light-independent Reactions) |\n|---------|--------------------------|-------------------------------------------|\n| Location | Thylakoid membranes       | Stroma                                   |\n| Energy Source | Light energy             | ATP, NADPH                              |\n| Products  | ATP, NADPH, O₂           | Glucose                                 |\n| Enzymes   | Photosystems I & II      | RuBisCO, G3P                            |\n\n### Common Misconceptions\n- **Misconception**: Plants only perform photosynthesis during the day.\n  - **Scientific Reality**: While most photosynthesis occurs during daylight, some plants can perform a limited form of photosynthesis at night through a process called CAM (Crassulacean Acid Metabolism).\n\n### Important Formulas, Equations, or Laws\n- **Photosynthesis Equation**: \\( \\text{6 CO}_2 + \\text{6 H}_2\\text{O} + \\text{light energy} \\rightarrow \\text{C}_6\\text{H}_{12}\\text{O}_6 + \\text{6 O}_2 \\)\n\n### Revision Summary & Key Takeaways\n- Photosynthesis is a two-stage process involving light-dependent and light-independent reactions.\n- Chlorophyll plays a crucial role in absorbing light energy.\n- The overall equation for photosynthesis shows the conversion of CO₂, H₂O, and light into glucose and O₂.\n\n### Self-Check Practice Questions & Model Answers\n1. **Question**: What is the main difference between the Light-dependent Reactions and the Calvin Cycle?\n   - **Answer**: The Light-dependent Reactions occur in the thylakoid membranes and produce ATP and NADPH, while the Calvin Cycle takes place in the stroma and uses these compounds to synthesize glucose.\n\n2. **Question**: If a plant produces 180 grams of glucose during photosynthesis, how much CO₂ is required?\n   - **Answer**: Since 360 grams of glucose require 12 moles of CO₂, 180 grams would require half that amount, which is 6 moles of CO₂.\n\n### Visual Specification\n- **Visual Type**: Labeled Diagram\n- **Purpose**: To illustrate the location and flow of materials in photosynthesis.\n- **Labels**: Thylakoid membranes, stroma, chlorophyll, RuBisCO, ATP, NADPH, glucose, O₂.\n- **Section Association**: Accompanies the detailed explanation of the two stages of photosynthesis.\n\n### AI-Generated Practice Questions\n1. **Question**: What is the role of chlorophyll in photosynthesis?\n   - **Answer**: Chlorophyll absorbs light energy, which drives the process of photosynthesis by exciting electrons.\n   \n2. **Question**: How much CO₂ is required to produce 90 grams of glucose during photosynthesis?\n   - **Answer**: Since 360 grams of glucose require 12 moles of CO₂, 90 grams would require one-third that amount, which is 4 moles of CO₂.",
+      "evaluation": {
+        "scores": {
+          "factual_correctness": 8.4,
+          "definition_accuracy": 10.0,
+          "key_term_completeness": 10.0,
+          "explanation_depth": 10.0,
+          "logical_organization": 10.0,
+          "appropriate_detail": 9.5,
+          "example_quality": 9.0,
+          "comparison_accuracy": 9.5,
+          "calculation_correctness": 8.5,
+          "exam_question_relevance": 9.0,
+          "citation_integrity": 9.5,
+          "correct_visual_planning": 9.5,
+          "clarity_and_readability": 9.2
+        },
+        "overall_score_10": 9.39,
+        "word_count": 895,
+        "matched_keywords": [
+          "chloroplast",
+          "chlorophyll",
+          "light-dependent",
+          "calvin cycle",
+          "thylakoid",
+          "stroma",
+          "photolysis"
+        ],
+        "missing_keywords": [
+          "6co2",
+          "c6h12o6"
+        ],
+        "markdown_table_rows": 6,
+        "failure_patterns": []
+      }
+    },
+    {
+      "id": "phys_1_newtons_laws",
+      "category": "Physics",
+      "task_type": "deep_explanation",
+      "question": "Explain Newton's laws of motion with real-world examples and formulas.",
+      "latency_sec": 104.39,
+      "eval_tokens": 1439,
+      "tokens_per_sec": 17.23,
+      "response": "### Topic Introduction & Learning Metadata\n**Subject**: Physics  \n**Level**: Grade 10  \n**Overview**: Newton's laws of motion are fundamental principles in classical mechanics that describe the relationship between a body and the forces acting upon it. These laws help us understand how objects move or remain stationary under different conditions.\n\n### Multi-Tier Definition\n1. **Precise Academic Definition**: Newton's laws of motion are three physical laws that, together, laid the foundation for classical mechanics. They describe the relationship between a body and the forces acting upon it, and its motion in response to those forces.\n2. **Everyday Explanation**: Imagine pushing a shopping cart; if you push harder, it moves faster. If you stop pushing, it eventually stops. These are examples of Newton's laws at work!\n3. **Formal / Technical Definition**: \n   - **First Law (Inertia)**: An object remains at rest or in uniform motion unless acted upon by an external force.\n   - **Second Law (F=ma)**: The acceleration of an object is directly proportional to the net force acting on it and inversely proportional to its mass. Mathematically, \\( F = ma \\).\n   - **Third Law**: For every action, there is an equal and opposite reaction.\n\n### Key Terms & Explained Glossary\n- **Term**: Inertia — Meaning: The resistance of any physical object to changes in its velocity. It expresses the tendency of objects to stay at rest or to keep moving with constant velocity unless acted upon by a force.\n- **Term**: Net Force — Meaning: The vector sum of all forces acting on an object. It determines the acceleration of the object according to Newton's second law.\n- **Term**: Acceleration — Meaning: The rate of change of velocity with respect to time, often denoted as \\(a\\).\n- **Term**: Action and Reaction — Meaning: For every action force, there is an equal and opposite reaction force. These forces act on different objects.\n\n### Prerequisites\n- Basic understanding of vectors and vector addition.\n- Knowledge of mass (m) and force (F).\n\n### Core Concepts Overview\n- **First Law**: Objects resist changes in their state of motion.\n- **Second Law**: Force is directly proportional to acceleration.\n- **Third Law**: Forces always come in pairs.\n\n### Detailed Section-by-Step Explanations & Mechanism\n1. **First Law (Inertia)**: If no net force acts on an object, the object will remain at rest or continue moving with a constant velocity.\n   - Example: A book sliding on a table stops when frictional forces act upon it.\n\n2. **Second Law (F=ma)**:\n   - \\( F = ma \\)\n   - Where \\( F \\) is net force, \\( m \\) is mass, and \\( a \\) is acceleration.\n   - Example: Pushing a shopping cart with more force makes it accelerate faster.\n\n3. **Third Law**: Forces always occur in pairs; if object A exerts a force on object B, then object B exerts an equal and opposite force on object A.\n   - Example: When you jump, your legs apply a force to the ground, and the ground applies an equal and opposite reaction force that propels you into the air.\n\n### Step-by-Step Mechanism or Mathematical Derivation\n1. **First Law**: If \\( F_{net} = 0 \\), then \\( a = 0 \\).\n2. **Second Law**: Given \\( F_{net} \\) and \\( m \\), solve for \\( a \\): \\( a = \\frac{F_{net}}{m} \\).\n3. **Third Law**: Forces are always equal in magnitude but opposite in direction.\n\n### Worked Example\n**Problem**: A 2 kg mass is pushed with a force of 10 N on a frictionless surface.\n- **Solution**: Using \\( F = ma \\), we find the acceleration:\n  - \\( a = \\frac{F}{m} = \\frac{10 \\, \\text{N}}{2 \\, \\text{kg}} = 5 \\, \\text{m/s}^2 \\).\n\n### Structured Comparison Table\n| Feature | First Law (Inertia) | Second Law (F=ma) | Third Law (Action & Reaction) |\n|---------|---------------------|-------------------|------------------------------|\n| Definition | Objects resist changes in their state of motion. | Force is directly proportional to acceleration. | Forces always occur in pairs. |\n| Example | A book sliding on a table stops when frictional forces act upon it. | Pushing a shopping cart with more force makes it accelerate faster. | When you jump, your legs apply a force to the ground, and the ground applies an equal and opposite reaction force that propels you into the air. |\n| Key Concept | Inertia | Net Force & Acceleration | Action-Reaction Pairs |\n| Formula | \\( F_{net} = 0 \\) implies \\( a = 0 \\) | \\( F = ma \\) | Forces are equal in magnitude but opposite in direction. |\n\n### Common Misconceptions\n- **Misconception**: Newton's first law states that objects move at constant velocity.\n  - **Scientific Reality**: It states that objects remain at rest or continue moving with a constant velocity unless acted upon by an external force.\n\n### Important Formulas, Equations, or Laws\n- \\( F = ma \\)\n\n### Revision Summary & Key Takeaways\n- Newton's laws describe the relationship between forces and motion.\n- Inertia resists changes in motion.\n- Net force determines acceleration.\n- Forces always come in pairs.\n\n### Self-Check Practice Questions & Model Answers (AI-Generated Practice Questions)\n1. **Question**: A 5 kg mass is pushed with a force of 20 N on a frictionless surface. What is the acceleration?\n   - **Answer**: \\( a = \\frac{F}{m} = \\frac{20 \\, \\text{N}}{5 \\, \\text{kg}} = 4 \\, \\text{m/s}^2 \\).\n\n2. **Question**: If an object has no net force acting on it, what is its acceleration?\n   - **Answer**: \\( a = 0 \\) (from the first law of motion).\n\n### Visual Specification\n- **Visual Type**: Labeled Diagram\n- **Pedagogical Purpose**: To illustrate the relationship between forces and motion.\n- **Essential Components & Labels**: A diagram showing an object with arrows representing forces, labeled as \"Action\" and \"Reaction.\"\n- **Target Section Association**: Accompanies the third law explanation.\n\n### Summary\nNewton's laws of motion provide a framework for understanding how objects move under the influence of forces. The first law describes inertia, the second law relates force to acceleration, and the third law explains action-reaction pairs. Understanding these principles is crucial for grasping more advanced topics in physics.",
+      "evaluation": {
+        "scores": {
+          "factual_correctness": 9.1,
+          "definition_accuracy": 10.0,
+          "key_term_completeness": 10.0,
+          "explanation_depth": 10.0,
+          "logical_organization": 10.0,
+          "appropriate_detail": 9.5,
+          "example_quality": 9.0,
+          "comparison_accuracy": 9.5,
+          "calculation_correctness": 8.5,
+          "exam_question_relevance": 9.0,
+          "citation_integrity": 9.5,
+          "correct_visual_planning": 9.5,
+          "clarity_and_readability": 9.2
+        },
+        "overall_score_10": 9.45,
+        "word_count": 1016,
+        "matched_keywords": [
+          "inertia",
+          "f = ma",
+          "action",
+          "reaction",
+          "newton",
+          "force",
+          "acceleration"
+        ],
+        "missing_keywords": [
+          "momentum"
+        ],
+        "markdown_table_rows": 6,
+        "failure_patterns": []
+      }
+    },
+    {
+      "id": "phys_2_speed_vs_velocity",
+      "category": "Physics",
+      "task_type": "comparison",
+      "question": "Explain the difference between speed and velocity.",
+      "latency_sec": 104.55,
+      "eval_tokens": 1380,
+      "tokens_per_sec": 16.18,
+      "response": "### Topic Introduction & Learning Metadata\n**Subject:** Physics  \n**Level:** Grade 10  \n**Overview:** This lesson will explain the difference between speed and velocity, focusing on their definitions, key terms, formulas, and practical applications.\n\n### Multi-Tier Definition\n\n1. **Precise Academic Definition:**\n   - **Speed**: The rate at which an object covers distance.\n   - **Velocity**: The rate of change of displacement with respect to time, including both magnitude and direction.\n\n2. **Everyday Explanation:**\n   - **Speed**: How fast something is moving, without considering the direction.\n   - **Velocity**: How fast something is moving in a specific direction.\n\n3. **Formal / Technical Definition:**\n   - **Speed**: \\( \\text{Speed} = \\frac{\\text{Distance}}{\\text{Time}} \\)\n   - **Velocity**: \\( \\text{Velocity} = \\frac{\\text{Displacement}}{\\text{Time}} \\)\n\n### Key Terms & Explained Glossary\n\n- **Term** — Meaning, context, example, and relationship to the main topic.\n  - **Distance**: The total length of a path traveled by an object. (e.g., running around a track)\n  - **Displacement**: The shortest distance between two points with direction. (e.g., moving from home to school)\n  - **Time**: The duration over which motion occurs.\n\n### Prerequisites\n- Basic understanding of:\n  - Time and its measurement.\n  - Distance and displacement in one, two, or three dimensions.\n  - Fundamental concepts of motion.\n\n### Step-by-Step Mechanism/Derivation & Formula/Equation\n\n1. **Speed:**\n   \\[\n   \\text{Speed} = \\frac{\\text{Distance}}{\\text{Time}}\n   \\]\n2. **Velocity:**\n   \\[\n   \\text{Velocity} = \\frac{\\text{Displacement}}{\\text{Time}}\n   \\]\n\n### Worked Example\n\n**Problem:** A car travels 100 meters in 5 seconds.\n- Calculate the speed and velocity of the car.\n\n**Solution:**\n1. **Speed:**\n   \\[\n   \\text{Speed} = \\frac{100 \\, \\text{m}}{5 \\, \\text{s}} = 20 \\, \\text{m/s}\n   \\]\n2. **Velocity:** Assuming the car moves in a straight line from point A to point B.\n   \\[\n   \\text{Displacement} = 100 \\, \\text{m}\n   \\]\n   \\[\n   \\text{Velocity} = \\frac{100 \\, \\text{m}}{5 \\, \\text{s}} = 20 \\, \\text{m/s} \\, \\text{(in the direction from A to B)}\n   \\]\n\n### Structured Comparison Table\n\n| Feature            | Speed                          | Velocity                        |\n|--------------------|--------------------------------|---------------------------------|\n| Definition         | Rate of distance covered       | Rate of displacement           |\n| Direction          | No direction                   | Includes direction              |\n| Formula            | \\( \\text{Speed} = \\frac{\\text{Distance}}{\\text{Time}} \\) | \\( \\text{Velocity} = \\frac{\\text{Displacement}}{\\text{Time}} \\) |\n| Example            | A car travels 100 meters       | An object moves from point A to B |\n| Application        | Describing motion in general   | Describing motion with direction|\n\n### Common Misconceptions & Corrections\n\n- **Misconception:** Speed and velocity are the same.\n- **Scientific Reality:** Speed is a scalar quantity (no direction), while velocity is a vector quantity (includes direction).\n\n### ### Visual Specification\n**Visual Type:** Labeled Diagram  \n**Purpose:** To illustrate the difference between distance and displacement.  \n**Labels:** \n  - Arrow representing displacement from A to B.\n  - Straight line representing distance traveled.\n**Section Association:** Accompanies the worked example.\n\n### Summary & Practice Questions\n\n1. **Practice Question (Short-Answer, 2 marks):**\n   - A runner completes a 400-meter lap in 50 seconds. Calculate the speed and velocity of the runner.\n   \n   **Model Answer:**\n   \\[\n   \\text{Speed} = \\frac{400 \\, \\text{m}}{50 \\, \\text{s}} = 8 \\, \\text{m/s}\n   \\]\n   \\[\n   \\text{Velocity} = 8 \\, \\text{m/s} \\, (\\text{in the direction of the lap})\n   \\]\n\n2. **Practice Question (Long-Answer, 5 marks):**\n   - A car travels from point X to point Y in a straight line, covering 100 meters in 10 seconds. Calculate and describe the speed and velocity.\n   \n   **Model Answer:**\n   \\[\n   \\text{Speed} = \\frac{100 \\, \\text{m}}{10 \\, \\text{s}} = 10 \\, \\text{m/s}\n   \\]\n   \\[\n   \\text{Velocity} = 10 \\, \\text{m/s} \\, (\\text{in the direction from X to Y})\n   \\]\n\n### AI-Generated Practice Questions\n\n**Question 1 (Definition-Based):**\n- Define speed and velocity.\n  \n  **Answer:**\n  - Speed is the rate of distance covered. Velocity is the rate of displacement with respect to time, including both magnitude and direction.\n\n**Question 2 (Short-Answer, 3 marks):**\n- A cyclist travels from point P to Q in a straight line, covering 500 meters in 100 seconds. Calculate the speed and velocity.\n  \n  **Answer:**\n  \\[\n  \\text{Speed} = \\frac{500 \\, \\text{m}}{100 \\, \\text{s}} = 5 \\, \\text{m/s}\n  \\]\n  \\[\n  \\text{Velocity} = 5 \\, \\text{m/s} \\, (\\text{in the direction from P to Q})\n  \\]\n\n**Question 3 (Multiple-Choice):**\n- Which of the following is a vector quantity?\n    - A) Speed\n    - B) Velocity\n    - C) Distance\n    - D) Time\n\n  **Answer: B) Velocity**\n\n  **Explanation:** Velocity includes both magnitude and direction, making it a vector quantity.",
+      "evaluation": {
+        "scores": {
+          "factual_correctness": 10.0,
+          "definition_accuracy": 10.0,
+          "key_term_completeness": 10.0,
+          "explanation_depth": 10.0,
+          "logical_organization": 10.0,
+          "appropriate_detail": 9.5,
+          "example_quality": 9.0,
+          "comparison_accuracy": 9.5,
+          "calculation_correctness": 8.5,
+          "exam_question_relevance": 9.0,
+          "citation_integrity": 9.5,
+          "correct_visual_planning": 9.5,
+          "clarity_and_readability": 9.2
+        },
+        "overall_score_10": 9.52,
+        "word_count": 696,
+        "matched_keywords": [
+          "scalar",
+          "vector",
+          "distance",
+          "displacement",
+          "direction",
+          "m/s",
+          "magnitude"
+        ],
+        "missing_keywords": [],
+        "markdown_table_rows": 7,
+        "failure_patterns": []
+      }
+    },
+    {
+      "id": "phys_3_force_numerical",
+      "category": "Physics",
+      "task_type": "numerical",
+      "question": "Solve step by step and verify: A net horizontal force acts on a 12 kg cart initially at rest on a frictionless track, accelerating it uniformly to a velocity of 15 m/s in 5 seconds. Calculate (a) the acceleration, (b) the magnitude of the applied force in Newtons, and (c) the distance travelled in those 5 seconds.",
+      "latency_sec": 83.41,
+      "eval_tokens": 1260,
+      "tokens_per_sec": 15.29,
+      "response": "### Step-by-Step Solution for the Given Physics Problem\n\n#### 1. Concept Definition & Formula/Law\n**Acceleration**: The rate of change of velocity with respect to time.\n\\[ a = \\frac{\\Delta v}{\\Delta t} = \\frac{v_f - v_i}{t_f - t_i} \\]\nwhere \\(a\\) is acceleration, \\(v_f\\) is final velocity, \\(v_i\\) is initial velocity, and \\(t_f - t_i\\) is the time interval.\n\n**Force**: The product of mass and acceleration.\n\\[ F = m \\cdot a \\]\nwhere \\(F\\) is force, \\(m\\) is mass, and \\(a\\) is acceleration.\n\n**Distance Traveled (Uniform Acceleration)**: \n\\[ s = v_i t + \\frac{1}{2} a t^2 \\]\nor\n\\[ s = \\frac{v_f + v_i}{2} t \\]\nwhere \\(s\\) is distance traveled, \\(v_i\\) and \\(v_f\\) are initial and final velocities, respectively, and \\(t\\) is time.\n\n#### 2. Key Terms & Explained Glossary\n- **Acceleration (a)**: Rate of change of velocity.\n- **Force (F)**: Push or pull on an object.\n- **Mass (m)**: Amount of matter in an object.\n- **Distance (s)**: Length of the path traveled.\n\n#### 3. Given Data in SI Units\n- Mass (\\(m\\)) = 12 kg\n- Initial velocity (\\(v_i\\)) = 0 m/s (since the cart is initially at rest)\n- Final velocity (\\(v_f\\)) = 15 m/s\n- Time interval (\\(t\\)) = 5 s\n\n#### 4. Step-by-Step Substitution & Calculation\n**a) Calculate the acceleration:**\n\\[ a = \\frac{v_f - v_i}{t} = \\frac{15 \\, \\text{m/s} - 0 \\, \\text{m/s}}{5 \\, \\text{s}} = 3 \\, \\text{m/s}^2 \\]\n\n**b) Calculate the magnitude of the applied force:**\n\\[ F = m \\cdot a = 12 \\, \\text{kg} \\times 3 \\, \\text{m/s}^2 = 36 \\, \\text{N} \\]\n\n**c) Calculate the distance traveled:**\nUsing the formula \\( s = v_i t + \\frac{1}{2} a t^2 \\):\n\\[ s = 0 \\, \\text{m/s} \\times 5 \\, \\text{s} + \\frac{1}{2} \\times 3 \\, \\text{m/s}^2 \\times (5 \\, \\text{s})^2 \\]\n\\[ s = 0 + \\frac{1}{2} \\times 3 \\times 25 = \\frac{75}{2} = 37.5 \\, \\text{m} \\]\n\n#### 5. Final Answer with Units\n- **Acceleration**: \\(3 \\, \\text{m/s}^2\\)\n- **Magnitude of the applied force**: \\(36 \\, \\text{N}\\)\n- **Distance traveled**: \\(37.5 \\, \\text{m}\\)\n\n#### 6. Explicit Verification Check\nTo verify the acceleration:\n\\[ a = \\frac{\\Delta v}{\\Delta t} = \\frac{15 \\, \\text{m/s}}{5 \\, \\text{s}} = 3 \\, \\text{m/s}^2 \\]\nThis matches our calculated value.\n\nFor force verification:\n\\[ F = m \\cdot a = 12 \\, \\text{kg} \\times 3 \\, \\text{m/s}^2 = 36 \\, \\text{N} \\]\nThis also matches the calculated value.\n\n#### 7. Common Misconceptions\n- **Misconception vs. Scientific Reality**: Some students might confuse acceleration with velocity or assume that a constant force is required to maintain uniform motion. Acceleration only requires a net force and can be zero if the object moves at a constant velocity.\n  \n#### 8. ### Visual Specification\n- **Visual Type**: Labeled Diagram of a cart on a frictionless track.\n- **Purpose**: To illustrate the concept of acceleration and distance traveled.\n- **Labels**: Cart, Initial Position (0 m), Final Position (37.5 m), Time Interval (5 s).\n- **Section Association**: This visual accompanies the section explaining the calculation of distance traveled.\n\n#### 9. Similar Practice Problem with Answer\n**Problem**: A 10 kg object is accelerated uniformly from rest to a velocity of 20 m/s in 4 seconds on a frictionless surface. Calculate (a) the acceleration, (b) the magnitude of the applied force, and (c) the distance traveled.\n\n**Solution:**\n- **(a) Acceleration**: \\(5 \\, \\text{m/s}^2\\)\n- **(b) Magnitude of the Applied Force**: \\(50 \\, \\text{N}\\)\n- **(c) Distance Traveled**: \\(100 \\, \\text{m}\\)\n\n**Verification Check**: \n\\[ a = \\frac{20 \\, \\text{m/s}}{4 \\, \\text{s}} = 5 \\, \\text{m/s}^2 \\]\n\\[ F = 10 \\, \\text{kg} \\times 5 \\, \\text{m/s}^2 = 50 \\, \\text{N} \\]\n\\[ s = \\frac{1}{2} \\times 5 \\, \\text{m/s}^2 \\times (4 \\, \\text{s})^2 = 40 \\, \\text{m} \\]\n\nThis problem reinforces the concepts and calculations used in the original question.",
+      "evaluation": {
+        "scores": {
+          "factual_correctness": 5.8,
+          "definition_accuracy": 8.0,
+          "key_term_completeness": 10.0,
+          "explanation_depth": 7.2,
+          "logical_organization": 7.5,
+          "appropriate_detail": 9.5,
+          "example_quality": 3.5,
+          "comparison_accuracy": 7.5,
+          "calculation_correctness": 5.0,
+          "exam_question_relevance": 5.5,
+          "citation_integrity": 9.5,
+          "correct_visual_planning": 9.5,
+          "clarity_and_readability": 9.2
+        },
+        "overall_score_10": 7.52,
+        "word_count": 637,
+        "matched_keywords": [
+          "37.5 m",
+          "verification"
+        ],
+        "missing_keywords": [
+          "3 m/s",
+          "36 n",
+          "f = ma"
+        ],
+        "markdown_table_rows": 0,
+        "failure_patterns": [
+          "No exam/self-check practice questions or model answers included."
+        ]
+      }
+    },
+    {
+      "id": "chem_1_atomic_structure",
+      "category": "Chemistry",
+      "task_type": "deep_explanation",
+      "question": "Explain atomic structure, subatomic particles, atomic number, and mass number.",
+      "latency_sec": 98.25,
+      "eval_tokens": 1553,
+      "tokens_per_sec": 15.96,
+      "response": "### Topic Introduction & Learning Metadata\n**Subject:** Chemistry  \n**Level:** Grade 10  \n**Overview:** This topic will cover the fundamental concepts of atomic structure, subatomic particles, and how to interpret atomic numbers and mass numbers.\n\n### Multi-Tier Definition\n\n1. **Precise Academic Definition:**\n   - **Atomic Structure**: The arrangement of subatomic particles (protons, neutrons, electrons) within an atom.\n   - **Subatomic Particles**: Fundamental particles that make up atoms—protons, neutrons, and electrons.\n   - **Atomic Number**: The number of protons in the nucleus of an atom; it defines the element's identity.\n   - **Mass Number**: The total number of protons and neutrons in the nucleus of an atom.\n\n2. **Everyday Explanation:**\n   - **Atomic Structure**: Think of atoms as tiny solar systems where electrons orbit around a central nucleus containing protons and neutrons.\n   - **Subatomic Particles**: These are like the building blocks of matter, just too small to see with the naked eye.\n   - **Atomic Number**: This is like the element's ID number; no two elements have the same atomic number.\n   - **Mass Number**: It’s similar to counting all the particles in the nucleus, giving a total mass.\n\n3. **Formal / Technical Definition:**\n   - **Atomic Structure**: The arrangement of subatomic particles (protons, neutrons, electrons) within an atom, described by quantum mechanics.\n   - **Subatomic Particles**: Protons (positive charge), neutrons (neutral charge), and electrons (negative charge).\n   - **Atomic Number**: \\( Z \\) = number of protons in the nucleus; defines the element.\n   - **Mass Number**: \\( A \\) = total number of protons + neutrons in the nucleus.\n\n### Key Terms & Explained Glossary\n\n- **Term: Proton** — Meaning: A subatomic particle with a positive charge, found in the nucleus. Symbol: \\( p^+ \\).\n- **Term: Neutron** — Meaning: A subatomic particle with no charge, found in the nucleus. Symbol: \\( n \\).\n- **Term: Electron** — Meaning: A subatomic particle with a negative charge, orbiting the nucleus. Symbol: \\( e^- \\).\n- **Term: Nucleus** — Meaning: The central part of an atom containing protons and neutrons.\n- **Term: Isotope** — Meaning: Atoms of the same element with different numbers of neutrons.\n\n### Prerequisites\n- Understanding of elements, periodic table, and basic chemistry concepts.\n\n### Core Concepts Overview\n1. **Protons & Neutrons**: Located in the nucleus; protons determine the atomic number.\n2. **Electrons**: Orbit around the nucleus; their arrangement determines chemical properties.\n3. **Atomic Number (Z)**: Identifies the element.\n4. **Mass Number (A)**: Total number of nucleons (protons + neutrons).\n\n### Detailed Section-by-Section Explanations\n\n1. **Protons & Neutrons**:\n   - Protons and neutrons are collectively called nucleons.\n   - The number of protons defines the element; changing this changes the element.\n\n2. **Electrons**:\n   - Electrons occupy different energy levels (shells) around the nucleus.\n   - The electron configuration determines chemical behavior.\n\n3. **Atomic Number (Z)**:\n   - \\( Z \\) = number of protons in the nucleus.\n   - For example, Carbon has 6 protons and an atomic number of 6.\n\n4. **Mass Number (A)**:\n   - \\( A \\) = total number of nucleons (protons + neutrons).\n   - For example, Carbon-12 has 6 protons and 6 neutrons, giving a mass number of 12.\n\n### Step-by-Step Mechanism/Derivation & Formula/Equation\n\n1. **Atomic Number**:\n   \\[\n   Z = \\text{Number of Protons}\n   \\]\n\n2. **Mass Number**:\n   \\[\n   A = \\text{Number of Protons} + \\text{Number of Neutrons}\n   \\]\n\n### Worked Example\n- **Example**: Carbon has an atomic number of 6 and a mass number of 12.\n  - \\( Z = 6 \\) (protons)\n  - \\( A = 12 \\)\n  - Number of neutrons: \\( N = A - Z = 12 - 6 = 6 \\)\n\n### Structured Comparison Table\n\n| Feature | Proton | Neutron | Electron |\n|---------|--------|---------|----------|\n| Charge  | +      | 0       | -        |\n| Location| Nucleus| Nucleus | Orbit    |\n| Symbol  | \\( p^+ \\) | \\( n \\) | \\( e^- \\) |\n| Role    | Determines element identity | Contributes to mass, stability | Influences chemical behavior |\n\n### Common Misconceptions & Corrections\n\n- **Misconception**: Protons and neutrons have the same mass.\n  - **Correction**: While they are similar in mass, protons and neutrons are distinct subatomic particles.\n\n### Important Formulas, Equations, or Laws\n- **Atomic Number (Z)**: \\( Z = \\text{Number of Protons} \\)\n- **Mass Number (A)**: \\( A = \\text{Number of Protons} + \\text{Number of Neutrons} \\)\n\n### Revision Summary & Key Takeaways\n\n- **Key Takeaways**:\n  - Atomic structure involves protons, neutrons, and electrons.\n  - The atomic number defines the element.\n  - Mass number is the total number of nucleons.\n\n### Self-Check Practice Questions & Model Answers (AI-Generated Practice Questions)\n\n1. **Question**: What is the mass number of an atom with 8 protons and 10 neutrons?\n   - **Answer**: \\( A = 8 + 10 = 18 \\)\n2. **Question**: If an element has an atomic number of 15, how many protons does it have?\n   - **Answer**: The element has 15 protons.\n\n### ### Visual Specification\n- **Visual Type**: Labeled Diagram\n- **Purpose**: To illustrate the structure of a simple atom (e.g., Carbon-12).\n- **Labels**: Protons, neutrons, electrons, nucleus, shells.\n- **Section Association**: Accompanies the detailed explanation of atomic structure.\n\n### Summary & Practice Questions\n\n**Summary**: Atomic structure involves protons, neutrons, and electrons. The atomic number defines the element, while the mass number indicates the total nucleons. Understanding these concepts is crucial for chemistry.\n\n**Practice Question 1**: What is the atomic number of an atom with 9 protons?\n   - **Answer**: 9\n\n**Practice Question 2**: If an atom has a mass number of 23 and 12 neutrons, how many protons does it have?\n   - **Answer**: \\( A = 23 \\) and \\( N = 12 \\), so \\( Z = 23 - 12 = 11 \\)\n\n**Model Answers & Marking Checkpoints**: Ensure the atomic number is correctly identified based on the number of protons, and the mass number calculation is accurate.",
+      "evaluation": {
+        "scores": {
+          "factual_correctness": 9.1,
+          "definition_accuracy": 10.0,
+          "key_term_completeness": 10.0,
+          "explanation_depth": 10.0,
+          "logical_organization": 10.0,
+          "appropriate_detail": 9.5,
+          "example_quality": 9.0,
+          "comparison_accuracy": 9.5,
+          "calculation_correctness": 8.5,
+          "exam_question_relevance": 9.0,
+          "citation_integrity": 9.5,
+          "correct_visual_planning": 9.5,
+          "clarity_and_readability": 9.2
+        },
+        "overall_score_10": 9.45,
+        "word_count": 958,
+        "matched_keywords": [
+          "proton",
+          "neutron",
+          "electron",
+          "nucleus",
+          "atomic number",
+          "mass number",
+          "isotope"
+        ],
+        "missing_keywords": [
+          "orbital"
+        ],
+        "markdown_table_rows": 6,
+        "failure_patterns": []
+      }
+    },
+    {
+      "id": "chem_2_ionic_vs_covalent",
+      "category": "Chemistry",
+      "task_type": "comparison",
+      "question": "Compare ionic and covalent bonding with examples.",
+      "latency_sec": 81.59,
+      "eval_tokens": 1162,
+      "tokens_per_sec": 15.48,
+      "response": "### Ionic and Covalent Bonding: A Comparative Analysis\n\n#### 1. Multi-Tier Definitions\n**Precise Academic Definition**: \n- **Ionic Bonding**: The electrostatic attraction between oppositely charged ions in a compound.\n- **Covalent Bonding**: The sharing of electron pairs between atoms to achieve stable electron configurations.\n\n**Everyday Explanation**: \n- **Ionic Bonding**: Think of it as \"kissing\" between two ions, where one ion gives up an electron and the other accepts it. This creates charged particles that attract each other.\n- **Covalent Bonding**: Imagine sharing a pair of socks (electrons) between two people (atoms). They both have their own socks but share the ones in the middle.\n\n**Formal / Technical Definition**: \n- **Ionic Bonding**: A bond formed by the electrostatic attraction between ions with opposite charges, typically involving the transfer of one or more electrons from a metal to a non-metal.\n- **Covalent Bonding**: A chemical bond resulting from the sharing of electron pairs between atoms.\n\n**Concrete Example**: \n- **Ionic Bonding**: Sodium chloride (NaCl) forms when sodium loses an electron to chlorine, creating Na⁺ and Cl⁻ ions that attract each other.\n- **Covalent Bonding**: Water (H₂O) molecules form by sharing electrons between hydrogen and oxygen atoms.\n\n#### 2. Key Terms & Explained Glossary\n**Term**: Ion — Meaning: An atom or molecule with a net electrical charge due to the loss or gain of one or more electrons.\n- **Term**: Electron — Meaning: A negatively charged particle that orbits the nucleus in an atom, crucial for bonding.\n- **Term**: Valence Electrons — Meaning: The outermost electrons in an atom's electron shell, involved in chemical bonding.\n\n#### 3. Prerequisites\nBefore understanding ionic and covalent bonding, students should be familiar with:\n- Atomic structure (protons, neutrons, electrons)\n- Electron shells and valence electrons\n- Basic concepts of atoms and molecules\n\n#### 4. Step-by-Step Mechanism/Derivation & Formula/Equation\n**Ionic Bonding**: \n1. **Electron Transfer**: An atom loses one or more electrons to another atom.\n2. **Charge Formation**: The losing atom becomes a positively charged ion (cation), while the gaining atom becomes negatively charged (anion).\n3. **Attraction**: Oppositely charged ions attract each other, forming an ionic bond.\n\n**Covalent Bonding**: \n1. **Electron Sharing**: Atoms share one or more pairs of electrons.\n2. **Stable Electron Configuration**: Both atoms achieve a stable electron configuration by sharing electrons.\n3. **Bond Formation**: The shared electrons are attracted to both nuclei, forming a covalent bond.\n\n#### 5. Worked Example\n**Ionic Bonding Example**: Sodium (Na) and Chlorine (Cl)\n- Sodium has one valence electron; it loses this electron to become Na⁺.\n- Chlorine needs one more electron to complete its outer shell; it gains an electron from sodium, becoming Cl⁻.\n- The resulting ionic bond between Na⁺ and Cl⁻ forms sodium chloride (NaCl).\n\n**Covalent Bonding Example**: Hydrogen (H) and Oxygen (O)\n- Each hydrogen atom shares its single valence electron with the oxygen atom.\n- This sharing results in a stable molecule of water (H₂O).\n\n#### 6. Markdown Comparison Table\n| Feature | Ionic Bonding | Covalent Bonding |\n| --- | --- | --- |\n| **Type** | Electrostatic attraction between ions | Sharing of electrons between atoms |\n| **Charge** | Positive and negative ions form | No net charge in the molecule |\n| **Electron Transfer** | Electron transfer from metal to non-metal | Electron sharing between atoms |\n| **Examples** | NaCl, MgO | H₂, O₂, CO₂ |\n| **Strength** | Strong due to electrostatic forces | Moderate to strong depending on electron sharing |\n\n#### 7. Common Misconceptions\n- **Misconception**: Ionic bonds only occur between metals and non-metals.\n  - **Scientific Reality**: While common in inorganic compounds, ionic bonding can also occur between certain metalloids.\n\n#### 8. ### Visual Specification\n**Visual Type**: Labeled Diagram\n**Purpose**: To illustrate the difference between ionic and covalent bonds at a molecular level.\n- **Essential Components & Labels**: \n  - Sodium ion (Na⁺) and chloride ion (Cl⁻) for ionic bonding.\n  - Hydrogen atoms sharing electrons with an oxygen atom for covalent bonding.\n- **Target Section Association**: This visual supports the detailed explanations of both types of bonding.\n\n#### 9. Summary & Practice Questions\n**Summary**: Ionic bonds involve electron transfer between ions, while covalent bonds involve shared electrons. The strength and nature of these bonds differ significantly based on the type of atoms involved.\n\n**Practice Questions (AI-Generated Practice Questions)**\n\n1. **Short-Answer Question**: Explain why ionic compounds conduct electricity in solution.\n   - **Model Answer**: Ionic compounds dissociate into free ions when dissolved in water, allowing them to carry an electric current.\n\n2. **Long-Answer / Analytical Question**: Compare and contrast the properties of ionic and covalent bonds.\n   - **Model Answer**: Provide a detailed comparison using the table above and discuss the implications for physical and chemical properties.\n\nThese questions are designed to help you understand the key differences between ionic and covalent bonding.",
+      "evaluation": {
+        "scores": {
+          "factual_correctness": 7.0,
+          "definition_accuracy": 10.0,
+          "key_term_completeness": 10.0,
+          "explanation_depth": 10.0,
+          "logical_organization": 10.0,
+          "appropriate_detail": 9.5,
+          "example_quality": 9.0,
+          "comparison_accuracy": 9.5,
+          "calculation_correctness": 8.5,
+          "exam_question_relevance": 9.0,
+          "citation_integrity": 9.5,
+          "correct_visual_planning": 9.5,
+          "clarity_and_readability": 9.2
+        },
+        "overall_score_10": 9.28,
+        "word_count": 790,
+        "matched_keywords": [
+          "electron transfer",
+          "electron sharing",
+          "electrostatic",
+          "nacl"
+        ],
+        "missing_keywords": [
+          "h2o",
+          "melting point",
+          "electronegativity"
+        ],
+        "markdown_table_rows": 7,
+        "failure_patterns": []
+      }
+    },
+    {
+      "id": "chem_3_chemical_equation",
+      "category": "Chemistry",
+      "task_type": "deep_explanation",
+      "question": "Explain how to interpret and balance a chemical equation using the combustion of methane (CH4 + O2 -> CO2 + H2O) as an example.",
+      "latency_sec": 93.82,
+      "eval_tokens": 1345,
+      "tokens_per_sec": 15.35,
+      "response": "### Topic Introduction & Learning Metadata\n**Subject:** Chemistry  \n**Level:** Grade 10  \n**Overview:** This lesson will explain how to interpret and balance a chemical equation using the combustion of methane (CH₄ + O₂ → CO₂ + H₂O) as an example. We will cover key terms, prerequisites, step-by-step mechanisms, worked examples, and common misconceptions.\n\n### Multi-Tier Definition\n1. **Precise Academic Definition**: A balanced chemical equation is one where the number of atoms for each element on both sides of the equation is equal.\n2. **Everyday Explanation**: Think of balancing a chemical equation like making sure you have an equal number of each type of ingredient in a recipe.\n3. **Formal / Technical Definition**: The law of conservation of mass states that matter cannot be created or destroyed, so the total mass on both sides of the equation must be equal.\n4. **Concrete Example**: For example, 2H₂ + O₂ → 2H₂O is balanced because there are 2 hydrogen atoms and 1 oxygen atom on each side.\n5. **Terminology Clarification**: \"Balancing\" means adjusting coefficients to ensure that the number of atoms for each element is equal on both sides.\n\n### Key Terms & Explained Glossary\n- **Term**: Coefficient  \n  - **Meaning**: A number placed in front of a chemical formula to balance the equation.\n- **Term**: Atom  \n  - **Meaning**: The smallest unit of an element that retains its chemical properties.\n- **Term**: Element  \n  - **Meaning**: A pure substance consisting of atoms with the same atomic number.\n\n### Prerequisites\nBefore understanding how to interpret and balance a chemical equation, students should be familiar with:\n1. Basic chemical symbols (e.g., CH₄ for methane).\n2. The concept of elements and their symbols.\n3. The law of conservation of mass.\n\n### Core Concepts Overview\n- **Interpretation**: Understanding what the equation represents in terms of reactants and products.\n- **Balancing**: Adjusting coefficients to ensure that the number of atoms for each element is equal on both sides.\n\n### Detailed Section-by-Step Explanations\n1. **Identify Reactants & Products**:\n   - Reactants: CH₄ (methane) + O₂ (oxygen)\n   - Products: CO₂ (carbon dioxide) + H₂O (water)\n\n2. **Count Atoms on Each Side**:\n   - Left side: 4 hydrogen, 1 carbon, 2 oxygen\n   - Right side: 1 carbon, 3 oxygen, 2 hydrogen\n\n3. **Balance Hydrogen First**:\n   - Add a coefficient of 2 to H₂O: CH₄ + O₂ → CO₂ + 2H₂O\n\n4. **Balance Oxygen Next**:\n   - Now we have 4 oxygen on the right side (1 from CO₂ and 3 from 2H₂O).\n   - Add a coefficient of 2 to O₂: CH₄ + 2O₂ → CO₂ + 2H₂O\n\n5. **Verify Balance**:\n   - Left side: 4 hydrogen, 1 carbon, 4 oxygen\n   - Right side: 1 carbon, 4 oxygen, 4 hydrogen\n\n### Step-by-Step Mechanism or Mathematical Derivation\nTo balance the equation, we use trial and error to find coefficients that make the number of atoms equal on both sides. The balanced equation is:\n\\[ \\text{CH}_4 + 2\\text{O}_2 \\rightarrow \\text{CO}_2 + 2\\text{H}_2\\text{O} \\]\n\n### Worked Example\n1. Start with: CH₄ + O₂ → CO₂ + H₂O\n2. Balance hydrogen: CH₄ + O₂ → CO₂ + 2H₂O\n3. Balance oxygen: CH₄ + 2O₂ → CO₂ + 2H₂O\n\n### Structured Comparison Table\n| Feature | Methane Combustion (CH₄ + 2O₂ → CO₂ + 2H₂O) | Photosynthesis (6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂) |\n|---------|-------------------------------------------|------------------------------------------------------------|\n| Reactants | CH₄, O₂ | CO₂, H₂O, light energy |\n| Products | CO₂, H₂O | C₆H₁₂O₆, O₂ |\n| Energy Source | Exothermic (releases heat) | Endothermic (absorbs light energy) |\n| Location | Combustion chamber | Chloroplasts in plants |\n| Importance | Provides energy for living organisms | Produces oxygen and glucose |\n\n### Common Misconceptions & Corrections\n- **Misconception**: \"You can add coefficients to the elements themselves.\"\n  - **Correction**: Coefficients must be added only to chemical formulas, not individual atoms.\n\n### Important Formulas, Equations, or Laws\n- **Law of Conservation of Mass**: The total mass of reactants equals the total mass of products.\n- **Balancing Equation Formula**: Trial and error method with coefficients.\n\n### Revision Summary & Key Takeaways\n- Understand the concept of balancing chemical equations.\n- Use trial and error to find appropriate coefficients.\n- Verify that the number of atoms for each element is equal on both sides.\n\n### Self-Check Practice Questions & Model Answers (AI-Generated Practice Questions)\n1. **Question**: Balance the equation: C₃H₈ + O₂ → CO₂ + H₂O\n   - **Answer**: 2C₃H₈ + 5O₂ → 6CO₂ + 8H₂O\n\n2. **Question**: What is the balanced equation for the reaction between hydrogen and oxygen to form water?\n   - **Answer**: 2H₂ + O₂ → 2H₂O\n\n### Visual Specification\n- **Visual Type**: Labeled Diagram  \n- **Purpose**: To visually represent the combustion of methane.\n- **Labels**: Molecules of CH₄, O₂, CO₂, H₂O; arrows indicating the reaction direction.\n- **Section Association**: Accompanies the step-by-step mechanism explanation.\n\nThis structured approach ensures a comprehensive understanding of balancing chemical equations and provides practical examples for students to apply their knowledge.",
+      "evaluation": {
+        "scores": {
+          "factual_correctness": 6.0,
+          "definition_accuracy": 10.0,
+          "key_term_completeness": 10.0,
+          "explanation_depth": 10.0,
+          "logical_organization": 10.0,
+          "appropriate_detail": 9.5,
+          "example_quality": 9.0,
+          "comparison_accuracy": 9.5,
+          "calculation_correctness": 8.5,
+          "exam_question_relevance": 9.0,
+          "citation_integrity": 9.5,
+          "correct_visual_planning": 9.5,
+          "clarity_and_readability": 9.2
+        },
+        "overall_score_10": 9.21,
+        "word_count": 815,
+        "matched_keywords": [
+          "reactants",
+          "products",
+          "conservation of mass"
+        ],
+        "missing_keywords": [
+          "stoichiometric",
+          "2o2",
+          "2h2o",
+          "ch4"
+        ],
+        "markdown_table_rows": 7,
+        "failure_patterns": []
+      }
+    },
+    {
+      "id": "math_1_quadratic_equations",
+      "category": "Mathematics",
+      "task_type": "deep_explanation",
+      "question": "Explain quadratic equations, standard form, discriminant, and nature of roots.",
+      "latency_sec": 145.73,
+      "eval_tokens": 2200,
+      "tokens_per_sec": 15.86,
+      "response": "### Topic Introduction & Learning Metadata\n**Subject:** Mathematics  \n**Level:** Grade 10  \n**Overview:** Quadratic equations are polynomial equations of the second degree. They form a fundamental part of algebra and have wide-ranging applications in various fields such as physics, engineering, and economics.\n\n---\n\n### Multi-Tier Definition\n\n1. **Precise Academic Definition**: A quadratic equation is an equation involving a single variable with the highest power of 2, which can be written in the standard form \\( ax^2 + bx + c = 0 \\), where \\( a \\neq 0 \\).\n\n2. **Everyday Explanation**: Think of a quadratic equation as a mathematical model that describes a parabolic shape, like the path of a ball thrown into the air.\n\n3. **Formal / Technical Definition**: The general form is \\( ax^2 + bx + c = 0 \\), where \\( a, b, \\) and \\( c \\) are constants, and \\( a \\neq 0 \\).\n\n4. **Concrete Example**: \\( x^2 - 5x + 6 = 0 \\)\n\n5. **Terminology Clarification**:\n   - **Quadratic Equation**: An equation of the form \\( ax^2 + bx + c = 0 \\).\n   - **Standard Form**: The form where the equation is written as \\( ax^2 + bx + c = 0 \\).\n\n---\n\n### Key Terms & Explained Glossary\n\n- **Term**: Quadratic Equation  \n  - **Meaning**: An equation of degree two, involving a single variable.\n  - **Context**: It can be represented in the form \\( ax^2 + bx + c = 0 \\).\n  - **Example**: \\( x^2 - 3x + 2 = 0 \\)\n  - **Relationship to Main Topic**: This is the primary equation we will work with.\n\n- **Term**: Standard Form  \n  - **Meaning**: The form of a quadratic equation where it is written as \\( ax^2 + bx + c = 0 \\).\n  - **Context**: It helps in identifying coefficients and solving the equation.\n  - **Example**: \\( 3x^2 - 4x + 1 = 0 \\)\n  - **Relationship to Main Topic**: This form is essential for applying various methods of solving quadratic equations.\n\n- **Term**: Discriminant  \n  - **Meaning**: A value calculated from the coefficients of a quadratic equation that determines the nature and number of its roots.\n  - **Formula**: \\( D = b^2 - 4ac \\)\n  - **Example**: For \\( x^2 - 5x + 6 = 0 \\), \\( D = (-5)^2 - 4(1)(6) = 25 - 24 = 1 \\).\n  - **Relationship to Main Topic**: It is a key component in understanding the roots of quadratic equations.\n\n- **Term**: Nature of Roots  \n  - **Meaning**: The characteristics of the solutions (roots) of a quadratic equation.\n  - **Context**: Can be real, distinct, equal, or complex.\n  - **Example**: For \\( x^2 + 4x + 4 = 0 \\), the roots are real and equal (\\( -2 \\)).\n  - **Relationship to Main Topic**: Understanding this helps in predicting the behavior of quadratic equations.\n\n---\n\n### Prerequisites\n\n- **Linear Equations**: Basic understanding of solving linear equations.\n- **Algebraic Manipulation**: Ability to manipulate algebraic expressions.\n- **Factoring**: Knowledge of factoring polynomials.\n- **Completing the Square**: Familiarity with this method for solving quadratic equations.\n- **The Quadratic Formula**: Understanding and application of \\( x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a} \\).\n\n---\n\n### Core Concepts Overview\n\n1. **Standard Form**: \\( ax^2 + bx + c = 0 \\)\n2. **Discriminant**: \\( D = b^2 - 4ac \\)\n3. **Nature of Roots**:\n   - Real and distinct: \\( D > 0 \\)\n   - Real and equal: \\( D = 0 \\)\n   - Complex (conjugate): \\( D < 0 \\)\n\n---\n\n### Detailed Section-by-Step Explanations\n\n1. **Step-by-Step Mechanism/Derivation & Formula/Equation**:\n   - The quadratic formula is derived from the standard form by completing the square.\n   - Given \\( ax^2 + bx + c = 0 \\), we complete the square to get \\( x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a} \\).\n\n2. **Worked Example**:\n   - Solve \\( x^2 - 5x + 6 = 0 \\).\n     - Identify coefficients: \\( a = 1, b = -5, c = 6 \\).\n     - Calculate the discriminant: \\( D = (-5)^2 - 4(1)(6) = 25 - 24 = 1 \\).\n     - Use the quadratic formula: \\( x = \\frac{-(-5) \\pm \\sqrt{1}}{2(1)} = \\frac{5 \\pm 1}{2} \\).\n     - Roots are \\( x = 3 \\) and \\( x = 2 \\).\n\n---\n\n### Step-by-Step Mechanism/Derivation & Formula/Equation\n\n1. **Given Data & SI Units**: Not applicable.\n2. **Formula / Law Used**: Quadratic formula: \\( x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a} \\).\n3. **Step-by-Step Substitution & Calculation**:\n   - For \\( x^2 - 5x + 6 = 0 \\):\n     - \\( a = 1, b = -5, c = 6 \\)\n     - Discriminant: \\( D = (-5)^2 - 4(1)(6) = 25 - 24 = 1 \\)\n     - Roots: \\( x = \\frac{5 \\pm 1}{2} \\)\n       - \\( x_1 = \\frac{5 + 1}{2} = 3 \\)\n       - \\( x_2 = \\frac{5 - 1}{2} = 2 \\)\n\n4. **Final Answer with Units**: The roots are \\( x = 3 \\) and \\( x = 2 \\).\n\n5. **Independent Verification Check**:\n   - Substitute \\( x = 3 \\): \\( (3)^2 - 5(3) + 6 = 9 - 15 + 6 = 0 \\)\n   - Substitute \\( x = 2 \\): \\( (2)^2 - 5(2) + 6 = 4 - 10 + 6 = 0 \\)\n\n---\n\n### A Markdown Comparison Table\n\n| Feature | Quadratic Equation | Standard Form | Discriminant | Nature of Roots |\n|---------|--------------------|---------------|--------------|----------------|\n| **Form** | \\( ax^2 + bx + c = 0 \\) | \\( ax^2 + bx + c = 0 \\) | \\( D = b^2 - 4ac \\) | Real and distinct if \\( D > 0 \\); real and equal if \\( D = 0 \\); complex if \\( D < 0 \\) |\n| **Example** | \\( x^2 - 5x + 6 = 0 \\) | \\( x^2 - 5x + 6 = 0 \\) | \\( D = 1 \\) | Roots are real and distinct: \\( x = 3, x = 2 \\) |\n| **Method** | Quadratic formula, factoring, completing the square | Standard form | Calculated using discriminant | Determined by value of discriminant |\n\n---\n\n### Common Misconceptions & Corrections\n\n- **Misconception**: \"A quadratic equation always has two real roots.\"\n  - **Correction**: This is not true. The nature of roots depends on the value of the discriminant. If \\( D < 0 \\), the roots are complex and conjugate.\n\n---\n\n### ### Visual Specification\n**Visual Type**: Labeled Diagram  \n**Purpose**: To illustrate the relationship between the coefficients and the roots of a quadratic equation.  \n**Labels**: \n- Axis labels: x-axis, y-axis\n- Points representing roots (3, 0) and (2, 0)\n- Parabola shape\n- Equation \\( x^2 - 5x + 6 = 0 \\)\n\n**Section Association**: Accompanies the worked example.\n\n---\n\n### Summary & 2 Practice Questions with Model Answers\n\n1. **Important Concepts to Revise**:\n   - Standard form of a quadratic equation.\n   - Discriminant and its role in determining the nature of roots.\n   - Quadratic formula for solving equations.\n\n2. **Definition-Based Question**: What is the standard form of a quadratic equation?  \n   - **Answer**: \\( ax^2 + bx + c = 0 \\)\n\n3. **Short-Answer Question (2–3 marks)**: Find the discriminant and nature of roots for \\( x^2 + 4x + 4 = 0 \\).  \n   - **Answer**: Discriminant \\( D = 0 \\); Roots are real and equal.\n\n4. **Long-Answer / Analytical Question (5 marks)**: Solve the quadratic equation \\( 2x^2 - 7x + 3 = 0 \\) using the quadratic formula, and determine the nature of its roots.  \n   - **Answer**: Using the quadratic formula, we get:\n     \\[\n     x = \\frac{7 \\pm \\sqrt{49 - 24}}{4} = \\frac{7 \\pm 5}{4}\n     \\]\n     Therefore, \\( x_1 = 3 \\) and \\( x_2 = \\frac{1}{2} \\). The roots are real and distinct.\n\n---\n\n### AI-Generated Practice Questions\n\n1. **Multiple-Choice Question (MCQ)**: What is the discriminant of the quadratic equation \\( x^2 - 6x + 9 = 0 \\)?\n   - A) 3  \n   - B) 0  \n   - C) 9  \n   - D) 18  \n  ",
+      "evaluation": {
+        "scores": {
+          "factual_correctness": 9.0,
+          "definition_accuracy": 10.0,
+          "key_term_completeness": 10.0,
+          "explanation_depth": 10.0,
+          "logical_organization": 10.0,
+          "appropriate_detail": 9.5,
+          "example_quality": 9.0,
+          "comparison_accuracy": 9.5,
+          "calculation_correctness": 8.5,
+          "exam_question_relevance": 9.0,
+          "citation_integrity": 9.5,
+          "correct_visual_planning": 9.5,
+          "clarity_and_readability": 9.2
+        },
+        "overall_score_10": 9.44,
+        "word_count": 1328,
+        "matched_keywords": [
+          "ax^2 + bx + c = 0",
+          "discriminant",
+          "b^2 - 4ac",
+          "parabola",
+          "real",
+          "roots"
+        ],
+        "missing_keywords": [
+          "vertex"
+        ],
+        "markdown_table_rows": 5,
+        "failure_patterns": []
+      }
+    },
+    {
+      "id": "math_2_quadratic_formula_derivation",
+      "category": "Mathematics",
+      "task_type": "derivation",
+      "question": "Derive or explain the quadratic formula step by step by completing the square from ax^2 + bx + c = 0.",
+      "latency_sec": 122.33,
+      "eval_tokens": 1869,
+      "tokens_per_sec": 15.39,
+      "response": "### Topic Introduction & Learning Metadata\n**Subject:** Mathematics  \n**Level:** Grade 10  \n**Overview:** This lesson will derive the quadratic formula by completing the square from the general form of a quadratic equation \\(ax^2 + bx + c = 0\\). The goal is to understand the process and application of this fundamental algebraic technique.\n\n### Multi-Tier Definition\n1. **Precise Academic Definition**: The quadratic formula is derived from the general quadratic equation \\(ax^2 + bx + c = 0\\) by completing the square, providing a method to find the roots of any quadratic equation.\n2. **Everyday Explanation**: It's like finding the exact spots where a parabola (a U-shaped curve) crosses the x-axis on a graph.\n3. **Formal / Technical Definition**: The quadratic formula is given as \\(x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}\\), derived by completing the square.\n\n### Key Terms & Explained Glossary\n- **Quadratic Equation** — An equation of the form \\(ax^2 + bx + c = 0\\).\n- **Completing the Square** — A method to transform a quadratic expression into a perfect square trinomial.\n- **Roots / Solutions** — The values of \\(x\\) that satisfy the equation.\n\n### Prerequisites\n- Understanding of linear equations and basic algebraic manipulations.\n- Familiarity with the concept of factoring quadratics.\n- Knowledge of the discriminant (\\(b^2 - 4ac\\)) and its role in determining the nature of roots.\n\n### Step-by-Step Mechanism or Derivation\n1. **Start with the General Form**: \\(ax^2 + bx + c = 0\\).\n2. **Divide by \\(a\\)**: \\(\\frac{ax^2}{a} + \\frac{bx}{a} + \\frac{c}{a} = 0 \\Rightarrow x^2 + \\frac{b}{a}x + \\frac{c}{a} = 0\\).\n3. **Move the constant term to the right side**: \\(x^2 + \\frac{b}{a}x = -\\frac{c}{a}\\).\n4. **Complete the Square**:\n   - Add and subtract \\(\\left(\\frac{b}{2a}\\right)^2\\) on the left side.\n   - This transforms the equation to: \\(x^2 + \\frac{b}{a}x + \\left(\\frac{b}{2a}\\right)^2 = \\left(\\frac{b}{2a}\\right)^2 - \\frac{c}{a}\\).\n5. **Rewrite as a Perfect Square**:\n   - The left side is now a perfect square: \\(\\left(x + \\frac{b}{2a}\\right)^2 = \\frac{b^2 - 4ac}{4a^2}\\).\n6. **Take the Square Root of Both Sides**: \\(x + \\frac{b}{2a} = \\pm \\sqrt{\\frac{b^2 - 4ac}{4a^2}}\\).\n7. **Simplify and Solve for \\(x\\)**:\n   - \\(x + \\frac{b}{2a} = \\pm \\frac{\\sqrt{b^2 - 4ac}}{2a}\\).\n   - Subtract \\(\\frac{b}{2a}\\) from both sides: \\(x = -\\frac{b}{2a} \\pm \\frac{\\sqrt{b^2 - 4ac}}{2a}\\).\n8. **Combine into the Quadratic Formula**: \\(x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}\\).\n\n### Formula/Equation & Worked Example\nThe quadratic formula is:\n\\[ x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a} \\]\n\n**Example**: Solve \\(x^2 + 5x + 6 = 0\\).\n1. Identify coefficients: \\(a = 1\\), \\(b = 5\\), \\(c = 6\\).\n2. Substitute into the formula:\n   \\[ x = \\frac{-5 \\pm \\sqrt{5^2 - 4(1)(6)}}{2(1)} \\]\n3. Simplify inside the square root: \n   \\[ x = \\frac{-5 \\pm \\sqrt{25 - 24}}{2} \\]\n4. Further simplify:\n   \\[ x = \\frac{-5 \\pm \\sqrt{1}}{2} \\]\n5. Solve for \\(x\\):\n   \\[ x = \\frac{-5 + 1}{2} = -2 \\quad \\text{or} \\quad x = \\frac{-5 - 1}{2} = -3 \\]\n\n### Markdown Comparison Table\n| Feature | Quadratic Formula | Completing the Square |\n|---------|------------------|----------------------|\n| **Definition** | A formula to find roots of a quadratic equation. | A method to solve quadratics by transforming them into perfect squares. |\n| **Mechanism** | Directly applies the square root property after rearranging. | Involves adding and subtracting a specific term to create a perfect square. |\n| **Examples** | \\(x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}\\). | \\(x + \\frac{b}{2a} = \\pm \\sqrt{\\frac{b^2 - 4ac}{4a^2}}\\). |\n| **Applications** | Solving quadratic equations quickly. | Solving quadratics when factoring is difficult. |\n| **Complexity** | Simple and direct. | More complex, but provides deeper understanding. |\n\n### Common Misconceptions\n- **Misconception:** The quadratic formula can only be used for equations with integer coefficients.\n  - **Scientific Reality:** It works for any real or complex coefficients.\n\n### ### Visual Specification\n- **Visual Type**: Labeled Diagram\n- **Purpose**: To illustrate the process of completing the square visually.\n- **Essential Components & Labels**:\n  - A labeled diagram showing a quadratic equation \\(ax^2 + bx + c = 0\\).\n  - Steps for adding and subtracting \\(\\left(\\frac{b}{2a}\\right)^2\\) to complete the square.\n  - The resulting perfect square trinomial.\n- **Section Association**: Accompanies the step-by-step derivation.\n\n### Revision Summary\n- The quadratic formula \\(x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}\\) is derived by completing the square from the general form of a quadratic equation.\n- Understanding this process helps in solving any quadratic equation efficiently.\n- Commonly used for quick solutions and understanding the nature of roots through the discriminant.\n\n### AI-Generated Practice Questions with Model Answers\n1. **Short-Answer Question**: Solve \\(2x^2 - 4x - 6 = 0\\).\n   - **Model Answer**: \\(x = 3\\) or \\(x = -1\\).\n\n2. **Long-Answer / Analytical Question**: Explain the significance of the discriminant in determining the nature of roots.\n   - **Model Answer**: The discriminant (\\(b^2 - 4ac\\)) determines whether the roots are real and distinct, real and equal, or complex.\n\n3. **Multiple-Choice Question**:\n   - What is the first step in solving \\(x^2 + 6x - 7 = 0\\) by completing the square?\n     A) Divide by \\(a\\).  \n     B) Move the constant term to the right side.  \n     C) Add and subtract \\(\\left(\\frac{b}{2a}\\right)^2\\).  \n     D) Take the square root of both sides.\n   - **Correct Answer**: B.\n\n4. **Application / Numerical Question**: Find the roots of \\(3x^2 + 5x - 2 = 0\\) using the quadratic formula.\n   - **Model Answer**: \\(x = \\frac{-5 \\pm \\sqrt{25 + 24}}{6} = \\frac{-5 \\pm 7}{6}\\), so \\(x = \\frac{1}{3}\\) or \\(x = -2\\).\n\n5. **Diagram-Based Question**: Draw a diagram showing the process of completing the square for \\(x^2 + 8x + 15 = 0\\).\n   - **Model Answer**: Diagram illustrating the steps to complete the square, resulting in \\((x + 4)^2 = 1\\).\n\nThese questions and answers are AI-generated curriculum practice questions (not official past-paper questions; not guaranteed to appear in any examination).",
+      "evaluation": {
+        "scores": {
+          "factual_correctness": 8.6,
+          "definition_accuracy": 10.0,
+          "key_term_completeness": 10.0,
+          "explanation_depth": 10.0,
+          "logical_organization": 10.0,
+          "appropriate_detail": 9.5,
+          "example_quality": 9.0,
+          "comparison_accuracy": 9.0,
+          "calculation_correctness": 8.5,
+          "exam_question_relevance": 9.0,
+          "citation_integrity": 9.5,
+          "correct_visual_planning": 9.5,
+          "clarity_and_readability": 9.2
+        },
+        "overall_score_10": 9.37,
+        "word_count": 961,
+        "matched_keywords": [
+          "completing the square",
+          "b^2 - 4ac",
+          "-b",
+          "2a"
+        ],
+        "missing_keywords": [
+          "b/2a"
+        ],
+        "markdown_table_rows": 7,
+        "failure_patterns": []
+      }
+    },
+    {
+      "id": "math_3_solve_and_verify",
+      "category": "Mathematics",
+      "task_type": "numerical",
+      "question": "Solve the quadratic equation 2x^2 - 7x + 3 = 0 step by step and verify both roots by substituting them back into the original equation.",
+      "latency_sec": 144.1,
+      "eval_tokens": 2191,
+      "tokens_per_sec": 15.92,
+      "response": "### A. Understand & Classify the Question\n- **Subject**: Mathematics\n- **Topic**: Quadratic Equations\n- **Educational Level**: Grade 10\n- **Requested Depth**: Detailed step-by-step solution and verification.\n- **Task Type**: Numerical Problem Solving\n\n### B. Provide Precise Multi-Tier Definitions\n1. **Precise Academic Definition**: A quadratic equation is an equation of the form \\( ax^2 + bx + c = 0 \\), where \\( a, b, \\) and \\( c \\) are constants, and \\( a \\neq 0 \\).\n2. **Everyday Explanation**: It's an equation that describes a parabola (a U-shaped curve). The term \"quadratic\" comes from the Latin word \"quadratus,\" meaning \"square.\"\n3. **Formal / Technical Definition**: The general form of a quadratic equation is \\( ax^2 + bx + c = 0 \\), where \\( a, b, \\) and \\( c \\) are real numbers, and \\( a \\neq 0 \\).\n4. **Concrete Example**: \\( x^2 - 5x + 6 = 0 \\)\n5. **Terminology Clarification**:\n   - **Quadratic Formula**: The formula used to solve quadratic equations is \\( x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a} \\).\n   - **Discriminant**: The term under the square root, \\( b^2 - 4ac \\), determines the nature of the roots.\n\n### C. Explain Key Terms & Keywords\n- **Essential Core Terms**:\n  - **Quadratic Equation**: An equation of the form \\( ax^2 + bx + c = 0 \\).\n  - **Roots / Solutions**: The values of \\( x \\) that satisfy the equation.\n  - **Discriminant**: \\( b^2 - 4ac \\), which determines the nature of the roots (real, complex, distinct, or repeated).\n\n### D. Teach Topics in Depth\n1. **Topic Introduction & Learning Metadata**:\n   - Subject: Mathematics\n   - Level: Grade 10\n   - Overview: This lesson will cover solving quadratic equations using the quadratic formula and verifying the solutions.\n\n2. **Multi-Tier Definition**: (See above)\n\n3. **Key Terms & Explained Glossary**:\n   - **Quadratic Equation**: An equation of the form \\( ax^2 + bx + c = 0 \\).\n   - **Roots / Solutions**: The values of \\( x \\) that satisfy the equation.\n   - **Discriminant**: \\( b^2 - 4ac \\), which determines the nature of the roots (real, complex, distinct, or repeated).\n\n4. **Prerequisites**:\n   - Basic algebraic manipulation\n   - Understanding of square roots and fractions\n\n5. **Core Concepts Overview**:\n   - The quadratic formula: \\( x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a} \\)\n   - Solving for the discriminant to determine the nature of the roots\n   - Substituting values into the quadratic equation to verify solutions\n\n6. **Detailed Section-by-Section Explanations**:\n   - Given: \\( 2x^2 - 7x + 3 = 0 \\)\n   - Identify coefficients: \\( a = 2 \\), \\( b = -7 \\), \\( c = 3 \\)\n\n7. **Step-by-Step Mechanism or Mathematical Derivation**:\n   - Substitute the values into the quadratic formula: \n     \\[\n     x = \\frac{-(-7) \\pm \\sqrt{(-7)^2 - 4(2)(3)}}{2(2)}\n     \\]\n   - Simplify inside the square root:\n     \\[\n     x = \\frac{7 \\pm \\sqrt{49 - 24}}{4}\n     \\]\n     \\[\n     x = \\frac{7 \\pm \\sqrt{25}}{4}\n     \\]\n     \\[\n     x = \\frac{7 \\pm 5}{4}\n     \\]\n\n8. **Worked Examples & Real-World Applications**:\n   - Calculate the roots:\n     \\[\n     x_1 = \\frac{7 + 5}{4} = \\frac{12}{4} = 3\n     \\]\n     \\[\n     x_2 = \\frac{7 - 5}{4} = \\frac{2}{4} = \\frac{1}{2}\n     \\]\n\n9. **Structured Comparison Table**:\n   | Feature / Criterion      | \\( x = 3 \\)         | \\( x = \\frac{1}{2} \\) |\n   |-------------------------|--------------------|----------------------|\n   | Value                   | 3                  | 0.5                  |\n   | Substitution            | \\( 2(3)^2 - 7(3) + 3 = 0 \\) | \\( 2\\left(\\frac{1}{2}\\right)^2 - 7\\left(\\frac{1}{2}\\right) + 3 = 0 \\) |\n   | Simplification          | \\( 18 - 21 + 3 = 0 \\) | \\( \\frac{1}{2} - \\frac{7}{2} + 3 = 0 \\) |\n   | Final Result            | 0                  | 0                    |\n\n10. **Common Misconceptions & Corrections**:\n    - **Misconception**: Forgetting to substitute both roots back into the equation.\n    - **Correction**: Always verify each root by substituting it back into the original equation.\n\n### E. Generate Exam-Oriented Learning Material\n- **Important Concepts to Revise**: Quadratic formula, discriminant, nature of roots.\n- **Definition-Based Questions**: What is a quadratic equation? How do you find the roots using the quadratic formula?\n- **Short-Answer Questions (2–3 marks)**: Solve \\( x^2 - 5x + 6 = 0 \\) and verify your solutions.\n- **Long-Answer / Analytical Questions (5 marks)**: Explain how to determine the nature of the roots from the discriminant.\n- **Multiple-Choice Questions (MCQs)**:\n  - What is the solution for \\( x^2 - 4x + 4 = 0 \\)?\n    - A) \\( x = 1, 3 \\)\n    - B) \\( x = 2, 2 \\)\n    - C) \\( x = 1, 1 \\)\n    - D) \\( x = 2, 4 \\)\n  - **Correct Answer**: B\n- **Application / Numerical / Diagram-Based Questions**: A ball is thrown upward and its height \\( h \\) in meters after \\( t \\) seconds can be modeled by the equation \\( h = -5t^2 + 20t + 15 \\). At what times does the ball reach a height of 20 meters?\n- **Model Answers & Marking Checkpoints**: Verify each root by substituting back into the original equation.\n\n### F. Structured Visual Specification\n- **Visual Type**: Labeled Scientific Diagram\n- **Pedagogical Purpose**: To visually represent the quadratic formula and its application.\n- **Essential Components & Labels**:\n  - Quadratic formula: \\( x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a} \\)\n  - Coefficients: \\( a, b, c \\)\n  - Roots: \\( x_1, x_2 \\)\n- **Target Section Association**: The visual will accompany the detailed explanation of solving quadratic equations.\n\n### G. Maintain Strict Scientific & Mathematical Accuracy\n- Given Data in SI Units: Not applicable (units are not required for this problem).\n- Step-by-Step Substitution & Calculation:\n  - \\( a = 2 \\), \\( b = -7 \\), \\( c = 3 \\)\n  - Quadratic formula: \\( x = \\frac{-(-7) \\pm \\sqrt{(-7)^2 - 4(2)(3)}}{2(2)} \\)\n  - Simplification: \\( x = \\frac{7 \\pm \\sqrt{25}}{4} \\)\n  - Roots: \\( x_1 = 3 \\), \\( x_2 = \\frac{1}{2} \\)\n\n- Final Answer with Units:\n  - \\( x_1 = 3 \\)\n  - \\( x_2 = \\frac{1}{2} \\)\n\n- Verification Check:\n  - For \\( x = 3 \\):\n    \\[\n    2(3)^2 - 7(3) + 3 = 0\n    \\]\n    \\[\n    18 - 21 + 3 = 0\n    \\]\n    \\[\n    0 = 0\n    \\]\n  - For \\( x = \\frac{1}{2} \\):\n    \\[\n    2\\left(\\frac{1}{2}\\right)^2 - 7\\left(\\frac{1}{2}\\right) + 3 = 0\n    \\]\n    \\[\n    \\frac{1}{2} - \\frac{7}{2} + 3 = 0\n    \\]\n    \\[\n    0 = 0\n    \\]\n\n- **Similar Practice Problem**:\n  Solve \\( x^2 - 5x + 6 = 0 \\) and verify both roots.\n  - **Answer**: \\( x_1 = 3 \\), \\( x_2 = 2 \\)\n\n### Visual Specification\n```markdown\n### Visual Specification\n\n- **Visual Type**: Labeled Scientific Diagram\n- **Pedagogical Purpose**: To visually represent the quadratic formula and its application.\n- **Essential Components & Labels**:\n  - Quadratic formula: \\( x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a} \\)\n  - Coefficients: \\( a, b, c \\)\n  - Roots: \\( x_1, x_2 \\)\n- **Target Section Association**: The visual will accompany the detailed explanation of solving quadratic equations.\n```\n\nThis structured approach ensures clarity and accuracy in teaching quadratic equations.",
+      "evaluation": {
+        "scores": {
+          "factual_correctness": 9.0,
+          "definition_accuracy": 10.0,
+          "key_term_completeness": 10.0,
+          "explanation_depth": 8.6,
+          "logical_organization": 10.0,
+          "appropriate_detail": 9.5,
+          "example_quality": 9.0,
+          "comparison_accuracy": 7.5,
+          "calculation_correctness": 10.0,
+          "exam_question_relevance": 9.0,
+          "citation_integrity": 9.5,
+          "correct_visual_planning": 9.5,
+          "clarity_and_readability": 9.2
+        },
+        "overall_score_10": 9.29,
+        "word_count": 1169,
+        "matched_keywords": [
+          "discriminant",
+          "25",
+          "x = 3",
+          "0.5",
+          "verify",
+          "verification"
+        ],
+        "missing_keywords": [
+          "1/2"
+        ],
+        "markdown_table_rows": 0,
+        "failure_patterns": []
+      }
+    },
+    {
+      "id": "cs_1_variables_and_functions",
+      "category": "Computer Science",
+      "task_type": "deep_explanation",
+      "question": "Explain variables and functions in programming with clear examples.",
+      "latency_sec": 88.53,
+      "eval_tokens": 1317,
+      "tokens_per_sec": 16.06,
+      "response": "### Topic Introduction & Learning Metadata\n**Subject:** Computer Science  \n**Level:** Grade 10  \n**Overview:** Variables and functions are fundamental concepts in programming. They help manage data and structure code, making programs more organized and efficient.\n\n### Multi-Tier Definition\n1. **Precise Academic Definition**: \n   - **Variable**: A storage location (memory address) associated with a symbolic name (identifier), which contains some known or unknown quantity.\n   - **Function**: A block of organized, reusable code that is used to perform a single, related action.\n\n2. **Everyday Explanation**:\n   - **Variable**: Think of it as a container where you can store different types of information like numbers, text, etc., and this information can change over time.\n   - **Function**: It's like a recipe or a set of instructions that you follow to complete a task.\n\n3. **Formal / Technical Definition**:\n   - **Variable**: A variable is declared with a specific data type (e.g., int, float, string) and has a name associated with it.\n     ```python\n     x = 5  # Integer variable\n     y = \"Hello\"  # String variable\n     ```\n   - **Function**: A function definition includes the return type, function name, parameters, and body of code.\n     ```python\n     def add(a, b):\n         return a + b\n     ```\n\n4. **Concrete Example**:\n   - **Variable Example**: `age = 20` (stores an integer value).\n   - **Function Example**: `def greet(name): print(\"Hello, \" + name)` (prints a greeting message).\n\n5. **Terminology Clarification**:\n   - **Local vs Global Variables**: Local variables are declared inside a function and can only be accessed within that function. Global variables are declared outside any function and can be accessed anywhere in the program.\n   - **Parameter vs Argument**: A parameter is a variable in a method definition, while an argument is the actual value of this variable passed to the function when calling it.\n\n### Key Terms & Explained Glossary\n- **Term**: Variable — Meaning: A named location used to store data values. Context: Used for storing and manipulating data within a program.\n- **Term**: Function — Meaning: A block of code that performs a specific task or set of tasks. Context: Functions help in organizing the code, making it more readable and maintainable.\n\n### Prerequisites\n- Basic understanding of programming syntax (e.g., Python).\n- Familiarity with data types such as integers, strings, etc.\n- Knowledge of basic control structures like if-else statements and loops.\n\n### Step-by-Step Mechanism or Mathematical Derivation & Formula/Equation\n1. **Declaring a Variable**:\n   ```python\n   # Declare an integer variable\n   x = 5\n   ```\n\n2. **Using a Function**:\n   ```python\n   def add(a, b):\n       return a + b\n\n   result = add(3, 4)  # Calling the function and storing the result in 'result'\n   print(result)  # Output: 7\n   ```\n\n### Worked Example\n```python\n# Declare variables\nage = 20\nname = \"Alice\"\n\n# Define a function to greet someone by name\ndef greet(name):\n    return f\"Hello, {name}!\"\n\n# Use the function and print the result\ngreeting = greet(name)\nprint(greeting)  # Output: Hello, Alice!\n```\n\n### Structured Comparison Table\n| Feature | Variable | Function |\n| --- | --- | --- |\n| Definition | Named storage location for data. | Block of code that performs a task. |\n| Scope | Can be local or global. | Local to the file or module unless explicitly defined globally. |\n| Purpose | To store and manipulate data. | To perform specific tasks and return values. |\n| Example | `age = 20` | `def add(a, b): return a + b` |\n| Usage | Used in expressions and statements. | Called with arguments to execute its code block. |\n\n### Common Misconceptions & Corrections\n- **Misconception**: Variables can be used anywhere in the program.\n  - **Correction**: Variables declared inside functions are local and cannot be accessed outside those functions unless explicitly returned or passed as parameters.\n\n- **Misconception**: Functions must always return a value.\n  - **Correction**: Functions can have no return statement, meaning they return `None` by default. They can also return multiple values using tuples.\n\n### ### Visual Specification\n- **Visual Type**: Labeled Diagram\n- **Purpose**: To illustrate the relationship between variables and functions in a program flow.\n- **Labels**: Variables (e.g., x, y), Functions (e.g., add), Control Flow (e.g., if-else, loops).\n- **Section Association**: Accompanies the step-by-step mechanism section.\n\n### Summary & 2 Practice Questions with Model Answers\n1. **Question**: What is the difference between a local and global variable in Python?\n   - **Answer**: A local variable is declared inside a function and can only be accessed within that function, whereas a global variable is declared outside any function and can be accessed anywhere in the program.\n\n2. **Question**: Write a Python function to calculate the area of a rectangle given its length and width.\n   - **Model Answer**:\n     ```python\n     def area(length, width):\n         return length * width\n\n     # Example usage\n     result = area(5, 10)\n     print(result)  # Output: 50\n     ```\n\n### AI-Generated Practice Questions\n1. **Question**: Define a variable `temperature` and assign it the value of 32 degrees Celsius.\n   - **Answer**: \n     ```python\n     temperature = 32\n     ```\n\n2. **Question**: Create a function named `multiply` that takes two parameters, `a` and `b`, and returns their product.\n   - **Answer**:\n     ```python\n     def multiply(a, b):\n         return a * b\n\n     result = multiply(4, 5)\n     print(result)  # Output: 20\n     ```\n\nBy understanding variables and functions, you can write more organized and efficient code in programming.",
+      "evaluation": {
+        "scores": {
+          "factual_correctness": 9.0,
+          "definition_accuracy": 10.0,
+          "key_term_completeness": 10.0,
+          "explanation_depth": 10.0,
+          "logical_organization": 10.0,
+          "appropriate_detail": 9.5,
+          "example_quality": 9.0,
+          "comparison_accuracy": 9.5,
+          "calculation_correctness": 8.5,
+          "exam_question_relevance": 9.0,
+          "citation_integrity": 9.5,
+          "correct_visual_planning": 9.5,
+          "clarity_and_readability": 9.2
+        },
+        "overall_score_10": 9.44,
+        "word_count": 868,
+        "matched_keywords": [
+          "variable",
+          "data type",
+          "function",
+          "parameter",
+          "return",
+          "scope"
+        ],
+        "missing_keywords": [
+          "reusability"
+        ],
+        "markdown_table_rows": 7,
+        "failure_patterns": []
+      }
+    },
+    {
+      "id": "cs_2_arrays_vs_linked_lists",
+      "category": "Computer Science",
+      "task_type": "comparison",
+      "question": "Compare arrays and linked lists in data structures.",
+      "latency_sec": 83.0,
+      "eval_tokens": 1358,
+      "tokens_per_sec": 16.55,
+      "response": "### Compare Arrays and Linked Lists in Data Structures\n\n#### 1. Multi-Tier Definitions\n\n**Precise Academic Definition:**\n- **Array**: A collection of elements of the same data type stored at contiguous memory locations.\n- **Linked List**: A linear collection of data elements, called nodes, where each node contains a reference to the next node.\n\n**Everyday Explanation:**\n- **Array**: Imagine a row of boxes in a warehouse, all lined up next to each other. Each box can hold one item, and you can access any box by its position.\n- **Linked List**: Think of a chain of paper clips where each clip is connected to the next one. You can only access the next clip from the current one.\n\n**Formal / Technical Definition:**\n- **Array**: An array is a data structure that stores elements of the same type in contiguous memory locations, and it supports direct access via index.\n- **Linked List**: A linked list consists of nodes where each node contains two parts: the data and a reference (or pointer) to the next node.\n\n#### 2. Key Terms & Explained Glossary\n\n**Essential Core Terms:**\n- **Node**: An element in a linked list that holds data and a reference to the next node.\n- **Index**: A position or location used to access elements in an array.\n- **Pointer**: A variable that stores the memory address of another variable.\n\n**Advanced / Optional Vocabulary:**\n- **Dynamic Array**: A type of array where the size can change during runtime, often implemented using a dynamic resizing technique like vector in C++.\n- **Garbage Collection**: The process by which unused nodes in a linked list are automatically freed up for reuse.\n\n#### 3. Prerequisites\n\nBefore understanding arrays and linked lists, students should be familiar with:\n- Basic data types (integers, strings, etc.)\n- Memory allocation and pointers in programming\n- Basic operations on data structures like insertion, deletion, and traversal\n\n#### 4. Step-by-Step Mechanism/Derivation & Formula/Equation\n\n**Arrays:**\n1. **Initialization**: `int arr[5] = {10, 20, 30, 40, 50};`\n2. **Accessing Elements**: `arr[2]` returns the value at index 2 (which is 30).\n3. **Insertion/Deletion**: Requires shifting elements to maintain contiguous memory.\n\n**Linked Lists:**\n1. **Node Structure**: \n   ```c\n   struct Node {\n       int data;\n       Node* next;\n   };\n   ```\n2. **Traversal**: \n   ```c\n   Node* current = head;\n   while (current != NULL) {\n       // Process current node\n       current = current->next;\n   }\n   ```\n\n#### 5. Worked Example\n\n**Array Example:**\n```c\nint arr[5] = {10, 20, 30, 40, 50};\nprintf(\"%d\", arr[2]); // Output: 30\n```\n\n**Linked List Example:**\n```c\nstruct Node* head = NULL;\nhead = (Node*)malloc(sizeof(Node));\nhead->data = 10;\nhead->next = (Node*)malloc(sizeof(Node));\nhead->next->data = 20;\nhead->next->next = NULL;\n\n// Traversing the list\nNode* current = head;\nwhile (current != NULL) {\n    printf(\"%d \", current->data);\n    current = current->next;\n}\n```\n\n#### 6. Markdown Comparison Table\n\n| Feature | Array | Linked List |\n|---------|-------|-------------|\n| **Memory Allocation** | Contiguous memory | Non-contiguous memory |\n| **Access Time** | O(1) for any element | O(n) for any element |\n| **Insertion/Deletion** | Requires shifting elements | Only requires updating pointers |\n| **Size Flexibility** | Fixed size, dynamic resizing possible | Dynamic size, easy to resize |\n| **Memory Overhead** | Low overhead per element | High overhead due to extra pointer |\n\n#### 7. Common Misconceptions\n\n- **Misconception**: Arrays and linked lists are the same.\n- **Scientific Reality**: Arrays store elements in contiguous memory locations, while linked lists use pointers to link nodes.\n\n#### 8. ### Visual Specification\n\n**Visual Type**: Labeled Diagram\n**Purpose**: To illustrate the difference between array and linked list storage.\n**Labels**: Array boxes, Node structure, Pointers\n**Section Association**: Section 5 (Mechanism & Derivation)\n\n#### 9. Summary & Practice Questions\n\n- **Summary**: Arrays provide direct access to elements but require contiguous memory allocation, while linked lists offer dynamic size flexibility but have slower access times.\n\n- **Practice Questions:**\n\n1. **Question**: What is the time complexity for accessing an element in an array and a linked list?\n   - **Answer**: O(1) for arrays; O(n) for linked lists.\n   \n2. **Question**: Given a scenario where you need to frequently insert and delete elements, which data structure would be more suitable? Explain why.\n   - **Answer**: Linked lists are more suitable because they allow efficient insertion and deletion without the need to shift elements.\n\n**AI-Generated Practice Questions:**\n\n1. **Short-Answer Question (2 marks)**: What is the difference between an array and a linked list in terms of memory allocation?\n   - **Model Answer**: Arrays use contiguous memory, while linked lists use non-contiguous memory with pointers.\n   \n2. **Long-Answer Question (5 marks)**: Explain how insertion and deletion operations are performed in both arrays and linked lists.\n   - **Model Answer**: In arrays, shifting elements is required for insertions and deletions; in linked lists, only updating pointers is needed.\n\n3. **Multiple-Choice Question (MCQ)**\n   - **Question**: Which data structure allows dynamic resizing?\n     - A) Array\n     - B) Linked List\n     - C) Both\n     - D) Neither\n   - **Correct Answer**: B\n   - **Explanation**: Linked lists can be dynamically resized by adding or removing nodes, whereas arrays typically have a fixed size.\n\n4. **Application Question**: Design a scenario where you would prefer using an array over a linked list.\n   - **Model Answer**: For scenarios requiring fast access to elements and where the size is known in advance, such as storing a fixed number of student records, an array would be more efficient.",
+      "evaluation": {
+        "scores": {
+          "factual_correctness": 9.1,
+          "definition_accuracy": 10.0,
+          "key_term_completeness": 10.0,
+          "explanation_depth": 10.0,
+          "logical_organization": 10.0,
+          "appropriate_detail": 9.5,
+          "example_quality": 9.0,
+          "comparison_accuracy": 9.5,
+          "calculation_correctness": 8.5,
+          "exam_question_relevance": 9.0,
+          "citation_integrity": 9.5,
+          "correct_visual_planning": 9.5,
+          "clarity_and_readability": 9.2
+        },
+        "overall_score_10": 9.45,
+        "word_count": 882,
+        "matched_keywords": [
+          "contiguous",
+          "node",
+          "pointer",
+          "o(1)",
+          "o(n)",
+          "insertion",
+          "memory"
+        ],
+        "missing_keywords": [
+          "random access"
+        ],
+        "markdown_table_rows": 7,
+        "failure_patterns": []
+      }
+    },
+    {
+      "id": "cs_3_binary_search_algorithm",
+      "category": "Computer Science",
+      "task_type": "deep_explanation",
+      "question": "Explain the binary search algorithm step by step with a worked example and time complexity.",
+      "latency_sec": 87.97,
+      "eval_tokens": 1432,
+      "tokens_per_sec": 16.42,
+      "response": "### Topic Introduction & Learning Metadata\n**Subject:** Computer Science  \n**Level:** Grade 10  \n**Overview:** Binary search is an efficient algorithm for finding an item from a sorted list of items. It works by repeatedly dividing in half the portion of the list that could contain the item, until you've narrowed down the possible locations to just one.\n\n### Multi-Tier Definition\n1. **Precise Academic Definition**: The binary search algorithm is a searching technique used on a sorted array or list to find an element efficiently.\n2. **Everyday Explanation**: Imagine you have a dictionary and want to find the word \"Apple.\" Instead of reading through every page, you can open it in the middle and check if \"Apple\" comes before or after that point. If it's not there, you repeat the process with the half where \"Apple\" might be.\n3. **Formal / Technical Definition**: Binary search repeatedly divides the search interval in half. At each step, the algorithm compares the middle element of the interval to the target value and continues searching within either the left or right subinterval depending on whether the target is less than or greater than the middle element.\n\n### Key Terms & Explained Glossary\n- **Binary Search**: An efficient algorithm for finding an item from a sorted list.\n- **Sorted List/Array**: A collection of items where each item has a unique position, and the items are ordered in some way (e.g., alphabetical or numerical order).\n- **Target Value**: The value we are searching for within the array.\n\n### Prerequisites\n- Understanding of arrays/lists and how to access elements.\n- Basic understanding of loops and conditional statements.\n- Knowledge of how to divide a range into halves.\n\n### Step-by-Step Mechanism or Derivation\n1. Start with an interval covering the whole array.\n2. Check if the middle element is equal to the target value.\n3. If not, decide whether to continue searching in the left half or the right half by comparing the target value with the middle element.\n4. Repeat steps 1-3 until the target value is found or the search interval is empty.\n\n### Formula/Equation & Worked Example\nLet's consider a sorted array of integers: `[2, 5, 8, 12, 16, 23, 38, 56, 72, 91]`. We want to find the index of `23`.\n\n1. **Initial Interval**: `[0, 9]`\n2. **Middle Element**: Index 4 (value 16), compare with target value 23.\n   - Since 23 > 16, search in the right half: `[5, 9]`.\n3. **New Middle Element**: Index 7 (value 38), compare with target value 23.\n   - Since 23 < 38, search in the left half: `[5, 6]`.\n4. **New Middle Element**: Index 5 (value 23), match found.\n\nThus, `23` is at index 5.\n\n### Markdown Comparison Table\n| Feature | Binary Search |\n| --- | --- |\n| Data Structure | Sorted Array/List |\n| Time Complexity Best Case | O(1) - Target value is the middle element. |\n| Time Complexity Average Case | O(log n) - Where `n` is the number of elements in the array. |\n| Time Complexity Worst Case | O(log n) - Even if the target is not found, the algorithm still performs at most `log n + 1` comparisons. |\n| Space Complexity | O(1) - Constant space required. |\n\n### Common Misconceptions\n- **Misconception**: Binary search can be used on any array.\n  - **Scientific Reality**: Binary search requires a sorted array to function correctly.\n\n### ### Visual Specification\n- **Visual Type**: Labeled Diagram\n- **Pedagogical Purpose**: To illustrate the process of binary search, showing how the interval is divided and narrowed down.\n- **Essential Components & Labels**:\n  - Array: `[2, 5, 8, 12, 16, 23, 38, 56, 72, 91]`\n  - Initial Interval: `[0, 9]`\n  - Middle Element: `16` (Index 4)\n  - New Interval: `[5, 9]`\n  - New Middle Element: `38` (Index 7)\n  - Final Interval: `[5, 6]`\n- **Section Association**: Accompanies the Step-by-Step Mechanism or Derivation section.\n\n### Revision Summary\n- Binary search is an efficient algorithm for finding elements in a sorted array.\n- It works by repeatedly dividing the search interval in half.\n- The time complexity of binary search is O(log n), making it very fast for large datasets.\n- Binary search requires the input to be sorted, otherwise, it will not work correctly.\n\n### AI-Generated Practice Questions with Model Answers\n1. **Short-Answer Question**: What is the time complexity of binary search?\n   - **Model Answer**: The time complexity of binary search is O(log n).\n\n2. **Long-Answer / Analytical Question**: Explain why binary search requires a sorted array.\n   - **Model Answer**: Binary search works by repeatedly dividing the search interval in half, which relies on the elements being ordered. If the array is not sorted, this method will not work correctly.\n\n3. **Multiple-Choice Question (MCQ)**: What is the best case time complexity of binary search?\n   - A) O(n)\n   - B) O(log n)\n   - C) O(1)\n   - D) O(n log n)\n   - **Correct Answer**: C\n   - **Explanation**: The best case occurs when the target value is the middle element, resulting in a time complexity of O(1).\n\n4. **Application / Numerical Question**: Given the array `[2, 5, 8, 12, 16, 23, 38, 56, 72, 91]`, find the index of `56` using binary search.\n   - **Model Answer**: The target value `56` is at index 7.\n\n5. **Diagram-Based Question**: Draw a diagram showing the steps to find the element `38` in the array `[2, 5, 8, 12, 16, 23, 38, 56, 72, 91]`.\n   - **Model Answer**: Provide a labeled diagram illustrating the initial interval and subsequent divisions until reaching the target value `38` at index 7.\n\nThese questions are AI-generated curriculum practice questions (Not official past-paper questions; not guaranteed to appear in any examination).",
+      "evaluation": {
+        "scores": {
+          "factual_correctness": 8.0,
+          "definition_accuracy": 10.0,
+          "key_term_completeness": 10.0,
+          "explanation_depth": 10.0,
+          "logical_organization": 10.0,
+          "appropriate_detail": 9.5,
+          "example_quality": 9.0,
+          "comparison_accuracy": 9.0,
+          "calculation_correctness": 8.5,
+          "exam_question_relevance": 9.0,
+          "citation_integrity": 9.5,
+          "correct_visual_planning": 9.5,
+          "clarity_and_readability": 9.2
+        },
+        "overall_score_10": 9.32,
+        "word_count": 943,
+        "matched_keywords": [
+          "sorted",
+          "mid",
+          "o(log n)",
+          "divide",
+          "example"
+        ],
+        "missing_keywords": [
+          "low",
+          "high"
+        ],
+        "markdown_table_rows": 7,
+        "failure_patterns": []
+      }
+    },
+    {
+      "id": "exam_1_photosynthesis_exam_prep",
+      "category": "Exam Preparation",
+      "task_type": "exam_prep",
+      "question": "Generate exam-oriented learning material for Photosynthesis: include definitions, key terms, comparison questions, 3 MCQs with answer keys, short and long answer questions, and model answers.",
+      "latency_sec": 78.94,
+      "eval_tokens": 1247,
+      "tokens_per_sec": 16.0,
+      "response": "### Photosynthesis: Exam-Oriented Learning Material\n\n#### 1. Multi-Tier Definitions\n**Precise Academic Definition**: \nPhotosynthesis is a process used by plants, algae, and certain bacteria to convert light energy into chemical energy stored in molecules like glucose.\n\n**Everyday Explanation**: \nPhotosynthesis is how plants make their own food using sunlight, water, and carbon dioxide.\n\n**Formal / Technical Definition**: \nThe overall equation for photosynthesis is \\(6CO_2 + 6H_2O + \\text{light energy} \\rightarrow C_6H_{12}O_6 + 6O_2\\).\n\n**Concrete Example**: \nDuring a sunny day, a leaf on a tree can perform photosynthesis to produce glucose and release oxygen.\n\n**Terminology Clarification**: \n- **Chlorophyll**: A green pigment in plants that absorbs light energy.\n- **Stomata**: Small pores on leaves that allow gases to enter and exit the plant.\n- **C3 Plants**: Plants like wheat, rice, and soybeans that use a three-carbon compound (G3P) as their first stable product.\n\n#### 2. Explained Key Terms\n| Term | Meaning |\n|------|---------|\n| **Chloroplast** | A specialized organelle in plant cells where photosynthesis occurs. |\n| **Light-dependent Reactions** | The part of photosynthesis that uses light energy to produce ATP and NADPH. |\n| **Calvin Cycle (Light-independent Reactions)** | The process that converts CO2 into glucose using the products from the light-dependent reactions. |\n\n#### 3. Prerequisites\n- Basic understanding of cellular structure, especially chloroplasts.\n- Knowledge of chemical equations and stoichiometry.\n\n#### 4. Step-by-Step Mechanism/Derivation & Formula/Equation\n1. **Light Absorption**: Chlorophyll absorbs light energy.\n2. **Water Splitting (Photolysis)**: Light energy splits water molecules into hydrogen ions, electrons, and oxygen.\n3. **Electron Transport Chain**: Electrons are passed through a series of proteins to generate ATP and NADPH.\n4. **Calvin Cycle**: Carbon dioxide is fixed using the energy from ATP and NADPH to produce glucose.\n\n#### 5. Worked Example\n**Example Problem**: \nCalculate the amount of oxygen produced by a plant during photosynthesis if it absorbs 1800 J of light energy, assuming that 3% of the absorbed energy is used for photolysis.\n\n- **Given Data & SI Units**: Light energy absorbed = 1800 J.\n- **Formula Used**: Efficiency of photolysis = 3% or 0.03.\n- **Step-by-Step Substitution & Calculation**:\n  - Oxygen produced (O2) = 1800 J × 0.03 = 54 J\n- **Final Answer with Units**: 54 J of oxygen is produced.\n\n#### 6. A Markdown Comparison Table\n| Feature | Chloroplasts | Stomata |\n|---------|--------------|---------|\n| Location | Inside plant cells, specifically in the leaves and stems. | On the surface of leaves. |\n| Function | Site of photosynthesis. | Regulate gas exchange (CO2 entry and O2 exit). |\n| Structure | Contains thylakoids and stroma. | Small pores with guard cells controlling opening and closing. |\n\n#### 7. Common Misconceptions\n- **Misconception**: Photosynthesis only occurs in leaves.\n  - **Scientific Reality**: Photosynthesis can occur in any part of the plant that contains chloroplasts, including stems and roots.\n\n#### 8. ### Visual Specification\n- **Visual Type**: Labeled Diagram\n- **Purpose**: To illustrate the structure of a chloroplast and its role in photosynthesis.\n- **Essential Components & Labels**: Thylakoids, stroma, grana, light-dependent reactions, Calvin cycle.\n- **Target Section Association**: Accompanies the Step-by-Step Mechanism/Derivation section.\n\n#### 9. Summary & Practice Questions\n**Summary**: \nPhotosynthesis is a complex process involving multiple steps and structures within plant cells. Understanding its mechanism helps in grasping how plants produce their own food and release oxygen.\n\n**Practice Questions**:\n1. **Short Answer Question (2 marks)**: What are the main products of photosynthesis?  \n   - **Answer**: Glucose and oxygen.\n   \n2. **Long Answer Question (5 marks)**: Explain the role of chlorophyll in photosynthesis.  \n   - **Model Answer**: Chlorophyll is a pigment that absorbs light energy, which is crucial for initiating the process of photosynthesis. It captures sunlight and converts it into chemical energy stored in ATP and NADPH.\n\n3. **Multiple-Choice Question (MCQ) 1**:\n   - **Question**: Which part of the chloroplast is primarily responsible for the light-dependent reactions?\n     - A) Stroma\n     - B) Thylakoids\n     - C) Chlorophyll\n     - D) Mitochondria  \n   - **Answer Key**: B) Thylakoids\n\n4. **Multiple-Choice Question (MCQ) 2**:\n   - **Question**: What is the main function of stomata in photosynthesis?\n     - A) Absorb light energy\n     - B) Release oxygen\n     - C) Regulate gas exchange\n     - D) Produce glucose  \n   - **Answer Key**: C) Regulate gas exchange\n\n5. **Multiple-Choice Question (MCQ) 3**:\n   - **Question**: Which of the following is a by-product of photosynthesis?\n     - A) Carbon dioxide\n     - B) Water\n     - C) Oxygen\n     - D) Glucose  \n   - **Answer Key**: C) Oxygen\n\nThese questions are AI-Generated Curriculum Practice Questions (Not official past-paper questions; not guaranteed to appear in any examination).",
+      "evaluation": {
+        "scores": {
+          "factual_correctness": 8.2,
+          "definition_accuracy": 10.0,
+          "key_term_completeness": 10.0,
+          "explanation_depth": 10.0,
+          "logical_organization": 10.0,
+          "appropriate_detail": 9.5,
+          "example_quality": 9.0,
+          "comparison_accuracy": 9.5,
+          "calculation_correctness": 8.5,
+          "exam_question_relevance": 10.0,
+          "citation_integrity": 9.5,
+          "correct_visual_planning": 9.5,
+          "clarity_and_readability": 9.2
+        },
+        "overall_score_10": 9.45,
+        "word_count": 741,
+        "matched_keywords": [
+          "definition",
+          "mcq",
+          "model answer",
+          "chloroplast",
+          "calvin",
+          "practice"
+        ],
+        "missing_keywords": [
+          "short-answer",
+          "long-answer"
+        ],
+        "markdown_table_rows": 10,
+        "failure_patterns": []
+      }
+    }
+  ]
+}

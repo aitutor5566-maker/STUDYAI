@@ -19,27 +19,47 @@ export const AudioLessonBar: React.FC = () => {
     setDuration(activeAudio.durationSeconds || 12);
 
     const isNeuralAudio =
+      Boolean(activeAudio.audioValidation?.isRealSpeech) ||
       activeAudio.wavDataUrl?.startsWith('data:audio/mpeg') ||
-      (activeAudio.providerUsed && !activeAudio.providerUsed.includes('Fallback'));
+      Boolean(activeAudio.providerUsed && !activeAudio.providerUsed.includes('Fallback'));
 
-    if (audioRef.current) {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+    }
+
+    if (isNeuralAudio && audioRef.current) {
       audioRef.current.src = activeAudio.wavDataUrl;
+      audioRef.current.volume = 1.0;
       audioRef.current.playbackRate = activeAudio.speed || 1.0;
       audioRef.current
         .play()
         .then(() => setIsPlaying(true))
         .catch(() => setIsPlaying(false));
-    }
-
-    // Only trigger Web Speech API synthesis if neural TTS audio stream was not used (fallback mode)
-    if (!isNeuralAudio && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    } else if (!isNeuralAudio && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      // Do NOT play the 8kHz fallback chime simultaneously over speechSynthesis!
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.removeAttribute('src');
+      }
       try {
-        window.speechSynthesis.cancel();
-        const utter = new SpeechSynthesisUtterance(activeAudio.script);
-        utter.rate = activeAudio.speed || 1.0;
-        window.speechSynthesis.speak(utter);
+        const spoken = activeAudio.spokenScript || activeAudio.script;
+        const segments = activeAudio.segments && activeAudio.segments.length > 0 ? activeAudio.segments : [spoken];
+        segments.forEach((seg, idx) => {
+          const utter = new SpeechSynthesisUtterance(seg);
+          utter.rate = activeAudio.speed || 1.0;
+          utter.volume = 1.0;
+          if (idx === 0) utter.onstart = () => setIsPlaying(true);
+          if (idx === segments.length - 1) utter.onend = () => setIsPlaying(false);
+          window.speechSynthesis.speak(utter);
+        });
+        setIsPlaying(true);
       } catch {
-        // Fallback to WAV audio element only
+        if (audioRef.current) {
+          audioRef.current.src = activeAudio.wavDataUrl;
+          audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+        }
       }
     }
 
@@ -55,22 +75,25 @@ export const AudioLessonBar: React.FC = () => {
   if (!activeAudio) return null;
 
   const isNeuralStream =
+    Boolean(activeAudio.audioValidation?.isRealSpeech) ||
     activeAudio.wavDataUrl?.startsWith('data:audio/mpeg') ||
     Boolean(activeAudio.providerUsed && !activeAudio.providerUsed.includes('Fallback'));
 
   const togglePlay = () => {
     if (!audioRef.current) return;
     if (isPlaying) {
-      audioRef.current.pause();
-      if (!isNeuralStream && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      if (isNeuralStream) {
+        audioRef.current.pause();
+      } else if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         try {
           window.speechSynthesis.pause();
         } catch {}
       }
       setIsPlaying(false);
     } else {
-      audioRef.current.play().catch(() => {});
-      if (!isNeuralStream && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      if (isNeuralStream) {
+        audioRef.current.play().catch(() => {});
+      } else if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         try {
           window.speechSynthesis.resume();
         } catch {}
@@ -81,13 +104,16 @@ export const AudioLessonBar: React.FC = () => {
 
   const handleReplay = () => {
     if (!audioRef.current) return;
-    audioRef.current.currentTime = 0;
-    audioRef.current.play().catch(() => {});
-    if (!isNeuralStream && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    if (isNeuralStream) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {});
+    } else if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       try {
         window.speechSynthesis.cancel();
-        const utter = new SpeechSynthesisUtterance(activeAudio.script);
+        const spoken = activeAudio.spokenScript || activeAudio.script;
+        const utter = new SpeechSynthesisUtterance(spoken);
         utter.rate = speed;
+        utter.volume = 1.0;
         window.speechSynthesis.speak(utter);
       } catch {}
     }
@@ -177,8 +203,20 @@ export const AudioLessonBar: React.FC = () => {
             <Volume2 size={18} />
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#202124', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#202124', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span>Audio Lesson: {activeAudio.topic}</span>
+              <span
+                style={{
+                  fontSize: '0.68rem',
+                  padding: '2px 7px',
+                  borderRadius: 999,
+                  background: '#EFF6FF',
+                  color: '#1D4ED8',
+                  fontWeight: 600
+                }}
+              >
+                {activeAudio.providerUsed || 'Clear Teacher Voice'} • {activeAudio.audioValidation?.peakLevelDbFs ?? -1.0} dBFS
+              </span>
               {activeAudio.reusedCache && (
                 <span
                   style={{
@@ -195,7 +233,7 @@ export const AudioLessonBar: React.FC = () => {
               )}
             </div>
             <div style={{ fontSize: '0.75rem', color: '#6B7280', maxWidth: 340, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {activeAudio.script}
+              {activeAudio.spokenScript || activeAudio.script}
             </div>
           </div>
         </div>

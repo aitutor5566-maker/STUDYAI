@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Rich Orange & Amber Gradient -->
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6B00"/>
+      <stop offset="50%" stop-color="#FF8A00"/>
+      <stop offset="100%" stop-color="#E05300"/>
+    </linearGradient>
+    <!-- Apple Glass Highlight -->
+    <linearGradient id="glassGloss" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.0"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Squircle App Background -->
+  <rect x="32" y="32" width="448" height="448" rx="104" fill="url(#primaryGrad)" filter="url(#shadow)"/>
+  <rect x="32" y="32" width="448" height="224" rx="104" fill="url(#glassGloss)"/>
+
+  <!-- Academic Knowledge Cap & Neural AI Core -->
+  <g transform="translate(106, 120)" fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Diamond Cap Top -->
+    <polygon points="150,20 280,85 150,150 20,85" fill="#FFFFFF" fill-opacity="0.95" stroke="none"/>
+    <!-- Tassel -->
+    <path d="M280,85 L280,180" stroke="#FFF3E0" stroke-width="8"/>
+    <circle cx="280" cy="188" r="10" fill="#FFF3E0" stroke="none"/>
+    <!-- Lower Skull Cap Arch -->
+    <path d="M60,110 L60,170 C60,225 240,225 240,170 L240,110" fill="#FFFFFF" fill-opacity="0.2" stroke="#FFFFFF" stroke-width="12"/>
+    
+    <!-- Open Book / Wings of Wisdom below -->
+    <path d="M40,230 Q150,210 150,260 Q150,210 260,230 L260,290 Q150,270 150,320 Q150,270 40,290 Z" fill="#FFFFFF" fill-opacity="0.9"/>
+  </g>
+</svg>

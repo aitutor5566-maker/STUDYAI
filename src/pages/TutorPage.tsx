@@ -13,6 +13,7 @@ import {
   FileText,
   HelpCircle,
   Gamepad2,
+  Rocket,
   Bookmark,
   Paperclip,
   RotateCcw,
@@ -39,6 +40,101 @@ interface TutorHealthInfo {
   accessible: boolean;
   tokensPerSec?: number;
 }
+
+const InteractiveQuadraticPlot: React.FC<{ spec?: any }> = ({ spec }) => {
+  const [a, setA] = useState<number>(spec?.defaultCoefficients?.a ?? spec?.defaultA ?? 1);
+  const [b, setB] = useState<number>(spec?.defaultCoefficients?.b ?? spec?.defaultB ?? -5);
+  const [c, setC] = useState<number>(spec?.defaultCoefficients?.c ?? spec?.defaultC ?? 6);
+
+  const safeA = a === 0 ? 0.25 : a;
+  const discriminant = Number((b * b - 4 * safeA * c).toFixed(2));
+  const vertexX = Number((-b / (2 * safeA)).toFixed(2));
+  const vertexY = Number((safeA * vertexX * vertexX + b * vertexX + c).toFixed(2));
+
+  let rootsSummary = 'No Real Roots (D < 0 — Complex Conjugate Roots)';
+  let r1: number | null = null;
+  let r2: number | null = null;
+  if (discriminant > 0) {
+    r1 = Number(((-b - Math.sqrt(discriminant)) / (2 * safeA)).toFixed(2));
+    r2 = Number(((-b + Math.sqrt(discriminant)) / (2 * safeA)).toFixed(2));
+    rootsSummary = `Two Distinct Real Roots: x₁ = ${r1}, x₂ = ${r2}`;
+  } else if (discriminant === 0) {
+    r1 = Number((-b / (2 * safeA)).toFixed(2));
+    rootsSummary = `One Repeated Real Root: x = ${r1}`;
+  }
+
+  // Build SVG polyline points for x in [-6, 8]
+  const mapX = (x: number) => 220 + x * 24;
+  const mapY = (y: number) => 130 - y * 14;
+  const pts: string[] = [];
+  for (let x = -7; x <= 9; x += 0.25) {
+    const y = safeA * x * x + b * x + c;
+    if (y >= -8 && y <= 10) {
+      pts.push(`${mapX(x).toFixed(1)},${mapY(y).toFixed(1)}`);
+    }
+  }
+
+  return (
+    <div
+      style={{
+        marginBottom: 18,
+        padding: 16,
+        borderRadius: 18,
+        background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+        color: '#F8FAFC',
+        border: '1.5px solid rgba(56, 189, 248, 0.35)'
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+        <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#38BDF8' }}>
+          📈 Interactive Quadratic Parabola Graph Explorer: y = {safeA}x² {b >= 0 ? `+ ${b}` : `- ${Math.abs(b)}`}x {c >= 0 ? `+ ${c}` : `- ${Math.abs(c)}`}
+        </div>
+        <span style={{ fontSize: '0.76rem', padding: '3px 10px', borderRadius: 999, background: 'rgba(255,106,0,0.2)', color: '#FDBA74', fontWeight: 700 }}>
+          Discriminant D = b² - 4ac = {discriminant}
+        </span>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr', gap: 14, alignItems: 'center' }}>
+        <svg viewBox="0 0 460 240" style={{ width: '100%', height: 210, background: '#090D16', borderRadius: 14, border: '1px solid #334155' }}>
+          <line x1="20" y1="130" x2="440" y2="130" stroke="#64748B" strokeWidth="1.5" />
+          <line x1="220" y1="15" x2="220" y2="225" stroke="#64748B" strokeWidth="1.5" />
+          <line x1={mapX(vertexX)} y1="15" x2={mapX(vertexX)} y2="225" stroke="#F59E0B" strokeWidth="1.2" strokeDasharray="4 4" />
+          {pts.length > 1 && <polyline fill="none" stroke="#FF6A00" strokeWidth="3" points={pts.join(' ')} />}
+          <circle cx={mapX(vertexX)} cy={mapY(vertexY)} r="5" fill="#38BDF8" />
+          {r1 !== null && <circle cx={mapX(r1)} cy={mapY(0)} r="5" fill="#22C55E" />}
+          {r2 !== null && <circle cx={mapX(r2)} cy={mapY(0)} r="5" fill="#22C55E" />}
+          <text x="24" y="28" fill="#FDBA74" fontSize="11" fontWeight="700">
+            Vertex: ({vertexX}, {vertexY}) • Axis: x = {vertexX}
+          </text>
+          <text x="24" y="220" fill="#4ADE80" fontSize="11" fontWeight="700">
+            {rootsSummary}
+          </text>
+        </svg>
+
+        <div style={{ display: 'grid', gap: 10, fontSize: '0.8rem' }}>
+          <label style={{ display: 'grid', gap: 4 }}>
+            <span>
+              Coefficient <strong>a = {safeA}</strong> ({safeA > 0 ? 'Opens Upward ∪' : 'Opens Downward ∩'})
+            </span>
+            <input type="range" min={-3} max={3} step={0.5} value={a} onChange={(e) => setA(Number(e.target.value))} style={{ accentColor: '#FF6A00' }} />
+          </label>
+          <label style={{ display: 'grid', gap: 4 }}>
+            <span>
+              Coefficient <strong>b = {b}</strong> (Shifts Axis of Symmetry)
+            </span>
+            <input type="range" min={-8} max={8} step={1} value={b} onChange={(e) => setB(Number(e.target.value))} style={{ accentColor: '#38BDF8' }} />
+          </label>
+          <label style={{ display: 'grid', gap: 4 }}>
+            <span>
+              Constant <strong>c = {c}</strong> (Y-Intercept: (0, {c}))
+            </span>
+            <input type="range" min={-6} max={10} step={1} value={c} onChange={(e) => setC(Number(e.target.value))} style={{ accentColor: '#22C55E' }} />
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const TutorPage: React.FC = () => {
   const navigate = useNavigate();
@@ -76,13 +172,21 @@ export const TutorPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [inline3DMsgId, setInline3DMsgId] = useState<string | null>(null);
   const [actionToast, setActionToast] = useState<string>('');
+  const [selectedVisualComponent, setSelectedVisualComponent] = useState<{ id: string; label: string; role?: string } | null>(null);
+
+  const askTargetedQuestion = (q: string, componentOverride?: { id: string; label: string; role?: string }) => {
+    if (componentOverride) {
+      setSelectedVisualComponent(componentOverride);
+    }
+    setQuestionInput(q);
+    submitQuestion(q, activeTopic, null);
+  };
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   // Check Local Ollama / AI Tutor Backend Health on load
   useEffect(() => {
-    fetch('/api/tutor/health')
-      .then((res) => res.json())
+    apiFetch<any>('/api/tutor/health')
       .then((data) => {
         if (data && (data.status === 'ok' || data.accessible)) {
           setTutorHealth({
@@ -258,7 +362,7 @@ export const TutorPage: React.FC = () => {
     }
   };
 
-  // Multilingual Speech Synthesis (Text-to-Speech)
+  // Multilingual Speech Synthesis (Text-to-Speech — Clean Sentence-Chunked Teacher Narration)
   const handleSpeakExplanation = (text: string) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
     if (isSpeaking) {
@@ -267,37 +371,55 @@ export const TutorPage: React.FC = () => {
       return;
     }
     window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(text);
+
+    // Clean markdown, symbols, and expand key abbreviations on first mention
+    const cleaned = text
+      .replace(/```[\s\S]*?```/g, ' ')
+      .replace(/[*#_`~>|]/g, ' ')
+      .replace(/→|->/g, ' yields ')
+      .replace(/6CO₂\s*\+\s*6H₂O/gi, 'six carbon dioxide plus six water ')
+      .replace(/C₆H₁₂O₆\s*\+\s*6O₂/gi, 'glucose plus six oxygen ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const sentences = cleaned.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [cleaned];
     const voices = window.speechSynthesis.getVoices();
 
-    if (language === 'Telugu') {
-      const teVoice = voices.find(
-        (v) => v.lang.startsWith('te') || v.name.toLowerCase().includes('telugu') || v.name.includes('Geeta')
-      );
-      if (teVoice) utter.voice = teVoice;
-      utter.lang = 'te-IN';
-      utter.rate = 0.92;
-    } else if (language === 'Hindi') {
-      const hiVoice = voices.find(
-        (v) => v.lang.startsWith('hi') || v.name.toLowerCase().includes('hindi') || v.name.includes('Lekha')
-      );
-      if (hiVoice) utter.voice = hiVoice;
-      utter.lang = 'hi-IN';
-      utter.rate = 0.95;
-    } else {
-      const enVoice = voices.find(
-        (v) => v.lang === 'en-IN' || v.name.includes('Rishi') || v.name.includes('Aman')
-      );
-      if (enVoice) utter.voice = enVoice;
-      utter.lang = 'en-IN';
-      utter.rate = 1.0;
-    }
+    sentences.forEach((sentence, idx) => {
+      const utter = new SpeechSynthesisUtterance(sentence.trim());
+      utter.volume = 1.0;
 
-    utter.onstart = () => setIsSpeaking(true);
-    utter.onend = () => setIsSpeaking(false);
-    utter.onerror = () => setIsSpeaking(false);
+      if (language === 'Telugu') {
+        const teVoice = voices.find(
+          (v) => v.lang.startsWith('te') || v.name.toLowerCase().includes('telugu') || v.name.includes('Geeta')
+        );
+        if (teVoice) utter.voice = teVoice;
+        utter.lang = 'te-IN';
+        utter.rate = 0.92;
+      } else if (language === 'Hindi') {
+        const hiVoice = voices.find(
+          (v) => v.lang.startsWith('hi') || v.name.toLowerCase().includes('hindi') || v.name.includes('Lekha')
+        );
+        if (hiVoice) utter.voice = hiVoice;
+        utter.lang = 'hi-IN';
+        utter.rate = 0.95;
+      } else {
+        const enVoice = voices.find(
+          (v) => v.name.includes('Samantha') || v.lang === 'en-IN' || v.name.includes('Rishi') || v.name.includes('Aman')
+        );
+        if (enVoice) utter.voice = enVoice;
+        utter.lang = 'en-IN';
+        utter.rate = 0.98;
+      }
 
-    window.speechSynthesis.speak(utter);
+      if (idx === 0) utter.onstart = () => setIsSpeaking(true);
+      if (idx === sentences.length - 1) {
+        utter.onend = () => setIsSpeaking(false);
+        utter.onerror = () => setIsSpeaking(false);
+      }
+
+      window.speechSynthesis.speak(utter);
+    });
   };
 
   // Core Question Submission to Local AI Tutor (Streaming SSE or Structured Studio)
@@ -321,7 +443,8 @@ export const TutorPage: React.FC = () => {
 
       try {
         const historyPayload = messages.slice(-4).map((m) => ({ role: m.role, content: m.content }));
-        const res = await fetch('/api/tutor/chat', {
+        const chatUrl = typeof window !== 'undefined' && window.location.port === '5173' ? 'http://localhost:3001/api/tutor/chat' : '/api/tutor/chat';
+        const res = await fetch(chatUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -409,7 +532,8 @@ export const TutorPage: React.FC = () => {
           level: `Grade ${grade}`,
           subject,
           language,
-          attachmentSummary: attachmentNote || undefined
+          attachmentSummary: attachmentNote || undefined,
+          selectedVisualComponent: selectedVisualComponent || undefined
         })
       });
 
@@ -913,6 +1037,26 @@ export const TutorPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* 0. Simple Introduction (Plain Everyday Language Before Jargon) */}
+              {s?.simpleIntroduction && (
+                <div
+                  style={{
+                    padding: '14px 18px',
+                    borderRadius: 18,
+                    background: 'linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)',
+                    border: '1.5px solid #A7F3D0',
+                    marginBottom: 14
+                  }}
+                >
+                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
+                    🌱 Simple Introduction (In Plain Everyday Words)
+                  </div>
+                  <p style={{ fontSize: '0.94rem', lineHeight: 1.62, color: '#064E3B', margin: 0 }}>
+                    {s.simpleIntroduction}
+                  </p>
+                </div>
+              )}
+
               {/* 1. Detailed Explanation */}
               <div
                 style={{
@@ -924,12 +1068,76 @@ export const TutorPage: React.FC = () => {
                 }}
               >
                 <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#FF6A00', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
-                  📖 {language === 'Telugu' ? 'వివరణ & భావన' : language === 'Hindi' ? 'अवधारणा एवं व्याख्या' : 'Concept Explanation'}
+                  📖 {language === 'Telugu' ? 'వివరణ & భావన' : language === 'Hindi' ? 'अवधारणा एवं व्याख्या' : 'Concept Explanation & Academic Overview'}
                 </div>
                 <p style={{ fontSize: '0.96rem', lineHeight: 1.68, color: '#202124', margin: 0, whiteSpace: 'pre-line' }}>
                   {s?.introduction || msg.content}
                 </p>
+                {s?.clearDefinition && (
+                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px dashed rgba(255,106,0,0.25)', display: 'grid', gap: 6, fontSize: '0.84rem', color: '#374151' }}>
+                    <div><strong style={{ color: '#EA580C' }}>Formal Definition:</strong> {s.clearDefinition.formal}</div>
+                    <div><strong style={{ color: '#EA580C' }}>Concrete Example:</strong> {s.clearDefinition.example}</div>
+                  </div>
+                )}
               </div>
+
+              {/* 1B. Prerequisites */}
+              {s?.prerequisites?.length > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.84rem', color: '#202124', marginBottom: 6 }}>
+                    🧭 What You Should Know Before Starting (Prerequisites):
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {s.prerequisites.map((pr: string, idx: number) => (
+                      <span
+                        key={idx}
+                        style={{
+                          padding: '4px 11px',
+                          borderRadius: 999,
+                          background: '#EFF6FF',
+                          color: '#1E40AF',
+                          border: '1px solid #BFDBFE',
+                          fontSize: '0.76rem',
+                          fontWeight: 600
+                        }}
+                      >
+                        ✓ {pr}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 1C. Mandatory Full Forms & Abbreviations Glossary */}
+              {s?.abbreviations?.length > 0 && (
+                <div style={{ marginBottom: 18, padding: 14, borderRadius: 18, background: '#F8FAFC', border: '1.5px solid #CBD5E1' }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0F172A', marginBottom: 10 }}>
+                    🔤 Mandatory Full Forms, Abbreviations &amp; Scientific Symbols Explained:
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 10 }}>
+                    {s.abbreviations.map((ab: any, idx: number) => (
+                      <div
+                        key={idx}
+                        style={{
+                          padding: 12,
+                          borderRadius: 14,
+                          background: '#FFFFFF',
+                          border: '1px solid #E2E8F0',
+                          fontSize: '0.82rem'
+                        }}
+                      >
+                        <div style={{ fontWeight: 900, color: '#EA580C', fontSize: '0.88rem', marginBottom: 4 }}>
+                          {ab.abbr} — <span style={{ color: '#0F172A' }}>{ab.fullForm}</span>
+                        </div>
+                        <div style={{ color: '#334155', lineHeight: 1.45, marginBottom: 4 }}>{ab.simpleDefinition}</div>
+                        <div style={{ color: '#047857', fontSize: '0.78rem', fontWeight: 600 }}>
+                          <strong>Role:</strong> {ab.roleInTopic}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* 2. Keywords Bar */}
               {keywordsList.length > 0 && (
@@ -942,6 +1150,40 @@ export const TutorPage: React.FC = () => {
                       <span key={idx} className="keyword-pill-orange">
                         ✦ {kw}
                       </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 2B. Concept-by-Concept Deep Sections */}
+              {s?.conceptSections?.length > 0 && (
+                <div style={{ marginBottom: 18 }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#202124', marginBottom: 10 }}>
+                    🧠 Deep Concept-by-Concept Breakdown:
+                  </div>
+                  <div style={{ display: 'grid', gap: 10 }}>
+                    {s.conceptSections.map((sec: any, idx: number) => (
+                      <div
+                        key={sec.id || idx}
+                        style={{
+                          padding: 14,
+                          borderRadius: 16,
+                          background: '#FFFDFB',
+                          border: '1px solid rgba(255,106,0,0.22)'
+                        }}
+                      >
+                        <div style={{ fontWeight: 800, color: '#EA580C', fontSize: '0.9rem', marginBottom: 6 }}>
+                          {idx + 1}. {sec.title}
+                        </div>
+                        <div style={{ display: 'grid', gap: 4, fontSize: '0.84rem', color: '#374151', lineHeight: 1.5 }}>
+                          <div><strong>What it is:</strong> {sec.whatItIs}</div>
+                          <div><strong>Where it occurs:</strong> {sec.whereItOccurs}</div>
+                          <div><strong>How it works:</strong> {sec.howItWorks}</div>
+                          <div><strong>Why it matters:</strong> {sec.whyItMatters}</div>
+                          <div style={{ color: '#B91C1C' }}><strong>If it fails / changes:</strong> {sec.whatIfItFails}</div>
+                          {sec.examTip && <div style={{ color: '#047857', fontWeight: 700 }}>🎯 Exam Tip: {sec.examTip}</div>}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -1053,9 +1295,53 @@ export const TutorPage: React.FC = () => {
                 </div>
               )}
 
-              {/* 7. Visual Image Diagram */}
-              {s?.imageUrl && (
+              {/* 6B. Interactive Quadratic Parabola Plot (for Mathematics / Quadratic Equations) */}
+              {s?.interactivePlotSpec && <InteractiveQuadraticPlot spec={s.interactivePlotSpec} />}
+
+              {/* 6C. Structured Subtopic Progression Navigation Bar (Section A & H) */}
+              {s?.subtopics && s.subtopics.length > 0 && (
+                <div style={{ margin: '14px 0', padding: '12px 16px', background: '#F8FAFC', borderRadius: 16, border: '1px solid #E2E8F0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      📚 Curriculum Subtopic Progression ({s.subtopics.length} Sections)
+                    </span>
+                    <span style={{ fontSize: '0.74rem', color: '#64748B' }}>Click any subtopic to learn</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {s.subtopics.map((sub: any, subIdx: number) => (
+                      <button
+                        key={sub.subtopicId || subIdx}
+                        type="button"
+                        onClick={() => askTargetedQuestion(`Teach me subtopic ${subIdx + 1}: ${sub.title}`)}
+                        className="btn-glass"
+                        style={{
+                          fontSize: '0.75rem',
+                          padding: '5px 12px',
+                          borderRadius: 999,
+                          background: '#FFFFFF',
+                          border: '1px solid #CBD5E1',
+                          color: '#1E293B',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {subIdx + 1}. {sub.title}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 7. Mandatory Section-Connected Educational Images & 7-Part Image Walkthroughs */}
+              {(s?.lessonImages?.length > 0 ? s.lessonImages : s?.imageUrl ? [{
+                id: 'img-primary-1',
+                title: `${s.topic || activeTopic} — Primary Scientific Diagram`,
+                caption: s.imageCaption || `${s.topic || activeTopic} Visual Illustration`,
+                imageUrl: s.imageUrl,
+                explanation: s.imageExplanation
+              }] : []).map((imgAsset: any, imgIdx: number) => (
                 <div
+                  key={imgAsset.id || imgIdx}
                   style={{
                     borderRadius: 20,
                     overflow: 'hidden',
@@ -1075,15 +1361,17 @@ export const TutorPage: React.FC = () => {
                       fontWeight: 800,
                       display: 'flex',
                       justifyContent: 'space-between',
-                      alignItems: 'center'
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: 8
                     }}
                   >
-                    <span>🖼️ Visual Illustration &amp; Concept Diagram: {s?.topic || activeTopic}</span>
-                    <span>2D Visual Blueprint</span>
+                    <span>🖼️ {imgAsset.title || `Visual Illustration & Concept Diagram: ${s?.topic || activeTopic}`}</span>
+                    <span>✓ Validated Educational Diagram #{imgIdx + 1}</span>
                   </div>
                   <img
-                    src={s.imageUrl}
-                    alt={s.imageCaption || `${s.topic || activeTopic} Visual Illustration`}
+                    src={imgAsset.imageUrl}
+                    alt={imgAsset.caption || `${s?.topic || activeTopic} Visual Illustration`}
                     style={{
                       width: '100%',
                       maxHeight: 340,
@@ -1092,7 +1380,141 @@ export const TutorPage: React.FC = () => {
                       padding: 6
                     }}
                   />
-                  {s?.analogies && (
+
+                  {/* 7-Part Image Explanation Walkthrough */}
+                  {imgAsset.explanation && (
+                    <div style={{ padding: 14, background: '#F8FAFC', borderTop: '1px solid #E2E8F0', fontSize: '0.82rem', color: '#334155' }}>
+                      <div style={{ fontWeight: 800, color: '#0F172A', fontSize: '0.86rem', marginBottom: 6 }}>
+                        🔍 How to Read This Image (7-Part Visual Walkthrough):
+                      </div>
+                      <div style={{ marginBottom: 6 }}>
+                        <strong>1. What this image shows:</strong> {imgAsset.explanation.whatItShows}
+                      </div>
+                      {imgAsset.explanation.importantParts?.length > 0 && (
+                        <div style={{ marginBottom: 6 }}>
+                          <strong>2. Important labeled parts (Click to investigate):</strong>{' '}
+                          {imgAsset.explanation.importantParts.map((pt: any, pIdx: number) => {
+                            const lbl = typeof pt === 'string' ? pt : pt.label;
+                            const r = typeof pt === 'object' ? pt.description || pt.role : '';
+                            const isSelected = selectedVisualComponent?.label === lbl;
+                            return (
+                              <button
+                                key={pIdx}
+                                type="button"
+                                onClick={() => setSelectedVisualComponent({
+                                  id: lbl.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+                                  label: lbl,
+                                  role: r
+                                })}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  margin: '2px 4px 2px 0',
+                                  padding: '3px 10px',
+                                  borderRadius: 999,
+                                  background: isSelected ? '#FF6A00' : '#FFF3E8',
+                                  color: isSelected ? '#FFFFFF' : '#C2410C',
+                                  border: isSelected ? '1.5px solid #EA580C' : '1px solid rgba(255,106,0,0.3)',
+                                  fontSize: '0.74rem',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease'
+                                }}
+                                title="Click to ask targeted questions about this component"
+                              >
+                                🏷️ {typeof pt === 'string' ? pt : `${pt.label}${pt.description ? ` (${pt.description})` : ''}`} 👆
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Interactive Component Focus Prompt Chips (Section H) */}
+                      {selectedVisualComponent && (
+                        <div style={{
+                          margin: '8px 0 10px',
+                          padding: '10px 14px',
+                          borderRadius: 12,
+                          background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
+                          border: '1.5px solid #3B82F6',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 6
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ fontSize: '0.9rem' }}>🎯</span>
+                              <span style={{ fontWeight: 800, color: '#1E40AF', fontSize: '0.84rem' }}>
+                                Selected Component: {selectedVisualComponent.label}
+                              </span>
+                              {selectedVisualComponent.role && (
+                                <span style={{ fontSize: '0.74rem', color: '#2563EB', fontWeight: 600 }}>
+                                  ({selectedVisualComponent.role})
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedVisualComponent(null)}
+                              style={{ border: 'none', background: 'transparent', color: '#64748B', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700 }}
+                            >
+                              ✕ Deselect
+                            </button>
+                          </div>
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            <button
+                              type="button"
+                              onClick={() => askTargetedQuestion(`Explain the specific mechanism and physiological role of ${selectedVisualComponent.label} in ${s?.topic || activeTopic}`)}
+                              className="btn-glass"
+                              style={{ fontSize: '0.74rem', padding: '4px 10px', background: '#FFFFFF', color: '#1D4ED8', fontWeight: 700 }}
+                            >
+                              ❓ Explain {selectedVisualComponent.label}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => askTargetedQuestion(`What happens if ${selectedVisualComponent.label} fails, gets blocked, or is damaged?`)}
+                              className="btn-glass"
+                              style={{ fontSize: '0.74rem', padding: '4px 10px', background: '#FFFFFF', color: '#DC2626', fontWeight: 700 }}
+                            >
+                              ⚠️ What If This Fails?
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => askTargetedQuestion(`How does ${selectedVisualComponent.label} connect to and communicate with other components?`)}
+                              className="btn-glass"
+                              style={{ fontSize: '0.74rem', padding: '4px 10px', background: '#FFFFFF', color: '#047857', fontWeight: 700 }}
+                            >
+                              🔗 Connect to Others
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {imgAsset.explanation.partFunctions && (
+                        <div style={{ marginBottom: 6 }}>
+                          <strong>3. What each part does:</strong>{' '}
+                          {Array.isArray(imgAsset.explanation.partFunctions)
+                            ? imgAsset.explanation.partFunctions.slice(0, 4).map((pf: any) => `${pf.part || pf.label}: ${pf.role || pf.description}`).join(' • ')
+                            : String(imgAsset.explanation.partFunctions)}
+                        </div>
+                      )}
+                      <div style={{ marginBottom: 6 }}>
+                        <strong>4. How the parts connect:</strong> {imgAsset.explanation.howPartsConnect}
+                      </div>
+                      {imgAsset.explanation.processStages?.length > 0 && (
+                        <div style={{ marginBottom: 6 }}>
+                          <strong>5. Process flow across the image:</strong> {imgAsset.explanation.processStages.join(' → ')}
+                        </div>
+                      )}
+                      <div style={{ marginBottom: 6 }}>
+                        <strong>6. Why this visual matters:</strong> {imgAsset.explanation.whyItMatters}
+                      </div>
+                      <div style={{ padding: '6px 10px', borderRadius: 10, background: '#ECFDF5', color: '#047857', fontWeight: 700 }}>
+                        💡 <strong>7. What to remember for exams:</strong> {imgAsset.explanation.whatToRemember}
+                      </div>
+                    </div>
+                  )}
+
+                  {imgIdx === 0 && s?.analogies && (
                     <div
                       style={{
                         padding: '10px 14px',
@@ -1129,6 +1551,85 @@ export const TutorPage: React.FC = () => {
                     </div>
                   )}
                 </div>
+              ))}
+
+              {/* 8. Real-Life Examples, Practical Applications & Common Misconceptions */}
+              {(s?.realLifeExamples?.length > 0 || s?.applications?.length > 0 || s?.misconceptions?.length > 0) && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12, marginBottom: 18 }}>
+                  {s?.realLifeExamples?.length > 0 && (
+                    <div style={{ padding: 14, borderRadius: 16, background: '#FFFBEB', border: '1px solid #FDE68A', fontSize: '0.82rem' }}>
+                      <div style={{ fontWeight: 800, color: '#B45309', marginBottom: 6 }}>🌍 Real-Life Examples</div>
+                      <ul style={{ margin: 0, paddingLeft: 18, color: '#78350F', lineHeight: 1.5 }}>
+                        {s.realLifeExamples.map((ex: string, i: number) => <li key={i}>{ex}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {s?.applications?.length > 0 && (
+                    <div style={{ padding: 14, borderRadius: 16, background: '#F0F9FF', border: '1px solid #BAE6FD', fontSize: '0.82rem' }}>
+                      <div style={{ fontWeight: 800, color: '#0369A1', marginBottom: 6 }}>🚀 Practical Applications</div>
+                      <ul style={{ margin: 0, paddingLeft: 18, color: '#0C4A6E', lineHeight: 1.5 }}>
+                        {s.applications.map((ap: string, i: number) => <li key={i}>{ap}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {s?.misconceptions?.length > 0 && (
+                    <div style={{ padding: 14, borderRadius: 16, background: '#FEF2F2', border: '1px solid #FECACA', fontSize: '0.82rem' }}>
+                      <div style={{ fontWeight: 800, color: '#B91C1C', marginBottom: 6 }}>⚠️ Common Misconceptions Corrected</div>
+                      <ul style={{ margin: 0, paddingLeft: 18, color: '#7F1D1D', lineHeight: 1.5 }}>
+                        {s.misconceptions.map((mc: string, i: number) => <li key={i}>{mc}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 9. Exam-Oriented Questions & Model Answers */}
+              {s?.examQuestions?.length > 0 && (
+                <div style={{ marginBottom: 18, padding: 16, borderRadius: 18, background: '#FFFDFB', border: '1.5px solid rgba(255,106,0,0.28)' }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#202124', marginBottom: 4 }}>
+                    📝 Exam-Oriented Questions &amp; Model Answers:
+                  </div>
+                  {s.examDisclaimer && (
+                    <div style={{ fontSize: '0.74rem', color: '#6B7280', fontStyle: 'italic', marginBottom: 10 }}>
+                      ℹ️ {s.examDisclaimer}
+                    </div>
+                  )}
+                  <div style={{ display: 'grid', gap: 10 }}>
+                    {s.examQuestions.map((eq: any, idx: number) => (
+                      <div key={idx} style={{ padding: 12, borderRadius: 14, background: '#FFFFFF', border: '1px solid #E5E7EB', fontSize: '0.83rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontWeight: 800, color: '#1F2937', marginBottom: 4 }}>
+                          <span>Q{idx + 1}. {eq.question}</span>
+                          <span style={{ color: '#EA580C', whiteSpace: 'nowrap', fontSize: '0.75rem' }}>{eq.marks}</span>
+                        </div>
+                        <div style={{ color: '#374151', lineHeight: 1.5 }}>
+                          <strong style={{ color: '#047857' }}>Model Answer:</strong> {eq.modelAnswer}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 10. Quick Revision Summary & Self-Check Practice Questions */}
+              {(s?.revisionNotes?.length > 0 || s?.practiceQuestions?.length > 0) && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12, marginBottom: 18 }}>
+                  {s?.revisionNotes?.length > 0 && (
+                    <div style={{ padding: 14, borderRadius: 16, background: '#ECFDF5', border: '1px solid #A7F3D0', fontSize: '0.82rem' }}>
+                      <div style={{ fontWeight: 800, color: '#047857', marginBottom: 6 }}>📌 Quick Revision Summary</div>
+                      <ul style={{ margin: 0, paddingLeft: 18, color: '#064E3B', lineHeight: 1.5 }}>
+                        {s.revisionNotes.map((rn: string, i: number) => <li key={i}>{rn}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {s?.practiceQuestions?.length > 0 && (
+                    <div style={{ padding: 14, borderRadius: 16, background: '#EFF6FF', border: '1px solid #BFDBFE', fontSize: '0.82rem' }}>
+                      <div style={{ fontWeight: 800, color: '#1D4ED8', marginBottom: 6 }}>🎯 Self-Check Practice Questions</div>
+                      <ol style={{ margin: 0, paddingLeft: 18, color: '#1E3A8A', lineHeight: 1.5 }}>
+                        {s.practiceQuestions.map((pq: string, i: number) => <li key={i}>{pq}</li>)}
+                      </ol>
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* Primary Media Actions: Listen | Image | Video | 3D Model */}
@@ -1160,12 +1661,23 @@ export const TutorPage: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => openVideoStudio(s?.topic || activeTopic)}
+                  onClick={async () => {
+                    try {
+                      const res = await apiFetch<any>('/api/visual/regenerate', {
+                        method: 'POST',
+                        body: JSON.stringify({ topic: s?.topic || activeTopic })
+                      });
+                      if (res?.visual?.dataUrl) {
+                        setActionToast(`Regenerated verified visual diagram for ${s?.topic || activeTopic}`);
+                        triggerRefresh();
+                      }
+                    } catch {}
+                  }}
                   className="btn-glass"
                   style={{ fontSize: '0.8rem', padding: '8px 14px' }}
                 >
-                  <Video size={15} color="#7C3AED" />
-                  <span>Video Studio</span>
+                  <Sparkles size={15} color="#2563EB" />
+                  <span>Regenerate Visual</span>
                 </button>
 
                 <button
@@ -1214,6 +1726,21 @@ export const TutorPage: React.FC = () => {
                   >
                     <HelpCircle size={15} color="#FF6A00" />
                     <span>Generate Quiz</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openGamesHub(s?.topic || activeTopic, s?.subject || subject, 'space_shooter')}
+                    className="btn-glass"
+                    style={{
+                      justifyContent: 'flex-start',
+                      fontSize: '0.82rem',
+                      background: 'rgba(56, 189, 248, 0.12)',
+                      borderColor: 'rgba(56, 189, 248, 0.45)',
+                      color: '#38bdf8'
+                    }}
+                  >
+                    <Rocket size={15} color="#38bdf8" />
+                    <span>Practice in Space Battle</span>
                   </button>
                   <button
                     type="button"

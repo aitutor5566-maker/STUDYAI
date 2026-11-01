@@ -1,0 +1,165 @@
+[
+  {
+    "id": "bio_1_what_is_dna",
+    "category": "Biology",
+    "task_type": "definition",
+    "question": "What is DNA?",
+    "expected_keywords": ["deoxyribonucleic acid", "nucleotide", "double helix", "genetic", "adenine", "thymine", "guanine", "cytosine"],
+    "requires_table": false,
+    "requires_calculation": false
+  },
+  {
+    "id": "bio_2_dna_structure_pairing",
+    "category": "Biology",
+    "task_type": "deep_explanation",
+    "question": "Explain DNA structure and complementary base pairing in detail.",
+    "expected_keywords": ["sugar-phosphate", "antiparallel", "hydrogen bond", "adenine", "thymine", "guanine", "cytosine", "purine", "pyrimidine", "chargaff"],
+    "requires_table": true,
+    "requires_calculation": false
+  },
+  {
+    "id": "bio_3_dna_vs_rna",
+    "category": "Biology",
+    "task_type": "comparison",
+    "question": "Explain DNA vs RNA with a clear comparison.",
+    "expected_keywords": ["deoxyribose", "ribose", "uracil", "thymine", "double-stranded", "single-stranded", "mRNA", "tRNA"],
+    "requires_table": true,
+    "requires_calculation": false
+  },
+  {
+    "id": "bio_4_photosynthesis",
+    "category": "Biology",
+    "task_type": "deep_explanation",
+    "question": "Explain photosynthesis in detail, including its balanced chemical equation and stages.",
+    "expected_keywords": ["chloroplast", "chlorophyll", "6co2", "c6h12o6", "light-dependent", "calvin cycle", "thylakoid", "stroma", "photolysis"],
+    "requires_table": true,
+    "requires_calculation": false
+  },
+  {
+    "id": "phys_1_newtons_laws",
+    "category": "Physics",
+    "task_type": "deep_explanation",
+    "question": "Explain Newton's laws of motion with real-world examples and formulas.",
+    "expected_keywords": ["inertia", "f = ma", "momentum", "action", "reaction", "newton", "force", "acceleration"],
+    "requires_table": true,
+    "requires_calculation": false
+  },
+  {
+    "id": "phys_2_speed_vs_velocity",
+    "category": "Physics",
+    "task_type": "comparison",
+    "question": "Explain the difference between speed and velocity.",
+    "expected_keywords": ["scalar", "vector", "distance", "displacement", "direction", "m/s", "magnitude"],
+    "requires_table": true,
+    "requires_calculation": false
+  },
+  {
+    "id": "phys_3_force_numerical",
+    "category": "Physics",
+    "task_type": "numerical",
+    "question": "Solve step by step and verify: A net horizontal force acts on a 12 kg cart initially at rest on a frictionless track, accelerating it uniformly to a velocity of 15 m/s in 5 seconds. Calculate (a) the acceleration, (b) the magnitude of the applied force in Newtons, and (c) the distance travelled in those 5 seconds.",
+    "expected_keywords": ["3 m/s", "36 n", "37.5 m", "f = ma", "verification"],
+    "deterministic_answers": {
+      "acceleration_m_s2": 3,
+      "force_newtons": 36,
+      "distance_meters": 37.5
+    },
+    "requires_table": false,
+    "requires_calculation": true
+  },
+  {
+    "id": "chem_1_atomic_structure",
+    "category": "Chemistry",
+    "task_type": "deep_explanation",
+    "question": "Explain atomic structure, subatomic particles, atomic number, and mass number.",
+    "expected_keywords": ["proton", "neutron", "electron", "nucleus", "atomic number", "mass number", "isotope", "orbital"],
+    "requires_table": true,
+    "requires_calculation": false
+  },
+  {
+    "id": "chem_2_ionic_vs_covalent",
+    "category": "Chemistry",
+    "task_type": "comparison",
+    "question": "Compare ionic and covalent bonding with examples.",
+    "expected_keywords": ["electron transfer", "electron sharing", "electrostatic", "nacl", "h2o", "melting point", "electronegativity"],
+    "requires_table": true,
+    "requires_calculation": false
+  },
+  {
+    "id": "chem_3_chemical_equation",
+    "category": "Chemistry",
+    "task_type": "deep_explanation",
+    "question": "Explain how to interpret and balance a chemical equation using the combustion of methane (CH4 + O2 -> CO2 + H2O) as an example.",
+    "expected_keywords": ["reactants", "products", "conservation of mass", "stoichiometric", "2o2", "2h2o", "ch4"],
+    "requires_table": true,
+    "requires_calculation": false
+  },
+  {
+    "id": "math_1_quadratic_equations",
+    "category": "Mathematics",
+    "task_type": "deep_explanation",
+    "question": "Explain quadratic equations, standard form, discriminant, and nature of roots.",
+    "expected_keywords": ["ax^2 + bx + c = 0", "discriminant", "b^2 - 4ac", "parabola", "real", "roots", "vertex"],
+    "requires_table": true,
+    "requires_calculation": false
+  },
+  {
+    "id": "math_2_quadratic_formula_derivation",
+    "category": "Mathematics",
+    "task_type": "derivation",
+    "question": "Derive or explain the quadratic formula step by step by completing the square from ax^2 + bx + c = 0.",
+    "expected_keywords": ["completing the square", "b/2a", "b^2 - 4ac", "-b", "2a"],
+    "requires_table": false,
+    "requires_calculation": false
+  },
+  {
+    "id": "math_3_solve_and_verify",
+    "category": "Mathematics",
+    "task_type": "numerical",
+    "question": "Solve the quadratic equation 2x^2 - 7x + 3 = 0 step by step and verify both roots by substituting them back into the original equation.",
+    "expected_keywords": ["discriminant", "25", "x = 3", "0.5", "1/2", "verify", "verification"],
+    "deterministic_answers": {
+      "discriminant": 25,
+      "root_1": 3,
+      "root_2": 0.5
+    },
+    "requires_table": false,
+    "requires_calculation": true
+  },
+  {
+    "id": "cs_1_variables_and_functions",
+    "category": "Computer Science",
+    "task_type": "deep_explanation",
+    "question": "Explain variables and functions in programming with clear examples.",
+    "expected_keywords": ["variable", "data type", "function", "parameter", "return", "scope", "reusability"],
+    "requires_table": true,
+    "requires_calculation": false
+  },
+  {
+    "id": "cs_2_arrays_vs_linked_lists",
+    "category": "Computer Science",
+    "task_type": "comparison",
+    "question": "Compare arrays and linked lists in data structures.",
+    "expected_keywords": ["contiguous", "node", "pointer", "o(1)", "o(n)", "random access", "insertion", "memory"],
+    "requires_table": true,
+    "requires_calculation": false
+  },
+  {
+    "id": "cs_3_binary_search_algorithm",
+    "category": "Computer Science",
+    "task_type": "deep_explanation",
+    "question": "Explain the binary search algorithm step by step with a worked example and time complexity.",
+    "expected_keywords": ["sorted", "mid", "low", "high", "o(log n)", "divide", "example"],
+    "requires_table": false,
+    "requires_calculation": false
+  },
+  {
+    "id": "exam_1_photosynthesis_exam_prep",
+    "category": "Exam Preparation",
+    "task_type": "exam_prep",
+    "question": "Generate exam-oriented learning material for Photosynthesis: include definitions, key terms, comparison questions, 3 MCQs with answer keys, short and long answer questions, and model answers.",
+    "expected_keywords": ["definition", "mcq", "short-answer", "long-answer", "model answer", "chloroplast", "calvin", "practice"],
+    "requires_table": true,
+    "requires_calculation": false
+  }
+]
