@@ -18,7 +18,7 @@
 
 **Core Product Principle:** `One Topic → One Complete Learning Journey`
 
-*An enterprise-grade, distraction-free educational ecosystem combining Socratic AI tutoring, interactive 60fps 3D anatomical and physical simulations, adaptive educational games, 40-mark weekly examination engines, and transparent parental oversight.*
+*An enterprise-grade, distraction-free educational ecosystem with a cross-platform **Flutter (Android, iOS & Web)** frontend, Socratic AI tutoring, interactive 60fps Three.js 3D simulations, adaptive educational games, 40-mark weekly examination engines, and transparent parental oversight.*
 
 </div>
 
@@ -29,7 +29,7 @@
 2. [Ecosystem Architecture & System Overview](#2-ecosystem-architecture--system-overview)
 3. [Programming Languages & Technology Stack](#3-programming-languages--technology-stack)
 4. [The Complete Student Learning Journey](#4-the-complete-student-learning-journey)
-5. [Frontend & UI Design: The Apple Glass Experience](#5-frontend--ui-design-the-apple-glass-experience)
+5. [Flutter Frontend Architecture & Apple Glass UI Design](#5-flutter-frontend-architecture--apple-glass-ui-design)
 6. [Core Features in Detail](#6-core-features-in-detail)
    - [AI Tutor Engine (Mode A & Mode B)](#61-ai-tutor-engine-mode-a-vs-mode-b)
    - [3D Visual Learning Lab](#62-3d-visual-learning-lab)
@@ -205,32 +205,190 @@ sequenceDiagram
 
 ---
 
-## 5. Frontend & UI Design: The Apple Glass Experience
+## 5. Flutter Frontend Architecture & Apple Glass UI Design
+
+The entire user interface across all three client applications is built using the **Flutter framework and the Dart programming language**. Flutter was chosen as the primary frontend engine to guarantee a 60fps hardware-accelerated user experience across Android, iOS, and Web from a single unified codebase.
+
+![Flutter Frontend Architecture](docs/assets/flutter_frontend_architecture.svg)
+
+### 5.1 Why Flutter & Dart Were Chosen for the Frontend
+
+- **Multiplatform Single Codebase**: Write once, deploy natively to Android (`.apk`/`.aab`), iOS (`.ipa`), and modern Web (`studyai.com`, `admin.studyai.com`, `superadmin.studyai.com`).
+- **Skia & Impeller Hardware Acceleration**: Delivers buttery-smooth 60fps animations for translucent glass cards, backdrop blurs, soft drop-shadows, and transitions without lag.
+- **Declarative & Modular Widget Tree**: Enables clean separation of concerns using shared UI packages (`packages/shared_ui`) across Student, Admin, and Super Admin applications.
+- **High-Performance 3D WebGL Bridge**: Integrates directly with Three.js via `flutter_studyai_visual` using bidirectional `JavaScriptChannel` (mobile) and window `postMessage` (web).
+- **Responsive Screen Adaptation**: Custom `LayoutBuilder` automatically adapts the UI layout from single-column mobile view to two-pane tablet and multi-column desktop dashboard.
+
+### 5.2 Flutter Monorepo Structure
+
+```
+apps/
+├── student_app/                      # Flutter Student Application (Android / iOS / Web)
+│   ├── lib/
+│   │   ├── main.dart                 # Flutter entrypoint
+│   │   ├── app.dart                  # MaterialApp configuration & theme injection
+│   │   ├── state/
+│   │   │   └── student_app_state.dart# Reactive state notifier
+│   │   ├── screens/
+│   │   │   ├── main_shell.dart       # Responsive shell with side-nav and bottom-bar
+│   │   │   ├── home_screen.dart      # Learning hub, streaks & schedule
+│   │   │   ├── tutor_screen.dart     # AI Tutor Mode A & Mode B conversation
+│   │   │   ├── notes_screen.dart     # Smart notes editor & PDF export
+│   │   │   ├── library_screen.dart   # Curriculum textbook & resources
+│   │   │   └── profile_screen.dart   # Badges, XP & Parent Dashboard access
+│   │   └── widgets/
+│   │       ├── interactive_3d_dialog.dart # Flutter 3D Three.js modal
+│   │       ├── continue_learning_card.dart
+│   │       ├── activity_chart.dart
+│   │       ├── upcoming_exam_card.dart
+│   │       └── subject_card.dart
+│   └── pubspec.yaml
+├── admin_portal/                     # Flutter Web Application (admin.studyai.com)
+│   ├── lib/
+│   │   ├── main.dart                 # Admin web entrypoint
+│   │   └── app.dart                  # Admin curriculum & class management dashboard
+│   └── pubspec.yaml
+└── superadmin_portal/                # Isolated Flutter Web Application (superadmin.studyai.com)
+    ├── lib/
+    │   ├── main.dart                 # Super admin web entrypoint
+    │   └── app.dart                  # AI billing, system health & kill-switch controls
+    └── pubspec.yaml
+
+packages/                             # Reusable Flutter / Dart Packages
+├── shared_ui/                        # Apple Glass UI Component Library
+│   └── lib/
+│       ├── shared_ui.dart            # Library barrel export
+│       └── src/
+│           ├── theme.dart            # Flutter ThemeData, StudyAiColors & StudyAiTextStyles
+│           ├── glass_card.dart       # BackdropFilter & glassmorphism container
+│           ├── glass_pill.dart       # Filter tags, navigation pills & badges
+│           ├── primary_button.dart   # Gradient orange CTA buttons
+│           └── loading_view.dart     # Shimmer skeleton loader
+├── shared_services/                  # Dart Network & Persistence Layer
+│   └── lib/src/
+│       ├── api_client.dart           # Dio/HTTP client with interceptors
+│       └── auth_service.dart         # JWT token management & session storage
+├── shared_models/                    # Strongly-Typed Dart Data Entities
+│   └── lib/src/
+│       ├── lesson.dart               # 11-step structured lesson schema
+│       ├── academic.dart             # Subject, topic, subtopic taxonomy
+│       ├── user.dart                 # Student, parent, admin roles
+│       ├── game.dart                 # Game session states & combo scores
+│       └── note.dart                 # Smart notebook models
+└── visual_learning/
+    └── flutter_studyai_visual/       # Flutter ↔ Three.js WebGL 3D Bridge
+```
+
+### 5.3 Concrete Flutter UI Implementation
+
+#### 1. Responsive Flutter Main Shell (`apps/student_app/lib/screens/main_shell.dart`)
+```dart
+class MainShell extends StatelessWidget {
+  final StudentAppState state;
+  const MainShell({Key? key, required this.state}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 1024;
+        final isTablet = constraints.maxWidth >= 768 && constraints.maxWidth < 1024;
+
+        return Scaffold(
+          backgroundColor: StudyAiColors.background,
+          body: Row(
+            children: [
+              if (isDesktop || isTablet) _buildSideNav(context, isCompact: isTablet),
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildTopHeader(context),
+                    Expanded(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: _buildCurrentScreen(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          bottomNavigationBar: (!isDesktop && !isTablet) ? _buildFloatingBottomNav(context) : null,
+        );
+      },
+    );
+  }
+}
+```
+
+#### 2. Flutter Apple Glass Card Widget (`packages/shared_ui/lib/src/glass_card.dart`)
+```dart
+class GlassCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final double borderRadius;
+  final double blurSigma;
+
+  const GlassCard({
+    Key? key,
+    required this.child,
+    this.padding,
+    this.borderRadius = 20.0,
+    this.blurSigma = 16.0,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+        child: Container(
+          padding: padding ?? const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: StudyAiColors.glassBackground,
+            borderRadius: BorderRadius.circular(borderRadius),
+            border: Border.all(color: StudyAiColors.glassBorder, width: 1.5),
+            boxShadow: [StudyAiColors.glassShadow],
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+```
+
+#### 3. Flutter Design Tokens & Palette (`packages/shared_ui/lib/src/theme.dart`)
+```dart
+class StudyAiColors {
+  static const Color pureWhite   = Color(0xFFFFFFFF);
+  static const Color primary     = Color(0xFFFF6A00); // Brand Orange
+  static const Color primaryDark = Color(0xFFE85D00); // Deep Orange
+  static const Color lightOrange = Color(0xFFFFF3E8); // Soft Orange Tint
+  static const Color charcoal    = Color(0xFF202124); // Primary Text
+  static const Color grayText    = Color(0xFF6B7280); // Secondary Subtext
+  static const Color background  = Color(0xFFFFF9F5); // Warm Canvas
+
+  // Glassmorphic Colors
+  static final Color glassBackground = Colors.white.withOpacity(0.75);
+  static final Color glassBorder     = Colors.white.withOpacity(0.90);
+  static final BoxShadow glassShadow = BoxShadow(
+    color: const Color(0xFFFF6A00).withOpacity(0.08),
+    blurRadius: 32,
+    offset: const Offset(0, 8),
+  );
+}
+```
+
+---
+
+### 5.4 The Apple Glass Visual Experience
 
 STUDYAI’s visual identity is built upon the **Apple Glass Design System**—a clean, modern, high-focus aesthetic engineered specifically to reduce cognitive fatigue during prolonged study sessions.
 
 ![Apple Glass UI Showcase](docs/assets/apple_glass_ui_showcase.svg)
-
-### Design Tokens & Visual Hierarchy
-
-```css
-:root {
-  /* Core Brand Colors */
-  --studyai-white: #FFFFFF;
-  --studyai-orange: #FF6A00;
-  --studyai-orange-dark: #E85D00;
-  --studyai-orange-light: #FFF3E8;
-  --studyai-charcoal: #202124;
-  --studyai-gray: #6B7280;
-
-  /* Glassmorphism Tokens */
-  --glass-bg-primary: rgba(255, 255, 255, 0.75);
-  --glass-bg-surface: rgba(255, 255, 255, 0.55);
-  --glass-border: rgba(255, 255, 255, 0.90);
-  --glass-shadow: 0 8px 32px 0 rgba(255, 106, 0, 0.08);
-  --glass-backdrop-blur: blur(16px);
-}
-```
 
 ### The 5 Main Student Navigation Views
 
