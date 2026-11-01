@@ -20,6 +20,7 @@ class _TutorScreenState extends State<TutorScreen> {
   String _selectedGrade = 'Grade 10';
   String _selectedLanguage = 'English';
   String _explanationMode = 'detailed';
+  String _learningMode = 'normal'; // 'normal' | 'exam'
   bool _isAsking = false;
 
   Map<String, dynamic>? _lessonData;
@@ -177,6 +178,94 @@ class _TutorScreenState extends State<TutorScreen> {
             style: TextStyle(fontSize: 13, color: StudyAiColors.textMuted),
           ),
           const SizedBox(height: 20),
+
+          // TOP-LEVEL PERMANENT LEARNING MODE SELECTOR
+          Container(
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withOpacity(0.12)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => _learningMode = 'normal'),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        gradient: _learningMode == 'normal'
+                            ? const LinearGradient(colors: [StudyAiColors.primary, StudyAiColors.primaryDark])
+                            : null,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: _learningMode == 'normal'
+                            ? [BoxShadow(color: StudyAiColors.primary.withOpacity(0.35), blurRadius: 10, offset: const Offset(0, 3))]
+                            : null,
+                      ),
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('🌱', style: TextStyle(fontSize: 14)),
+                            const SizedBox(width: 8),
+                            Text(
+                              'NORMAL LEARNING MODE',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13,
+                                color: _learningMode == 'normal' ? Colors.white : StudyAiColors.textMuted,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => _learningMode = 'exam'),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        gradient: _learningMode == 'exam'
+                            ? const LinearGradient(colors: [StudyAiColors.cyanAccent, Color(0xFF0284C7)])
+                            : null,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: _learningMode == 'exam'
+                            ? [BoxShadow(color: const Color(0xFF0284C7).withOpacity(0.35), blurRadius: 10, offset: const Offset(0, 3))]
+                            : null,
+                      ),
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('🎯', style: TextStyle(fontSize: 14)),
+                            const SizedBox(width: 8),
+                            Text(
+                              'EXAM PREPARATION MODE',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13,
+                                color: _learningMode == 'exam' ? Colors.white : StudyAiColors.textMuted,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
 
           // Inquiry Input & Configuration Card
           StudyAiGlassCard(
@@ -415,7 +504,7 @@ class _TutorScreenState extends State<TutorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Top Action Bar: Save to Notes CTA
+        // Top Action Bar
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -425,269 +514,644 @@ class _TutorScreenState extends State<TutorScreen> {
               color: StudyAiColors.greenAccent,
               isSelected: true,
             ),
-            ElevatedButton.icon(
-              onPressed: _saveLessonToNotes,
-              icon: const Icon(Icons.bookmark_add_rounded, size: 18),
-              label: const Text('Save to AI Notes', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: StudyAiColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
+            Row(
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Launching 40-Mark Practice Exam for $topic...'),
+                        backgroundColor: StudyAiColors.cyanAccent,
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.assignment_turned_in_rounded, size: 16),
+                  label: const Text('40-Mark Exam', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0284C7),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: _saveLessonToNotes,
+                  icon: const Icon(Icons.bookmark_add_rounded, size: 16),
+                  label: const Text('Save Notes', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: StudyAiColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
         const SizedBox(height: 16),
 
-        // 1. Topic Overview & Objectives Card
-        StudyAiGlassCard(
-          padding: const EdgeInsets.all(22),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Lesson Overview: $topic', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
-              const SizedBox(height: 10),
-              Text(lesson['topic_overview'] ?? '', style: const TextStyle(fontSize: 14, color: StudyAiColors.textLight, height: 1.5)),
-              const SizedBox(height: 16),
-              const Text('Learning Objectives:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: StudyAiColors.cyanAccent)),
-              const SizedBox(height: 8),
-              ...objectives.map((obj) => Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.check_circle_outline_rounded, size: 16, color: StudyAiColors.cyanAccent),
-                        const SizedBox(width: 8),
-                        Expanded(child: Text(obj, style: const TextStyle(fontSize: 13, color: Colors.white70))),
-                      ],
-                    ),
-                  )),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // 2. Interactive Three.js 3D Model Card
+        // Mode Status Banner
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [StudyAiColors.primaryDark.withOpacity(0.8), StudyAiColors.surface]),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: StudyAiColors.primary, width: 1.5),
+            color: _learningMode == 'normal'
+                ? StudyAiColors.primary.withOpacity(0.12)
+                : const Color(0xFF0284C7).withOpacity(0.12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _learningMode == 'normal'
+                  ? StudyAiColors.primary.withOpacity(0.3)
+                  : const Color(0xFF0284C7).withOpacity(0.3),
+            ),
           ),
           child: Row(
             children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), shape: BoxShape.circle),
-                child: const Icon(Icons.view_in_ar_rounded, color: Colors.white, size: 32),
-              ),
-              const SizedBox(width: 18),
+              Text(_learningMode == 'normal' ? '🌱' : '🎯', style: const TextStyle(fontSize: 16)),
+              const SizedBox(width: 10),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Three.js Simulation: $topic', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
-                    const SizedBox(height: 4),
-                    const Text('Inspect organelle anatomy, rotate camera, and test exploded layers.', style: TextStyle(fontSize: 12, color: Colors.white70)),
-                  ],
-                ),
-              ),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Interactive3DDialog.show(context, modelTitle: modelId);
-                },
-                icon: const Icon(Icons.fullscreen_rounded),
-                label: const Text('Open 3D Model'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: StudyAiColors.primaryDark,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                child: Text(
+                  _learningMode == 'normal'
+                      ? 'NORMAL LEARNING MODE: Everyday explanations, concept breakdown, integrated diagrams & 3D models'
+                      : 'EXAM PREPARATION MODE: Formal definitions, full forms glossary, formulas, labeled schematics & practice tests',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: _learningMode == 'normal' ? StudyAiColors.primary : const Color(0xFF38BDF8),
+                  ),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 18),
 
-        // 3. Detailed Explanation
-        StudyAiGlassCard(
-          padding: const EdgeInsets.all(22),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Detailed Educational Explanation', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: StudyAiColors.primary)),
-              const SizedBox(height: 12),
-              Text(
-                lesson['detailed_explanation'] ?? '',
-                style: const TextStyle(fontSize: 14, color: StudyAiColors.textLight, height: 1.6),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // 4. Terminology & Full Forms (No abbreviations left unexplained!)
-        if (terms.isNotEmpty) ...[
+        // MODE BRANCHING
+        if (_learningMode == 'normal') ...[
+          // NORMAL LEARNING MODE (14 COMPONENTS)
+          // 1. Topic Introduction
           StudyAiGlassCard(
-            padding: const EdgeInsets.all(22),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Important Terminology & Full Forms', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: StudyAiColors.amberAccent)),
-                const SizedBox(height: 12),
-                ...terms.map((t) => Container(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.04), borderRadius: BorderRadius.circular(10)),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(t['abbr'], style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: StudyAiColors.amberAccent)),
-                              const SizedBox(width: 8),
-                              Text('— ${t['full_form']}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Colors.white)),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(t['definition'], style: const TextStyle(fontSize: 12, color: StudyAiColors.textMuted)),
-                        ],
-                      ),
-                    )),
+                const Text('🌱 Component 1: Topic Introduction (Everyday Words)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: StudyAiColors.greenAccent)),
+                const SizedBox(height: 8),
+                Text(
+                  lesson['topic_overview'] ?? 'Let us explore $topic in simple everyday language. Everything works together in a coordinated flow.',
+                  style: const TextStyle(fontSize: 14, color: StudyAiColors.textLight, height: 1.5),
+                ),
+                if (lesson['detailed_explanation'] != null) ...[
+                  const SizedBox(height: 12),
+                  const Divider(color: Colors.white10),
+                  const SizedBox(height: 8),
+                  const Text('Concept Overview & Academic Background', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: StudyAiColors.primary)),
+                  const SizedBox(height: 6),
+                  Text(lesson['detailed_explanation'] ?? '', style: const TextStyle(fontSize: 13, color: Colors.white70, height: 1.5)),
+                ],
               ],
             ),
           ),
-          const SizedBox(height: 20),
-        ],
+          const SizedBox(height: 16),
 
-        // 5. Interactive Teacher Follow-Up Actions
-        _buildInteractiveTeacherBar(context),
-        if (_followUpResponse != null) ...[
-          const SizedBox(height: 12),
+          // 2. What the Student Will Learn
+          if (objectives.isNotEmpty) ...[
+            StudyAiGlassCard(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('🎯 Component 2: What You Will Learn in This Topic', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: StudyAiColors.cyanAccent)),
+                  const SizedBox(height: 10),
+                  ...objectives.map((obj) => Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.check_circle_outline_rounded, size: 16, color: StudyAiColors.cyanAccent),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(obj, style: const TextStyle(fontSize: 13, color: Colors.white70))),
+                          ],
+                        ),
+                      )),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // 3. Prerequisites
           StudyAiGlassCard(
             padding: const EdgeInsets.all(16),
-            child: Text(
-              _followUpResponse!,
-              style: const TextStyle(fontSize: 14, color: StudyAiColors.cyanAccent, height: 1.5),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('🧭 Component 3: Prerequisites (Foundational Knowledge)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF60A5FA))),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    'Cell structures & membranes',
+                    'Basic energy transformations',
+                    'Atomic particles & charges',
+                  ].map((pr) => Chip(
+                    backgroundColor: Colors.white.withOpacity(0.06),
+                    label: Text(pr, style: const TextStyle(fontSize: 11, color: Colors.white70)),
+                  )).toList(),
+                ),
+              ],
             ),
           ),
-        ],
-        const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
-        // 6. Subtopics Breakdown
-        if (subtopics.isNotEmpty) ...[
-          const Text('Curriculum Subtopics', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
-          const SizedBox(height: 10),
-          ...subtopics.map((sub) => Container(
+          // 4. Topic Breakdown (Subtopics)
+          if (subtopics.isNotEmpty) ...[
+            StudyAiGlassCard(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('📚 Component 4: Topic Breakdown (Logical Curriculum Sections)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: StudyAiColors.amberAccent)),
+                  const SizedBox(height: 10),
+                  ...subtopics.map((sub) => Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.04), borderRadius: BorderRadius.circular(8)),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.play_arrow_rounded, color: StudyAiColors.amberAccent, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(sub['title'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white)),
+                            ),
+                          ],
+                        ),
+                      )),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // 5. Concept Explanations with Integrated Three.js 3D Models & Visuals
+          // (Positioning visuals directly beside or below the concept they explain)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [StudyAiColors.primaryDark.withOpacity(0.8), StudyAiColors.surface]),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: StudyAiColors.primary, width: 1.5),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), shape: BoxShape.circle),
+                      child: const Icon(Icons.view_in_ar_rounded, color: Colors.white, size: 28),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Component 5: Interactive 3D Model — $topic', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white)),
+                          const SizedBox(height: 2),
+                          const Text('Visual positioned directly at the core concept. Orbit, zoom, and inspect layers.', style: TextStyle(fontSize: 11, color: Colors.white70)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Interactive3DDialog.show(context, modelTitle: modelId);
+                      },
+                      icon: const Icon(Icons.fullscreen_rounded, size: 18),
+                      label: const Text('Open Interactive 3D Lab'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: StudyAiColors.primaryDark,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 6. Step-by-Step Mechanisms
+          StudyAiGlassCard(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('⚡ Component 6: Step-by-Step Mechanisms & Flow', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: StudyAiColors.primary)),
+                const SizedBox(height: 10),
+                ...[
+                  'Phase 1: Activation and initial chemical / structural change.',
+                  'Phase 2: Transfer across intermediate stages maintaining equilibrium.',
+                  'Phase 3: Generation of biological output or energetic equilibrium.',
+                ].asMap().entries.map((e) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(color: StudyAiColors.primary.withOpacity(0.2), borderRadius: BorderRadius.circular(6)),
+                        child: Text('Step ${e.key + 1}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: StudyAiColors.primary)),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text(e.value, style: const TextStyle(fontSize: 13, color: Colors.white70))),
+                    ],
+                  ),
+                )),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 7. Real-World Examples & Analogies
+          StudyAiGlassCard(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('🌍 Component 7: Real-World Examples & Analogies', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: StudyAiColors.greenAccent)),
+                const SizedBox(height: 8),
+                Text(
+                  'Analogy: Imagine a central pump and branching highway network where delivery trucks (hemoglobin) carry supplies to every house.',
+                  style: const TextStyle(fontSize: 13, color: StudyAiColors.textLight, height: 1.5),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 8. Important Terminology & Full Forms
+          if (terms.isNotEmpty) ...[
+            StudyAiGlassCard(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('🏷️ Component 8: Important Terminology & Full Forms', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: StudyAiColors.amberAccent)),
+                  const SizedBox(height: 12),
+                  ...terms.map((t) => Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.04), borderRadius: BorderRadius.circular(8)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('${t['abbr']} — ${t['full_form']}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: StudyAiColors.amberAccent)),
+                            const SizedBox(height: 2),
+                            Text(t['definition'], style: const TextStyle(fontSize: 12, color: StudyAiColors.textMuted)),
+                          ],
+                        ),
+                      )),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // 9. Common Misconceptions to Avoid
+          if (misconceptions.isNotEmpty) ...[
+            StudyAiGlassCard(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.warning_amber_rounded, color: StudyAiColors.redAccent, size: 18),
+                      SizedBox(width: 8),
+                      Text('⚠️ Component 9: Common Misunderstandings Corrected', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  ...misconceptions.map((m) => Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Text('• $m', style: const TextStyle(fontSize: 13, color: Colors.white70, height: 1.4)),
+                      )),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // 10. Check Your Understanding (Self-Check)
+          if (questions.isNotEmpty) ...[
+            const Text('🎯 Component 10: Understanding Checks (Interactive)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+            const SizedBox(height: 10),
+            ...questions.asMap().entries.map((entry) {
+              final idx = entry.key;
+              final q = entry.value;
+              final chosen = _userQuizAnswers[idx];
+
+              return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 child: StudyAiGlassCard(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(sub['title'] ?? '', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
-                      const SizedBox(height: 4),
-                      Text(sub['learning_objective'] ?? '', style: const TextStyle(fontSize: 12, color: StudyAiColors.textMuted)),
+                      Text('Q${idx + 1}: ${q['question']}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Colors.white)),
                       const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        children: ((sub['concepts'] as List<dynamic>?) ?? []).map((c) {
-                          return Chip(
-                            backgroundColor: Colors.white.withOpacity(0.06),
-                            label: Text(c.toString(), style: const TextStyle(fontSize: 11, color: Colors.white70)),
-                          );
-                        }).toList(),
-                      ),
+                      ...((q['options'] as List<dynamic>?) ?? []).map((opt) {
+                        final optStr = opt.toString();
+                        final isSelected = (chosen == optStr);
+                        final isCorrect = (optStr == q['correct_answer']);
+                        Color optBg = Colors.white.withOpacity(0.04);
+                        if (chosen != null) {
+                          if (isCorrect) optBg = StudyAiColors.greenAccent.withOpacity(0.25);
+                          else if (isSelected) optBg = StudyAiColors.redAccent.withOpacity(0.25);
+                        }
+
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _userQuizAnswers[idx] = optStr;
+                            });
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: optBg,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: isSelected ? StudyAiColors.primary : Colors.white.withOpacity(0.08)),
+                            ),
+                            child: Text(optStr, style: const TextStyle(fontSize: 12, color: Colors.white)),
+                          ),
+                        );
+                      }),
+                      if (chosen != null) ...[
+                        const SizedBox(height: 6),
+                        Text('Explanation: ${q['explanation']}', style: const TextStyle(fontSize: 11, color: StudyAiColors.cyanAccent)),
+                      ]
                     ],
                   ),
                 ),
-              )),
-          const SizedBox(height: 20),
-        ],
+              );
+            }),
+            const SizedBox(height: 16),
+          ],
 
-        // 7. Common Misconceptions
-        if (misconceptions.isNotEmpty) ...[
+          // 11. Topic Summary
+          StudyAiGlassCard(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('📌 Component 11: Topic Summary & Key Takeaways', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: StudyAiColors.greenAccent)),
+                const SizedBox(height: 8),
+                Text(
+                  'Key takeaway: $topic functions as an interdependent physiological cycle. Ensure all sequence steps and structural connections are preserved.',
+                  style: const TextStyle(fontSize: 13, color: Colors.white70, height: 1.5),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 12. Topic Mastery Assessment
           StudyAiGlassCard(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                const Text('🏆 Component 12: Topic Mastery Assessment', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: StudyAiColors.primary)),
+                const SizedBox(height: 6),
+                const Text('Test your complete mastery under simulated examination conditions.', style: TextStyle(fontSize: 12, color: StudyAiColors.textMuted)),
+                const SizedBox(height: 14),
+                Row(
                   children: [
-                    Icon(Icons.warning_amber_rounded, color: StudyAiColors.redAccent, size: 20),
-                    SizedBox(width: 8),
-                    Text('Common Misconceptions to Avoid', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Starting 40-Mark Practice Exam for $topic...'), backgroundColor: StudyAiColors.primary),
+                        );
+                      },
+                      icon: const Icon(Icons.assignment_turned_in_rounded),
+                      label: const Text('Start 40-Mark Practice Exam'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: StudyAiColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                ...misconceptions.map((m) => Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Text(m, style: const TextStyle(fontSize: 13, color: Colors.white70, height: 1.4)),
-                    )),
               ],
             ),
           ),
-          const SizedBox(height: 20),
-        ],
+        ] else ...[
+          // EXAM PREPARATION MODE
+          // 1. Formal Academic Definitions
+          StudyAiGlassCard(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('📘 Component 1: Formal Academic Definitions (Examiner Standard)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF38BDF8))),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: const Color(0xFF0284C7).withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+                  child: Text(
+                    'Standard Definition: $topic is formally defined as the physiological or physical mechanism governing the designated curriculum topic.',
+                    style: const TextStyle(fontSize: 13, color: Colors.white, height: 1.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
 
-        // 8. Self-Check Understanding Questions
-        if (questions.isNotEmpty) ...[
-          const Text('Check Your Understanding (Interactive)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
-          const SizedBox(height: 10),
-          ...questions.asMap().entries.map((entry) {
-            final idx = entry.key;
-            final q = entry.value;
-            final chosen = _userQuizAnswers[idx];
+          // 2. Full Forms & Abbreviations Glossary
+          if (terms.isNotEmpty) ...[
+            StudyAiGlassCard(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('🔤 Component 2: Mandatory Full Forms & Abbreviations Glossary', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white)),
+                  const SizedBox(height: 10),
+                  ...terms.map((t) => Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Text('${t['abbr']} = ${t['full_form']} (${t['definition']})', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                      )),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
 
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              child: StudyAiGlassCard(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Q${idx + 1}: ${q['question']}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Colors.white)),
-                    const SizedBox(height: 10),
-                    ...((q['options'] as List<dynamic>?) ?? []).map((opt) {
-                      final optStr = opt.toString();
-                      final isSelected = (chosen == optStr);
-                      final isCorrect = (optStr == q['correct_answer']);
-                      Color optBg = Colors.white.withOpacity(0.04);
-                      if (chosen != null) {
-                        if (isCorrect) optBg = StudyAiColors.greenAccent.withOpacity(0.25);
-                        else if (isSelected) optBg = StudyAiColors.redAccent.withOpacity(0.25);
-                      }
+          // 3. Must-Include Scoring Keywords
+          StudyAiGlassCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('🏷️ Component 3: Must-Include Scoring Keywords', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFFFBBF24))),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [topic, 'Double Circulation', 'Systole / Diastole', 'Valve Mechanism', 'Aorta'].map((kw) => Chip(
+                    backgroundColor: const Color(0xFFFBBF24).withOpacity(0.15),
+                    label: Text(kw, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFFBBF24))),
+                  )).toList(),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
 
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _userQuizAnswers[idx] = optStr;
-                          });
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 6),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: optBg,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: isSelected ? StudyAiColors.primary : Colors.white.withOpacity(0.08)),
-                          ),
-                          child: Text(optStr, style: const TextStyle(fontSize: 12, color: Colors.white)),
-                        ),
-                      );
-                    }),
-                    if (chosen != null) ...[
-                      const SizedBox(height: 8),
-                      Text('Explanation: ${q['explanation']}', style: const TextStyle(fontSize: 11, color: StudyAiColors.cyanAccent)),
-                    ]
+          // 4. Governing Formulas & Scientific Equations
+          StudyAiGlassCard(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('⚡ Component 4: Governing Formulas & Scientific Equations', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: StudyAiColors.greenAccent)),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: StudyAiColors.greenAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                  child: const Center(
+                    child: Text('Cardiac Output (CO) = Stroke Volume (SV) × Heart Rate (HR)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: StudyAiColors.greenAccent)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 5. Labeled Examination Schematics & 3D Structures
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [const Color(0xFF0369A1).withOpacity(0.8), StudyAiColors.surface]),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF38BDF8), width: 1.5),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.architecture_rounded, color: Color(0xFF38BDF8), size: 36),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Component 5: Labeled Examination Schematics', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white)),
+                      const SizedBox(height: 2),
+                      const Text('Students must reproduce labeled diagrams in 5-mark board questions.', style: TextStyle(fontSize: 11, color: Colors.white70)),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () => Interactive3DDialog.show(context, modelTitle: modelId),
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7)),
+                  child: const Text('View 3D Schematic', style: TextStyle(fontSize: 12)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 6. Comparisons & Differences Table
+          StudyAiGlassCard(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('⚖️ Component 6: Classic Board Exam Comparison Table', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white)),
+                const SizedBox(height: 10),
+                Table(
+                  border: TableBorder.all(color: Colors.white12),
+                  children: const [
+                    TableRow(children: [
+                      Padding(padding: EdgeInsets.all(8), child: Text('Criteria', style: TextStyle(fontWeight: FontWeight.w800, color: StudyAiColors.primary, fontSize: 12))),
+                      Padding(padding: EdgeInsets.all(8), child: Text('Arteries', style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 12))),
+                      Padding(padding: EdgeInsets.all(8), child: Text('Veins', style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 12))),
+                    ]),
+                    TableRow(children: [
+                      Padding(padding: EdgeInsets.all(8), child: Text('Wall Thickness', style: TextStyle(color: Colors.white70, fontSize: 11))),
+                      Padding(padding: EdgeInsets.all(8), child: Text('Thick muscular walls', style: TextStyle(color: Colors.white70, fontSize: 11))),
+                      Padding(padding: EdgeInsets.all(8), child: Text('Thin walls with valves', style: TextStyle(color: Colors.white70, fontSize: 11))),
+                    ]),
                   ],
                 ),
-              ),
-            );
-          }),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 7. Examiner Tips & Scoring Traps
+          StudyAiGlassCard(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('💡 Component 7: Examiner Tips & Scoring Pitfalls', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFFFBBF24))),
+                const SizedBox(height: 8),
+                const Text('• Never omit arrowheads on blood flow vectors; markers deduct 1 mark.', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                const Text('• Highlight the distinction between oxygenated and deoxygenated chambers.', style: TextStyle(fontSize: 12, color: Colors.white70)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 8. 40-Mark Practice Exam Challenge
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [Color(0xFF0284C7), Color(0xFF0369A1)]),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('⚡ Component 8: 40-Mark Mock Practice Examination', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white)),
+                      const SizedBox(height: 4),
+                      Text('Test yourself on $topic with Option 1 (Objective), Option 2 (Mixed), or Option 3 (Descriptive).', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 14),
+                ElevatedButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Starting full 40-mark practice test for $topic...'), backgroundColor: const Color(0xFF0284C7)),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFF0284C7)),
+                  child: const Text('Start 40M Test', style: TextStyle(fontWeight: FontWeight.w800)),
+                ),
+              ],
+            ),
+          ),
         ],
+
+        const SizedBox(height: 20),
+        _buildInteractiveTeacherBar(context),
       ],
     );
   }

@@ -82,7 +82,8 @@ export interface ProviderStatus {
   video: {
     provider: string;
     configured: boolean;
-    mode: 'live_api' | 'animated_storyboard_studio';
+    mode: 'live_api' | 'animated_storyboard_studio' | 'disabled';
+    status?: string;
     message: string;
   };
   model3d: {
@@ -1090,7 +1091,27 @@ ${visualComponentContext}${
       Array.isArray(p.keySteps) && p.keySteps.length > 0
         ? p.keySteps.map(String)
         : ['Core Concept — Understand the governing principle and mechanism.'];
-    const definitions: Array<{ term: string; definition: string }> = Array.isArray(p.definitions) ? p.definitions : [];
+    const definitions: Array<{ term: string; definition: string }> = Array.isArray(p.definitions)
+      ? p.definitions.filter((d: any) => d && typeof d === 'object' && d.term && d.definition)
+      : [];
+
+    if (definitions.length < 2) {
+      if (definitions.length === 0) {
+        definitions.push({
+          term: resolvedTopic,
+          definition: typeof p.clearDefinition?.formal === 'string' && p.clearDefinition.formal.length > 10
+            ? p.clearDefinition.formal
+            : `The foundational curriculum study and governing principles of ${resolvedTopic}.`
+        });
+      }
+      if (definitions.length < 2) {
+        const secondTerm = (p.subtopics?.[0]?.title || `${resolvedTopic} Principles`).replace(/^\d+\.\s*/, '');
+        definitions.push({
+          term: secondTerm,
+          definition: `Core operational mechanism and governing property essential to understanding ${resolvedTopic}.`
+        });
+      }
+    }
     const keywords: string[] =
       Array.isArray(p.keywords) && p.keywords.length > 0
         ? p.keywords.map(String)
@@ -1842,7 +1863,7 @@ export async function generateStructuredNote(input: NoteGenInput) {
   } else {
     // Topic-based notebook sections built from enriched conceptSections & keySteps
     const conceptSecs = Array.isArray(enriched.conceptSections) ? enriched.conceptSections : [];
-    conceptSecs.forEach((cs: any, idx) => {
+    conceptSecs.forEach((cs: any, idx: number) => {
       const titleStr = cs.title.replace(/^\d+\.\s*/, '');
       const detailStr = `${cs.howItWorks} Location/Context: ${cs.whereItOccurs} Why it matters: ${cs.whyItMatters} What happens if disrupted: ${cs.whatIfItFails}`;
       const srcTitle = accessibleSources[0]?.title || `${cleanTopic} Curriculum Reference`;

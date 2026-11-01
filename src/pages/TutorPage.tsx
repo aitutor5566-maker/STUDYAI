@@ -24,7 +24,8 @@ import {
   Globe,
   BookOpen,
   Radio,
-  Trash2
+  Trash2,
+  ShieldCheck
 } from 'lucide-react';
 import { TopBrandBar } from '../components/GlassNav';
 import { Interactive3DViewer } from '../components/Interactive3DLab';
@@ -33,6 +34,21 @@ import { useLearning } from '../context/LearningContext';
 
 type LanguageType = 'English' | 'Telugu' | 'Hindi';
 type ModeType = 'simple' | 'detailed';
+export type TeachingMode = 'normal' | 'exam';
+
+export function inferTopicModel3D(topicName: string): string | null {
+  const t = (topicName || '').toLowerCase();
+  if (t.includes('heart') || t.includes('circulation') || t.includes('cardio')) return 'human_heart';
+  if (t.includes('dna') || t.includes('helix') || t.includes('genetic') || t.includes('nucleotide')) return 'dna_helix';
+  if (t.includes('photo') || t.includes('chloroplast') || t.includes('plant cell')) return 'chloroplast_molecule';
+  if (t.includes('circuit') || t.includes('ohm') || t.includes('electric') || t.includes('resistor')) return 'electric_circuit';
+  if (t.includes('atom') || t.includes('bohr') || t.includes('electron') || t.includes('nucleus')) return 'atom_bohr';
+  if (t.includes('solar') || t.includes('planet') || t.includes('orbit')) return 'solar_system';
+  if (t.includes('pythagor') || t.includes('geometry') || t.includes('triangle')) return 'geometry_pythagoras';
+  if (t.includes('volcano')) return 'volcano_cross_section';
+  if (t.includes('water') || t.includes('molecule')) return 'water_molecule';
+  return null;
+}
 
 interface TutorHealthInfo {
   status: string;
@@ -148,6 +164,7 @@ export const TutorPage: React.FC = () => {
     openVideoStudio,
     openGamesHub,
     openQuizModal,
+    openExamModal,
     triggerRefresh
   } = useLearning();
 
@@ -156,6 +173,7 @@ export const TutorPage: React.FC = () => {
   const [subject, setSubject] = useState<string>('Science');
   const [language, setLanguage] = useState<LanguageType>('English');
   const [mode, setMode] = useState<ModeType>('simple');
+  const [teachingMode, setTeachingMode] = useState<TeachingMode>('normal');
   const [streamingMode, setStreamingMode] = useState<boolean>(false);
   const [streamingText, setStreamingText] = useState<string>('');
   const [isListening, setIsListening] = useState<boolean>(false);
@@ -173,6 +191,7 @@ export const TutorPage: React.FC = () => {
   const [inline3DMsgId, setInline3DMsgId] = useState<string | null>(null);
   const [actionToast, setActionToast] = useState<string>('');
   const [selectedVisualComponent, setSelectedVisualComponent] = useState<{ id: string; label: string; role?: string } | null>(null);
+  const [revealedQuestions, setRevealedQuestions] = useState<Record<string, boolean>>({});
 
   const askTargetedQuestion = (q: string, componentOverride?: { id: string; label: string; role?: string }) => {
     if (componentOverride) {
@@ -678,6 +697,141 @@ export const TutorPage: React.FC = () => {
         </div>
       </section>
 
+      {/* =========================================================================
+          PERMANENT TOP-LEVEL LEARNING MODE SELECTOR (PART 2 MANDATORY REQUIREMENT)
+          Visually prominent, sticky below header, accessible at all times while scrolling
+          ========================================================================= */}
+      <section
+        style={{
+          position: 'sticky',
+          top: 64,
+          zIndex: 35,
+          marginBottom: 16,
+          padding: '12px 18px',
+          borderRadius: 20,
+          background: 'rgba(255, 255, 255, 0.94)',
+          backdropFilter: 'blur(20px)',
+          border: '2px solid rgba(255, 106, 0, 0.35)',
+          boxShadow: '0 8px 30px rgba(255, 106, 0, 0.12)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 14
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 12,
+              background: teachingMode === 'normal'
+                ? 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)'
+                : 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#FFFFFF',
+              boxShadow: teachingMode === 'normal' ? '0 4px 14px rgba(255, 106, 0, 0.35)' : '0 4px 14px rgba(2, 132, 199, 0.35)',
+              fontSize: '1.25rem'
+            }}
+          >
+            {teachingMode === 'normal' ? '✨' : '⚡'}
+          </div>
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em', color: teachingMode === 'normal' ? '#EA580C' : '#0284C7' }}>
+              CURRENT TEACHING MODE
+            </div>
+            <div style={{ fontSize: '0.96rem', fontWeight: 900, color: '#1F2937' }}>
+              {teachingMode === 'normal'
+                ? 'Normal Learning Mode (Concept Mastery & Visuals)'
+                : 'Exam Preparation Mode (Formal Definitions & Revision)'}
+            </div>
+          </div>
+        </div>
+
+        {/* PROMINENT SEGMENTED CONTROL */}
+        <div
+          role="tablist"
+          aria-label="Teaching Mode Selector"
+          style={{
+            display: 'flex',
+            background: '#FFF3E8',
+            padding: 4,
+            borderRadius: 999,
+            border: '1.5px solid rgba(255, 106, 0, 0.35)',
+            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.04)'
+          }}
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={teachingMode === 'normal'}
+            onClick={() => {
+              if (teachingMode === 'normal') return;
+              setTeachingMode('normal');
+              setMode('simple');
+              setActionToast('Switched to NORMAL LEARNING MODE: Simple language, teacher-style explanations & visual diagrams.');
+              setTimeout(() => setActionToast(''), 3500);
+            }}
+            style={{
+              padding: '10px 22px',
+              borderRadius: 999,
+              border: 'none',
+              background: teachingMode === 'normal'
+                ? 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)'
+                : 'transparent',
+              color: teachingMode === 'normal' ? '#FFFFFF' : '#6B7280',
+              fontWeight: 800,
+              fontSize: '0.86rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              boxShadow: teachingMode === 'normal' ? '0 4px 12px rgba(255,106,0,0.35)' : 'none',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <span>✨</span>
+            <span>NORMAL LEARNING MODE</span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={teachingMode === 'exam'}
+            onClick={() => {
+              if (teachingMode === 'exam') return;
+              setTeachingMode('exam');
+              setMode('detailed');
+              setActionToast('Switched to EXAM PREPARATION MODE: Formal definitions, scientific symbols & model answer guidance.');
+              setTimeout(() => setActionToast(''), 3500);
+            }}
+            style={{
+              padding: '10px 22px',
+              borderRadius: 999,
+              border: 'none',
+              background: teachingMode === 'exam'
+                ? 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)'
+                : 'transparent',
+              color: teachingMode === 'exam' ? '#FFFFFF' : '#6B7280',
+              fontWeight: 800,
+              fontSize: '0.86rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              boxShadow: teachingMode === 'exam' ? '0 4px 12px rgba(2,132,199,0.35)' : 'none',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <span>⚡</span>
+            <span>EXAM PREPARATION MODE</span>
+          </button>
+        </div>
+      </section>
+
       {/* Multilingual, Multi-Grade & Pedagogical Controls Bar */}
       <section
         className="glass-card"
@@ -1009,7 +1163,7 @@ export const TutorPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <button
                     type="button"
                     onClick={() => handleSpeakExplanation(`${s?.introduction || msg.content} ${(s?.keySteps || []).join(' ')}`)}
@@ -1021,690 +1175,843 @@ export const TutorPage: React.FC = () => {
                     <span>{isSpeaking ? 'Stop Audio' : 'Listen Aloud'}</span>
                   </button>
 
+                  <button
+                    type="button"
+                    onClick={() => setInline3DMsgId(showInline3D ? null : msg.id)}
+                    className="btn-glass"
+                    style={{
+                      fontSize: '0.76rem',
+                      padding: '5px 12px',
+                      background: showInline3D ? '#FF6A00' : '#FFF7ED',
+                      color: showInline3D ? '#FFFFFF' : '#EA580C',
+                      borderColor: 'rgba(255,106,0,0.3)'
+                    }}
+                    title="Toggle Interactive 3D Lab"
+                  >
+                    <Box size={14} />
+                    <span>{showInline3D ? 'Hide 3D Lab' : '3D Model Lab'}</span>
+                  </button>
+
                   <span
                     style={{
                       fontSize: '0.73rem',
                       fontWeight: 700,
-                      color: '#EA580C',
-                      background: '#FFF7ED',
+                      color: teachingMode === 'normal' ? '#EA580C' : '#0284C7',
+                      background: teachingMode === 'normal' ? '#FFF7ED' : '#F0F9FF',
                       padding: '4px 10px',
                       borderRadius: 999,
-                      border: '1px solid rgba(255,106,0,0.25)'
+                      border: `1px solid ${teachingMode === 'normal' ? 'rgba(255,106,0,0.25)' : 'rgba(2,132,199,0.25)'}`
                     }}
                   >
-                    ⚡ AI Tutor (qwen2.5:7b)
+                    {teachingMode === 'normal' ? '🌱 Normal Learning Mode' : '🎯 Exam Prep Mode'}
                   </span>
                 </div>
               </div>
 
-              {/* 0. Simple Introduction (Plain Everyday Language Before Jargon) */}
-              {s?.simpleIntroduction && (
-                <div
-                  style={{
-                    padding: '14px 18px',
-                    borderRadius: 18,
-                    background: 'linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)',
-                    border: '1.5px solid #A7F3D0',
-                    marginBottom: 14
-                  }}
-                >
-                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
-                    🌱 Simple Introduction (In Plain Everyday Words)
-                  </div>
-                  <p style={{ fontSize: '0.94rem', lineHeight: 1.62, color: '#064E3B', margin: 0 }}>
-                    {s.simpleIntroduction}
-                  </p>
-                </div>
-              )}
-
-              {/* 1. Detailed Explanation */}
+              {/* Mode Status Banner inside card */}
               <div
                 style={{
-                  padding: '14px 18px',
-                  borderRadius: 18,
-                  background: 'linear-gradient(135deg, #FFFDFB 0%, #FFF7ED 100%)',
-                  border: '1px solid rgba(255, 106, 0, 0.22)',
-                  marginBottom: 16
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '9px 15px',
+                  borderRadius: 14,
+                  marginBottom: 16,
+                  background: teachingMode === 'normal'
+                    ? 'linear-gradient(90deg, #FFF7ED 0%, #FFEDD5 100%)'
+                    : 'linear-gradient(90deg, #F0F9FF 0%, #E0F2FE 100%)',
+                  border: `1.5px solid ${teachingMode === 'normal' ? '#FDBA74' : '#7DD3FC'}`
                 }}
               >
-                <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#FF6A00', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
-                  📖 {language === 'Telugu' ? 'వివరణ & భావన' : language === 'Hindi' ? 'अवधारणा एवं व्याख्या' : 'Concept Explanation & Academic Overview'}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem', fontWeight: 800, color: teachingMode === 'normal' ? '#C2410C' : '#0369A1' }}>
+                  <span>{teachingMode === 'normal' ? '🌱' : '⚡'}</span>
+                  <span>
+                    {teachingMode === 'normal'
+                      ? 'NORMAL LEARNING MODE: Everyday explanations, concept breakdown, integrated diagrams & 3D models'
+                      : 'EXAM PREPARATION MODE: Formal definitions, full forms glossary, formulas, labeled schematics & practice tests'}
+                  </span>
                 </div>
-                <p style={{ fontSize: '0.96rem', lineHeight: 1.68, color: '#202124', margin: 0, whiteSpace: 'pre-line' }}>
-                  {s?.introduction || msg.content}
-                </p>
-                {s?.clearDefinition && (
-                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px dashed rgba(255,106,0,0.25)', display: 'grid', gap: 6, fontSize: '0.84rem', color: '#374151' }}>
-                    <div><strong style={{ color: '#EA580C' }}>Formal Definition:</strong> {s.clearDefinition.formal}</div>
-                    <div><strong style={{ color: '#EA580C' }}>Concrete Example:</strong> {s.clearDefinition.example}</div>
-                  </div>
-                )}
-              </div>
-
-              {/* 1B. Prerequisites */}
-              {s?.prerequisites?.length > 0 && (
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontWeight: 800, fontSize: '0.84rem', color: '#202124', marginBottom: 6 }}>
-                    🧭 What You Should Know Before Starting (Prerequisites):
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {s.prerequisites.map((pr: string, idx: number) => (
-                      <span
-                        key={idx}
-                        style={{
-                          padding: '4px 11px',
-                          borderRadius: 999,
-                          background: '#EFF6FF',
-                          color: '#1E40AF',
-                          border: '1px solid #BFDBFE',
-                          fontSize: '0.76rem',
-                          fontWeight: 600
-                        }}
-                      >
-                        ✓ {pr}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* 1C. Mandatory Full Forms & Abbreviations Glossary */}
-              {s?.abbreviations?.length > 0 && (
-                <div style={{ marginBottom: 18, padding: 14, borderRadius: 18, background: '#F8FAFC', border: '1.5px solid #CBD5E1' }}>
-                  <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0F172A', marginBottom: 10 }}>
-                    🔤 Mandatory Full Forms, Abbreviations &amp; Scientific Symbols Explained:
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 10 }}>
-                    {s.abbreviations.map((ab: any, idx: number) => (
-                      <div
-                        key={idx}
-                        style={{
-                          padding: 12,
-                          borderRadius: 14,
-                          background: '#FFFFFF',
-                          border: '1px solid #E2E8F0',
-                          fontSize: '0.82rem'
-                        }}
-                      >
-                        <div style={{ fontWeight: 900, color: '#EA580C', fontSize: '0.88rem', marginBottom: 4 }}>
-                          {ab.abbr} — <span style={{ color: '#0F172A' }}>{ab.fullForm}</span>
-                        </div>
-                        <div style={{ color: '#334155', lineHeight: 1.45, marginBottom: 4 }}>{ab.simpleDefinition}</div>
-                        <div style={{ color: '#047857', fontSize: '0.78rem', fontWeight: 600 }}>
-                          <strong>Role:</strong> {ab.roleInTopic}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* 2. Keywords Bar */}
-              {keywordsList.length > 0 && (
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontWeight: 800, fontSize: '0.84rem', color: '#202124', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ color: '#FF6A00' }}>🏷️</span> {language === 'Telugu' ? 'ముఖ్య పదాలు:' : language === 'Hindi' ? 'प्रमुख शब्द:' : 'Key Terminology & Keywords:'}
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                    {keywordsList.map((kw: string, idx: number) => (
-                      <span key={idx} className="keyword-pill-orange">
-                        ✦ {kw}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* 2B. Concept-by-Concept Deep Sections */}
-              {s?.conceptSections?.length > 0 && (
-                <div style={{ marginBottom: 18 }}>
-                  <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#202124', marginBottom: 10 }}>
-                    🧠 Deep Concept-by-Concept Breakdown:
-                  </div>
-                  <div style={{ display: 'grid', gap: 10 }}>
-                    {s.conceptSections.map((sec: any, idx: number) => (
-                      <div
-                        key={sec.id || idx}
-                        style={{
-                          padding: 14,
-                          borderRadius: 16,
-                          background: '#FFFDFB',
-                          border: '1px solid rgba(255,106,0,0.22)'
-                        }}
-                      >
-                        <div style={{ fontWeight: 800, color: '#EA580C', fontSize: '0.9rem', marginBottom: 6 }}>
-                          {idx + 1}. {sec.title}
-                        </div>
-                        <div style={{ display: 'grid', gap: 4, fontSize: '0.84rem', color: '#374151', lineHeight: 1.5 }}>
-                          <div><strong>What it is:</strong> {sec.whatItIs}</div>
-                          <div><strong>Where it occurs:</strong> {sec.whereItOccurs}</div>
-                          <div><strong>How it works:</strong> {sec.howItWorks}</div>
-                          <div><strong>Why it matters:</strong> {sec.whyItMatters}</div>
-                          <div style={{ color: '#B91C1C' }}><strong>If it fails / changes:</strong> {sec.whatIfItFails}</div>
-                          {sec.examTip && <div style={{ color: '#047857', fontWeight: 700 }}>🎯 Exam Tip: {sec.examTip}</div>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* 3. Key Points & Step-by-Step Mechanism */}
-              {s?.keySteps?.length > 0 && (
-                <div style={{ marginBottom: 18 }}>
-                  <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#202124', marginBottom: 10 }}>
-                    ⚡ {language === 'Telugu' ? 'ముఖ్యమైన అంశాలు:' : language === 'Hindi' ? 'मुख्य बिंदु एवं प्रक्रिया:' : 'Key Points & Step-by-Step Mechanism:'}
-                  </div>
-                  <div style={{ display: 'grid', gap: 10 }}>
-                    {s.keySteps.map((step: string, idx: number) => (
-                      <div key={idx} className="futuristic-step-card">
-                        <div style={{ fontSize: '0.9rem', lineHeight: 1.55, color: '#1F2937' }}>
-                          <strong style={{ color: '#FF6A00', fontWeight: 900, marginRight: 6 }}>Point {idx + 1}:</strong>
-                          {step}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* 4. Core Definitions */}
-              {s?.definitions?.length > 0 && (
-                <div style={{ marginBottom: 18 }}>
-                  <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#202124', marginBottom: 10 }}>
-                    📘 {language === 'Telugu' ? 'ప్రధాన నిర్వచనాలు:' : language === 'Hindi' ? 'प्रमुख परिभाषाएँ:' : 'Core Definitions:'}
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
-                    {s.definitions.map((d: any, idx: number) => (
-                      <div
-                        key={idx}
-                        style={{
-                          padding: '12px 14px',
-                          borderRadius: 16,
-                          background: 'linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%)',
-                          border: '1.5px solid rgba(255, 106, 0, 0.28)',
-                          fontSize: '0.84rem',
-                          boxShadow: '0 4px 12px rgba(255, 106, 0, 0.06)'
-                        }}
-                      >
-                        <div style={{ fontWeight: 800, color: '#EA580C', fontSize: '0.88rem', marginBottom: 4 }}>
-                          🔹 {d.term}
-                        </div>
-                        <div style={{ color: '#374151', lineHeight: 1.48 }}>{d.definition}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* 5. Key Differences Comparison Table */}
-              {diffTable && (
-                <div style={{ marginBottom: 18 }}>
-                  <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#202124', marginBottom: 10 }}>
-                    ⚖️ Key Differences &amp; Comparison ({diffTable.titleA} vs. {diffTable.titleB}):
-                  </div>
-                  <div style={{ overflowX: 'auto' }}>
-                    <table className="futuristic-diff-table">
-                      <thead>
-                        <tr>
-                          <th style={{ width: '24%' }}>Comparison Aspect</th>
-                          <th style={{ width: '38%' }}>{diffTable.titleA}</th>
-                          <th style={{ width: '38%' }}>{diffTable.titleB}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {diffTable.rows.map((r: any, idx: number) => (
-                          <tr key={idx}>
-                            <td style={{ fontWeight: 800, color: '#EA580C' }}>{r.aspect}</td>
-                            <td>{r.itemA}</td>
-                            <td>{r.itemB}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* 6. Formula / Equation Card */}
-              {s?.formula && (
-                <div
-                  style={{
-                    padding: '14px 18px',
-                    borderRadius: 18,
-                    background: 'linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)',
-                    border: '2px solid rgba(255, 106, 0, 0.38)',
-                    marginBottom: 18,
-                    textAlign: 'center',
-                    boxShadow: '0 8px 20px rgba(255, 106, 0, 0.12)'
-                  }}
-                >
-                  <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#EA580C', textTransform: 'uppercase', marginBottom: 4 }}>
-                    ⚡ Governing Formula / Equation
-                  </div>
-                  <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#202124', letterSpacing: '0.01em', marginBottom: 8 }}>
-                    {s.formula.equation}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 16, fontSize: '0.78rem', color: '#4B5563', fontWeight: 700 }}>
-                    {[...(s.formula.reactants || []), ...(s.formula.products || [])].map((item: any, idx: number) => (
-                      <span key={idx}>
-                        <strong style={{ color: '#FF6A00' }}>{item.symbol}:</strong> {item.label}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* 6B. Interactive Quadratic Parabola Plot (for Mathematics / Quadratic Equations) */}
-              {s?.interactivePlotSpec && <InteractiveQuadraticPlot spec={s.interactivePlotSpec} />}
-
-              {/* 6C. Structured Subtopic Progression Navigation Bar (Section A & H) */}
-              {s?.subtopics && s.subtopics.length > 0 && (
-                <div style={{ margin: '14px 0', padding: '12px 16px', background: '#F8FAFC', borderRadius: 16, border: '1px solid #E2E8F0' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      📚 Curriculum Subtopic Progression ({s.subtopics.length} Sections)
-                    </span>
-                    <span style={{ fontSize: '0.74rem', color: '#64748B' }}>Click any subtopic to learn</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {s.subtopics.map((sub: any, subIdx: number) => (
-                      <button
-                        key={sub.subtopicId || subIdx}
-                        type="button"
-                        onClick={() => askTargetedQuestion(`Teach me subtopic ${subIdx + 1}: ${sub.title}`)}
-                        className="btn-glass"
-                        style={{
-                          fontSize: '0.75rem',
-                          padding: '5px 12px',
-                          borderRadius: 999,
-                          background: '#FFFFFF',
-                          border: '1px solid #CBD5E1',
-                          color: '#1E293B',
-                          fontWeight: 700,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {subIdx + 1}. {sub.title}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* 7. Mandatory Section-Connected Educational Images & 7-Part Image Walkthroughs */}
-              {(s?.lessonImages?.length > 0 ? s.lessonImages : s?.imageUrl ? [{
-                id: 'img-primary-1',
-                title: `${s.topic || activeTopic} — Primary Scientific Diagram`,
-                caption: s.imageCaption || `${s.topic || activeTopic} Visual Illustration`,
-                imageUrl: s.imageUrl,
-                explanation: s.imageExplanation
-              }] : []).map((imgAsset: any, imgIdx: number) => (
-                <div
-                  key={imgAsset.id || imgIdx}
-                  style={{
-                    borderRadius: 20,
-                    overflow: 'hidden',
-                    border: '2px solid rgba(255,106,0,0.3)',
-                    marginBottom: 16,
-                    background: '#FFFDFB',
-                    boxShadow: '0 10px 28px rgba(255, 106, 0, 0.12)',
-                    position: 'relative'
-                  }}
-                >
-                  <div
-                    style={{
-                      padding: '8px 14px',
-                      background: 'linear-gradient(90deg, #FF6A00 0%, #FF8533 100%)',
-                      color: '#FFFFFF',
-                      fontSize: '0.78rem',
-                      fontWeight: 800,
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      flexWrap: 'wrap',
-                      gap: 8
-                    }}
-                  >
-                    <span>🖼️ {imgAsset.title || `Visual Illustration & Concept Diagram: ${s?.topic || activeTopic}`}</span>
-                    <span>✓ Validated Educational Diagram #{imgIdx + 1}</span>
-                  </div>
-                  <img
-                    src={imgAsset.imageUrl}
-                    alt={imgAsset.caption || `${s?.topic || activeTopic} Visual Illustration`}
-                    style={{
-                      width: '100%',
-                      maxHeight: 340,
-                      objectFit: 'contain',
-                      display: 'block',
-                      padding: 6
-                    }}
-                  />
-
-                  {/* 7-Part Image Explanation Walkthrough */}
-                  {imgAsset.explanation && (
-                    <div style={{ padding: 14, background: '#F8FAFC', borderTop: '1px solid #E2E8F0', fontSize: '0.82rem', color: '#334155' }}>
-                      <div style={{ fontWeight: 800, color: '#0F172A', fontSize: '0.86rem', marginBottom: 6 }}>
-                        🔍 How to Read This Image (7-Part Visual Walkthrough):
-                      </div>
-                      <div style={{ marginBottom: 6 }}>
-                        <strong>1. What this image shows:</strong> {imgAsset.explanation.whatItShows}
-                      </div>
-                      {imgAsset.explanation.importantParts?.length > 0 && (
-                        <div style={{ marginBottom: 6 }}>
-                          <strong>2. Important labeled parts (Click to investigate):</strong>{' '}
-                          {imgAsset.explanation.importantParts.map((pt: any, pIdx: number) => {
-                            const lbl = typeof pt === 'string' ? pt : pt.label;
-                            const r = typeof pt === 'object' ? pt.description || pt.role : '';
-                            const isSelected = selectedVisualComponent?.label === lbl;
-                            return (
-                              <button
-                                key={pIdx}
-                                type="button"
-                                onClick={() => setSelectedVisualComponent({
-                                  id: lbl.toLowerCase().replace(/[^a-z0-9]/g, '_'),
-                                  label: lbl,
-                                  role: r
-                                })}
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  margin: '2px 4px 2px 0',
-                                  padding: '3px 10px',
-                                  borderRadius: 999,
-                                  background: isSelected ? '#FF6A00' : '#FFF3E8',
-                                  color: isSelected ? '#FFFFFF' : '#C2410C',
-                                  border: isSelected ? '1.5px solid #EA580C' : '1px solid rgba(255,106,0,0.3)',
-                                  fontSize: '0.74rem',
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                                  transition: 'all 0.2s ease'
-                                }}
-                                title="Click to ask targeted questions about this component"
-                              >
-                                🏷️ {typeof pt === 'string' ? pt : `${pt.label}${pt.description ? ` (${pt.description})` : ''}`} 👆
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      {/* Interactive Component Focus Prompt Chips (Section H) */}
-                      {selectedVisualComponent && (
-                        <div style={{
-                          margin: '8px 0 10px',
-                          padding: '10px 14px',
-                          borderRadius: 12,
-                          background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
-                          border: '1.5px solid #3B82F6',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 6
-                        }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <span style={{ fontSize: '0.9rem' }}>🎯</span>
-                              <span style={{ fontWeight: 800, color: '#1E40AF', fontSize: '0.84rem' }}>
-                                Selected Component: {selectedVisualComponent.label}
-                              </span>
-                              {selectedVisualComponent.role && (
-                                <span style={{ fontSize: '0.74rem', color: '#2563EB', fontWeight: 600 }}>
-                                  ({selectedVisualComponent.role})
-                                </span>
-                              )}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => setSelectedVisualComponent(null)}
-                              style={{ border: 'none', background: 'transparent', color: '#64748B', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700 }}
-                            >
-                              ✕ Deselect
-                            </button>
-                          </div>
-                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                            <button
-                              type="button"
-                              onClick={() => askTargetedQuestion(`Explain the specific mechanism and physiological role of ${selectedVisualComponent.label} in ${s?.topic || activeTopic}`)}
-                              className="btn-glass"
-                              style={{ fontSize: '0.74rem', padding: '4px 10px', background: '#FFFFFF', color: '#1D4ED8', fontWeight: 700 }}
-                            >
-                              ❓ Explain {selectedVisualComponent.label}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => askTargetedQuestion(`What happens if ${selectedVisualComponent.label} fails, gets blocked, or is damaged?`)}
-                              className="btn-glass"
-                              style={{ fontSize: '0.74rem', padding: '4px 10px', background: '#FFFFFF', color: '#DC2626', fontWeight: 700 }}
-                            >
-                              ⚠️ What If This Fails?
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => askTargetedQuestion(`How does ${selectedVisualComponent.label} connect to and communicate with other components?`)}
-                              className="btn-glass"
-                              style={{ fontSize: '0.74rem', padding: '4px 10px', background: '#FFFFFF', color: '#047857', fontWeight: 700 }}
-                            >
-                              🔗 Connect to Others
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                      {imgAsset.explanation.partFunctions && (
-                        <div style={{ marginBottom: 6 }}>
-                          <strong>3. What each part does:</strong>{' '}
-                          {Array.isArray(imgAsset.explanation.partFunctions)
-                            ? imgAsset.explanation.partFunctions.slice(0, 4).map((pf: any) => `${pf.part || pf.label}: ${pf.role || pf.description}`).join(' • ')
-                            : String(imgAsset.explanation.partFunctions)}
-                        </div>
-                      )}
-                      <div style={{ marginBottom: 6 }}>
-                        <strong>4. How the parts connect:</strong> {imgAsset.explanation.howPartsConnect}
-                      </div>
-                      {imgAsset.explanation.processStages?.length > 0 && (
-                        <div style={{ marginBottom: 6 }}>
-                          <strong>5. Process flow across the image:</strong> {imgAsset.explanation.processStages.join(' → ')}
-                        </div>
-                      )}
-                      <div style={{ marginBottom: 6 }}>
-                        <strong>6. Why this visual matters:</strong> {imgAsset.explanation.whyItMatters}
-                      </div>
-                      <div style={{ padding: '6px 10px', borderRadius: 10, background: '#ECFDF5', color: '#047857', fontWeight: 700 }}>
-                        💡 <strong>7. What to remember for exams:</strong> {imgAsset.explanation.whatToRemember}
-                      </div>
-                    </div>
-                  )}
-
-                  {imgIdx === 0 && s?.analogies && (
-                    <div
-                      style={{
-                        padding: '10px 14px',
-                        background: 'rgba(255, 243, 232, 0.95)',
-                        borderTop: '1px solid rgba(255, 106, 0, 0.16)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexWrap: 'wrap',
-                        gap: 8,
-                        fontSize: '0.82rem',
-                        color: '#202124'
-                      }}
-                    >
-                      <div>
-                        <strong style={{ color: '#E85D00' }}>💡 Real-World Analogy:</strong> {s.analogies}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => openImageStudio(s?.topic || activeTopic)}
-                        style={{
-                          border: '1px solid rgba(255,106,0,0.35)',
-                          background: '#FFFFFF',
-                          color: '#FF6A00',
-                          fontWeight: 800,
-                          fontSize: '0.75rem',
-                          padding: '5px 12px',
-                          borderRadius: 999,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        ✨ Open Full Image Studio
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {/* 8. Real-Life Examples, Practical Applications & Common Misconceptions */}
-              {(s?.realLifeExamples?.length > 0 || s?.applications?.length > 0 || s?.misconceptions?.length > 0) && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12, marginBottom: 18 }}>
-                  {s?.realLifeExamples?.length > 0 && (
-                    <div style={{ padding: 14, borderRadius: 16, background: '#FFFBEB', border: '1px solid #FDE68A', fontSize: '0.82rem' }}>
-                      <div style={{ fontWeight: 800, color: '#B45309', marginBottom: 6 }}>🌍 Real-Life Examples</div>
-                      <ul style={{ margin: 0, paddingLeft: 18, color: '#78350F', lineHeight: 1.5 }}>
-                        {s.realLifeExamples.map((ex: string, i: number) => <li key={i}>{ex}</li>)}
-                      </ul>
-                    </div>
-                  )}
-                  {s?.applications?.length > 0 && (
-                    <div style={{ padding: 14, borderRadius: 16, background: '#F0F9FF', border: '1px solid #BAE6FD', fontSize: '0.82rem' }}>
-                      <div style={{ fontWeight: 800, color: '#0369A1', marginBottom: 6 }}>🚀 Practical Applications</div>
-                      <ul style={{ margin: 0, paddingLeft: 18, color: '#0C4A6E', lineHeight: 1.5 }}>
-                        {s.applications.map((ap: string, i: number) => <li key={i}>{ap}</li>)}
-                      </ul>
-                    </div>
-                  )}
-                  {s?.misconceptions?.length > 0 && (
-                    <div style={{ padding: 14, borderRadius: 16, background: '#FEF2F2', border: '1px solid #FECACA', fontSize: '0.82rem' }}>
-                      <div style={{ fontWeight: 800, color: '#B91C1C', marginBottom: 6 }}>⚠️ Common Misconceptions Corrected</div>
-                      <ul style={{ margin: 0, paddingLeft: 18, color: '#7F1D1D', lineHeight: 1.5 }}>
-                        {s.misconceptions.map((mc: string, i: number) => <li key={i}>{mc}</li>)}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* 9. Exam-Oriented Questions & Model Answers */}
-              {s?.examQuestions?.length > 0 && (
-                <div style={{ marginBottom: 18, padding: 16, borderRadius: 18, background: '#FFFDFB', border: '1.5px solid rgba(255,106,0,0.28)' }}>
-                  <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#202124', marginBottom: 4 }}>
-                    📝 Exam-Oriented Questions &amp; Model Answers:
-                  </div>
-                  {s.examDisclaimer && (
-                    <div style={{ fontSize: '0.74rem', color: '#6B7280', fontStyle: 'italic', marginBottom: 10 }}>
-                      ℹ️ {s.examDisclaimer}
-                    </div>
-                  )}
-                  <div style={{ display: 'grid', gap: 10 }}>
-                    {s.examQuestions.map((eq: any, idx: number) => (
-                      <div key={idx} style={{ padding: 12, borderRadius: 14, background: '#FFFFFF', border: '1px solid #E5E7EB', fontSize: '0.83rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontWeight: 800, color: '#1F2937', marginBottom: 4 }}>
-                          <span>Q{idx + 1}. {eq.question}</span>
-                          <span style={{ color: '#EA580C', whiteSpace: 'nowrap', fontSize: '0.75rem' }}>{eq.marks}</span>
-                        </div>
-                        <div style={{ color: '#374151', lineHeight: 1.5 }}>
-                          <strong style={{ color: '#047857' }}>Model Answer:</strong> {eq.modelAnswer}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* 10. Quick Revision Summary & Self-Check Practice Questions */}
-              {(s?.revisionNotes?.length > 0 || s?.practiceQuestions?.length > 0) && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12, marginBottom: 18 }}>
-                  {s?.revisionNotes?.length > 0 && (
-                    <div style={{ padding: 14, borderRadius: 16, background: '#ECFDF5', border: '1px solid #A7F3D0', fontSize: '0.82rem' }}>
-                      <div style={{ fontWeight: 800, color: '#047857', marginBottom: 6 }}>📌 Quick Revision Summary</div>
-                      <ul style={{ margin: 0, paddingLeft: 18, color: '#064E3B', lineHeight: 1.5 }}>
-                        {s.revisionNotes.map((rn: string, i: number) => <li key={i}>{rn}</li>)}
-                      </ul>
-                    </div>
-                  )}
-                  {s?.practiceQuestions?.length > 0 && (
-                    <div style={{ padding: 14, borderRadius: 16, background: '#EFF6FF', border: '1px solid #BFDBFE', fontSize: '0.82rem' }}>
-                      <div style={{ fontWeight: 800, color: '#1D4ED8', marginBottom: 6 }}>🎯 Self-Check Practice Questions</div>
-                      <ol style={{ margin: 0, paddingLeft: 18, color: '#1E3A8A', lineHeight: 1.5 }}>
-                        {s.practiceQuestions.map((pq: string, i: number) => <li key={i}>{pq}</li>)}
-                      </ol>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Primary Media Actions: Listen | Image | Video | 3D Model */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
                 <button
                   type="button"
-                  onClick={() =>
-                    startAudioLesson({
-                      topic: s?.topic || activeTopic,
-                      text: `${s?.introduction || ''} ${(s?.keySteps || []).join(' ')} ${s?.recap || ''}`
-                    })
-                  }
+                  onClick={() => setTeachingMode(teachingMode === 'normal' ? 'exam' : 'normal')}
                   className="btn-glass"
-                  style={{ fontSize: '0.8rem', padding: '8px 14px' }}
+                  style={{ fontSize: '0.74rem', padding: '4px 12px', background: '#FFFFFF', color: teachingMode === 'normal' ? '#EA580C' : '#0284C7', fontWeight: 800 }}
                 >
-                  <Volume2 size={15} color="#FF6A00" />
-                  <span>Audio Lesson</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => openImageStudio(s?.topic || activeTopic)}
-                  className="btn-glass"
-                  style={{ fontSize: '0.8rem', padding: '8px 14px' }}
-                >
-                  <ImageIcon size={15} color="#16A34A" />
-                  <span>Image Studio</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      const res = await apiFetch<any>('/api/visual/regenerate', {
-                        method: 'POST',
-                        body: JSON.stringify({ topic: s?.topic || activeTopic })
-                      });
-                      if (res?.visual?.dataUrl) {
-                        setActionToast(`Regenerated verified visual diagram for ${s?.topic || activeTopic}`);
-                        triggerRefresh();
-                      }
-                    } catch {}
-                  }}
-                  className="btn-glass"
-                  style={{ fontSize: '0.8rem', padding: '8px 14px' }}
-                >
-                  <Sparkles size={15} color="#2563EB" />
-                  <span>Regenerate Visual</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setInline3DMsgId(showInline3D ? null : msg.id)}
-                  className="btn-orange"
-                  style={{ fontSize: '0.8rem', padding: '8px 14px' }}
-                >
-                  <Box size={15} />
-                  <span>{showInline3D ? 'Hide 3D Lab' : 'Interactive 3D Lab'}</span>
+                  Switch to {teachingMode === 'normal' ? 'Exam Prep ⚡' : 'Normal Mode 🌱'}
                 </button>
               </div>
 
-              {/* Inline Three.js 3D Viewer */}
-              {showInline3D && (
-                <div style={{ marginBottom: 16 }}>
+              {/* Standalone / Inline 3D Viewer if toggled or auto-available */}
+              {(showInline3D || (!s?.imageUrl && inferTopicModel3D(s?.topic || activeTopic))) && (
+                <div style={{ marginBottom: 18, border: '2px solid rgba(255,106,0,0.3)', borderRadius: 20, overflow: 'hidden' }}>
                   <Interactive3DViewer
                     topic={s?.topic || activeTopic}
-                    modelType={s?.model3dType}
+                    modelType={s?.model3dType || inferTopicModel3D(s?.topic || activeTopic) || undefined}
                     compact
                     onClose={() => setInline3DMsgId(null)}
                   />
                 </div>
               )}
 
+              {/* MODE A: NORMAL LEARNING & CONCEPT MASTERY (14 COMPONENTS) */}
+              {teachingMode === 'normal' ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {/* 1. Simple Introduction in Everyday Language */}
+                  <div
+                    style={{
+                      padding: '14px 18px',
+                      borderRadius: 18,
+                      background: 'linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)',
+                      border: '1.5px solid #A7F3D0'
+                    }}
+                  >
+                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
+                      🌱 Component 1: Simple Introduction (In Plain Everyday Words)
+                    </div>
+                    <p style={{ fontSize: '0.94rem', lineHeight: 1.62, color: '#064E3B', margin: 0 }}>
+                      {s?.simpleIntroduction || `Let's understand ${s?.topic || activeTopic} using everyday language. Think of it like a coordinated system where each element works together seamlessly.`}
+                    </p>
+                  </div>
+
+                  {/* Academic Concept Overview */}
+                  <div
+                    style={{
+                      padding: '14px 18px',
+                      borderRadius: 18,
+                      background: 'linear-gradient(135deg, #FFFDFB 0%, #FFF7ED 100%)',
+                      border: '1px solid rgba(255, 106, 0, 0.22)'
+                    }}
+                  >
+                    <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#FF6A00', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
+                      📖 Concept Overview &amp; Scientific Background
+                    </div>
+                    <p style={{ fontSize: '0.95rem', lineHeight: 1.68, color: '#202124', margin: 0, whiteSpace: 'pre-line' }}>
+                      {s?.introduction || msg.content}
+                    </p>
+                    {s?.clearDefinition && (
+                      <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px dashed rgba(255,106,0,0.25)', display: 'grid', gap: 6, fontSize: '0.84rem', color: '#374151' }}>
+                        <div><strong style={{ color: '#EA580C' }}>Core Principle:</strong> {s.clearDefinition.formal}</div>
+                        <div><strong style={{ color: '#EA580C' }}>Everyday Example:</strong> {s.clearDefinition.example}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 2. What the Student Will Learn */}
+                  <div style={{ padding: '12px 16px', background: '#F8FAFC', borderRadius: 16, border: '1px solid #E2E8F0' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#0F172A', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span>🎯</span> Component 2: What You Will Learn in This Topic
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8 }}>
+                      {(s?.learningOutcomes || [
+                        `Master the foundational concepts and definitions of ${s?.topic || activeTopic}`,
+                        'Visualize structural parts and mechanisms through diagrams & 3D models',
+                        'Understand the step-by-step sequence of operations and connections',
+                        'Identify and avoid common misconceptions students make in exams'
+                      ]).map((item: string, i: number) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: '0.82rem', color: '#334155' }}>
+                          <span style={{ color: '#16A34A', fontWeight: 800 }}>✓</span>
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 3. Prerequisites */}
+                  {s?.prerequisites?.length > 0 && (
+                    <div style={{ padding: '12px 16px', background: '#EFF6FF', borderRadius: 16, border: '1px solid #BFDBFE' }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#1E40AF', marginBottom: 6 }}>
+                        🧭 Component 3: Prerequisites (What You Should Know First)
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {s.prerequisites.map((pr: string, idx: number) => (
+                          <span
+                            key={idx}
+                            style={{
+                              padding: '4px 11px',
+                              borderRadius: 999,
+                              background: '#FFFFFF',
+                              color: '#1E40AF',
+                              border: '1px solid #93C5FD',
+                              fontSize: '0.76rem',
+                              fontWeight: 600
+                            }}
+                          >
+                            ✓ {pr}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 4. Topic Breakdown (Subtopics) */}
+                  {s?.subtopics && s.subtopics.length > 0 && (
+                    <div style={{ padding: '12px 16px', background: '#FFFDF9', borderRadius: 16, border: '1px solid rgba(255,106,0,0.22)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#C2410C', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          📚 Component 4: Topic Breakdown ({s.subtopics.length} Logical Subtopics)
+                        </span>
+                        <span style={{ fontSize: '0.74rem', color: '#9A3412' }}>Click to explore subtopic</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {s.subtopics.map((sub: any, subIdx: number) => (
+                          <button
+                            key={sub.subtopicId || subIdx}
+                            type="button"
+                            onClick={() => askTargetedQuestion(`Teach me subtopic ${subIdx + 1}: ${sub.title}`)}
+                            className="btn-glass"
+                            style={{
+                              fontSize: '0.75rem',
+                              padding: '5px 12px',
+                              borderRadius: 999,
+                              background: '#FFFFFF',
+                              border: '1px solid #FDBA74',
+                              color: '#9A3412',
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {subIdx + 1}. {sub.title}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 5. Concept Explanations with Integrated Visuals & 3D Models */}
+                  {/* VISUAL POSITIONING RULE: Position every visual directly beside or below the concept it explains */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#202124', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span>🖼️</span> Component 5: Concept Explanations with Integrated Visuals &amp; Diagrams
+                    </div>
+
+                    {/* Integrated Concept Cards with Direct Visuals */}
+                    {(s?.conceptSections?.length > 0 ? s.conceptSections : [
+                      {
+                        id: 'concept-1',
+                        title: `${s?.topic || activeTopic} Core Mechanism`,
+                        whatItIs: s?.clearDefinition?.formal || s?.introduction || msg.content,
+                        whereItOccurs: `Within the relevant physiological / physical domain of ${s?.subject || subject}`,
+                        howItWorks: (s?.keySteps || []).slice(0, 2).join('; ') || 'Coordinated biological or physical transformation.',
+                        whyItMatters: 'Essential for sustaining energy, function, and equilibrium.',
+                        whatIfItFails: 'System disruption or reduced efficiency occurs.',
+                        examTip: 'Examiners award marks for exact terminology and labeled arrows.'
+                      }
+                    ]).map((sec: any, idx: number) => {
+                      const matchingImg = (s?.lessonImages || [])[idx] || (idx === 0 && s?.imageUrl ? {
+                        id: 'primary-visual',
+                        title: `${s?.topic || activeTopic} Schematic`,
+                        caption: s?.imageCaption || `${s?.topic || activeTopic} Visual Illustration`,
+                        imageUrl: s?.imageUrl,
+                        explanation: s?.imageExplanation
+                      } : null);
+
+                      return (
+                        <div
+                          key={sec.id || idx}
+                          style={{
+                            padding: 16,
+                            borderRadius: 18,
+                            background: '#FFFFFF',
+                            border: '1.5px solid rgba(255,106,0,0.25)',
+                            boxShadow: '0 4px 14px rgba(255,106,0,0.06)'
+                          }}
+                        >
+                          <div style={{ fontWeight: 800, color: '#EA580C', fontSize: '0.92rem', marginBottom: 6 }}>
+                            Concept {idx + 1}: {sec.title}
+                          </div>
+
+                          <div style={{ display: 'grid', gap: 5, fontSize: '0.85rem', color: '#374151', lineHeight: 1.55, marginBottom: 12 }}>
+                            <div><strong style={{ color: '#1F2937' }}>What it is:</strong> {sec.whatItIs}</div>
+                            {sec.whereItOccurs && <div><strong style={{ color: '#1F2937' }}>Where it occurs:</strong> {sec.whereItOccurs}</div>}
+                            <div><strong style={{ color: '#1F2937' }}>How it works:</strong> {sec.howItWorks}</div>
+                            <div><strong style={{ color: '#1F2937' }}>Why it matters:</strong> {sec.whyItMatters}</div>
+                            {sec.whatIfItFails && <div style={{ color: '#B91C1C' }}><strong>If it fails / changes:</strong> {sec.whatIfItFails}</div>}
+                            {sec.examTip && <div style={{ color: '#047857', fontWeight: 700 }}>🎯 Exam Tip: {sec.examTip}</div>}
+                          </div>
+
+                          {/* DIRECTLY CONNECTED VISUAL / 3D MODEL FOR THIS CONCEPT */}
+                          {matchingImg && (
+                            <div
+                              style={{
+                                marginTop: 10,
+                                borderRadius: 16,
+                                overflow: 'hidden',
+                                border: '1.5px solid rgba(255,106,0,0.3)',
+                                background: '#FFFDFB'
+                              }}
+                            >
+                              <div
+                                style={{
+                                  padding: '7px 12px',
+                                  background: 'linear-gradient(90deg, #FF6A00 0%, #FF8533 100%)',
+                                  color: '#FFFFFF',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 800,
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center'
+                                }}
+                              >
+                                <span>🖼️ Diagram for Concept {idx + 1}: {matchingImg.title || sec.title}</span>
+                                <span>Validated Educational Visual</span>
+                              </div>
+                              <img
+                                src={matchingImg.imageUrl}
+                                alt={matchingImg.caption || sec.title}
+                                style={{
+                                  width: '100%',
+                                  maxHeight: 320,
+                                  objectFit: 'contain',
+                                  display: 'block',
+                                  padding: 6
+                                }}
+                              />
+
+                              {/* 7-Part Visual Walkthrough directly below the diagram */}
+                              {matchingImg.explanation && (
+                                <div style={{ padding: 12, background: '#F8FAFC', borderTop: '1px solid #E2E8F0', fontSize: '0.82rem', color: '#334155' }}>
+                                  <div style={{ fontWeight: 800, color: '#0F172A', fontSize: '0.84rem', marginBottom: 6 }}>
+                                    🔍 7-Part Visual Walkthrough for This Concept:
+                                  </div>
+                                  <div style={{ marginBottom: 5 }}>
+                                    <strong>1. What this image shows:</strong> {matchingImg.explanation.whatItShows}
+                                  </div>
+                                  {matchingImg.explanation.importantParts?.length > 0 && (
+                                    <div style={{ marginBottom: 5 }}>
+                                      <strong>2. Important labeled parts (Click to investigate):</strong>{' '}
+                                      {matchingImg.explanation.importantParts.map((pt: any, pIdx: number) => {
+                                        const lbl = typeof pt === 'string' ? pt : pt.label;
+                                        const r = typeof pt === 'object' ? pt.description || pt.role : '';
+                                        const isSelected = selectedVisualComponent?.label === lbl;
+                                        return (
+                                          <button
+                                            key={pIdx}
+                                            type="button"
+                                            onClick={() => setSelectedVisualComponent({
+                                              id: lbl.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+                                              label: lbl,
+                                              role: r
+                                            })}
+                                            style={{
+                                              display: 'inline-flex',
+                                              alignItems: 'center',
+                                              margin: '2px 4px 2px 0',
+                                              padding: '2px 8px',
+                                              borderRadius: 999,
+                                              background: isSelected ? '#FF6A00' : '#FFF3E8',
+                                              color: isSelected ? '#FFFFFF' : '#C2410C',
+                                              border: isSelected ? '1.5px solid #EA580C' : '1px solid rgba(255,106,0,0.3)',
+                                              fontSize: '0.72rem',
+                                              fontWeight: 700,
+                                              cursor: 'pointer'
+                                            }}
+                                          >
+                                            🏷️ {lbl}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+
+                                  {/* Interactive Component Focus Prompt Chips */}
+                                  {selectedVisualComponent && (
+                                    <div style={{
+                                      margin: '6px 0 8px',
+                                      padding: '8px 12px',
+                                      borderRadius: 12,
+                                      background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
+                                      border: '1.5px solid #3B82F6',
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: 6
+                                    }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontWeight: 800, color: '#1E40AF', fontSize: '0.8rem' }}>
+                                          🎯 Selected Part: {selectedVisualComponent.label}
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={() => setSelectedVisualComponent(null)}
+                                          style={{ border: 'none', background: 'transparent', color: '#64748B', cursor: 'pointer', fontSize: '0.74rem', fontWeight: 700 }}
+                                        >
+                                          ✕ Deselect
+                                        </button>
+                                      </div>
+                                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                        <button
+                                          type="button"
+                                          onClick={() => askTargetedQuestion(`Explain the role and mechanism of ${selectedVisualComponent.label} in ${s?.topic || activeTopic}`)}
+                                          className="btn-glass"
+                                          style={{ fontSize: '0.72rem', padding: '3px 8px', background: '#FFFFFF', color: '#1D4ED8', fontWeight: 700 }}
+                                        >
+                                          ❓ Explain Role
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => askTargetedQuestion(`What happens if ${selectedVisualComponent.label} is damaged or fails?`)}
+                                          className="btn-glass"
+                                          style={{ fontSize: '0.72rem', padding: '3px 8px', background: '#FFFFFF', color: '#DC2626', fontWeight: 700 }}
+                                        >
+                                          ⚠️ If This Fails?
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {matchingImg.explanation.partFunctions && (
+                                    <div style={{ marginBottom: 5 }}>
+                                      <strong>3. What each part does:</strong>{' '}
+                                      {Array.isArray(matchingImg.explanation.partFunctions)
+                                        ? matchingImg.explanation.partFunctions.slice(0, 3).map((pf: any) => `${pf.part || pf.label}: ${pf.role || pf.description}`).join(' • ')
+                                        : String(matchingImg.explanation.partFunctions)}
+                                    </div>
+                                  )}
+                                  {matchingImg.explanation.processStages?.length > 0 && (
+                                    <div style={{ marginBottom: 5 }}>
+                                      <strong>4. Process flow across visual:</strong> {matchingImg.explanation.processStages.join(' → ')}
+                                    </div>
+                                  )}
+                                  <div style={{ padding: '5px 8px', borderRadius: 8, background: '#ECFDF5', color: '#047857', fontWeight: 700 }}>
+                                    💡 <strong>5. Exam memory hook:</strong> {matchingImg.explanation.whatToRemember || 'Remember the sequence and labeled arrows.'}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Quadratic Parabola Plot if applicable */}
+                    {s?.interactivePlotSpec && <InteractiveQuadraticPlot spec={s.interactivePlotSpec} />}
+                  </div>
+
+                  {/* 6. Step-by-Step Mechanism */}
+                  {s?.keySteps?.length > 0 && (
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#202124', marginBottom: 10 }}>
+                        ⚡ Component 6: Step-by-Step Mechanisms &amp; Process Sequence
+                      </div>
+                      <div style={{ display: 'grid', gap: 8 }}>
+                        {s.keySteps.map((step: string, idx: number) => (
+                          <div key={idx} className="futuristic-step-card">
+                            <div style={{ fontSize: '0.88rem', lineHeight: 1.55, color: '#1F2937' }}>
+                              <strong style={{ color: '#FF6A00', fontWeight: 900, marginRight: 6 }}>Step {idx + 1}:</strong>
+                              {step}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 7. Real-World Examples & Analogies */}
+                  {(s?.realLifeExamples?.length > 0 || s?.applications?.length > 0 || s?.analogies) && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
+                      {s?.analogies && (
+                        <div style={{ padding: 14, borderRadius: 16, background: '#FFF7ED', border: '1.5px solid #FDBA74', fontSize: '0.82rem' }}>
+                          <div style={{ fontWeight: 800, color: '#C2410C', marginBottom: 6 }}>💡 Everyday Analogy</div>
+                          <p style={{ margin: 0, color: '#9A3412', lineHeight: 1.55 }}>{s.analogies}</p>
+                        </div>
+                      )}
+                      {s?.realLifeExamples?.length > 0 && (
+                        <div style={{ padding: 14, borderRadius: 16, background: '#FFFBEB', border: '1px solid #FDE68A', fontSize: '0.82rem' }}>
+                          <div style={{ fontWeight: 800, color: '#B45309', marginBottom: 6 }}>🌍 Component 7: Real-Life Examples</div>
+                          <ul style={{ margin: 0, paddingLeft: 18, color: '#78350F', lineHeight: 1.5 }}>
+                            {s.realLifeExamples.map((ex: string, i: number) => <li key={i}>{ex}</li>)}
+                          </ul>
+                        </div>
+                      )}
+                      {s?.applications?.length > 0 && (
+                        <div style={{ padding: 14, borderRadius: 16, background: '#F0F9FF', border: '1px solid #BAE6FD', fontSize: '0.82rem' }}>
+                          <div style={{ fontWeight: 800, color: '#0369A1', marginBottom: 6 }}>🚀 Practical Applications</div>
+                          <ul style={{ margin: 0, paddingLeft: 18, color: '#0C4A6E', lineHeight: 1.5 }}>
+                            {s.applications.map((ap: string, i: number) => <li key={i}>{ap}</li>)}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 8. Important Terminology */}
+                  {(keywordsList.length > 0 || s?.definitions?.length > 0) && (
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#202124', marginBottom: 8 }}>
+                        🏷️ Component 8: Important Terminology &amp; Keywords
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                        {keywordsList.map((kw: string, idx: number) => (
+                          <span key={idx} className="keyword-pill-orange">✦ {kw}</span>
+                        ))}
+                      </div>
+                      {s?.definitions?.length > 0 && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8 }}>
+                          {s.definitions.slice(0, 4).map((d: any, idx: number) => (
+                            <div key={idx} style={{ padding: 10, borderRadius: 12, background: '#FFF7ED', border: '1px solid rgba(255,106,0,0.2)', fontSize: '0.82rem' }}>
+                              <strong style={{ color: '#EA580C' }}>{d.term}:</strong> <span style={{ color: '#374151' }}>{d.definition}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 9. Common Misunderstandings Corrected */}
+                  {s?.misconceptions?.length > 0 && (
+                    <div style={{ padding: 14, borderRadius: 16, background: '#FEF2F2', border: '1.5px solid #FECACA', fontSize: '0.82rem' }}>
+                      <div style={{ fontWeight: 800, color: '#B91C1C', marginBottom: 6 }}>
+                        ⚠️ Component 9: Common Misunderstandings Corrected
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: 18, color: '#7F1D1D', lineHeight: 1.55 }}>
+                        {s.misconceptions.map((mc: string, i: number) => <li key={i}>{mc}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* 10. Short Understanding Questions (Interactive Self-Check) */}
+                  {(s?.practiceQuestions?.length > 0 || s?.examQuestions?.length > 0) && (
+                    <div style={{ padding: 16, borderRadius: 18, background: '#EFF6FF', border: '1.5px solid #BFDBFE' }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#1E40AF', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span>🎯 Component 10: Short Understanding Questions (Self-Check)</span>
+                        <span style={{ fontSize: '0.74rem', color: '#3B82F6', fontWeight: 600 }}>Click to reveal answer</span>
+                      </div>
+                      <div style={{ display: 'grid', gap: 8 }}>
+                        {(s?.practiceQuestions || s.examQuestions.map((q: any) => q.question)).slice(0, 4).map((q: string, i: number) => {
+                          const qKey = `normal-q-${i}`;
+                          const isRevealed = revealedQuestions[qKey];
+                          return (
+                            <div key={i} style={{ padding: 10, borderRadius: 12, background: '#FFFFFF', border: '1px solid #DBEAFE', fontSize: '0.83rem' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontWeight: 700, color: '#1E3A8A' }}>Q{i + 1}: {q}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setRevealedQuestions(prev => ({ ...prev, [qKey]: !prev[qKey] }))}
+                                  style={{ border: 'none', background: '#DBEAFE', color: '#1D4ED8', padding: '3px 8px', borderRadius: 6, fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}
+                                >
+                                  {isRevealed ? 'Hide' : 'Check'}
+                                </button>
+                              </div>
+                              {isRevealed && (
+                                <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px dashed #BFDBFE', color: '#047857', fontSize: '0.8rem' }}>
+                                  <strong>Key Answer Concept:</strong> {s?.keySteps?.[i] || s?.examQuestions?.[i]?.modelAnswer || 'Apply the core mechanism steps directly.'}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 11. Topic Summary */}
+                  {s?.revisionNotes?.length > 0 && (
+                    <div style={{ padding: 14, borderRadius: 16, background: '#ECFDF5', border: '1px solid #A7F3D0', fontSize: '0.82rem' }}>
+                      <div style={{ fontWeight: 800, color: '#047857', marginBottom: 6 }}>📌 Component 11: Topic Summary &amp; Key Takeaways</div>
+                      <ul style={{ margin: 0, paddingLeft: 18, color: '#064E3B', lineHeight: 1.55 }}>
+                        {s.revisionNotes.map((rn: string, i: number) => <li key={i}>{rn}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* 12. Mastery Assessment Actions */}
+                  <div style={{ padding: 16, borderRadius: 18, background: 'linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%)', border: '1.5px solid rgba(255,106,0,0.3)' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#EA580C', marginBottom: 10 }}>
+                      🏆 Component 12: Topic Mastery Assessment &amp; Interactive Practice
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => openExamModal(s?.topic || activeTopic, s?.subject || subject)}
+                        className="btn-orange"
+                        style={{ fontSize: '0.8rem', padding: '10px 14px', justifyContent: 'center' }}
+                      >
+                        <ShieldCheck size={16} />
+                        <span>Take 40-Mark Topic Exam</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openQuizModal(s?.topic || activeTopic, s?.subject || subject)}
+                        className="btn-glass"
+                        style={{ fontSize: '0.8rem', padding: '10px 14px', justifyContent: 'center' }}
+                      >
+                        <HelpCircle size={16} color="#FF6A00" />
+                        <span>Interactive Quiz</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openGamesHub(s?.topic || activeTopic, s?.subject || subject, 'space_shooter')}
+                        className="btn-glass"
+                        style={{ fontSize: '0.8rem', padding: '10px 14px', justifyContent: 'center', color: '#0284C7' }}
+                      >
+                        <Rocket size={16} color="#0284C7" />
+                        <span>Space Battle Practice</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* MODE B: EXAM PREPARATION MODE (FORMAL DEFINITIONS, FORMULAS, SCHEMATICS, 40-MARK TESTS) */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {/* 1. Formal Academic Definitions */}
+                  <div style={{ padding: 16, borderRadius: 18, background: '#FFFFFF', border: '1.5px solid #0284C7' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0369A1', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span>📘</span> Component 1: Formal Definitions (Examiner-Standard)
+                    </div>
+                    {s?.clearDefinition ? (
+                      <div style={{ fontSize: '0.88rem', lineHeight: 1.6, color: '#1E293B', background: '#F0F9FF', padding: 12, borderRadius: 12, border: '1px solid #BAE6FD' }}>
+                        <div style={{ marginBottom: 4 }}>
+                          <strong style={{ color: '#0284C7' }}>Standard Board Definition:</strong> {s.clearDefinition.formal}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: '#0369A1' }}>
+                          <strong>Examiner Keyphrase:</strong> Full marks awarded for exact mention of keywords and conditions.
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '0.88rem', color: '#1E293B' }}>{s?.introduction || msg.content}</div>
+                    )}
+                    {s?.definitions?.length > 0 && (
+                      <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8 }}>
+                        {s.definitions.map((d: any, idx: number) => (
+                          <div key={idx} style={{ padding: 10, borderRadius: 12, background: '#F8FAFC', border: '1px solid #CBD5E1', fontSize: '0.82rem' }}>
+                            <div style={{ fontWeight: 800, color: '#0284C7' }}>🔹 {d.term}</div>
+                            <div style={{ color: '#334155' }}>{d.definition}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 2. Full Forms & Scientific Abbreviations Glossary */}
+                  {s?.abbreviations?.length > 0 && (
+                    <div style={{ padding: 16, borderRadius: 18, background: '#F8FAFC', border: '1.5px solid #64748B' }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0F172A', marginBottom: 10 }}>
+                        🔤 Component 2: Mandatory Full Forms &amp; Abbreviations Glossary
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 8 }}>
+                        {s.abbreviations.map((ab: any, idx: number) => (
+                          <div key={idx} style={{ padding: 10, borderRadius: 12, background: '#FFFFFF', border: '1px solid #CBD5E1', fontSize: '0.82rem' }}>
+                            <div style={{ fontWeight: 900, color: '#0284C7', fontSize: '0.86rem' }}>
+                              {ab.abbr} = <span style={{ color: '#0F172A' }}>{ab.fullForm}</span>
+                            </div>
+                            <div style={{ color: '#475569', fontSize: '0.78rem', marginTop: 2 }}>{ab.simpleDefinition}</div>
+                            <div style={{ color: '#047857', fontSize: '0.75rem', fontWeight: 700, marginTop: 2 }}>Role: {ab.roleInTopic}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3. Scoring Keywords Bar */}
+                  {keywordsList.length > 0 && (
+                    <div style={{ padding: 14, borderRadius: 16, background: '#FFFBEB', border: '1.5px solid #FCD34D' }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#92400E', marginBottom: 8 }}>
+                        🏷️ Component 3: Must-Include Scoring Keywords (Marking Scheme Specific)
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {keywordsList.map((kw: string, idx: number) => (
+                          <span
+                            key={idx}
+                            style={{
+                              padding: '4px 10px',
+                              borderRadius: 999,
+                              background: '#FEF3C7',
+                              color: '#92400E',
+                              border: '1px solid #F59E0B',
+                              fontSize: '0.78rem',
+                              fontWeight: 800
+                            }}
+                          >
+                            ⭐ {kw}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 4. Governing Formulas, Equations & Derivations */}
+                  {s?.formula && (
+                    <div
+                      style={{
+                        padding: '14px 18px',
+                        borderRadius: 18,
+                        background: 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)',
+                        border: '2px solid #86EFAC',
+                        textAlign: 'center'
+                      }}
+                    >
+                      <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#15803D', textTransform: 'uppercase', marginBottom: 4 }}>
+                        ⚡ Component 4: Governing Equation &amp; Scientific Notation
+                      </div>
+                      <div style={{ fontSize: '1.18rem', fontWeight: 900, color: '#14532D', letterSpacing: '0.02em', marginBottom: 8 }}>
+                        {s.formula.equation}
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 14, fontSize: '0.8rem', color: '#166534', fontWeight: 700 }}>
+                        {[...(s.formula.reactants || []), ...(s.formula.products || [])].map((item: any, idx: number) => (
+                          <span key={idx}>
+                            <strong style={{ color: '#047857' }}>{item.symbol}:</strong> {item.label}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 5. Labeled Examination Schematics & 3D Structures */}
+                  <div style={{ padding: 16, borderRadius: 18, background: '#FFFFFF', border: '1.5px solid #0284C7' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0369A1' }}>
+                        📐 Component 5: Labeled Examination Diagrams &amp; 3D Schematics
+                      </div>
+                      <span style={{ fontSize: '0.74rem', color: '#0284C7', fontWeight: 700, background: '#E0F2FE', padding: '3px 8px', borderRadius: 999 }}>
+                        High-Yield Exam Diagrams
+                      </span>
+                    </div>
+
+                    {(s?.lessonImages?.length > 0 ? s.lessonImages : s?.imageUrl ? [{
+                      id: 'exam-img-1',
+                      title: `${s.topic || activeTopic} Examination Schematic`,
+                      imageUrl: s.imageUrl,
+                      explanation: s.imageExplanation
+                    }] : []).map((imgAsset: any, imgIdx: number) => (
+                      <div key={imgAsset.id || imgIdx} style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid #BAE6FD', marginBottom: 12 }}>
+                        <div style={{ padding: '6px 12px', background: '#0284C7', color: '#FFFFFF', fontSize: '0.76rem', fontWeight: 800 }}>
+                          Schematic #{imgIdx + 1}: {imgAsset.title}
+                        </div>
+                        <img src={imgAsset.imageUrl} alt={imgAsset.title} style={{ width: '100%', maxHeight: 280, objectFit: 'contain', padding: 6 }} />
+                        {imgAsset.explanation?.whatToRemember && (
+                          <div style={{ padding: '8px 12px', background: '#F0F9FF', fontSize: '0.8rem', color: '#0369A1', fontWeight: 700 }}>
+                            🎯 Drawing &amp; Labeling Guideline: {imgAsset.explanation.whatToRemember}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* 6. Comparisons & Differences Table */}
+                  {diffTable && (
+                    <div style={{ padding: 16, borderRadius: 18, background: '#FFFFFF', border: '1.5px solid #CBD5E1' }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0F172A', marginBottom: 10 }}>
+                        ⚖️ Component 6: Comparison &amp; Differences Table ({diffTable.titleA} vs. {diffTable.titleB})
+                      </div>
+                      <div style={{ overflowX: 'auto' }}>
+                        <table className="futuristic-diff-table">
+                          <thead>
+                            <tr>
+                              <th style={{ width: '25%' }}>Criteria</th>
+                              <th style={{ width: '37.5%' }}>{diffTable.titleA}</th>
+                              <th style={{ width: '37.5%' }}>{diffTable.titleB}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {diffTable.rows.map((r: any, idx: number) => (
+                              <tr key={idx}>
+                                <td style={{ fontWeight: 800, color: '#0284C7' }}>{r.aspect}</td>
+                                <td>{r.itemA}</td>
+                                <td>{r.itemB}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 7. Exam-Focused Points & Examiner Tips */}
+                  {s?.conceptSections?.some((c: any) => c.examTip) && (
+                    <div style={{ padding: 14, borderRadius: 16, background: '#FEF3C7', border: '1.5px solid #F59E0B' }}>
+                      <div style={{ fontWeight: 800, color: '#92400E', fontSize: '0.88rem', marginBottom: 6 }}>
+                        💡 Component 7: Examiner Tips &amp; High-Yield Focus Points
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: 18, color: '#78350F', fontSize: '0.83rem', lineHeight: 1.55 }}>
+                        {s.conceptSections.filter((c: any) => c.examTip).map((c: any, i: number) => (
+                          <li key={i}><strong>{c.title}:</strong> {c.examTip}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* 8 & 9. Short and Long Exam Questions with Model Answers */}
+                  {s?.examQuestions?.length > 0 && (
+                    <div style={{ padding: 16, borderRadius: 18, background: '#FFFFFF', border: '1.5px solid #CBD5E1' }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0F172A', marginBottom: 10 }}>
+                        📝 Component 8 &amp; 9: Practice Exam Questions &amp; Model Answers
+                      </div>
+                      <div style={{ display: 'grid', gap: 10 }}>
+                        {s.examQuestions.map((eq: any, idx: number) => (
+                          <div key={idx} style={{ padding: 12, borderRadius: 14, background: '#F8FAFC', border: '1px solid #E2E8F0', fontSize: '0.83rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontWeight: 800, color: '#0F172A', marginBottom: 4 }}>
+                              <span>Q{idx + 1}. {eq.question}</span>
+                              <span style={{ color: '#0284C7', fontWeight: 800, whiteSpace: 'nowrap' }}>{eq.marks || '3 Marks'}</span>
+                            </div>
+                            <div style={{ color: '#334155', lineHeight: 1.5, marginTop: 4 }}>
+                              <strong style={{ color: '#047857' }}>Model Answer (Examiner Standard):</strong> {eq.modelAnswer}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 10. Quick Revision Summary */}
+                  {s?.revisionNotes?.length > 0 && (
+                    <div style={{ padding: 14, borderRadius: 16, background: '#F0FDF4', border: '1px solid #86EFAC', fontSize: '0.82rem' }}>
+                      <div style={{ fontWeight: 800, color: '#166534', marginBottom: 6 }}>
+                        📌 Component 10: High-Speed Revision Cram Notes
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: 18, color: '#14532D', lineHeight: 1.55 }}>
+                        {s.revisionNotes.map((rn: string, i: number) => <li key={i}>{rn}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* 11. 40-Mark Mock Test Challenge */}
+                  <div
+                    style={{
+                      padding: 18,
+                      borderRadius: 18,
+                      background: 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)',
+                      color: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: 12
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 800, opacity: 0.9 }}>
+                        ⚡ Component 11: Real Examination Simulation
+                      </div>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 900, marginTop: 2 }}>
+                        Practice 40-Mark Test: {s?.topic || activeTopic}
+                      </div>
+                      <div style={{ fontSize: '0.78rem', opacity: 0.85, marginTop: 2 }}>
+                        Option 1 (Objective) • Option 2 (Mixed 20+20) • Option 3 (Descriptive)
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => openExamModal(s?.topic || activeTopic, s?.subject || subject)}
+                      style={{
+                        padding: '10px 20px',
+                        borderRadius: 999,
+                        background: '#FFFFFF',
+                        color: '#0284C7',
+                        border: 'none',
+                        fontWeight: 900,
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 14px rgba(0,0,0,0.15)'
+                      }}
+                    >
+                      🚀 Start 40-Mark Test Now
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Connected Learning Actions: Notes | Quiz | Game | Library */}
-              <div style={{ padding: 14, borderRadius: 18, background: '#FFFDF9', border: '1px solid rgba(255,106,0,0.18)' }}>
+              <div style={{ marginTop: 18, padding: 14, borderRadius: 18, background: '#FFFDF9', border: '1px solid rgba(255,106,0,0.18)' }}>
                 <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#6B7280', marginBottom: 10 }}>
                   Practice &amp; Progress:
                 </div>
@@ -1729,6 +2036,15 @@ export const TutorPage: React.FC = () => {
                   </button>
                   <button
                     type="button"
+                    onClick={() => openExamModal(s?.topic || activeTopic, s?.subject || subject)}
+                    className="btn-glass"
+                    style={{ justifyContent: 'flex-start', fontSize: '0.82rem', borderColor: 'rgba(2, 132, 199, 0.4)', color: '#0284C7' }}
+                  >
+                    <ShieldCheck size={15} color="#0284C7" />
+                    <span>40-Mark Mock Test</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => openGamesHub(s?.topic || activeTopic, s?.subject || subject, 'space_shooter')}
                     className="btn-glass"
                     style={{
@@ -1736,20 +2052,11 @@ export const TutorPage: React.FC = () => {
                       fontSize: '0.82rem',
                       background: 'rgba(56, 189, 248, 0.12)',
                       borderColor: 'rgba(56, 189, 248, 0.45)',
-                      color: '#38bdf8'
+                      color: '#0284C7'
                     }}
                   >
-                    <Rocket size={15} color="#38bdf8" />
-                    <span>Practice in Space Battle</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openGamesHub(s?.topic || activeTopic, s?.subject || subject)}
-                    className="btn-glass"
-                    style={{ justifyContent: 'flex-start', fontSize: '0.82rem' }}
-                  >
-                    <Gamepad2 size={15} color="#FF6A00" />
-                    <span>Start Practice Game</span>
+                    <Rocket size={15} color="#0284C7" />
+                    <span>Space Battle Game</span>
                   </button>
                   <button
                     type="button"

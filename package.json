@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"npm:dev:fastapi\" \"npm:dev:server\" \"npm:dev:client\"",
     "dev:fastapi": "PYTHONPATH=. venv/bin/uvicorn fastapi_server.main:app --host 127.0.0.1 --port 8000 --reload",
-    "dev:server": "node --experimental-strip-types server/index.ts",
+    "dev:server": "node --watch --experimental-strip-types server/index.ts",
     "dev:client": "vite",
     "build": "vite build",
     "start": "NODE_ENV=production node --experimental-strip-types server/index.ts",
@@ -15,6 +15,7 @@
     "test:frontend": "vitest run"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

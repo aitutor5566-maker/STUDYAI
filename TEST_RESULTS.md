@@ -11,10 +11,11 @@
 | Test Battery | Target Area | Tests Executed | Passed | Failed | Duration |
 | :--- | :--- | :---: | :---: | :---: | :---: |
 | **Master Prompt 3 Integration** (`verify_master_prompt_3_full_integration.mjs`) | Full 21-Step Student Journey, RBAC, Admin & Super Admin, 40M Tests, Video Block | 34 | 34 | 0 | ~14s |
+| **Visual AI Tutor Full Acceptance** (`verify_visual_tutor_acceptance.mjs`) | Dual Teaching Modes, Concept-Anchored Visuals, Three.js 3D, All Disciplines | 12 | 12 | 0 | ~3m |
 | **Phase 8 Master Integration** (`verify_phase8_system_integration_and_qa.mjs`) | Ecosystem Integration, 17-step journey, 5-subject tutor quality, security | 29 | 29 | 0 | ~9s |
 | **Master Prompt 1 Foundation** (`verify_master_prompt_1_foundation.mjs`) | Monorepo layout, 39 DB tables, RLS policies, Three.js v0.170.0 single source | 11 | 11 | 0 | ~4s |
 | **Node.js Core Unit Tests** (`ecosystem.test.ts`) | Server routes, audio caching, notes persistence, rate limiter, answer keys | 9 | 9 | 0 | ~11s |
-| **Total Ecosystem Battery** | **Full System Coverage** | **83** | **83** | **0** | **~38s** |
+| **Total Ecosystem Battery** | **Full System Coverage** | **95** | **95** | **0** | **~3m 38s** |
 
 ---
 

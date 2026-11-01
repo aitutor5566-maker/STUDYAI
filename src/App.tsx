@@ -7,6 +7,20 @@ import { Interactive3DLabModal } from './components/Interactive3DLab';
 import { ImageGenerationModal, VideoGenerationModal } from './components/MediaStudios';
 import { EducationalGamesModal } from './components/EducationalGamesModal';
 import { QuizModal } from './components/QuizModal';
+import { ExaminationModal } from './components/ExaminationModal';
+import { useLearning } from './context/LearningContext';
+
+const GlobalExaminationModal: React.FC = () => {
+  const { modalExam, closeExamModal } = useLearning();
+  return (
+    <ExaminationModal
+      isOpen={modalExam.open}
+      onClose={closeExamModal}
+      initialTopic={modalExam.topic}
+      initialSubject={modalExam.subject}
+    />
+  );
+};
 import { HomePage } from './pages/HomePage';
 import { NotesPage } from './pages/NotesPage';
 import { TutorPage } from './pages/TutorPage';
@@ -79,6 +93,7 @@ export const App: React.FC = () => {
             <VideoGenerationModal />
             <EducationalGamesModal />
             <QuizModal />
+            <GlobalExaminationModal />
 
             {/* Shared 5-Destination Floating Pill Glass Navigation */}
             <GlassNav />

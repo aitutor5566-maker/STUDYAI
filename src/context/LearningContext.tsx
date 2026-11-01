@@ -58,6 +58,10 @@ export interface LearningContextType {
   modalQuiz: { open: boolean; topic: string; subject: string };
   openQuizModal: (topic?: string, subject?: string) => void;
   closeQuizModal: () => void;
+  // Weekly Examinations & Mock Tests Modal
+  modalExam: { open: boolean; topic: string; subject: string };
+  openExamModal: (topic?: string, subject?: string) => void;
+  closeExamModal: () => void;
   refreshTick: number;
   triggerRefresh: () => void;
 }
@@ -87,6 +91,11 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [modalQuiz, setModalQuiz] = useState<{ open: boolean; topic: string; subject: string }>({
     open: false,
     topic: 'Photosynthesis',
+    subject: 'Science'
+  });
+  const [modalExam, setModalExam] = useState<{ open: boolean; topic: string; subject: string }>({
+    open: false,
+    topic: 'Human Heart',
     subject: 'Science'
   });
 
@@ -221,6 +230,15 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
   const closeQuizModal = () => setModalQuiz((prev) => ({ ...prev, open: false }));
 
+  const openExamModal = (topic?: string, subject?: string) => {
+    setModalExam({
+      open: true,
+      topic: topic || activeTopic,
+      subject: subject || activeSubject
+    });
+  };
+  const closeExamModal = () => setModalExam((prev) => ({ ...prev, open: false }));
+
   return (
     <LearningContext.Provider
       value={{
@@ -251,6 +269,9 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         modalQuiz,
         openQuizModal,
         closeQuizModal,
+        modalExam,
+        openExamModal,
+        closeExamModal,
         refreshTick,
         triggerRefresh
       }}

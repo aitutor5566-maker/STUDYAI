@@ -48,7 +48,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: ['All', '3D Science Models', 'Curriculum Textbooks', 'Games Arcade'].map((cat) {
+              children: ['All', 'Weekly Examinations & Mock Tests', '3D Science Models', 'Curriculum Textbooks', 'Games Arcade'].map((cat) {
                 final isSelected = (_selectedCategory == cat);
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
@@ -65,7 +65,290 @@ class _LibraryScreenState extends State<LibraryScreen> {
               }).toList(),
             ),
           ),
+          const SizedBox(height: 20),
+
+          // Top Feature Banner: WEEKLY EXAMINATIONS & MOCK TESTS
+          Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: StudyAiColors.primary.withOpacity(0.5), width: 1.5),
+              boxShadow: [
+                BoxShadow(color: StudyAiColors.primary.withOpacity(0.18), blurRadius: 20, offset: const Offset(0, 6)),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [StudyAiColors.primary, StudyAiColors.primaryDark]),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.assignment_turned_in_rounded, size: 14, color: Colors.white),
+                          SizedBox(width: 6),
+                          Text('CENTRAL ASSESSMENT HUB', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 0.5)),
+                        ],
+                      ),
+                    ),
+                    const Text('Official Board & AI Adaptive', style: TextStyle(fontSize: 11, color: StudyAiColors.textMuted)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'WEEKLY EXAMINATIONS & MOCK TESTS',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.3),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Simulated board exams with timers, question ribbons, auto-save, and diagnostics. Choose admin scheduled tests or AI 40-mark practice tests (Objective, Mixed, Descriptive).',
+                  style: TextStyle(fontSize: 12, color: Colors.white70, height: 1.5),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() => _selectedCategory = 'Weekly Examinations & Mock Tests');
+                      },
+                      icon: const Icon(Icons.rocket_launch_rounded, size: 16),
+                      label: const Text('Browse Weekly Exams', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: StudyAiColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        setState(() => _selectedCategory = 'Weekly Examinations & Mock Tests');
+                      },
+                      icon: const Icon(Icons.tune_rounded, size: 16, color: StudyAiColors.cyanAccent),
+                      label: const Text('Generate 40M Test', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Colors.white)),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: StudyAiColors.cyanAccent),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 24),
+
+          // 0. WEEKLY EXAMINATIONS & MOCK TESTS SECTION
+          if (_selectedCategory == 'All' || _selectedCategory == 'Weekly Examinations & Mock Tests') ...[
+            // SECTION A: Weekly Mock Examinations
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: const [
+                Text('Section A — Weekly Mock Examinations', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
+                Text('Admin Scheduled', style: TextStyle(fontSize: 12, color: StudyAiColors.primary, fontWeight: FontWeight.w700)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (ctx, constraints) {
+                final isWide = constraints.maxWidth >= 700;
+                return Wrap(
+                  spacing: 14,
+                  runSpacing: 14,
+                  children: [
+                    {
+                      'title': 'Grade 10 Science Weekly Assessment #4',
+                      'subject': 'Science',
+                      'duration': '90 mins',
+                      'marks': '80 Marks',
+                      'status': 'Published',
+                      'date': 'Weekly • Active Now',
+                    },
+                    {
+                      'title': 'Mathematics Quadratic & Trigonometry Mock Exam',
+                      'subject': 'Mathematics',
+                      'duration': '60 mins',
+                      'marks': '40 Marks',
+                      'status': 'Published',
+                      'date': 'Scheduled • Closes Sunday',
+                    },
+                    {
+                      'title': 'CBSE Target Biology Mock Examination',
+                      'subject': 'Biology',
+                      'duration': '120 mins',
+                      'marks': '70 Marks',
+                      'status': 'Scheduled',
+                      'date': 'Starts Friday 10:00 AM',
+                    },
+                  ].map((exam) {
+                    return Container(
+                      width: isWide ? (constraints.maxWidth - 14) / 2 : constraints.maxWidth,
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.04),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white.withOpacity(0.1)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: StudyAiColors.primary.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(exam['subject']!, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: StudyAiColors.primary)),
+                              ),
+                              Text(exam['marks']!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: StudyAiColors.cyanAccent)),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Text(exam['title']!, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white)),
+                          const SizedBox(height: 6),
+                          Text('Duration: ${exam['duration']} • ${exam['date']}', style: const TextStyle(fontSize: 11, color: StudyAiColors.textMuted)),
+                          const SizedBox(height: 14),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              ElevatedButton(
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Starting attempt for "${exam['title']}"...'), backgroundColor: StudyAiColors.primary),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: StudyAiColors.primary,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                child: const Text('Attempt Mock Exam', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+            const SizedBox(height: 24),
+
+            // SECTION B: Topic-Based Practice Tests (Default 40 Marks)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: const [
+                Text('Section B — Topic-Based Practice Tests (40 Marks)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
+                Text('3 Blueprint Options', style: TextStyle(fontSize: 12, color: Color(0xFF38BDF8), fontWeight: FontWeight.w700)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            StudyAiGlassCard(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Customize & Generate Strict 40-Mark Examination Blueprint', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white)),
+                  const SizedBox(height: 6),
+                  const Text('Select subject, topic, and exam composition. Marks strictly total 40.0 marks.', style: TextStyle(fontSize: 12, color: StudyAiColors.textMuted)),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      {
+                        'option': 'Option 1: Objective Only',
+                        'desc': '40 marks total: 40 questions × 1 mark each. MCQs, fill-ins, assertion-reason.',
+                        'badge': '100% Objective',
+                        'color': StudyAiColors.greenAccent,
+                      },
+                      {
+                        'option': 'Option 2: Mixed (Objective + Descriptive)',
+                        'desc': 'Default: 20M Objective + 20M Descriptive (or 25+15, 15+25, 10+30). Perfectly sums to 40M.',
+                        'badge': 'Recommended (20+20)',
+                        'color': StudyAiColors.primary,
+                      },
+                      {
+                        'option': 'Option 3: Descriptive Only',
+                        'desc': '40 marks total: Short answers (2M/3M), long answers (5M), diagram & numerical problems.',
+                        'badge': '100% Subjective',
+                        'color': StudyAiColors.cyanAccent,
+                      },
+                    ].map((opt) {
+                      return Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.04),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: (opt['color'] as Color).withOpacity(0.3)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(opt['option'] as String, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Colors.white)),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(color: (opt['color'] as Color).withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
+                                  child: Text(opt['badge'] as String, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: opt['color'] as Color)),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Text(opt['desc'] as String, style: const TextStyle(fontSize: 11, color: StudyAiColors.textMuted, height: 1.4)),
+                            const SizedBox(height: 10),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Generating 40-Mark Test with ${opt['option']}...'),
+                                      backgroundColor: StudyAiColors.primary,
+                                    ),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: opt['color'] as Color,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                child: const Text('Generate 40M Test', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
 
           // 1. 3D Science Models Grid
           if (_selectedCategory == 'All' || _selectedCategory == '3D Science Models') ...[

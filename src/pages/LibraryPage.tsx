@@ -27,6 +27,7 @@ export const LibraryPage: React.FC = () => {
     openImageStudio,
     openGamesHub,
     openQuizModal,
+    openExamModal,
     startAudioLesson,
     activeTopic,
     refreshTick,
@@ -88,6 +89,7 @@ export const LibraryPage: React.FC = () => {
 
   const filterTabs = [
     { id: 'all', label: 'All' },
+    { id: 'examinations', label: 'Weekly Exams & Mock Tests' },
     { id: 'note', label: 'Notes' },
     { id: 'image', label: 'Images' },
     { id: 'video', label: 'Videos' },
@@ -103,6 +105,7 @@ export const LibraryPage: React.FC = () => {
     count: number;
     iconName: FuturisticIconName;
   }> = [
+    { id: 'examinations', label: 'Weekly Mock Exams', count: 2, iconName: 'quiz' },
     { id: 'note', label: 'Notes', count: counts.note || 0, iconName: 'notes' },
     { id: 'image', label: 'Images', count: counts.image || 0, iconName: 'image' },
     { id: 'video', label: 'Videos', count: counts.video || 0, iconName: 'video' },
@@ -147,13 +150,88 @@ export const LibraryPage: React.FC = () => {
             <button
               key={t.id}
               type="button"
-              onClick={() => setTypeFilter(t.id)}
+              onClick={() => {
+                if (t.id === 'examinations') {
+                  openExamModal(activeTopic, 'Science');
+                } else {
+                  setTypeFilter(t.id);
+                }
+              }}
               className={`filter-pill ${typeFilter === t.id ? 'active' : ''}`}
             >
               {t.label}
             </button>
           ))}
         </div>
+      </section>
+
+      {/* PROMINENT MANDATORY FEATURE: WEEKLY EXAMINATIONS & MOCK TESTS */}
+      <section
+        style={{
+          marginBottom: 24,
+          padding: 20,
+          borderRadius: 22,
+          background: 'linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%)',
+          border: '2px solid rgba(255, 106, 0, 0.35)',
+          boxShadow: '0 8px 24px rgba(255, 106, 0, 0.08)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: 16,
+              background: 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#FFFFFF',
+              boxShadow: '0 4px 14px rgba(255, 106, 0, 0.35)'
+            }}
+          >
+            <FuturisticIcon name="quiz" size={32} />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <span
+                style={{
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  background: '#FF6A00',
+                  color: '#FFFFFF',
+                  fontSize: '0.72rem',
+                  fontWeight: 800
+                }}
+              >
+                MANDATORY FEATURE
+              </span>
+              <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 700 }}>
+                A. Weekly Mock Exams • B. Topic-Based 40-Mark Tests
+              </span>
+            </div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#1F2937', margin: '0 0 4px 0' }}>
+              WEEKLY EXAMINATIONS &amp; MOCK TESTS
+            </h2>
+            <p style={{ fontSize: '0.85rem', color: '#4B5563', margin: 0 }}>
+              Attempt official scheduled weekly mock exams or generate customized 40-mark practice tests across 3 configurations.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => openExamModal(activeTopic, 'Science')}
+          className="btn-orange"
+          style={{ padding: '12px 24px', fontSize: '0.92rem', fontWeight: 800 }}
+        >
+          Open Examination Center ➔
+        </button>
       </section>
 
       {/* 6 Category Count Cards (matching reference UI grid) */}
@@ -170,7 +248,13 @@ export const LibraryPage: React.FC = () => {
           return (
             <div
               key={c.id}
-              onClick={() => setTypeFilter(isSelected ? 'all' : c.id)}
+              onClick={() => {
+                if (c.id === 'examinations') {
+                  openExamModal(activeTopic, 'Science');
+                } else {
+                  setTypeFilter(isSelected ? 'all' : c.id);
+                }
+              }}
               className="glass-card glass-card-interactive"
               style={{
                 padding: '14px 16px',

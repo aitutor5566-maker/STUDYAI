@@ -131,8 +131,11 @@ export function createAppServer() {
     const studentId = getStudentId(req);
 
     // Forward all /api/v1 calls transparently to FastAPI Central Production Backend
-    if (pathname.startsWith('/api/v1')) {
-      const targetUrl = `http://127.0.0.1:8000${req.url}`;
+    if (pathname.startsWith('/api/v1') || pathname.startsWith('/api/examinations')) {
+      const effectivePath = pathname.startsWith('/api/examinations')
+        ? (req.url?.replace(/^\/api\/examinations/, '/api/v1/examinations') || '/api/v1/examinations')
+        : (req.url || '');
+      const targetUrl = `http://127.0.0.1:8000${effectivePath}`;
       const forwardHeaders: Record<string, string> = {};
       for (const [k, v] of Object.entries(req.headers)) {
         if (k.toLowerCase() !== 'host' && v) {
@@ -151,7 +154,7 @@ export function createAppServer() {
         const fRes = await fetch(targetUrl, {
           method: req.method,
           headers: forwardHeaders,
-          body: bodyBuffer
+          body: bodyBuffer as any
         });
         const resBody = await fRes.arrayBuffer();
         res.writeHead(fRes.status, {
@@ -1308,7 +1311,7 @@ export function createAppServer() {
           sceneCount: scenes.length,
           topicSpecific: true,
           synchronizedNarrationAndCaptions: scenes.every((s) => Boolean(s.narration && s.captions && s.importantLabels?.length)),
-          audioValidated: Boolean(audioNarration.audioValidation?.exists && audioNarration.audioValidation?.decodable)
+          audioValidated: Boolean((audioNarration.audioValidation as any)?.exists && (audioNarration.audioValidation as any)?.decodable)
         };
 
         const resultPayload = {
