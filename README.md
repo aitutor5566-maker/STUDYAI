@@ -29,3 +29,4 @@ npm run dev
 
 ## Parent Dashboard Server Authorization
 - Default server-verified Parent Passcode: `2468` (hashed with SHA-256 in `users.parent_passcode_hash` and verified via `POST /api/parent/auth` before issuing a bearer session token).
+# STUDYAI
