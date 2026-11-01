@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 460" width="1000" height="460" style="background:#0F172A; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <linearGradient id="modeAGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6A00"/>
+      <stop offset="100%" stop-color="#E85D00"/>
+    </linearGradient>
+    <linearGradient id="modeBGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+    <linearGradient id="cardDark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <filter id="cardShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Banner Header -->
+  <rect x="260" y="20" width="480" height="46" rx="23" fill="#1E293B" stroke="#334155" stroke-width="2"/>
+  <text x="500" y="49" fill="#FFFFFF" font-size="18" font-weight="800" text-anchor="middle" letter-spacing="1">TWO DISTINCT AI TUTOR OPERATING MODES</text>
+
+  <!-- Left Card: Mode A -->
+  <g transform="translate(50, 90)">
+    <rect x="0" y="0" width="420" height="330" rx="20" fill="url(#cardDark)" stroke="#FF6A00" stroke-width="2" filter="url(#cardShadow)"/>
+    
+    <!-- Header Badge -->
+    <rect x="25" y="24" width="180" height="32" rx="16" fill="url(#modeAGrad)"/>
+    <text x="115" y="45" fill="#FFFFFF" font-size="13" font-weight="800" text-anchor="middle">MODE A — MASTERY</text>
+
+    <text x="25" y="85" fill="#FFFFFF" font-size="16" font-weight="700">Deep Conceptual Understanding</text>
+    <text x="25" y="105" fill="#94A3B8" font-size="12">Designed for initial learning, homework help &amp; exploration</text>
+
+    <!-- Mode A Feature List -->
+    <g transform="translate(25, 125)">
+      <circle cx="10" cy="10" r="5" fill="#FF6A00"/>
+      <text x="25" y="14" fill="#CBD5E1" font-size="12" font-weight="600">Socratic Guided Dialogue:</text>
+      <text x="25" y="30" fill="#94A3B8" font-size="11">Teaches students how to deduce answers rather than feeding solutions.</text>
+
+      <circle cx="10" cy="55" r="5" fill="#FF6A00"/>
+      <text x="25" y="59" fill="#CBD5E1" font-size="12" font-weight="600">7-Part Structured Walkthroughs:</text>
+      <text x="25" y="75" fill="#94A3B8" font-size="11">Breaks complex STEM concepts into progressive cognitive milestones.</text>
+
+      <circle cx="10" cy="100" r="5" fill="#FF6A00"/>
+      <text x="25" y="104" fill="#CBD5E1" font-size="12" font-weight="600">Zero Hallucination Curriculum:</text>
+      <text x="25" y="120" fill="#94A3B8" font-size="11">Strictly grounded in verified syllabus standards (CBSE/ICSE/IB/NGSS).</text>
+
+      <circle cx="10" cy="145" r="5" fill="#FF6A00"/>
+      <text x="25" y="149" fill="#CBD5E1" font-size="12" font-weight="600">Integrated 3D Anatomy &amp; Physics:</text>
+      <text x="25" y="165" fill="#94A3B8" font-size="11">Instantly launches synchronized Three.js models directly in conversation.</text>
+    </g>
+  </g>
+
+  <!-- Right Card: Mode B -->
+  <g transform="translate(530, 90)">
+    <rect x="0" y="0" width="420" height="330" rx="20" fill="url(#cardDark)" stroke="#38BDF8" stroke-width="2" filter="url(#cardShadow)"/>
+    
+    <!-- Header Badge -->
+    <rect x="25" y="24" width="200" height="32" rx="16" fill="url(#modeBGrad)"/>
+    <text x="125" y="45" fill="#FFFFFF" font-size="13" font-weight="800" text-anchor="middle">MODE B — REVISION &amp; EXAM</text>
+
+    <text x="25" y="85" fill="#FFFFFF" font-size="16" font-weight="700">Targeted Speed &amp; Accuracy Drill</text>
+    <text x="25" y="105" fill="#94A3B8" font-size="12">Designed for test preparation, rapid revision &amp; mock tests</text>
+
+    <!-- Mode B Feature List -->
+    <g transform="translate(25, 125)">
+      <circle cx="10" cy="10" r="5" fill="#38BDF8"/>
+      <text x="25" y="14" fill="#CBD5E1" font-size="12" font-weight="600">40-Mark Examination Engine:</text>
+      <text x="25" y="30" fill="#94A3B8" font-size="11">Simulates real test conditions with strict 40-mark sum validation.</text>
+
+      <circle cx="10" cy="55" r="5" fill="#38BDF8"/>
+      <text x="25" y="59" fill="#CBD5E1" font-size="12" font-weight="600">Options A / B / C Assessment:</text>
+      <text x="25" y="75" fill="#94A3B8" font-size="11">Standardized multi-tier question format with detailed rationale per option.</text>
+
+      <circle cx="10" cy="100" r="5" fill="#38BDF8"/>
+      <text x="25" y="104" fill="#CBD5E1" font-size="12" font-weight="600">Weak-Area Diagnostic Remediation:</text>
+      <text x="25" y="120" fill="#94A3B8" font-size="11">Flags incorrect concepts and dynamically drills subtopics until mastered.</text>
+
+      <circle cx="10" cy="145" r="5" fill="#38BDF8"/>
+      <text x="25" y="149" fill="#CBD5E1" font-size="12" font-weight="600">Timed Rapid Recall Quizzes:</text>
+      <text x="25" y="165" fill="#94A3B8" font-size="11">Simulates time pressure to build student speed, stamina and confidence.</text>
+    </g>
+  </g>
+</svg>

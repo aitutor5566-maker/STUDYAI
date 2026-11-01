@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="1000" height="560" style="background:#FFF9F5; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <!-- Glass Gradients -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF3E8"/>
+      <stop offset="50%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#FFEADB"/>
+    </linearGradient>
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6A00"/>
+      <stop offset="100%" stop-color="#E85D00"/>
+    </linearGradient>
+    <filter id="glassShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#FF6A00" flood-opacity="0.08"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#202124" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <rect width="1000" height="560" fill="url(#bgGrad)"/>
+
+  <!-- App Container (Tablet/Desktop Mockup Frame) -->
+  <g transform="translate(40, 25)">
+    <!-- Main Window Frame -->
+    <rect x="0" y="0" width="920" height="510" rx="28" fill="#FFFFFF" fill-opacity="0.85" stroke="rgba(255, 106, 0, 0.2)" stroke-width="2" filter="url(#glassShadow)"/>
+
+    <!-- App Header / Top Navigation -->
+    <g transform="translate(30, 24)">
+      <!-- Logo & Brand -->
+      <rect x="0" y="0" width="40" height="40" rx="12" fill="url(#orangeGrad)"/>
+      <text x="20" y="27" fill="#FFFFFF" font-size="20" font-weight="900" text-anchor="middle">S</text>
+      <text x="52" y="24" fill="#202124" font-size="18" font-weight="800">STUDYAI</text>
+      <text x="52" y="38" fill="#6B7280" font-size="11">Grade 10 • CBSE / ICSE / IB</text>
+
+      <!-- Center Nav Glass Pills -->
+      <g transform="translate(240, 4)">
+        <rect x="0" y="0" width="340" height="34" rx="17" fill="rgba(255, 106, 0, 0.08)" stroke="rgba(255, 106, 0, 0.15)"/>
+        <!-- Active Tab: AI Tutor -->
+        <rect x="75" y="3" width="85" height="28" rx="14" fill="url(#orangeGrad)"/>
+        <text x="40" y="21" fill="#6B7280" font-size="12" font-weight="600" text-anchor="middle">Home</text>
+        <text x="117" y="21" fill="#FFFFFF" font-size="12" font-weight="700" text-anchor="middle">AI Tutor</text>
+        <text x="195" y="21" fill="#6B7280" font-size="12" font-weight="600" text-anchor="middle">3D Lab</text>
+        <text x="260" y="21" fill="#6B7280" font-size="12" font-weight="600" text-anchor="middle">Notes</text>
+        <text x="312" y="21" fill="#6B7280" font-size="12" font-weight="600" text-anchor="middle">Games</text>
+      </g>
+
+      <!-- Right Profile & XP Badge -->
+      <g transform="translate(680, 4)">
+        <rect x="0" y="0" width="100" height="34" rx="17" fill="#FFF3E8" stroke="rgba(255,106,0,0.3)"/>
+        <text x="16" y="22" font-size="14">🔥</text>
+        <text x="36" y="22" fill="#E85D00" font-size="13" font-weight="800">1,250 XP</text>
+
+        <circle cx="130" cy="17" r="17" fill="url(#orangeGrad)"/>
+        <text x="130" y="23" fill="#FFFFFF" font-size="13" font-weight="bold" text-anchor="middle">VS</text>
+      </g>
+    </g>
+
+    <!-- Content Row -->
+    <!-- Left Column: Topic Navigator & Socratic Conversation -->
+    <g transform="translate(30, 90)">
+      <!-- Left Glass Card: Conversation & Mode Switch -->
+      <rect x="0" y="0" width="480" height="395" rx="20" fill="rgba(255, 255, 255, 0.75)" stroke="rgba(255, 255, 255, 0.9)" filter="url(#glassShadow)"/>
+      
+      <!-- Mode Toggle Switch -->
+      <g transform="translate(20, 20)">
+        <rect x="0" y="0" width="440" height="40" rx="12" fill="#FFF3E8"/>
+        <!-- Mode A Selected -->
+        <rect x="4" y="4" width="212" height="32" rx="10" fill="#FFFFFF" filter="url(#glassShadow)"/>
+        <text x="110" y="24" fill="#FF6A00" font-size="12" font-weight="700" text-anchor="middle">✨ Mode A — Mastery &amp; Learn</text>
+        <text x="325" y="24" fill="#6B7280" font-size="12" font-weight="600" text-anchor="middle">⚡ Mode B — Exam Prep</text>
+      </g>
+
+      <!-- Chat Bubble 1: Student -->
+      <g transform="translate(20, 75)">
+        <rect x="180" y="0" width="260" height="42" rx="14" fill="url(#orangeGrad)"/>
+        <text x="195" y="26" fill="#FFFFFF" font-size="12" font-weight="600">Explain how the heart pumps blood?</text>
+      </g>
+
+      <!-- Chat Bubble 2: AI Tutor (Mode A 7-Part Explanation) -->
+      <g transform="translate(20, 125)">
+        <rect x="0" y="0" width="440" height="195" rx="16" fill="#FFFFFF" stroke="rgba(255, 106, 0, 0.15)"/>
+        <text x="18" y="26" fill="#202124" font-size="13" font-weight="800">🫀 The Human Heart: Dual-Pump Mechanism</text>
+        
+        <rect x="18" y="38" width="130" height="20" rx="6" fill="#FFF3E8"/>
+        <text x="83" y="52" fill="#E85D00" font-size="10" font-weight="700" text-anchor="middle">Step 1: Deoxygenated Inflow</text>
+
+        <text x="18" y="78" fill="#4B5563" font-size="11" width="400">1. Superior &amp; inferior vena cava bring blood to Right Atrium.</text>
+        <text x="18" y="98" fill="#4B5563" font-size="11">2. Tricuspid valve opens → Right Ventricle contracts.</text>
+        <text x="18" y="118" fill="#4B5563" font-size="11">3. Pulmonary artery takes blood to lungs for oxygenation.</text>
+        <text x="18" y="138" fill="#4B5563" font-size="11">4. Left Ventricle pumps oxygenated blood through Aorta.</text>
+
+        <rect x="18" y="152" width="404" height="32" rx="8" fill="#F8FAFC" stroke="#E2E8F0"/>
+        <text x="28" y="172" fill="#0F172A" font-size="11" font-weight="600">💡 Socratic Prompt: What prevents backflow into the atrium?</text>
+      </g>
+
+      <!-- Input Bar -->
+      <g transform="translate(20, 335)">
+        <rect x="0" y="0" width="440" height="44" rx="22" fill="#FFFFFF" stroke="rgba(255, 106, 0, 0.3)"/>
+        <text x="20" y="27" fill="#9CA3AF" font-size="12">Ask a follow-up or test your understanding...</text>
+        <circle cx="414" cy="22" r="16" fill="url(#orangeGrad)"/>
+        <text x="414" y="27" fill="#FFFFFF" font-size="14" font-weight="bold" text-anchor="middle">↑</text>
+      </g>
+    </g>
+
+    <!-- Right Column: Interactive 3D Lab Canvas & Knowledge Insights -->
+    <g transform="translate(530, 90)">
+      <!-- Right Glass Card: 3D Viewport -->
+      <rect x="0" y="0" width="360" height="395" rx="20" fill="rgba(255, 255, 255, 0.75)" stroke="rgba(255, 255, 255, 0.9)" filter="url(#glassShadow)"/>
+      
+      <!-- 3D Header -->
+      <g transform="translate(20, 18)">
+        <text x="0" y="18" fill="#202124" font-size="14" font-weight="800">3D Interactive Laboratory</text>
+        <text x="0" y="33" fill="#6B7280" font-size="11">WebGL • Three.js 60fps Hardware Render</text>
+      </g>
+
+      <!-- 3D Canvas Area (Stylized 3D Heart Graphic) -->
+      <g transform="translate(20, 60)">
+        <rect x="0" y="0" width="320" height="210" rx="14" fill="#0F172A"/>
+        
+        <!-- Grid Lines -->
+        <line x1="20" y1="180" x2="300" y2="180" stroke="#334155" stroke-dasharray="4 4"/>
+        <line x1="50" y1="195" x2="270" y2="195" stroke="#334155" stroke-dasharray="4 4"/>
+        
+        <!-- Glowing 3D Heart Illustration -->
+        <circle cx="160" cy="95" r="55" fill="#EF4444" fill-opacity="0.8"/>
+        <circle cx="135" cy="80" r="30" fill="#DC2626"/>
+        <circle cx="185" cy="80" r="30" fill="#DC2626"/>
+        <!-- Aorta Tube -->
+        <path d="M 160 50 Q 185 20 205 45" fill="none" stroke="#F87171" stroke-width="12" stroke-linecap="round"/>
+        <!-- Pulmonary Artery -->
+        <path d="M 135 60 Q 115 35 95 55" fill="none" stroke="#38BDF8" stroke-width="10" stroke-linecap="round"/>
+
+        <!-- Orbit Controls UI Overlay -->
+        <rect x="10" y="10" width="75" height="22" rx="6" fill="rgba(15, 23, 42, 0.7)"/>
+        <text x="47" y="25" fill="#38BDF8" font-size="10" font-weight="600" text-anchor="middle">🔄 Orbit 360°</text>
+
+        <rect x="90" y="10" width="70" height="22" rx="6" fill="rgba(15, 23, 42, 0.7)"/>
+        <text x="125" y="25" fill="#10B981" font-size="10" font-weight="600" text-anchor="middle">🔍 Zoom 2.5x</text>
+
+        <rect x="165" y="10" width="75" height="22" rx="6" fill="rgba(15, 23, 42, 0.7)"/>
+        <text x="202" y="25" fill="#F59E0B" font-size="10" font-weight="600" text-anchor="middle">✂️ Cross-Section</text>
+      </g>
+
+      <!-- Action Buttons below 3D -->
+      <g transform="translate(20, 285)">
+        <rect x="0" y="0" width="155" height="42" rx="12" fill="url(#orangeGrad)"/>
+        <text x="77" y="26" fill="#FFFFFF" font-size="12" font-weight="700" text-anchor="middle">🎮 Play Quiz Battle</text>
+
+        <rect x="165" y="0" width="155" height="42" rx="12" fill="#FFF3E8" stroke="rgba(255, 106, 0, 0.4)"/>
+        <text x="242" y="26" fill="#E85D00" font-size="12" font-weight="700" text-anchor="middle">📝 Auto-Notes</text>
+
+        <!-- Exam Readiness Indicator -->
+        <g transform="translate(0, 52)">
+          <rect x="0" y="0" width="320" height="42" rx="10" fill="#F8FAFC" stroke="#E2E8F0"/>
+          <text x="14" y="26" fill="#202124" font-size="11" font-weight="700">Topic Readiness:</text>
+          <rect x="110" y="16" width="140" height="10" rx="5" fill="#E2E8F0"/>
+          <rect x="110" y="16" width="115" height="10" rx="5" fill="#10B981"/>
+          <text x="260" y="25" fill="#10B981" font-size="11" font-weight="800">82%</text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

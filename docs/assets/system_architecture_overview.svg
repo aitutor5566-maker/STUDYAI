@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600" style="background:#0F172A; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6A00"/>
+      <stop offset="100%" stop-color="#E85D00"/>
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.9"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Title Badge -->
+  <rect x="300" y="24" width="400" height="48" rx="24" fill="url(#headerGrad)" filter="url(#shadow)"/>
+  <text x="500" y="55" fill="#FFFFFF" font-size="20" font-weight="700" text-anchor="middle" letter-spacing="1">STUDYAI ECOSYSTEM ARCHITECTURE</text>
+
+  <!-- Row 1: Frontend Clients -->
+  <g transform="translate(40, 100)">
+    <!-- Student App -->
+    <rect x="0" y="0" width="280" height="130" rx="16" fill="url(#cardGrad)" stroke="#FF6A00" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="16" y="16" width="36" height="36" rx="8" fill="#FF6A00" fill-opacity="0.2"/>
+    <text x="34" y="41" fill="#FF6A00" font-size="20" font-weight="bold" text-anchor="middle">📱</text>
+    <text x="64" y="38" fill="#FFFFFF" font-size="16" font-weight="700">Student Application</text>
+    <text x="64" y="56" fill="#94A3B8" font-size="12">Flutter (Android / iOS / Web PWA)</text>
+    <text x="16" y="86" fill="#CBD5E1" font-size="12">• Apple Glass UI Design Tokens</text>
+    <text x="16" y="106" fill="#CBD5E1" font-size="12">• AI Tutor, 3D Lab, Games, Notes</text>
+    <rect x="195" y="14" width="70" height="20" rx="10" fill="#FF6A00" fill-opacity="0.2"/>
+    <text x="230" y="28" fill="#FF6A00" font-size="10" font-weight="600" text-anchor="middle">studyai.com</text>
+
+    <!-- Admin Portal -->
+    <rect x="320" y="0" width="280" height="130" rx="16" fill="url(#cardGrad)" stroke="#38BDF8" stroke-width="1.5" filter="url(#shadow)"/>
+    <rect x="336" y="16" width="36" height="36" rx="8" fill="#38BDF8" fill-opacity="0.2"/>
+    <text x="354" y="41" fill="#38BDF8" font-size="20" font-weight="bold" text-anchor="middle">🛡️</text>
+    <text x="384" y="38" fill="#FFFFFF" font-size="16" font-weight="700">Admin Portal</text>
+    <text x="384" y="56" fill="#94A3B8" font-size="12">Flutter Web Dashboard</text>
+    <text x="336" y="86" fill="#CBD5E1" font-size="12">• Curriculum, Classes &amp; Students</text>
+    <text x="336" y="106" fill="#CBD5E1" font-size="12">• 40-Mark Exams &amp; Question Bank</text>
+    <rect x="480" y="14" width="105" height="20" rx="10" fill="#38BDF8" fill-opacity="0.2"/>
+    <text x="532" y="28" fill="#38BDF8" font-size="10" font-weight="600" text-anchor="middle">admin.studyai.com</text>
+
+    <!-- Super Admin Portal -->
+    <rect x="640" y="0" width="280" height="130" rx="16" fill="url(#cardGrad)" stroke="#A855F7" stroke-width="1.5" filter="url(#shadow)"/>
+    <rect x="656" y="16" width="36" height="36" rx="8" fill="#A855F7" fill-opacity="0.2"/>
+    <text x="674" y="41" fill="#A855F7" font-size="20" font-weight="bold" text-anchor="middle">⚡</text>
+    <text x="704" y="38" fill="#FFFFFF" font-size="16" font-weight="700">Super Admin Portal</text>
+    <text x="704" y="56" fill="#94A3B8" font-size="12">Independent Isolated Web App</text>
+    <text x="656" y="86" fill="#CBD5E1" font-size="12">• AI Provider Health &amp; Cost Meter</text>
+    <text x="656" y="106" fill="#CBD5E1" font-size="12">• System Security &amp; Tenant Roles</text>
+    <rect x="790" y="14" width="118" height="20" rx="10" fill="#A855F7" fill-opacity="0.2"/>
+    <text x="849" y="28" fill="#A855F7" font-size="10" font-weight="600" text-anchor="middle">superadmin.studyai.com</text>
+  </g>
+
+  <!-- Connectors from Clients to Central API -->
+  <path d="M 180 230 L 180 275 L 500 275" fill="none" stroke="#FF6A00" stroke-width="2" stroke-dasharray="4 4"/>
+  <path d="M 500 230 L 500 275" fill="none" stroke="#38BDF8" stroke-width="2" stroke-dasharray="4 4"/>
+  <path d="M 820 230 L 820 275 L 500 275" fill="none" stroke="#A855F7" stroke-width="2" stroke-dasharray="4 4"/>
+  <path d="M 500 275 L 500 300" fill="none" stroke="#FFFFFF" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Row 2: Central FastAPI Backend -->
+  <g transform="translate(180, 300)">
+    <rect x="0" y="0" width="640" height="110" rx="16" fill="url(#cardGrad)" stroke="#10B981" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="20" y="20" width="40" height="40" rx="10" fill="#10B981" fill-opacity="0.2"/>
+    <text x="40" y="48" fill="#10B981" font-size="24" font-weight="bold" text-anchor="middle">⚙️</text>
+    <text x="76" y="44" fill="#FFFFFF" font-size="18" font-weight="700">Central Backend Engine — FastAPI (Python 3.11+) / Node.js API</text>
+    <text x="76" y="65" fill="#94A3B8" font-size="13">High-throughput Asynchronous REST • SSE Streaming • WebSockets • Pydantic v2 Contracts</text>
+    <g transform="translate(20, 80)">
+      <rect x="0" y="0" width="110" height="20" rx="6" fill="#10B981" fill-opacity="0.2"/>
+      <text x="55" y="14" fill="#10B981" font-size="11" font-weight="600" text-anchor="middle">Mode A &amp; B Tutor</text>
+      
+      <rect x="120" y="0" width="110" height="20" rx="6" fill="#10B981" fill-opacity="0.2"/>
+      <text x="175" y="14" fill="#10B981" font-size="11" font-weight="600" text-anchor="middle">40-Mark Exams</text>
+      
+      <rect x="240" y="0" width="110" height="20" rx="6" fill="#10B981" fill-opacity="0.2"/>
+      <text x="295" y="14" fill="#10B981" font-size="11" font-weight="600" text-anchor="middle">3 Adaptive Games</text>
+      
+      <rect x="360" y="0" width="115" height="20" rx="6" fill="#10B981" fill-opacity="0.2"/>
+      <text x="417" y="14" fill="#10B981" font-size="11" font-weight="600" text-anchor="middle">Parent Passcode</text>
+
+      <rect x="485" y="0" width="115" height="20" rx="6" fill="#10B981" fill-opacity="0.2"/>
+      <text x="542" y="14" fill="#10B981" font-size="11" font-weight="600" text-anchor="middle">Anti-Cheat Points</text>
+    </g>
+  </g>
+
+  <!-- Connectors from Backend to Core Services -->
+  <path d="M 320 410 L 320 445 L 180 445 L 180 470" fill="none" stroke="#10B981" stroke-width="2"/>
+  <path d="M 500 410 L 500 470" fill="none" stroke="#10B981" stroke-width="2"/>
+  <path d="M 680 410 L 680 445 L 820 445 L 820 470" fill="none" stroke="#10B981" stroke-width="2"/>
+
+  <!-- Row 3: Service Providers & Storage -->
+  <g transform="translate(40, 470)">
+    <!-- AI Orchestration -->
+    <rect x="0" y="0" width="280" height="100" rx="14" fill="url(#cardGrad)" stroke="#F59E0B" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="20" y="32" fill="#F59E0B" font-size="15" font-weight="700">🧠 AI Orchestration Tier</text>
+    <text x="20" y="55" fill="#CBD5E1" font-size="12">• Ollama Qwen2.5 Local LLM</text>
+    <text x="20" y="75" fill="#CBD5E1" font-size="12">• Gemini / OpenAI / Groq Fallbacks</text>
+    <text x="20" y="93" fill="#94A3B8" font-size="10">Zero Hallucination Grounded Curriculum</text>
+
+    <!-- PostgreSQL & Supabase -->
+    <rect x="320" y="0" width="280" height="100" rx="14" fill="url(#cardGrad)" stroke="#3B82F6" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="340" y="32" fill="#3B82F6" font-size="15" font-weight="700">🗄️ PostgreSQL / Supabase</text>
+    <text x="340" y="55" fill="#CBD5E1" font-size="12">• Row Level Security (RLS) Isolation</text>
+    <text x="340" y="75" fill="#CBD5E1" font-size="12">• Native SQLite Offline Synchronization</text>
+    <text x="340" y="93" fill="#94A3B8" font-size="10">Encrypted Passwords &amp; Parent Tokens</text>
+
+    <!-- Three.js 3D Lab Engine -->
+    <rect x="640" y="0" width="280" height="100" rx="14" fill="url(#cardGrad)" stroke="#EC4899" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="660" y="32" fill="#EC4899" font-size="15" font-weight="700">🧊 Three.js 3D Lab Engine</text>
+    <text x="660" y="55" fill="#CBD5E1" font-size="12">• 8+ Interactive Scientific Models</text>
+    <text x="660" y="75" fill="#CBD5E1" font-size="12">• 360° Orbit, Zoom &amp; Slice Controls</text>
+    <text x="660" y="93" fill="#94A3B8" font-size="10">WebGL 60fps Native Hardware Acceleration</text>
+  </g>
+</svg>
