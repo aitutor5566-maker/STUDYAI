@@ -108,6 +108,61 @@ function sanitizeText(input: unknown, maxLen = 5000): string {
     .slice(0, maxLen);
 }
 
+function getStudentAdaptiveProfile(userId: string): any {
+  let row = db.prepare('SELECT * FROM student_adaptive_profiles WHERE user_id = ?').get(userId) as any;
+  if (!row) {
+    const now = new Date().toISOString();
+    try {
+      db.prepare(`
+        INSERT INTO student_adaptive_profiles (
+          user_id, difficult_subjects_json, difficult_topics_json,
+          reading_difficulty, spelling_difficulty, writing_difficulty, vocabulary_difficulty,
+          concept_difficulty, memory_difficulty, math_calculation_difficulty,
+          explanation_style, preferred_learning_methods_json, topic_understanding_json, recent_feedback_json, updated_at
+        ) VALUES (?, '[]', '[]', 0, 0, 0, 0, 0, 0, 0, 'balanced', '["diagrams","examples"]', '{}', '[]', ?)
+      `).run(userId, now);
+      row = db.prepare('SELECT * FROM student_adaptive_profiles WHERE user_id = ?').get(userId) as any;
+    } catch {
+      // ignore
+    }
+  }
+
+  if (!row) {
+    return {
+      difficult_subjects: [],
+      difficult_topics: [],
+      reading_difficulty: false,
+      spelling_difficulty: false,
+      writing_difficulty: false,
+      vocabulary_difficulty: false,
+      concept_difficulty: false,
+      memory_difficulty: false,
+      math_calculation_difficulty: false,
+      explanation_style: 'balanced',
+      preferred_learning_methods: ['diagrams', 'examples'],
+      topic_understanding: {},
+      recent_feedback: []
+    };
+  }
+
+  return {
+    difficult_subjects: JSON.parse(row.difficult_subjects_json || '[]'),
+    difficult_topics: JSON.parse(row.difficult_topics_json || '[]'),
+    reading_difficulty: Boolean(row.reading_difficulty),
+    spelling_difficulty: Boolean(row.spelling_difficulty),
+    writing_difficulty: Boolean(row.writing_difficulty),
+    vocabulary_difficulty: Boolean(row.vocabulary_difficulty),
+    concept_difficulty: Boolean(row.concept_difficulty),
+    memory_difficulty: Boolean(row.memory_difficulty),
+    math_calculation_difficulty: Boolean(row.math_calculation_difficulty),
+    explanation_style: row.explanation_style || 'balanced',
+    preferred_learning_methods: JSON.parse(row.preferred_learning_methods_json || '["diagrams","examples"]'),
+    topic_understanding: JSON.parse(row.topic_understanding_json || '{}'),
+    recent_feedback: JSON.parse(row.recent_feedback_json || '[]'),
+    updated_at: row.updated_at
+  };
+}
+
 export function createAppServer() {
   const server = http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') {
@@ -444,6 +499,189 @@ export function createAppServer() {
         return;
       }
 
+      // Adaptive Student Learning Profile & Comprehension Engine
+      if ((pathname === '/api/tutor/adaptive-profile' || pathname === '/api/profile/adaptive') && req.method === 'GET') {
+        const profile = getStudentAdaptiveProfile(studentId);
+        sendJson(res, 200, {
+          user_id: studentId,
+          adaptive_profile: profile
+        });
+        return;
+      }
+
+      if ((pathname === '/api/tutor/adaptive-profile' || pathname === '/api/profile/adaptive') && req.method === 'PUT') {
+        const body = await readJsonBody(req);
+        const current = getStudentAdaptiveProfile(studentId);
+
+        const difficult_subjects = Array.isArray(body.difficult_subjects) ? body.difficult_subjects : current.difficult_subjects;
+        const difficult_topics = Array.isArray(body.difficult_topics) ? body.difficult_topics : current.difficult_topics;
+        const reading_difficulty = body.reading_difficulty !== undefined ? (body.reading_difficulty ? 1 : 0) : (current.reading_difficulty ? 1 : 0);
+        const spelling_difficulty = body.spelling_difficulty !== undefined ? (body.spelling_difficulty ? 1 : 0) : (current.spelling_difficulty ? 1 : 0);
+        const writing_difficulty = body.writing_difficulty !== undefined ? (body.writing_difficulty ? 1 : 0) : (current.writing_difficulty ? 1 : 0);
+        const vocabulary_difficulty = body.vocabulary_difficulty !== undefined ? (body.vocabulary_difficulty ? 1 : 0) : (current.vocabulary_difficulty ? 1 : 0);
+        const concept_difficulty = body.concept_difficulty !== undefined ? (body.concept_difficulty ? 1 : 0) : (current.concept_difficulty ? 1 : 0);
+        const memory_difficulty = body.memory_difficulty !== undefined ? (body.memory_difficulty ? 1 : 0) : (current.memory_difficulty ? 1 : 0);
+        const math_calculation_difficulty = body.math_calculation_difficulty !== undefined ? (body.math_calculation_difficulty ? 1 : 0) : (current.math_calculation_difficulty ? 1 : 0);
+        const explanation_style = ['concise', 'balanced', 'detailed'].includes(body.explanation_style) ? body.explanation_style : current.explanation_style;
+        const preferred_learning_methods = Array.isArray(body.preferred_learning_methods) ? body.preferred_learning_methods : current.preferred_learning_methods;
+
+        const now = new Date().toISOString();
+        db.prepare(`
+          INSERT INTO student_adaptive_profiles (
+            user_id, difficult_subjects_json, difficult_topics_json,
+            reading_difficulty, spelling_difficulty, writing_difficulty, vocabulary_difficulty,
+            concept_difficulty, memory_difficulty, math_calculation_difficulty,
+            explanation_style, preferred_learning_methods_json, topic_understanding_json, recent_feedback_json, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(user_id) DO UPDATE SET
+            difficult_subjects_json = excluded.difficult_subjects_json,
+            difficult_topics_json = excluded.difficult_topics_json,
+            reading_difficulty = excluded.reading_difficulty,
+            spelling_difficulty = excluded.spelling_difficulty,
+            writing_difficulty = excluded.writing_difficulty,
+            vocabulary_difficulty = excluded.vocabulary_difficulty,
+            concept_difficulty = excluded.concept_difficulty,
+            memory_difficulty = excluded.memory_difficulty,
+            math_calculation_difficulty = excluded.math_calculation_difficulty,
+            explanation_style = excluded.explanation_style,
+            preferred_learning_methods_json = excluded.preferred_learning_methods_json,
+            updated_at = excluded.updated_at
+        `).run(
+          studentId,
+          JSON.stringify(difficult_subjects),
+          JSON.stringify(difficult_topics),
+          reading_difficulty,
+          spelling_difficulty,
+          writing_difficulty,
+          vocabulary_difficulty,
+          concept_difficulty,
+          memory_difficulty,
+          math_calculation_difficulty,
+          explanation_style,
+          JSON.stringify(preferred_learning_methods),
+          JSON.stringify(current.topic_understanding || {}),
+          JSON.stringify(current.recent_feedback || []),
+          now
+        );
+
+        const updated = getStudentAdaptiveProfile(studentId);
+        sendJson(res, 200, {
+          success: true,
+          message: 'Adaptive learning profile updated successfully.',
+          adaptive_profile: updated
+        });
+        return;
+      }
+
+      if (pathname === '/api/tutor/evaluate-understanding' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const topic = sanitizeText(body.topic || 'Concept', 100);
+        const question = sanitizeText(body.question || '', 500);
+        const selectedOption = sanitizeText(body.selectedOption || body.studentAnswer || '', 300);
+        const correctOption = sanitizeText(body.correctOption || '', 300);
+        const explanation = sanitizeText(body.explanation || '', 500);
+
+        if (!selectedOption) {
+          sendJson(res, 400, { error: 'Please choose or submit an answer to check your understanding.' });
+          return;
+        }
+
+        const normSelected = selectedOption.trim().toLowerCase();
+        const normCorrect = correctOption.trim().toLowerCase();
+        const isMatch = Boolean(
+          normCorrect && (
+            normSelected === normCorrect ||
+            (normCorrect.length > 2 && normSelected.startsWith(normCorrect.slice(0, 1) + ')')) ||
+            (normCorrect.length > 2 && normSelected.startsWith(normCorrect.slice(0, 1) + '.')) ||
+            normSelected.includes(normCorrect.slice(2).trim())
+          )
+        );
+
+        const currentProfile = getStudentAdaptiveProfile(studentId);
+        const topicUnderstanding = { ...(currentProfile.topic_understanding || {}) };
+        const now = new Date().toISOString();
+
+        let isCorrect = false;
+        let constructiveFeedback = '';
+        let score = 50;
+
+        if (isMatch) {
+          isCorrect = true;
+          score = 100;
+          constructiveFeedback = `🌟 Excellent work! Your understanding of "${topic}" is spot on. ${explanation ? `${explanation}` : 'You grasped the core mechanism perfectly!'}`;
+          topicUnderstanding[topic] = {
+            score: 100,
+            status: 'mastered',
+            lastAssessed: now,
+            correctCount: ((topicUnderstanding[topic]?.correctCount || 0) + 1)
+          };
+        } else {
+          isCorrect = false;
+          score = 60;
+          constructiveFeedback = `💡 Good effort! The best answer is: "${correctOption}". ${explanation ? `Why: ${explanation}` : ''} Learning happens through practice—let's keep building your understanding!`;
+          topicUnderstanding[topic] = {
+            score: Math.max(50, (topicUnderstanding[topic]?.score || 60) - 5),
+            status: 'needs_review',
+            lastAssessed: now,
+            reviewCount: ((topicUnderstanding[topic]?.reviewCount || 0) + 1)
+          };
+        }
+
+        db.prepare('UPDATE student_adaptive_profiles SET topic_understanding_json = ?, updated_at = ? WHERE user_id = ?')
+          .run(JSON.stringify(topicUnderstanding), now, studentId);
+
+        db.prepare(`
+          INSERT INTO learning_activity (id, user_id, activity_type, title, subject, topic, duration_minutes, score_percent, resource_id, created_at)
+          VALUES (?, ?, 'quiz', ?, 'Science', ?, 3, ?, ?, ?)
+        `).run(`act-${crypto.randomUUID().slice(0, 8)}`, studentId, `Understanding Check: ${topic}`, topic, score, `check-${topic}`, now);
+
+        sendJson(res, 200, {
+          success: true,
+          isCorrect,
+          score,
+          feedback: constructiveFeedback,
+          correctOption,
+          topic,
+          topicStatus: topicUnderstanding[topic]?.status || 'learning'
+        });
+        return;
+      }
+
+      if (pathname === '/api/tutor/feedback' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const topic = sanitizeText(body.topic || 'General', 100);
+        const rating = sanitizeText(body.rating || 'just_right', 30);
+        const comment = sanitizeText(body.comment || '', 300);
+
+        const currentProfile = getStudentAdaptiveProfile(studentId);
+        const recentFeedback = [...(currentProfile.recent_feedback || [])];
+        const now = new Date().toISOString();
+
+        recentFeedback.unshift({ topic, rating, comment, date: now });
+        if (recentFeedback.length > 20) recentFeedback.pop();
+
+        let updatedStyle = currentProfile.explanation_style;
+        if (rating === 'too_detailed') {
+          updatedStyle = 'concise';
+        } else if (rating === 'too_simple') {
+          updatedStyle = 'detailed';
+        }
+
+        db.prepare(`
+          UPDATE student_adaptive_profiles
+          SET recent_feedback_json = ?, explanation_style = ?, updated_at = ?
+          WHERE user_id = ?
+        `).run(JSON.stringify(recentFeedback), updatedStyle, now, studentId);
+
+        sendJson(res, 200, {
+          success: true,
+          message: 'Thank you! Your AI Tutor has adapted to your explanation preference.',
+          rating,
+          adaptedStyle: updatedStyle
+        });
+        return;
+      }
+
       if (pathname === '/api/tutor/ask' && req.method === 'POST') {
         const body = await readJsonBody(req);
         const question = sanitizeText(body.question, 2000);
@@ -512,6 +750,9 @@ export function createAppServer() {
           return;
         }
 
+        const adaptiveProfile = getStudentAdaptiveProfile(studentId);
+        const explanationLength = body.explanationLength || (adaptiveProfile.explanation_style as 'concise' | 'balanced' | 'detailed') || 'balanced';
+
         // Generate structured AI Tutor teaching response
         const structured = await generateTutorExplanation({
           topic: effectiveTopic,
@@ -523,7 +764,9 @@ export function createAppServer() {
           language,
           history: historyRows,
           attachmentSummary,
-          selectedVisualComponent: body.selectedVisualComponent || undefined
+          selectedVisualComponent: body.selectedVisualComponent || undefined,
+          adaptiveProfile,
+          explanationLength
         });
 
         if (body.simulateFailure === 'primary_provider') {

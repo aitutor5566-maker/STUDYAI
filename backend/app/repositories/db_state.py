@@ -107,6 +107,24 @@ class DatabaseState:
                 "total_points": 1450,
                 "preferred_learning_style": "visual",
                 "target_examinations": ["CBSE Class 10 Board Exam", "Science Olympiad"],
+                "adaptive_profile": {
+                    "difficult_subjects": ["Maths", "Physics"],
+                    "difficult_topics": ["Quadratic Equations", "Chemical Bonding"],
+                    "reading_difficulty": False,
+                    "spelling_difficulty": False,
+                    "writing_difficulty": False,
+                    "vocabulary_difficulty": True,
+                    "concept_difficulty": True,
+                    "memory_difficulty": False,
+                    "math_calculation_difficulty": True,
+                    "explanation_style": "balanced",
+                    "preferred_learning_methods": ["diagrams", "images", "examples"],
+                    "topic_understanding": {
+                        "Photosynthesis": {"score": 92, "status": "mastered"},
+                        "Human Heart": {"score": 88, "status": "mastered"}
+                    },
+                    "recent_feedback": []
+                }
             },
             "usr_student_002": {
                 "user_id": "usr_student_002",
@@ -118,6 +136,21 @@ class DatabaseState:
                 "total_points": 150,
                 "preferred_learning_style": "auditory",
                 "target_examinations": ["CBSE Class 10 Board Exam"],
+                "adaptive_profile": {
+                    "difficult_subjects": ["Science", "Maths"],
+                    "difficult_topics": [],
+                    "reading_difficulty": True,
+                    "spelling_difficulty": True,
+                    "writing_difficulty": True,
+                    "vocabulary_difficulty": True,
+                    "concept_difficulty": True,
+                    "memory_difficulty": True,
+                    "math_calculation_difficulty": True,
+                    "explanation_style": "concise",
+                    "preferred_learning_methods": ["audio", "diagrams", "examples"],
+                    "topic_understanding": {},
+                    "recent_feedback": []
+                }
             }
         }
 

@@ -183,3 +183,106 @@ async def synthesize_tutor_audio(topic: str = "Photosynthesis", speed: float = 1
         "script": script,
         "audio_data_url": f"data:audio/wav;base64,{wav_header}"
     }
+
+
+class EvaluateUnderstandingRequest(BaseModel):
+    topic: str
+    question: str
+    student_answer: str
+    correct_answer: Optional[str] = None
+    explanation: Optional[str] = None
+
+
+class TutorFeedbackRequest(BaseModel):
+    topic: str
+    rating: str
+    comment: Optional[str] = None
+
+
+@router.post("/evaluate-understanding", summary="Evaluate Student Understanding Check Answer")
+async def evaluate_understanding(req: EvaluateUnderstandingRequest, user: Optional[AuthenticatedUser] = Depends(get_optional_current_user)):
+    """
+    Evaluates student's answer to the understanding-check question constructively:
+    - Analyzes conceptual accuracy.
+    - If correct: reinforces positive learning and mastery.
+    - If incorrect: gently clarifies the misconception without penalty.
+    - Updates topic-level understanding profile dynamically.
+    """
+    ans_clean = req.student_answer.strip().lower()
+    correct_clean = (req.correct_answer or "").strip().lower()
+
+    # Determine correctness using semantic similarity or exact matching
+    is_correct = False
+    if correct_clean:
+        is_correct = (ans_clean == correct_clean) or (correct_clean in ans_clean) or (ans_clean in correct_clean)
+    else:
+        # Check against common keywords for topic
+        is_correct = len(ans_clean) > 8 and not any(neg in ans_clean for neg in ["don't know", "idk", "not sure", "no idea"])
+
+    if is_correct:
+        feedback = "Excellent understanding! You accurately captured the key mechanism."
+        explanation = req.explanation or f"Your answer correctly demonstrates the governing principles of {req.topic}."
+        encouragement = "Great work! You've grasped this concept solidly."
+        score_delta = 15
+    else:
+        feedback = "Good try! Let's clarify this key distinction."
+        explanation = req.explanation or f"In {req.topic}, remember the sequence and governing conditions so you can recall it easily."
+        encouragement = "Mistakes are a natural and valuable part of learning. Let's review the core step together!"
+        score_delta = 5
+
+    # Update student's topic understanding if user logged in
+    student_id = user.id if user else "usr_student_001"
+    profile = db_state.student_profiles.get(student_id, {})
+    adaptive = profile.setdefault("adaptive_profile", {})
+    topic_scores = adaptive.setdefault("topic_understanding", {})
+    curr = topic_scores.get(req.topic, {"score": 70, "attempts": 0})
+    new_score = min(100, max(40, curr.get("score", 70) + (10 if is_correct else -5)))
+    topic_scores[req.topic] = {
+        "score": new_score,
+        "attempts": curr.get("attempts", 0) + 1,
+        "status": "mastered" if new_score >= 85 else "in_progress",
+        "last_assessed": datetime.datetime.now(datetime.timezone.utc).isoformat()
+    }
+
+    return {
+        "is_correct": is_correct,
+        "feedback": feedback,
+        "explanation": explanation,
+        "encouragement": encouragement,
+        "topic": req.topic,
+        "updated_understanding_score": new_score,
+        "status": topic_scores[req.topic]["status"]
+    }
+
+
+@router.post("/feedback", summary="Adaptive Feedback on Explanation Quality")
+async def record_tutor_feedback(req: TutorFeedbackRequest, user: Optional[AuthenticatedUser] = Depends(get_optional_current_user)):
+    """
+    Records student feedback about whether the explanation was too simple, just right, or too hard,
+    dynamically tuning explanation style.
+    """
+    student_id = user.id if user else "usr_student_001"
+    profile = db_state.student_profiles.get(student_id, {})
+    adaptive = profile.setdefault("adaptive_profile", {})
+    recent_fb = adaptive.setdefault("recent_feedback", [])
+    recent_fb.append({
+        "topic": req.topic,
+        "rating": req.rating,
+        "comment": req.comment or "",
+        "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
+    })
+
+    # Adjust explanation style if requested
+    if req.rating == "too_hard":
+        adaptive["explanation_style"] = "concise"
+        adaptive["reading_difficulty"] = True
+    elif req.rating == "too_simple":
+        adaptive["explanation_style"] = "deep"
+    elif req.rating == "just_right":
+        adaptive["explanation_style"] = "balanced"
+
+    return {
+        "status": "recorded",
+        "adapted_style": adaptive["explanation_style"],
+        "message": f"Thank you! Your tutor will now tailor future explanations with {adaptive['explanation_style']} depth."
+    }

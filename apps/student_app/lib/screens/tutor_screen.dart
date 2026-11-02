@@ -535,6 +535,24 @@ class _TutorScreenState extends State<TutorScreen> {
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton.icon(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Launching Space Battle Game for $topic...'),
+                        backgroundColor: const Color(0xFF7C3AED),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.videogame_asset_rounded, size: 16),
+                  label: const Text('Play Game', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF7C3AED),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
                   onPressed: _saveLessonToNotes,
                   icon: const Icon(Icons.bookmark_add_rounded, size: 16),
                   label: const Text('Save Notes', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
@@ -584,6 +602,69 @@ class _TutorScreenState extends State<TutorScreen> {
           ),
         ),
         const SizedBox(height: 18),
+
+        // ADAPTIVE GUIDANCE BANNERS
+        if (lesson['spellingGuidance'] != null || lesson['spelling_guidance'] != null) ...[
+          Builder(builder: (ctx) {
+            final sg = (lesson['spellingGuidance'] ?? lesson['spelling_guidance']) as Map<String, dynamic>;
+            return Container(
+              padding: const EdgeInsets.all(14),
+              margin: const EdgeInsets.only(bottom: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF93C5FD)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.spellcheck_rounded, color: Color(0xFF2563EB), size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      sg['message']?.toString() ?? 'Friendly spelling tip: "${sg['corrected']}"',
+                      style: const TextStyle(color: Color(0xFF1E40AF), fontWeight: FontWeight.w600, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+
+        if (lesson['prerequisiteBridge'] != null || lesson['prerequisite_bridge'] != null) ...[
+          Builder(builder: (ctx) {
+            final pb = (lesson['prerequisiteBridge'] ?? lesson['prerequisite_bridge']) as Map<String, dynamic>;
+            return Container(
+              padding: const EdgeInsets.all(14),
+              margin: const EdgeInsets.only(bottom: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF86EFAC)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text('🌱', style: TextStyle(fontSize: 16)),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Foundational Prerequisite: ${pb['foundationConcept'] ?? pb['foundation_concept'] ?? 'Core Concepts'}',
+                        style: const TextStyle(color: Color(0xFF166534), fontWeight: FontWeight.w800, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    pb['whyItMatters']?.toString() ?? pb['why_it_matters']?.toString() ?? '',
+                    style: const TextStyle(color: Color(0xFF14532D), fontSize: 13, height: 1.4),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
 
         // MODE BRANCHING
         if (_learningMode == 'normal') ...[

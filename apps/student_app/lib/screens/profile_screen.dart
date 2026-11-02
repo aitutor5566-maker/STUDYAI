@@ -128,6 +128,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 24),
 
+          // Personalised Adaptive Learning Profile
+          const Text('Personalised Adaptive Learning Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+          const SizedBox(height: 12),
+          StudyAiGlassCard(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.psychology_rounded, color: Color(0xFFC084FC), size: 24),
+                        SizedBox(width: 10),
+                        Text('Adaptive Comprehension Engine', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white)),
+                      ],
+                    ),
+                    StudyAiGlassPill(
+                      label: 'Active Profile',
+                      icon: Icons.check_circle_rounded,
+                      color: StudyAiColors.greenAccent,
+                      isSelected: true,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Your AI Tutor personalises explanations, simplifies sentence structures, bridges foundational concepts, and provides gentle spelling guidance based on your academic profile.',
+                  style: TextStyle(fontSize: 13, color: Colors.white70, height: 1.45),
+                ),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: const [
+                    Chip(
+                      label: Text('Reading: Chunks & Glossaries', style: TextStyle(fontSize: 11, color: Colors.white)),
+                      backgroundColor: Color(0x33A855F7),
+                    ),
+                    Chip(
+                      label: Text('Spelling: Gentle Guidance', style: TextStyle(fontSize: 11, color: Colors.white)),
+                      backgroundColor: Color(0x3306B6D4),
+                    ),
+                    Chip(
+                      label: Text('Style: Balanced & Meaning-Preserving', style: TextStyle(fontSize: 11, color: Colors.white)),
+                      backgroundColor: Color(0x3310B981),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
           // Academic & Learning Preferences
           const Text('Learning Preferences', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
           const SizedBox(height: 12),

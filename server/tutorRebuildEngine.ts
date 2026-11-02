@@ -1200,6 +1200,68 @@ export function enrichLessonWithRebuildStructure(
         }
       : null;
 
+  // 11. Adaptive Scaffolding: Understanding Check, Prerequisite Bridge, Writing & Memory Guides
+  const understandingCheck = {
+    id: `chk-${topic.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 10)}`,
+    question: examQuestions[3]?.question || `Which of the following statements accurately describes the core mechanism of ${topic}?`,
+    options: examQuestions[3]?.options || [
+      lessonImages[0].explanation.whatToRemember,
+      `It occurs without any transfer of energy or matter in ${subject}`,
+      `Its stages are completely isolated and do not interact`,
+      `It violates established scientific laws`
+    ],
+    correctAnswer: examQuestions[3]?.correctAnswer || lessonImages[0].explanation.whatToRemember,
+    explanation: examQuestions[3]?.explanation || 'Reflects the verified scientific mechanism explained above.',
+    hint: `Hint: Focus on how ${lessonImages[0].explanation.importantParts[0]?.label || 'the primary component'} operates in ${topic}.`
+  };
+
+  const isWeakSubject = Boolean(
+    baseLesson.adaptiveProfile?.difficult_subjects?.some((s: string) => s.toLowerCase() === subject.toLowerCase()) ||
+    baseLesson.adaptiveProfile?.difficult_topics?.some((t: string) => t.toLowerCase() === topic.toLowerCase())
+  );
+  const prerequisiteBridge = isWeakSubject || baseLesson.adaptiveProfile?.concept_difficulty
+    ? {
+        title: `🌱 Foundational Prerequisite for ${topic}`,
+        foundationalConcept: prerequisites[0] || `Core principles of ${subject}`,
+        whyItMattersFirst: `Before understanding ${topic}, remember that ${prerequisites[0] || 'underlying foundational principles'} establish how energy and structures interact.`
+      }
+    : null;
+
+  const writingGuide = baseLesson.adaptiveProfile?.writing_difficulty
+    ? {
+        title: `📝 How to Write a High-Scoring Answer for "${topic}"`,
+        steps: [
+          `1. Definition: State clearly that "${topic} is the process/concept where..."`,
+          `2. Mechanism: Describe the ${keySteps.length} key steps in sequential order.`,
+          `3. Connection: Reference the governing formula (${baseLesson.formula?.equation || 'key equation'}) and 1 real-world application.`
+        ],
+        sentenceStarters: [
+          `"${topic} is fundamentally governed by..."`,
+          `"During the primary stage, the system converts..."`,
+          `"This is vital in ${subject} because..."`
+        ]
+      }
+    : null;
+
+  const memoryHooks = baseLesson.adaptiveProfile?.memory_difficulty
+    ? {
+        title: `🧠 Rapid Memory Anchor for ${topic}`,
+        keyMnemonic: `Remember: ${lessonImages[0].explanation.whatToRemember}`,
+        rapidTakeaways: [
+          `Core Concept: ${simpleIntroduction.slice(0, 110)}...`,
+          ...(baseLesson.formula?.equation ? [`Key Formula: ${baseLesson.formula.equation}`] : []),
+          `Process Flow: ${keySteps[0]?.split('—')[0]?.trim() || 'Initial Activation'} → ${keySteps[1]?.split('—')[0]?.trim() || 'Transformation'}`
+        ]
+      }
+    : null;
+
+  const adaptiveFormatting = {
+    isConcise: baseLesson.explanationLength === 'concise' || baseLesson.adaptiveProfile?.explanation_style === 'concise',
+    isReadingDifficulty: Boolean(baseLesson.adaptiveProfile?.reading_difficulty),
+    audioRecommended: Boolean(baseLesson.adaptiveProfile?.reading_difficulty || baseLesson.adaptiveProfile?.preferred_learning_methods?.includes('audio')),
+    visualPriority: Boolean(baseLesson.adaptiveProfile?.concept_difficulty || baseLesson.adaptiveProfile?.preferred_learning_methods?.includes('diagrams'))
+  };
+
   return {
     ...baseLesson,
     simpleIntroduction,
@@ -1219,6 +1281,11 @@ export function enrichLessonWithRebuildStructure(
     revisionNotes,
     practiceQuestions,
     interactivePlotSpec,
+    understandingCheck,
+    prerequisiteBridge,
+    writingGuide,
+    memoryHooks,
+    adaptiveFormatting,
     visualPlan: getVisualPlanForTopic(topic, baseLesson.level || 'Grade 10'),
     subtopics: getVisualPlanForTopic(topic, baseLesson.level || 'Grade 10').subtopics,
     lessonValidation: {

@@ -25,12 +25,14 @@ import {
   BookOpen,
   Radio,
   Trash2,
-  ShieldCheck
+  ShieldCheck,
+  Sliders
 } from 'lucide-react';
 import { TopBrandBar } from '../components/GlassNav';
 import { Interactive3DViewer } from '../components/Interactive3DLab';
 import { FuturisticIcon } from '../components/FuturisticIcons';
 import { useLearning } from '../context/LearningContext';
+import { AdaptiveProfileModal } from '../components/AdaptiveProfileModal';
 
 type LanguageType = 'English' | 'Telugu' | 'Hindi';
 type ModeType = 'simple' | 'detailed';
@@ -192,6 +194,82 @@ export const TutorPage: React.FC = () => {
   const [actionToast, setActionToast] = useState<string>('');
   const [selectedVisualComponent, setSelectedVisualComponent] = useState<{ id: string; label: string; role?: string } | null>(null);
   const [revealedQuestions, setRevealedQuestions] = useState<Record<string, boolean>>({});
+  const [explanationLength, setExplanationLength] = useState<'concise' | 'balanced' | 'detailed'>('balanced');
+  const [showAdaptiveModal, setShowAdaptiveModal] = useState<boolean>(false);
+  const [evaluations, setEvaluations] = useState<Record<string, { selectedOption: string; evaluated: boolean; isCorrect?: boolean; feedback?: string; score?: number; loading?: boolean }>>({});
+  const [feedbacks, setFeedbacks] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    apiFetch<any>('/api/tutor/adaptive-profile')
+      .then((data) => {
+        if (data?.adaptive_profile?.explanation_style) {
+          setExplanationLength(data.adaptive_profile.explanation_style);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleEvaluateUnderstanding = async (
+    msgId: string,
+    topic: string,
+    question: string,
+    selectedOption: string,
+    correctOption: string,
+    explanation: string
+  ) => {
+    setEvaluations((prev) => ({
+      ...prev,
+      [msgId]: { selectedOption, evaluated: false, loading: true }
+    }));
+    try {
+      const res = await apiFetch<any>('/api/tutor/evaluate-understanding', {
+        method: 'POST',
+        body: JSON.stringify({
+          topic,
+          question,
+          selectedOption,
+          correctOption,
+          explanation
+        })
+      });
+      setEvaluations((prev) => ({
+        ...prev,
+        [msgId]: {
+          selectedOption,
+          evaluated: true,
+          loading: false,
+          isCorrect: res.isCorrect,
+          score: res.score,
+          feedback: res.feedback
+        }
+      }));
+      setActionToast(res.isCorrect ? '🌟 Understanding verified! (+100 score)' : '💡 Constructive feedback provided. Keep learning!');
+      setTimeout(() => setActionToast(''), 4000);
+    } catch (err: any) {
+      setEvaluations((prev) => ({
+        ...prev,
+        [msgId]: { selectedOption, evaluated: false, loading: false }
+      }));
+      setActionToast('Could not evaluate: ' + (err?.message || 'Error'));
+    }
+  };
+
+  const handleSendFeedback = async (msgId: string, topic: string, rating: 'too_simple' | 'just_right' | 'too_detailed') => {
+    try {
+      const res = await apiFetch<any>('/api/tutor/feedback', {
+        method: 'POST',
+        body: JSON.stringify({ topic, rating })
+      });
+      setFeedbacks((prev) => ({ ...prev, [msgId]: rating }));
+      if (res.adaptedStyle) {
+        setExplanationLength(res.adaptedStyle);
+      }
+      setActionToast(res.message || 'Thank you! Your tutor has adapted to your preference.');
+      setTimeout(() => setActionToast(''), 4000);
+    } catch (err: any) {
+      setActionToast('Could not record feedback');
+    }
+  };
 
   const askTargetedQuestion = (q: string, componentOverride?: { id: string; label: string; role?: string }) => {
     if (componentOverride) {
@@ -551,6 +629,7 @@ export const TutorPage: React.FC = () => {
           level: `Grade ${grade}`,
           subject,
           language,
+          explanationLength,
           attachmentSummary: attachmentNote || undefined,
           selectedVisualComponent: selectedVisualComponent || undefined
         })
@@ -830,6 +909,30 @@ export const TutorPage: React.FC = () => {
             <span>EXAM PREPARATION MODE</span>
           </button>
         </div>
+
+        {/* Adaptive Profile Quick Trigger */}
+        <button
+          type="button"
+          onClick={() => setShowAdaptiveModal(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '9px 18px',
+            borderRadius: 999,
+            background: '#FFFFFF',
+            border: '1.5px solid rgba(124, 58, 237, 0.35)',
+            color: '#6D28D9',
+            fontWeight: 800,
+            fontSize: '0.84rem',
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(124, 58, 237, 0.1)',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <Sliders size={16} color="#7C3AED" />
+          <span>Learning Profile</span>
+        </button>
       </section>
 
       {/* Multilingual, Multi-Grade & Pedagogical Controls Bar */}
@@ -846,6 +949,42 @@ export const TutorPage: React.FC = () => {
           border: '1.5px solid rgba(255, 106, 0, 0.25)'
         }}
       >
+        {/* Explanation Depth Selector */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Sparkles size={16} color="#FF6A00" />
+          <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#202124' }}>Depth:</span>
+          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.9)', padding: 3, borderRadius: 999, border: '1px solid rgba(255,106,0,0.2)' }}>
+            {(
+              [
+                { id: 'concise', label: '⚡ Concise' },
+                { id: 'balanced', label: '⚖️ Balanced' },
+                { id: 'detailed', label: '🔍 Detailed' }
+              ] as const
+            ).map((len) => (
+              <button
+                key={len.id}
+                type="button"
+                onClick={() => {
+                  setExplanationLength(len.id);
+                  setActionToast(`Explanation depth set to: ${len.label}`);
+                  setTimeout(() => setActionToast(''), 3000);
+                }}
+                style={{
+                  border: 'none',
+                  padding: '4px 12px',
+                  borderRadius: 999,
+                  background: explanationLength === len.id ? 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)' : 'transparent',
+                  color: explanationLength === len.id ? '#FFFFFF' : '#4B5563',
+                  fontWeight: 700,
+                  fontSize: '0.76rem',
+                  cursor: 'pointer'
+                }}
+              >
+                {len.label}
+              </button>
+            ))}
+          </div>
+        </div>
         {/* 1. Language Selector (English, Telugu, Hindi) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <Globe size={16} color="#FF6A00" />
@@ -1250,6 +1389,103 @@ export const TutorPage: React.FC = () => {
                     compact
                     onClose={() => setInline3DMsgId(null)}
                   />
+                </div>
+              )}
+
+              {/* Gentle Spelling Guidance Notice */}
+              {s?.spellingGuidance && (
+                <div
+                  style={{
+                    padding: '10px 16px',
+                    borderRadius: 14,
+                    background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
+                    border: '1.5px solid #93C5FD',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    marginBottom: 14
+                  }}
+                >
+                  <Sparkles size={18} color="#2563EB" />
+                  <span style={{ fontSize: '0.85rem', color: '#1E40AF', fontWeight: 700 }}>
+                    {s.spellingGuidance.message || `Gentle tip: "${s.spellingGuidance.corrected}" is spelled '${s.spellingGuidance.corrected}' — wonderful question!`}
+                  </span>
+                </div>
+              )}
+
+              {/* Foundational Prerequisite Bridge (for students with subject difficulty) */}
+              {s?.prerequisiteBridge && (
+                <div
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: 16,
+                    background: 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)',
+                    border: '1.5px solid #86EFAC',
+                    marginBottom: 14
+                  }}
+                >
+                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#166534', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span>🌱</span> Foundational Prerequisite Bridge: {s.prerequisiteBridge.foundationConcept}
+                  </div>
+                  <p style={{ fontSize: '0.88rem', color: '#14532D', margin: 0, lineHeight: 1.55 }}>
+                    {s.prerequisiteBridge.whyItMatters}
+                  </p>
+                </div>
+              )}
+
+              {/* Writing Structure Guide (for students with writing difficulty) */}
+              {s?.writingGuide && (
+                <div
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: 16,
+                    background: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)',
+                    border: '1.5px solid #FCD34D',
+                    marginBottom: 14
+                  }}
+                >
+                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#92400E', marginBottom: 4 }}>
+                    ✍️ Answer Structuring Guide (Writing Support)
+                  </div>
+                  <div style={{ fontSize: '0.84rem', color: '#78350F', marginBottom: 6 }}>
+                    <strong>Recommended Structure:</strong> {s.writingGuide.answerStructure}
+                  </div>
+                  {Array.isArray(s.writingGuide.sentenceStarters) && s.writingGuide.sentenceStarters.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {s.writingGuide.sentenceStarters.map((starter: string, sIdx: number) => (
+                        <span key={sIdx} style={{ fontSize: '0.76rem', background: '#FFFFFF', padding: '3px 8px', borderRadius: 8, border: '1px solid #FDE68A', color: '#78350F', fontWeight: 600 }}>
+                          "{starter}..."
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Memory Hooks (for students with memory difficulty) */}
+              {s?.memoryHooks && (
+                <div
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: 16,
+                    background: 'linear-gradient(135deg, #FAF5FF 0%, #F3E8FF 100%)',
+                    border: '1.5px solid #D8B4FE',
+                    marginBottom: 14
+                  }}
+                >
+                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#6B21A8', marginBottom: 4 }}>
+                    🧠 Memory Revision Hooks &amp; Mnemonic
+                  </div>
+                  <div style={{ fontSize: '0.84rem', color: '#581C87', fontWeight: 700, marginBottom: 4 }}>
+                    "{s.memoryHooks.mnemonic}"
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {s.memoryHooks.quickTakeaways?.map((qt: string, qIdx: number) => (
+                      <span key={qIdx} style={{ fontSize: '0.76rem', background: '#FFFFFF', padding: '3px 8px', borderRadius: 8, border: '1px solid #E9D5FF', color: '#6B21A8' }}>
+                        • {qt}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -2010,6 +2246,105 @@ export const TutorPage: React.FC = () => {
                 </div>
               )}
 
+              {/* 8-Part Standard Format: Interactive Understanding-Check Question */}
+              {s?.understandingCheck && (
+                <div
+                  style={{
+                    marginTop: 16,
+                    padding: 16,
+                    borderRadius: 18,
+                    background: 'linear-gradient(135deg, #F0FDF4 0%, #FFFFFF 100%)',
+                    border: '2px solid #86EFAC',
+                    boxShadow: '0 4px 14px rgba(22, 163, 74, 0.08)'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div style={{ fontSize: '0.88rem', fontWeight: 900, color: '#166534', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span>🎯</span>
+                      <span>Check Your Understanding</span>
+                    </div>
+                    <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#15803D', background: '#DCFCE7', padding: '3px 8px', borderRadius: 999 }}>
+                      Interactive Assessment
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '0.92rem', fontWeight: 700, color: '#1F2937', marginBottom: 12 }}>
+                    {s.understandingCheck.question}
+                  </p>
+
+                  {/* Options */}
+                  {Array.isArray(s.understandingCheck.options) && s.understandingCheck.options.length > 0 && (
+                    <div style={{ display: 'grid', gap: 8, marginBottom: 12 }}>
+                      {s.understandingCheck.options.map((opt: string, optIdx: number) => {
+                        const evalState = evaluations[msg.id];
+                        const isSelected = evalState?.selectedOption === opt;
+                        return (
+                          <button
+                            key={optIdx}
+                            type="button"
+                            disabled={evalState?.evaluated || evalState?.loading}
+                            onClick={() =>
+                              handleEvaluateUnderstanding(
+                                msg.id,
+                                s.topic || activeTopic,
+                                s.understandingCheck.question,
+                                opt,
+                                s.understandingCheck.correctAnswer,
+                                s.understandingCheck.explanation
+                              )
+                            }
+                            style={{
+                              textAlign: 'left',
+                              padding: '10px 14px',
+                              borderRadius: 12,
+                              border: isSelected
+                                ? evalState?.isCorrect
+                                  ? '2px solid #16A34A'
+                                  : '2px solid #EF4444'
+                                : '1.5px solid #E5E7EB',
+                              background: isSelected
+                                ? evalState?.isCorrect
+                                  ? '#DCFCE7'
+                                  : '#FEE2E2'
+                                : '#FFFFFF',
+                              color: '#1F2937',
+                              fontSize: '0.86rem',
+                              fontWeight: isSelected ? 700 : 500,
+                              cursor: evalState?.evaluated ? 'default' : 'pointer',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            {opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Realtime Feedback / Result */}
+                  {evaluations[msg.id]?.loading && (
+                    <div style={{ fontSize: '0.84rem', color: '#166534', fontStyle: 'italic' }}>
+                      Evaluating your response...
+                    </div>
+                  )}
+
+                  {evaluations[msg.id]?.evaluated && (
+                    <div
+                      style={{
+                        padding: 12,
+                        borderRadius: 12,
+                        background: evaluations[msg.id]?.isCorrect ? '#DCFCE7' : '#FEF3C7',
+                        border: evaluations[msg.id]?.isCorrect ? '1.5px solid #86EFAC' : '1.5px solid #FCD34D',
+                        fontSize: '0.86rem',
+                        lineHeight: 1.55,
+                        color: evaluations[msg.id]?.isCorrect ? '#14532D' : '#78350F'
+                      }}
+                    >
+                      {evaluations[msg.id]?.feedback}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Connected Learning Actions: Notes | Quiz | Game | Library */}
               <div style={{ marginTop: 18, padding: 14, borderRadius: 18, background: '#FFFDF9', border: '1px solid rgba(255,106,0,0.18)' }}>
                 <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#6B7280', marginBottom: 10 }}>
@@ -2050,13 +2385,15 @@ export const TutorPage: React.FC = () => {
                     style={{
                       justifyContent: 'flex-start',
                       fontSize: '0.82rem',
-                      background: 'rgba(56, 189, 248, 0.12)',
-                      borderColor: 'rgba(56, 189, 248, 0.45)',
-                      color: '#0284C7'
+                      background: 'linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)',
+                      color: '#FFFFFF',
+                      fontWeight: 800,
+                      border: 'none',
+                      boxShadow: '0 4px 12px rgba(124, 58, 237, 0.25)'
                     }}
                   >
-                    <Rocket size={15} color="#0284C7" />
-                    <span>Space Battle Game</span>
+                    <Gamepad2 size={16} color="#FFFFFF" />
+                    <span>🎮 Play Game for this Topic</span>
                   </button>
                   <button
                     type="button"
@@ -2067,6 +2404,61 @@ export const TutorPage: React.FC = () => {
                     <Bookmark size={15} color="#FF6A00" />
                     <span>Save to Library</span>
                   </button>
+                </div>
+
+                {/* Adaptive Feedback Rating Bar */}
+                <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px dashed #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#6B7280' }}>
+                    How was this explanation?
+                  </span>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      type="button"
+                      onClick={() => handleSendFeedback(msg.id, s?.topic || activeTopic, 'too_simple')}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: 999,
+                        border: '1px solid #E5E7EB',
+                        background: feedbacks[msg.id] === 'too_simple' ? '#FEF3C7' : '#FFFFFF',
+                        fontSize: '0.74rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🟡 Too Simple
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSendFeedback(msg.id, s?.topic || activeTopic, 'just_right')}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: 999,
+                        border: '1px solid #86EFAC',
+                        background: feedbacks[msg.id] === 'just_right' ? '#DCFCE7' : '#F0FDF4',
+                        color: '#166534',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🟢 Just Right
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSendFeedback(msg.id, s?.topic || activeTopic, 'too_detailed')}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: 999,
+                        border: '1px solid #E5E7EB',
+                        background: feedbacks[msg.id] === 'too_detailed' ? '#E0F2FE' : '#FFFFFF',
+                        fontSize: '0.74rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🔵 Too Detailed
+                    </button>
+                  </div>
                 </div>
 
                 {/* Follow-up question chips */}
@@ -2209,6 +2601,20 @@ export const TutorPage: React.FC = () => {
           <Send size={18} />
         </button>
       </form>
+
+      {/* Adaptive Learning Profile Modal */}
+      <AdaptiveProfileModal
+        isOpen={showAdaptiveModal}
+        onClose={() => setShowAdaptiveModal(false)}
+        apiFetch={apiFetch}
+        onProfileUpdated={(updated) => {
+          if (updated.explanation_style) {
+            setExplanationLength(updated.explanation_style as any);
+          }
+          setActionToast('Adaptive learning preferences applied to AI Tutor!');
+          setTimeout(() => setActionToast(''), 3500);
+        }}
+      />
     </div>
   );
 };

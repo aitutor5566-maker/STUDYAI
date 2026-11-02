@@ -54,6 +54,25 @@ export function initDatabase() {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS student_adaptive_profiles (
+      user_id TEXT PRIMARY KEY,
+      difficult_subjects_json TEXT NOT NULL DEFAULT '[]',
+      difficult_topics_json TEXT NOT NULL DEFAULT '[]',
+      reading_difficulty INTEGER NOT NULL DEFAULT 0,
+      spelling_difficulty INTEGER NOT NULL DEFAULT 0,
+      writing_difficulty INTEGER NOT NULL DEFAULT 0,
+      vocabulary_difficulty INTEGER NOT NULL DEFAULT 0,
+      concept_difficulty INTEGER NOT NULL DEFAULT 0,
+      memory_difficulty INTEGER NOT NULL DEFAULT 0,
+      math_calculation_difficulty INTEGER NOT NULL DEFAULT 0,
+      explanation_style TEXT NOT NULL DEFAULT 'balanced',
+      preferred_learning_methods_json TEXT NOT NULL DEFAULT '["diagrams","examples"]',
+      topic_understanding_json TEXT NOT NULL DEFAULT '{}',
+      recent_feedback_json TEXT NOT NULL DEFAULT '[]',
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS study_goals (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
@@ -274,6 +293,62 @@ function seedInitialDataIfEmpty() {
     JSON.stringify(['Science', 'Maths', 'English']),
     1,
     0
+  );
+
+  // 2B. Student Adaptive Profiles
+  db.prepare(`
+    INSERT INTO student_adaptive_profiles (
+      user_id, difficult_subjects_json, difficult_topics_json,
+      reading_difficulty, spelling_difficulty, writing_difficulty, vocabulary_difficulty,
+      concept_difficulty, memory_difficulty, math_calculation_difficulty,
+      explanation_style, preferred_learning_methods_json, topic_understanding_json, recent_feedback_json, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    'student-vishwak',
+    JSON.stringify(['Maths', 'Physics']),
+    JSON.stringify(['Quadratic Equations', 'Chemical Bonding']),
+    0, // reading_difficulty
+    0, // spelling_difficulty
+    0, // writing_difficulty
+    1, // vocabulary_difficulty (prefers clear glossaries)
+    1, // concept_difficulty (benefits from visual 3D & diagrams)
+    0, // memory_difficulty
+    1, // math_calculation_difficulty
+    'balanced',
+    JSON.stringify(['diagrams', 'images', 'examples']),
+    JSON.stringify({
+      'Photosynthesis': { score: 92, status: 'mastered', assessedAt: iso(2) },
+      'Human Heart': { score: 88, status: 'mastered', assessedAt: iso(4) }
+    }),
+    JSON.stringify([
+      { topic: 'Photosynthesis', rating: 'just_right', date: iso(2) }
+    ]),
+    iso(1)
+  );
+
+  db.prepare(`
+    INSERT INTO student_adaptive_profiles (
+      user_id, difficult_subjects_json, difficult_topics_json,
+      reading_difficulty, spelling_difficulty, writing_difficulty, vocabulary_difficulty,
+      concept_difficulty, memory_difficulty, math_calculation_difficulty,
+      explanation_style, preferred_learning_methods_json, topic_understanding_json, recent_feedback_json, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    'student-new',
+    JSON.stringify(['Science', 'Maths']),
+    JSON.stringify([]),
+    1, // reading_difficulty (benefits from shorter sentences & audio)
+    1, // spelling_difficulty (gentle spelling guidance)
+    1, // writing_difficulty (answer structuring help)
+    1,
+    1,
+    1,
+    1,
+    'concise',
+    JSON.stringify(['audio', 'diagrams', 'examples']),
+    JSON.stringify({}),
+    JSON.stringify([]),
+    iso(1)
   );
 
   // 3. Study Goals

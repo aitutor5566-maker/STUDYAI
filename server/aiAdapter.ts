@@ -968,7 +968,22 @@ export async function generateEducationalImage(
   };
 }
 
-interface TutorRequestInput {
+export interface StudentAdaptiveProfile {
+  difficult_subjects?: string[];
+  difficult_topics?: string[];
+  reading_difficulty?: boolean;
+  spelling_difficulty?: boolean;
+  writing_difficulty?: boolean;
+  vocabulary_difficulty?: boolean;
+  concept_difficulty?: boolean;
+  memory_difficulty?: boolean;
+  math_calculation_difficulty?: boolean;
+  explanation_style?: 'concise' | 'balanced' | 'deep' | 'visual_first';
+  preferred_learning_methods?: string[];
+  topic_understanding?: Record<string, { score: number; status: string }>;
+}
+
+export interface TutorRequestInput {
   topic: string;
   question: string;
   mode: 'simple' | 'detailed';
@@ -978,6 +993,8 @@ interface TutorRequestInput {
   language?: string;
   history?: Array<{ role: string; content: string }>;
   attachmentSummary?: string;
+  explanationLength?: 'concise' | 'balanced' | 'deep';
+  adaptiveProfile?: StudentAdaptiveProfile;
   selectedVisualComponent?: {
     id: string;
     label: string;
@@ -986,13 +1003,83 @@ interface TutorRequestInput {
   };
 }
 
+const COMMON_ACADEMIC_SPELLINGS: Record<string, string> = {
+  fotosynthesis: 'photosynthesis',
+  photosynthisis: 'photosynthesis',
+  photosynthesys: 'photosynthesis',
+  respration: 'respiration',
+  resperation: 'respiration',
+  mitokondria: 'mitochondria',
+  mitocondria: 'mitochondria',
+  cloroplast: 'chloroplast',
+  chloroplst: 'chloroplast',
+  circut: 'circuit',
+  curcuit: 'circuit',
+  algebric: 'algebraic',
+  trigometry: 'trigonometry',
+  trignometry: 'trigonometry',
+  equasion: 'equation',
+  parabola: 'parabola',
+  parabala: 'parabola',
+  osmocis: 'osmosis',
+  chromosom: 'chromosome',
+  cromosome: 'chromosome',
+  neucleus: 'nucleus',
+  pythagorus: 'Pythagoras',
+  kinetik: 'kinetic',
+  chemicle: 'chemical',
+  fracton: 'fraction'
+};
+
+export function detectSpellingGuidance(query: string): { original: string; corrected: string; message: string } | null {
+  const words = query.toLowerCase().split(/[^a-z0-9]+/);
+  for (const w of words) {
+    if (COMMON_ACADEMIC_SPELLINGS[w]) {
+      const corrected = COMMON_ACADEMIC_SPELLINGS[w];
+      return {
+        original: w,
+        corrected,
+        message: `Friendly spelling note: "${corrected}" is spelled with '${corrected.slice(0, 3)}' — great effort asking this question!`
+      };
+    }
+  }
+  return null;
+}
+
 export async function generateTutorExplanation(input: TutorRequestInput): Promise<any> {
   const baseLesson = await generateTutorExplanationInner(input);
+  if (!baseLesson.spellingGuidance && detectSpellingGuidance(input.question)) {
+    baseLesson.spellingGuidance = detectSpellingGuidance(input.question);
+  }
+  if (!baseLesson.adaptiveProfile && input.adaptiveProfile) {
+    baseLesson.adaptiveProfile = input.adaptiveProfile;
+  }
+  if (!baseLesson.explanationLength) {
+    baseLesson.explanationLength = input.explanationLength || input.adaptiveProfile?.explanation_style || 'balanced';
+  }
   return enrichLessonWithRebuildStructure(baseLesson, generateScientificSvgDataUrl);
 }
 
 async function generateTutorExplanationInner(input: TutorRequestInput) {
   const cleanQuestion = input.question.trim();
+  const spellingGuidance = detectSpellingGuidance(cleanQuestion);
+  const isConcise = input.explanationLength === 'concise' || input.adaptiveProfile?.explanation_style === 'concise';
+  const isReadingDifficulty = Boolean(input.adaptiveProfile?.reading_difficulty);
+  const isWeakSubject = Boolean(
+    input.adaptiveProfile?.difficult_subjects?.some((s: string) => s.toLowerCase() === (input.subject || '').toLowerCase()) ||
+    input.adaptiveProfile?.difficult_topics?.some((t: string) => t.toLowerCase() === input.topic.toLowerCase())
+  );
+
+  let adaptiveDirective = '';
+  if (isConcise) {
+    adaptiveDirective += `\nCONCISE EXPLANATION ENGINE DIRECTIVE: Deliver a short, clear, meaning-preserving explanation without fluff or repetition (under 140 words). You MUST preserve 100% of the true scientific/academic meaning. Never simplify a definition so much that it becomes inaccurate.`;
+  }
+  if (isReadingDifficulty) {
+    adaptiveDirective += `\nREADING ACCESSIBILITY DIRECTIVE: Use shorter sentences (under 18 words), small paragraphs (2 sentences max), and define unfamiliar vocabulary clearly.`;
+  }
+  if (isWeakSubject) {
+    adaptiveDirective += `\nFOUNDATIONAL PREREQUISITE BRIDGE: The student finds this subject challenging. Clearly explain the foundational background concept first in simple terms before moving to advanced steps.`;
+  }
   // Resolve the true topic from the user's question so asking about a new topic never stays stuck on "Photosynthesis"
   const effectiveTopic = resolveQuestionTopic(cleanQuestion, input.topic);
   const subject = input.subject && input.subject !== 'Science' ? input.subject : inferSubjectFromTopic(effectiveTopic + ' ' + cleanQuestion);
@@ -1224,7 +1311,10 @@ ${visualComponentContext}${
               `Test me with a quiz on ${resolvedTopic}`
             ],
       providerMode: 'live_api',
-      providerName: llmResponse.providerUsed
+      providerName: llmResponse.providerUsed,
+      spellingGuidance,
+      adaptiveProfile: input.adaptiveProfile,
+      explanationLength: input.explanationLength || input.adaptiveProfile?.explanation_style || 'balanced'
     };
   }
 

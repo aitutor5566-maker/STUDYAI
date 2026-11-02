@@ -12,10 +12,13 @@ import {
   AlertOctagon,
   LogOut,
   ChevronRight,
-  CheckCircle2
+  CheckCircle2,
+  Sliders,
+  Brain
 } from 'lucide-react';
 import { TopBrandBar } from '../components/GlassNav';
 import { useLearning } from '../context/LearningContext';
+import { AdaptiveProfileModal } from '../components/AdaptiveProfileModal';
 
 export const ProfilePage: React.FC = () => {
   const { apiFetch, studentId, setStudentId, refreshTick, triggerRefresh } = useLearning();
@@ -40,6 +43,8 @@ export const ProfilePage: React.FC = () => {
   const [parentData, setParentData] = useState<any | null>(null);
   const [parentAuthError, setParentAuthError] = useState('');
   const [parentLoading, setParentLoading] = useState(false);
+  const [showAdaptiveModal, setShowAdaptiveModal] = useState<boolean>(false);
+  const [adaptiveProfile, setAdaptiveProfile] = useState<any | null>(null);
 
   useEffect(() => {
     apiFetch('/api/dashboard').then((data) => {
@@ -56,6 +61,14 @@ export const ProfilePage: React.FC = () => {
         setNotificationsOn(Boolean(data.preferences.notifications_enabled));
       }
     });
+
+    apiFetch('/api/tutor/adaptive-profile')
+      .then((data) => {
+        if (data?.adaptive_profile) {
+          setAdaptiveProfile(data.adaptive_profile);
+        }
+      })
+      .catch(() => {});
   }, [apiFetch, refreshTick, studentId]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -206,6 +219,85 @@ export const ProfilePage: React.FC = () => {
             </div>
           </form>
         )}
+      </section>
+
+      {/* Personalised Adaptive Learning Profile Card */}
+      <section
+        className="glass-card"
+        style={{
+          padding: 22,
+          marginBottom: 20,
+          background: 'linear-gradient(135deg, #FAF5FF 0%, #FFFFFF 100%)',
+          border: '1.5px solid rgba(124, 58, 237, 0.25)',
+          boxShadow: '0 4px 16px rgba(124, 58, 237, 0.06)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 14,
+                background: 'linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)',
+                color: '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(124, 58, 237, 0.25)'
+              }}
+            >
+              <Brain size={22} />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '1.08rem', fontWeight: 800, color: '#1F2937', margin: 0 }}>
+                Personalised Adaptive Learning Profile
+              </h2>
+              <p style={{ fontSize: '0.82rem', color: '#6B7280', margin: '2px 0 0' }}>
+                Helps your AI Tutor understand your weaknesses, preferred explanations, and reading pace
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowAdaptiveModal(true)}
+            style={{
+              padding: '9px 18px',
+              borderRadius: 999,
+              background: 'linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)',
+              color: '#FFFFFF',
+              border: 'none',
+              fontWeight: 800,
+              fontSize: '0.84rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              boxShadow: '0 4px 12px rgba(124, 58, 237, 0.25)'
+            }}
+          >
+            <Sliders size={16} />
+            <span>Customize Learning Profile</span>
+          </button>
+        </div>
+
+        {/* Profile Highlights Pills */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+          <span style={{ fontSize: '0.78rem', padding: '5px 12px', borderRadius: 999, background: '#EDE9FE', color: '#6D28D9', fontWeight: 700 }}>
+            ⚡ Style: {adaptiveProfile?.explanation_style ? String(adaptiveProfile.explanation_style).toUpperCase() : 'BALANCED'}
+          </span>
+          <span style={{ fontSize: '0.78rem', padding: '5px 12px', borderRadius: 999, background: adaptiveProfile?.reading_difficulty ? '#FEE2E2' : '#DCFCE7', color: adaptiveProfile?.reading_difficulty ? '#B91C1C' : '#15803D', fontWeight: 700 }}>
+            📖 Reading Accessibility: {adaptiveProfile?.reading_difficulty ? 'Short sentences & chunks' : 'Standard'}
+          </span>
+          <span style={{ fontSize: '0.78rem', padding: '5px 12px', borderRadius: 999, background: adaptiveProfile?.spelling_difficulty ? '#FEF3C7' : '#DCFCE7', color: adaptiveProfile?.spelling_difficulty ? '#B45309' : '#15803D', fontWeight: 700 }}>
+            ✍️ Spelling Support: {adaptiveProfile?.spelling_difficulty ? 'Gentle guidance' : 'Standard'}
+          </span>
+          {Array.isArray(adaptiveProfile?.difficult_subjects) && adaptiveProfile.difficult_subjects.length > 0 && (
+            <span style={{ fontSize: '0.78rem', padding: '5px 12px', borderRadius: 999, background: '#EFF6FF', color: '#1D4ED8', fontWeight: 700 }}>
+              🎯 Focused Subjects: {adaptiveProfile.difficult_subjects.join(', ')}
+            </span>
+          )}
+        </div>
       </section>
 
       <div className="dashboard-grid">
@@ -552,6 +644,18 @@ export const ProfilePage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Adaptive Profile Modal */}
+      <AdaptiveProfileModal
+        isOpen={showAdaptiveModal}
+        onClose={() => setShowAdaptiveModal(false)}
+        apiFetch={apiFetch}
+        onProfileUpdated={(updated) => {
+          setAdaptiveProfile(updated);
+          setSaveBanner('Adaptive learning profile updated!');
+          setTimeout(() => setSaveBanner(''), 3000);
+        }}
+      />
     </div>
   );
 };
