@@ -13,7 +13,7 @@
 [![Three.js](https://img.shields.io/badge/Three.js-0.170.0-black?logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Auth_%26_RLS-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
-[![License](https://img.shields.io/badge/License-Proprietary-FF6A00)](#license)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests Passing](https://img.shields.io/badge/Tests-34%2F34%20Passing-brightgreen)](tests/)
 
 **Core Product Principle:** `One Topic → One Complete Learning Journey`
@@ -686,6 +686,8 @@ npm test
 
 ## License
 
-This software and its associated documentation files are the proprietary, confidential property of the **STUDYAI Learning Ecosystem**. Unauthorized copying, modification, redistribution, or deployment is strictly prohibited.
+This project is licensed under the open-source **MIT License** — see the [LICENSE](LICENSE) file for complete details.
 
-© 2026 STUDYAI. All Rights Reserved.
+You are free to use, modify, distribute, and contribute to this educational ecosystem.
+
+© 2026 aitutor5566-maker / STUDYAI Contributors. Open source under the MIT License.
