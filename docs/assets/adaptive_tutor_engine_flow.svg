@@ -1,0 +1,265 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" width="1200" height="680" style="background:#0B1120; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A855F7"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6A00"/>
+      <stop offset="100%" stop-color="#EA580C"/>
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ADE80"/>
+      <stop offset="100%" stop-color="#16A34A"/>
+    </linearGradient>
+    <linearGradient id="cardBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.95"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="1200" height="680" fill="url(#bgGrad)"/>
+  <circle cx="200" cy="100" r="150" fill="#7C3AED" opacity="0.08" filter="url(#glow)"/>
+  <circle cx="1000" cy="500" r="180" fill="#0284C7" opacity="0.08" filter="url(#glow)"/>
+  <circle cx="600" cy="300" r="220" fill="#FF6A00" opacity="0.05" filter="url(#glow)"/>
+
+  <!-- Top Title Banner -->
+  <g transform="translate(600, 48)" text-anchor="middle">
+    <rect x="-340" y="-24" width="680" height="48" rx="24" fill="#1E293B" stroke="rgba(168,85,247,0.4)" stroke-width="1.5" filter="url(#shadow)"/>
+    <text y="7" fill="#F8FAFC" font-size="18" font-weight="800" letter-spacing="1">STUDYAI • ULTIMATE ADAPTIVE AI TUTOR ARCHITECTURE</text>
+  </g>
+
+  <!-- 1. Left Column: Student Weakness & Learning Profile Input -->
+  <g transform="translate(40, 100)">
+    <rect width="250" height="540" rx="18" fill="url(#cardBg)" stroke="rgba(168,85,247,0.35)" stroke-width="1.5" filter="url(#shadow)"/>
+    
+    <rect x="20" y="20" width="210" height="34" rx="10" fill="url(#purpleGrad)"/>
+    <text x="125" y="42" fill="#FFFFFF" font-size="12" font-weight="800" text-anchor="middle" letter-spacing="0.5">1. STUDENT LEARNING PROFILE</text>
+
+    <!-- Weakness Categories -->
+    <g transform="translate(20, 75)">
+      <!-- Item 1 -->
+      <rect width="210" height="48" rx="10" fill="#0F172A" stroke="#334155"/>
+      <text x="14" y="20" fill="#E2E8F0" font-size="12" font-weight="700">📖 Reading Difficulties</text>
+      <text x="14" y="36" fill="#94A3B8" font-size="10">Auto-chunks text, simpler sentences</text>
+
+      <!-- Item 2 -->
+      <rect y="56" width="210" height="48" rx="10" fill="#0F172A" stroke="#334155"/>
+      <text x="14" y="76" fill="#E2E8F0" font-size="12" font-weight="700">✍️ Spelling &amp; Vocabulary</text>
+      <text x="14" y="92" fill="#94A3B8" font-size="10">Gentle spelling notes, clear glossaries</text>
+
+      <!-- Item 3 -->
+      <rect y="112" width="210" height="48" rx="10" fill="#0F172A" stroke="#334155"/>
+      <text x="14" y="132" fill="#E2E8F0" font-size="12" font-weight="700">🎯 Difficult Subjects &amp; Topics</text>
+      <text x="14" y="148" fill="#94A3B8" font-size="10">Auto-triggers prerequisite bridge</text>
+
+      <!-- Item 4 -->
+      <rect y="168" width="210" height="48" rx="10" fill="#0F172A" stroke="#334155"/>
+      <text x="14" y="188" fill="#E2E8F0" font-size="12" font-weight="700">🧠 Concept &amp; Memory</text>
+      <text x="14" y="204" fill="#94A3B8" font-size="10">Visual 3D first &amp; mnemonic hooks</text>
+
+      <!-- Item 5 -->
+      <rect y="224" width="210" height="48" rx="10" fill="#0F172A" stroke="#334155"/>
+      <text x="14" y="244" fill="#E2E8F0" font-size="12" font-weight="700">📐 Math Calculations</text>
+      <text x="14" y="260" fill="#94A3B8" font-size="10">Interactive SVG parabolic plots</text>
+
+      <!-- Depth Selector Badge -->
+      <rect y="284" width="210" height="80" rx="10" fill="rgba(255,106,0,0.08)" stroke="rgba(255,106,0,0.3)"/>
+      <text x="14" y="304" fill="#FF8C38" font-size="11" font-weight="800">EXPLANATION DEPTH CONTROLS</text>
+      <rect x="14" y="314" width="56" height="24" rx="6" fill="#FF6A00"/>
+      <text x="42" y="330" fill="#FFFFFF" font-size="10" font-weight="700" text-anchor="middle">Concise</text>
+      <rect x="76" y="314" width="56" height="24" rx="6" fill="#334155"/>
+      <text x="104" y="330" fill="#CBD5E1" font-size="10" font-weight="700" text-anchor="middle">Balanced</text>
+      <rect x="138" y="314" width="58" height="24" rx="6" fill="#334155"/>
+      <text x="167" y="330" fill="#CBD5E1" font-size="10" font-weight="700" text-anchor="middle">Detailed</text>
+      <text x="14" y="354" fill="#94A3B8" font-size="9">Preserves 100% scientific meaning</text>
+
+      <!-- Persistence pill -->
+      <rect y="376" width="210" height="50" rx="10" fill="#0F172A" stroke="rgba(56,189,248,0.3)"/>
+      <text x="14" y="396" fill="#38BDF8" font-size="11" font-weight="800">DATABASE SYNC &amp; RLS</text>
+      <text x="14" y="412" fill="#94A3B8" font-size="10">SQLite + Supabase 009 Migration</text>
+    </g>
+  </g>
+
+  <!-- Flow Arrow 1 -->
+  <path d="M 300 370 L 335 370" stroke="#A855F7" stroke-width="3" stroke-dasharray="6,4" marker-end="url(#arrowPurple)"/>
+
+  <!-- 2. Middle Column: Adaptive Teaching Engine Directives -->
+  <g transform="translate(345, 100)">
+    <rect width="270" height="540" rx="18" fill="url(#cardBg)" stroke="rgba(255,106,0,0.35)" stroke-width="1.5" filter="url(#shadow)"/>
+
+    <rect x="20" y="20" width="230" height="34" rx="10" fill="url(#orangeGrad)"/>
+    <text x="135" y="42" fill="#FFFFFF" font-size="12" font-weight="800" text-anchor="middle" letter-spacing="0.5">2. ADAPTIVE TEACHING ENGINE</text>
+
+    <g transform="translate(20, 75)">
+      <!-- Step 1: Spelling Engine -->
+      <rect width="230" height="74" rx="10" fill="#0F172A" stroke="#334155"/>
+      <text x="14" y="22" fill="#60A5FA" font-size="12" font-weight="800">Supportive Spelling Guidance</text>
+      <text x="14" y="38" fill="#CBD5E1" font-size="10">Query: "fotosynthesis" / "respration"</text>
+      <rect x="14" y="46" width="202" height="20" rx="5" fill="#1E3A8A"/>
+      <text x="22" y="60" fill="#93C5FD" font-size="9" font-weight="700">Gentle: "photosynthesis" (No shaming!)</text>
+
+      <!-- Step 2: Prerequisite Bridging -->
+      <rect y="84" width="230" height="74" rx="10" fill="#0F172A" stroke="#334155"/>
+      <text x="14" y="106" fill="#4ADE80" font-size="12" font-weight="800">Foundational Prerequisite Bridge</text>
+      <text x="14" y="122" fill="#CBD5E1" font-size="10">Triggers on Maths/Physics weaknesses</text>
+      <rect x="14" y="130" width="202" height="20" rx="5" fill="#14532D"/>
+      <text x="22" y="144" fill="#86EFAC" font-size="9" font-weight="700">Bridges core foundations before formulas</text>
+
+      <!-- Step 3: Writing & Structure Guide -->
+      <rect y="168" width="230" height="74" rx="10" fill="#0F172A" stroke="#334155"/>
+      <text x="14" y="190" fill="#FBBF24" font-size="12" font-weight="800">Writing Answer Structuring</text>
+      <text x="14" y="206" fill="#CBD5E1" font-size="10">Step-by-step examination scaffolding</text>
+      <rect x="14" y="214" width="202" height="20" rx="5" fill="#78350F"/>
+      <text x="22" y="228" fill="#FDE68A" font-size="9" font-weight="700">Sentence starters: "First...", "Therefore..."</text>
+
+      <!-- Step 4: Memory Hooks & Mnemonics -->
+      <rect y="252" width="230" height="74" rx="10" fill="#0F172A" stroke="#334155"/>
+      <text x="14" y="274" fill="#C084FC" font-size="12" font-weight="800">Memory Hooks &amp; Mnemonics</text>
+      <text x="14" y="290" fill="#CBD5E1" font-size="10">Active recall hooks &amp; memory rhymes</text>
+      <rect x="14" y="298" width="202" height="20" rx="5" fill="#581C87"/>
+      <text x="22" y="312" fill="#E9D5FF" font-size="9" font-weight="700">High-yield revision takeaways</text>
+
+      <!-- Step 5: Visual Intelligence -->
+      <rect y="336" width="230" height="96" rx="10" fill="#0F172A" stroke="rgba(255,106,0,0.3)"/>
+      <text x="14" y="358" fill="#FF8C38" font-size="12" font-weight="800">Multimodal Visual Pipeline</text>
+      <text x="14" y="374" fill="#94A3B8" font-size="10">• Topic-specific scientific diagrams</text>
+      <text x="14" y="390" fill="#94A3B8" font-size="10">• 60fps Three.js WebGL 3D models</text>
+      <text x="14" y="406" fill="#94A3B8" font-size="10">• Parabola SVG interactive solvers</text>
+      <text x="14" y="422" fill="#94A3B8" font-size="10">• Natural speech voice narration</text>
+    </g>
+  </g>
+
+  <!-- Flow Arrow 2 -->
+  <path d="M 625 370 L 660 370" stroke="#FF6A00" stroke-width="3" stroke-dasharray="6,4"/>
+
+  <!-- 3. Third Column: Standard 8-Part Explanation Format -->
+  <g transform="translate(670, 100)">
+    <rect width="250" height="540" rx="18" fill="url(#cardBg)" stroke="rgba(56,189,248,0.35)" stroke-width="1.5" filter="url(#shadow)"/>
+
+    <rect x="20" y="20" width="210" height="34" rx="10" fill="url(#cyanGrad)"/>
+    <text x="125" y="42" fill="#FFFFFF" font-size="12" font-weight="800" text-anchor="middle" letter-spacing="0.5">3. 8-PART STANDARD FORMAT</text>
+
+    <g transform="translate(20, 70)">
+      <!-- 8-part steps -->
+      <g transform="translate(0, 0)">
+        <circle cx="12" cy="12" r="10" fill="#0284C7"/>
+        <text x="12" y="16" fill="#FFFFFF" font-size="10" font-weight="800" text-anchor="middle">1</text>
+        <text x="30" y="16" fill="#E2E8F0" font-size="11" font-weight="700">Topic Title &amp; Subject Badge</text>
+      </g>
+      <g transform="translate(0, 36)">
+        <circle cx="12" cy="12" r="10" fill="#0284C7"/>
+        <text x="12" y="16" fill="#FFFFFF" font-size="10" font-weight="800" text-anchor="middle">2</text>
+        <text x="30" y="16" fill="#E2E8F0" font-size="11" font-weight="700">Simple Everyday Definition</text>
+      </g>
+      <g transform="translate(0, 72)">
+        <circle cx="12" cy="12" r="10" fill="#0284C7"/>
+        <text x="12" y="16" fill="#FFFFFF" font-size="10" font-weight="800" text-anchor="middle">3</text>
+        <text x="30" y="16" fill="#E2E8F0" font-size="11" font-weight="700">How / Why It Works (Steps)</text>
+      </g>
+      <g transform="translate(0, 108)">
+        <circle cx="12" cy="12" r="10" fill="#0284C7"/>
+        <text x="12" y="16" fill="#FFFFFF" font-size="10" font-weight="800" text-anchor="middle">4</text>
+        <text x="30" y="16" fill="#E2E8F0" font-size="11" font-weight="700">Integrated Image or 3D Model</text>
+      </g>
+      <g transform="translate(0, 144)">
+        <circle cx="12" cy="12" r="10" fill="#0284C7"/>
+        <text x="12" y="16" fill="#FFFFFF" font-size="10" font-weight="800" text-anchor="middle">5</text>
+        <text x="30" y="16" fill="#E2E8F0" font-size="11" font-weight="700">Important Terms &amp; Definitions</text>
+      </g>
+      <g transform="translate(0, 180)">
+        <circle cx="12" cy="12" r="10" fill="#0284C7"/>
+        <text x="12" y="16" fill="#FFFFFF" font-size="10" font-weight="800" text-anchor="middle">6</text>
+        <text x="30" y="16" fill="#E2E8F0" font-size="11" font-weight="700">Meaningful Practical Example</text>
+      </g>
+      <g transform="translate(0, 216)">
+        <circle cx="12" cy="12" r="10" fill="#0284C7"/>
+        <text x="12" y="16" fill="#FFFFFF" font-size="10" font-weight="800" text-anchor="middle">7</text>
+        <text x="30" y="16" fill="#E2E8F0" font-size="11" font-weight="700">Short Summary &amp; Takeaways</text>
+      </g>
+      <g transform="translate(0, 252)">
+        <circle cx="12" cy="12" r="10" fill="#16A34A"/>
+        <text x="12" y="16" fill="#FFFFFF" font-size="10" font-weight="800" text-anchor="middle">8</text>
+        <text x="30" y="16" fill="#4ADE80" font-size="11" font-weight="800">Understanding-Check Question</text>
+      </g>
+
+      <!-- Understanding check interactive card -->
+      <rect y="286" width="210" height="150" rx="10" fill="#0F172A" stroke="rgba(34,197,94,0.4)"/>
+      <text x="12" y="306" fill="#4ADE80" font-size="11" font-weight="800">INTERACTIVE SELF-TEST</text>
+      <rect x="12" y="316" width="186" height="22" rx="5" fill="#1E293B" stroke="#334155"/>
+      <text x="20" y="331" fill="#E2E8F0" font-size="9">Option A: Correct mechanism</text>
+      <rect x="12" y="342" width="186" height="22" rx="5" fill="#1E293B" stroke="#334155"/>
+      <text x="20" y="357" fill="#E2E8F0" font-size="9">Option B: Plausible distractor</text>
+      
+      <rect x="12" y="372" width="186" height="50" rx="6" fill="#14532D" stroke="#22C55E"/>
+      <text x="20" y="390" fill="#86EFAC" font-size="10" font-weight="800">Instant Real-Time Evaluation:</text>
+      <text x="20" y="404" fill="#DCFCE7" font-size="9">• Correct: +100 score &amp; positive reinforcement</text>
+      <text x="20" y="416" fill="#DCFCE7" font-size="9">• Incorrect: Gentle non-shaming clarification</text>
+    </g>
+  </g>
+
+  <!-- Flow Arrow 3 -->
+  <path d="M 930 370 L 965 370" stroke="#38BDF8" stroke-width="3" stroke-dasharray="6,4"/>
+
+  <!-- 4. Fourth Column: Action & Feedback Loop -->
+  <g transform="translate(975, 100)">
+    <rect width="185" height="540" rx="18" fill="url(#cardBg)" stroke="rgba(74,222,128,0.35)" stroke-width="1.5" filter="url(#shadow)"/>
+
+    <rect x="15" y="20" width="155" height="34" rx="10" fill="url(#greenGrad)"/>
+    <text x="92" y="42" fill="#FFFFFF" font-size="12" font-weight="800" text-anchor="middle" letter-spacing="0.5">4. ACTION &amp; REINFORCE</text>
+
+    <g transform="translate(15, 75)">
+      <!-- Direct Game Launch -->
+      <rect width="155" height="100" rx="10" fill="url(#purpleGrad)" stroke="rgba(255,255,255,0.2)"/>
+      <text x="77" y="24" fill="#FFFFFF" font-size="12" font-weight="800" text-anchor="middle">🎮 DIRECT GAME</text>
+      <text x="77" y="40" fill="#E9D5FF" font-size="10" text-anchor="middle">Topic &amp; Subject Preserved</text>
+      <rect x="12" y="48" width="131" height="40" rx="6" fill="rgba(0,0,0,0.3)"/>
+      <text x="77" y="64" fill="#FFFFFF" font-size="9" font-weight="700" text-anchor="middle">🚀 Space Battle</text>
+      <text x="77" y="78" fill="#FFFFFF" font-size="9" font-weight="700" text-anchor="middle">⚔️ Concept Duel • 🏃 Runner</text>
+
+      <!-- 40-Mark Mock Test -->
+      <rect y="112" width="155" height="74" rx="10" fill="#0F172A" stroke="#0284C7"/>
+      <text x="12" y="132" fill="#38BDF8" font-size="11" font-weight="800">📝 40-Mark Mock Test</text>
+      <text x="12" y="148" fill="#94A3B8" font-size="9">Timed exam practice with</text>
+      <text x="12" y="160" fill="#94A3B8" font-size="9">Options 1, 2 &amp; 3 structures</text>
+      <text x="12" y="174" fill="#38BDF8" font-size="9" font-weight="700">Strict 40-mark validation</text>
+
+      <!-- Dynamic Feedback Rating -->
+      <rect y="198" width="155" height="110" rx="10" fill="#0F172A" stroke="#E2E8F0"/>
+      <text x="12" y="218" fill="#F8FAFC" font-size="11" font-weight="800">Dynamic Feedback</text>
+      <text x="12" y="232" fill="#94A3B8" font-size="9">Adapts future tone &amp; depth</text>
+      <rect x="12" y="240" width="131" height="18" rx="4" fill="#334155"/>
+      <text x="77" y="253" fill="#FEF08A" font-size="9" font-weight="700" text-anchor="middle">🟡 Too Simple</text>
+      <rect x="12" y="262" width="131" height="18" rx="4" fill="#14532D"/>
+      <text x="77" y="275" fill="#86EFAC" font-size="9" font-weight="700" text-anchor="middle">🟢 Just Right</text>
+      <rect x="12" y="284" width="131" height="18" rx="4" fill="#334155"/>
+      <text x="77" y="297" fill="#BAE6FD" font-size="9" font-weight="700" text-anchor="middle">🔵 Too Detailed</text>
+
+      <!-- Progress Tracking -->
+      <rect y="320" width="155" height="120" rx="10" fill="#0F172A" stroke="rgba(74,222,128,0.3)"/>
+      <text x="12" y="340" fill="#4ADE80" font-size="11" font-weight="800">Mastery Progression</text>
+      <text x="12" y="356" fill="#94A3B8" font-size="9">No permanent negative tags</text>
+      <rect x="12" y="366" width="131" height="8" rx="4" fill="#1E293B"/>
+      <rect x="12" y="366" width="112" height="8" rx="4" fill="#22C55E"/>
+      <text x="12" y="390" fill="#CBD5E1" font-size="9">• Learning: 0-60%</text>
+      <text x="12" y="404" fill="#CBD5E1" font-size="9">• Practicing: 61-84%</text>
+      <text x="12" y="418" fill="#4ADE80" font-size="9" font-weight="700">• Mastered: 85-100%</text>
+    </g>
+  </g>
+</svg>

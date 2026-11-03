@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 580" width="1100" height="580" style="background:#0F172A; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#EC4899"/>
+    </linearGradient>
+    <linearGradient id="tileDark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <filter id="tileShadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Title Badge -->
+  <g transform="translate(550, 42)" text-anchor="middle">
+    <rect x="-300" y="-22" width="600" height="44" rx="22" fill="#1E293B" stroke="rgba(139,92,246,0.4)" stroke-width="1.5"/>
+    <text y="6" fill="#F8FAFC" font-size="16" font-weight="800" letter-spacing="0.8">STUDENT LEARNING WEAKNESS &amp; ADAPTATION MATRIX</text>
+  </g>
+
+  <!-- Subtitle -->
+  <text x="550" y="86" fill="#94A3B8" font-size="12" text-anchor="middle">
+    Ethical AI Tutoring: Empowers comprehension through tailored scaffolding — Never diagnoses medical conditions or stigmatizes students
+  </text>
+
+  <!-- 3x3 Grid of Student Weaknesses and Adaptations -->
+  <!-- Row 1 -->
+  <!-- 1. Reading Difficulty -->
+  <g transform="translate(50, 110)">
+    <rect width="310" height="125" rx="14" fill="url(#tileDark)" stroke="#38BDF8" stroke-width="1.5" filter="url(#tileShadow)"/>
+    <circle cx="28" cy="28" r="14" fill="#0284C7"/>
+    <text x="28" y="33" fill="#FFFFFF" font-size="14" text-anchor="middle">📖</text>
+    <text x="52" y="26" fill="#F0F9FF" font-size="13" font-weight="800">Reading Accessibility</text>
+    <text x="52" y="42" fill="#38BDF8" font-size="10" font-weight="600">Cognitive Load Reduction</text>
+    <line x1="16" y1="56" x2="294" y2="56" stroke="#334155"/>
+    <text x="16" y="74" fill="#E2E8F0" font-size="11" font-weight="600">Adaptation Engine Action:</text>
+    <text x="16" y="90" fill="#94A3B8" font-size="10">• Shortens sentences to under 18 words</text>
+    <text x="16" y="104" fill="#94A3B8" font-size="10">• Breaks paragraphs into 2-sentence micro-chunks</text>
+    <text x="16" y="118" fill="#94A3B8" font-size="10">• Offers instant natural voice audio accompaniment</text>
+  </g>
+
+  <!-- 2. Spelling Difficulty -->
+  <g transform="translate(395, 110)">
+    <rect width="310" height="125" rx="14" fill="url(#tileDark)" stroke="#A855F7" stroke-width="1.5" filter="url(#tileShadow)"/>
+    <circle cx="28" cy="28" r="14" fill="#7C3AED"/>
+    <text x="28" y="33" fill="#FFFFFF" font-size="14" text-anchor="middle">✍️</text>
+    <text x="52" y="26" fill="#FAF5FF" font-size="13" font-weight="800">Spelling Support</text>
+    <text x="52" y="42" fill="#C084FC" font-size="10" font-weight="600">Zero-Shame Corrections</text>
+    <line x1="16" y1="56" x2="294" y2="56" stroke="#334155"/>
+    <text x="16" y="74" fill="#E2E8F0" font-size="11" font-weight="600">Adaptation Engine Action:</text>
+    <text x="16" y="90" fill="#94A3B8" font-size="10">• Detects academic phonetic typos automatically</text>
+    <text x="16" y="104" fill="#94A3B8" font-size="10">• Displays gentle, supportive notes with root spelling</text>
+    <text x="16" y="118" fill="#94A3B8" font-size="10">• Praises curiosity without deducting marks for errors</text>
+  </g>
+
+  <!-- 3. Writing Difficulty -->
+  <g transform="translate(740, 110)">
+    <rect width="310" height="125" rx="14" fill="url(#tileDark)" stroke="#F59E0B" stroke-width="1.5" filter="url(#tileShadow)"/>
+    <circle cx="28" cy="28" r="14" fill="#D97706"/>
+    <text x="28" y="33" fill="#FFFFFF" font-size="14" text-anchor="middle">📝</text>
+    <text x="52" y="26" fill="#FFFBEB" font-size="13" font-weight="800">Writing Scaffolding</text>
+    <text x="52" y="42" fill="#FBBF24" font-size="10" font-weight="600">Examination Answer Architecture</text>
+    <line x1="16" y1="56" x2="294" y2="56" stroke="#334155"/>
+    <text x="16" y="74" fill="#E2E8F0" font-size="11" font-weight="600">Adaptation Engine Action:</text>
+    <text x="16" y="90" fill="#94A3B8" font-size="10">• Provides bulleted answer frames &amp; sentence starters</text>
+    <text x="16" y="104" fill="#94A3B8" font-size="10">• Models high-scoring CBSE/ICSE answer patterns</text>
+    <text x="16" y="118" fill="#94A3B8" font-size="10">• Breaks descriptive long questions into distinct points</text>
+  </g>
+
+  <!-- Row 2 -->
+  <!-- 4. Vocabulary Difficulty -->
+  <g transform="translate(50, 255)">
+    <rect width="310" height="125" rx="14" fill="url(#tileDark)" stroke="#10B981" stroke-width="1.5" filter="url(#tileShadow)"/>
+    <circle cx="28" cy="28" r="14" fill="#059669"/>
+    <text x="28" y="33" fill="#FFFFFF" font-size="14" text-anchor="middle">📚</text>
+    <text x="52" y="26" fill="#ECFDF5" font-size="13" font-weight="800">Vocabulary &amp; Terminology</text>
+    <text x="52" y="42" fill="#34D399" font-size="10" font-weight="600">Full Forms &amp; Context Glossaries</text>
+    <line x1="16" y1="56" x2="294" y2="56" stroke="#334155"/>
+    <text x="16" y="74" fill="#E2E8F0" font-size="11" font-weight="600">Adaptation Engine Action:</text>
+    <text x="16" y="90" fill="#94A3B8" font-size="10">• Auto-expands abbreviations (DNA, ATP, mRNA, etc.)</text>
+    <text x="16" y="104" fill="#94A3B8" font-size="10">• Provides separate everyday vs formal definitions</text>
+    <text x="16" y="118" fill="#94A3B8" font-size="10">• Contextualizes key scientific and mathematical words</text>
+  </g>
+
+  <!-- 5. Difficult Subjects / Prerequisite Gap -->
+  <g transform="translate(395, 255)">
+    <rect width="310" height="125" rx="14" fill="url(#tileDark)" stroke="#EF4444" stroke-width="1.5" filter="url(#tileShadow)"/>
+    <circle cx="28" cy="28" r="14" fill="#DC2626"/>
+    <text x="28" y="33" fill="#FFFFFF" font-size="14" text-anchor="middle">🌱</text>
+    <text x="52" y="26" fill="#FEF2F2" font-size="13" font-weight="800">Difficult Subject Bridging</text>
+    <text x="52" y="42" fill="#F87171" font-size="10" font-weight="600">Foundational Prerequisite Scaffolding</text>
+    <line x1="16" y1="56" x2="294" y2="56" stroke="#334155"/>
+    <text x="16" y="74" fill="#E2E8F0" font-size="11" font-weight="600">Adaptation Engine Action:</text>
+    <text x="16" y="90" fill="#94A3B8" font-size="10">• Detects subject weak-spots (e.g. Maths, Physics)</text>
+    <text x="16" y="104" fill="#94A3B8" font-size="10">• Explains underlying prerequisite principle first</text>
+    <text x="16" y="118" fill="#94A3B8" font-size="10">• Connects foundational concept before complex formulas</text>
+  </g>
+
+  <!-- 6. Concept Comprehension -->
+  <g transform="translate(740, 255)">
+    <rect width="310" height="125" rx="14" fill="url(#tileDark)" stroke="#6366F1" stroke-width="1.5" filter="url(#tileShadow)"/>
+    <circle cx="28" cy="28" r="14" fill="#4F46E5"/>
+    <text x="28" y="33" fill="#FFFFFF" font-size="14" text-anchor="middle">💡</text>
+    <text x="52" y="26" fill="#EEF2FF" font-size="13" font-weight="800">Conceptual Clarity</text>
+    <text x="52" y="42" fill="#818CF8" font-size="10" font-weight="600">3D Simulation &amp; Real Analogies</text>
+    <line x1="16" y1="56" x2="294" y2="56" stroke="#334155"/>
+    <text x="16" y="74" fill="#E2E8F0" font-size="11" font-weight="600">Adaptation Engine Action:</text>
+    <text x="16" y="90" fill="#94A3B8" font-size="10">• Triggers interactive Three.js 3D spatial models</text>
+    <text x="16" y="104" fill="#94A3B8" font-size="10">• Builds relatable real-world analogies first</text>
+    <text x="16" y="118" fill="#94A3B8" font-size="10">• Uses labeled cause-and-effect flow diagrams</text>
+  </g>
+
+  <!-- Row 3 -->
+  <!-- 7. Memory & Revision -->
+  <g transform="translate(50, 400)">
+    <rect width="310" height="125" rx="14" fill="url(#tileDark)" stroke="#EC4899" stroke-width="1.5" filter="url(#tileShadow)"/>
+    <circle cx="28" cy="28" r="14" fill="#DB2777"/>
+    <text x="28" y="33" fill="#FFFFFF" font-size="14" text-anchor="middle">🧠</text>
+    <text x="52" y="26" fill="#FDF2F8" font-size="13" font-weight="800">Memory &amp; Retention</text>
+    <text x="52" y="42" fill="#F472B6" font-size="10" font-weight="600">Mnemonics &amp; Spaced Recall</text>
+    <line x1="16" y1="56" x2="294" y2="56" stroke="#334155"/>
+    <text x="16" y="74" fill="#E2E8F0" font-size="11" font-weight="600">Adaptation Engine Action:</text>
+    <text x="16" y="90" fill="#94A3B8" font-size="10">• Formulates topic-specific memorable mnemonics</text>
+    <text x="16" y="104" fill="#94A3B8" font-size="10">• Highlights key takeaways and exam flashpoints</text>
+    <text x="16" y="118" fill="#94A3B8" font-size="10">• Generates quick revision bullet-points for quick review</text>
+  </g>
+
+  <!-- 8. Mathematics Calculation -->
+  <g transform="translate(395, 400)">
+    <rect width="310" height="125" rx="14" fill="url(#tileDark)" stroke="#14B8A6" stroke-width="1.5" filter="url(#tileShadow)"/>
+    <circle cx="28" cy="28" r="14" fill="#0D9488"/>
+    <text x="28" y="33" fill="#FFFFFF" font-size="14" text-anchor="middle">📐</text>
+    <text x="52" y="26" fill="#F0FDFA" font-size="13" font-weight="800">Calculation Confidence</text>
+    <text x="52" y="42" fill="#2DD4BF" font-size="10" font-weight="600">Visual Math Solvers &amp; Plots</text>
+    <line x1="16" y1="56" x2="294" y2="56" stroke="#334155"/>
+    <text x="16" y="74" fill="#E2E8F0" font-size="11" font-weight="600">Adaptation Engine Action:</text>
+    <text x="16" y="90" fill="#94A3B8" font-size="10">• Visualizes quadratic curves with live SVG coefficient sliders</text>
+    <text x="16" y="104" fill="#94A3B8" font-size="10">• Explains step-by-step formula derivations</text>
+    <text x="16" y="118" fill="#94A3B8" font-size="10">• Connects equations directly to geometric shapes</text>
+  </g>
+
+  <!-- 9. Continuous Improvement -->
+  <g transform="translate(740, 400)">
+    <rect width="310" height="125" rx="14" fill="url(#tileDark)" stroke="#84CC16" stroke-width="1.5" filter="url(#tileShadow)"/>
+    <circle cx="28" cy="28" r="14" fill="#65A30D"/>
+    <text x="28" y="33" fill="#FFFFFF" font-size="14" text-anchor="middle">🔄</text>
+    <text x="52" y="26" fill="#F7FEE7" font-size="13" font-weight="800">Continuous Mastery Loop</text>
+    <text x="52" y="42" fill="#A3E635" font-size="10" font-weight="600">Non-Punitive Dynamic Growth</text>
+    <line x1="16" y1="56" x2="294" y2="56" stroke="#334155"/>
+    <text x="16" y="74" fill="#E2E8F0" font-size="11" font-weight="600">Adaptation Engine Action:</text>
+    <text x="16" y="90" fill="#94A3B8" font-size="10">• Adapts tone from student ratings (Too Simple / Just Right)</text>
+    <text x="16" y="104" fill="#94A3B8" font-size="10">• Interactive Understanding Check updates topic status</text>
+    <text x="16" y="118" fill="#94A3B8" font-size="10">• Never locks student into permanent low-ability labels</text>
+  </g>
+
+  <!-- Bottom Ethical Banner -->
+  <g transform="translate(550, 552)" text-anchor="middle">
+    <text fill="#64748B" font-size="11">
+      ⚡ Built-in Ethical Guardrails: Profile is 100% editable by the student at any time • Skip questions freely • Fully secured under Supabase Row-Level Security
+    </text>
+  </g>
+</svg>
