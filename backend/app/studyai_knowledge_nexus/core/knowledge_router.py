@@ -6,6 +6,9 @@ from backend.app.studyai_knowledge_nexus.core.ai_gateway import ai_gateway
 from backend.app.studyai_knowledge_nexus.core.hallucination_guard import hallucination_guard
 from backend.app.studyai_knowledge_nexus.core.subject_classifier import subject_classifier
 from backend.app.studyai_knowledge_nexus.core.teaching_orchestrator import teaching_orchestrator
+from backend.app.studyai_knowledge_nexus.core.grade_controller import grade_controller
+from backend.app.studyai_knowledge_nexus.core.adaptation_engine import adaptation_engine
+from backend.app.studyai_knowledge_nexus.core.adaptive_memory import adaptive_memory
 from backend.app.studyai_knowledge_nexus.curriculum.icse_database import icse_db
 from backend.app.studyai_knowledge_nexus.subjects.mathematics_engine import math_engine
 from backend.app.studyai_knowledge_nexus.subjects.history_engine import history_engine
@@ -23,12 +26,13 @@ logger = logging.getLogger("knowledge_nexus.router")
 
 class KnowledgeNexusRouter:
     """
-    Central Coordinator for the STUDYAI Knowledge Nexus.
-    Dispatches queries across the 4 Knowledge Collections:
-    1. Curriculum Knowledge (ICSE Database)
-    2. Extended Educational Knowledge (Specialized Subject Engines)
-    3. Student-Provided Knowledge (Document Ingestion & Multimodal Vision)
-    4. Verified Research Knowledge (Google Search, Grok, Telegram)
+    Central Coordinator for STUDYAI Knowledge Nexus.
+    Orchestrates Grade-Aware and Student-Adaptive teaching intelligence:
+    - Never serves uniform explanation depth to different grades.
+    - Tailors academic concept selection, vocabulary, and sentence structure strictly to student grade.
+    - Combines independent pedagogical adapters for multiple simultaneous learning difficulties.
+    - Filters external research to grade-appropriate benchmarks.
+    - Tracks empirical student learning memory.
     """
 
     async def process_learning_query(
@@ -40,8 +44,10 @@ class KnowledgeNexusRouter:
         language: str = "English",
         profile: Optional[Dict[str, Any]] = None,
         file_payload: Optional[Dict[str, Any]] = None,
+        user_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         start_time = time.time()
+        effective_user_id = user_id or (profile or {}).get("user_id") or "anonymous_student"
 
         # Step 1: Input sanitization & Anti-injection check
         cleaned_query = hallucination_guard.sanitize_input(query)
@@ -86,7 +92,6 @@ class KnowledgeNexusRouter:
 
         lower_subj = resolved_subject.lower()
         if "math" in lower_subj:
-            # Check for equations to solve
             if any(char in cleaned_query for char in ["=", "^", "²", "x", "+", "-", "*", "/"]):
                 math_data = math_engine.solve_algebraic_expression(cleaned_query)
                 math_verified = math_data.get("verified_by_sympy", False)
@@ -102,35 +107,67 @@ class KnowledgeNexusRouter:
         elif "phys" in lower_subj:
             phys_data = physics_engine.analyze_topic(cleaned_query)
 
-        # Step 5: External Gap Detection & Research
+        # Step 5: External Gap Detection & Research with Grade-Aware Filtering
         curriculum_match = icse_db.find_matching_curriculum(cleaned_query, grade=grade, subject=resolved_subject)
         requires_research = gap_detector.requires_external_research(cleaned_query, curriculum_match)
-        research_snippets = []
+        raw_research_snippets = []
+        adapted_research = {"core_adapted_snippets": [], "advanced_optional_material": []}
         if requires_research:
             try:
-                research_snippets = await external_research.search_web(cleaned_query, num_results=3)
+                raw_research_snippets = await external_research.search_web(cleaned_query, num_results=3)
+                grade_depth_spec = grade_controller.resolve_topic_curriculum_depth(cleaned_query, grade)
+                adapted_research = external_research.filter_and_adapt_research_for_grade(
+                    snippets=raw_research_snippets,
+                    grade=grade,
+                    prohibited_concepts=grade_depth_spec.get("prohibited_concepts", []),
+                )
             except Exception as e:
                 logger.warning(f"External research failed: {e}")
 
-        # Step 6: Pedagogical Prompt & AI Gateway Call
-        system_prompt = teaching_orchestrator.build_system_instructions(
+        # Step 6: Construct Structured Teaching Configuration (Enforces Grade & Adaptations)
+        teaching_config = teaching_orchestrator.build_teaching_configuration(
+            query=cleaned_query,
             grade=grade,
             subject=resolved_subject,
+            chapter=resolved_chapter,
             mode=mode,
             profile=profile,
+            retrieved_knowledge=[{"curriculum": curriculum_match}] if curriculum_match else [],
+            verified_sources=adapted_research["core_adapted_snippets"],
+        )
+
+        # Generate Independent Modular Scaffolding for Active Learning Difficulties
+        active_difficulties = (profile or {}).get("difficulties") or (profile or {}).get("weaknesses") or []
+        adaptation_payload = adaptation_engine.generate_adaptations(
+            topic=cleaned_query,
+            subject=resolved_subject,
+            grade=grade,
+            difficulties=active_difficulties,
+            math_steps=math_data.get("steps") if math_data else None,
+        )
+
+        system_prompt = teaching_orchestrator.build_system_instructions(
+            config=teaching_config,
+            mode=mode,
         )
 
         user_content = [
             f"Topic/Question: {cleaned_query}",
             f"Subject: {resolved_subject} | Chapter: {resolved_chapter}",
             f"Grade: {grade} | Teaching Mode: {mode} | Language: {language}",
+            f"Strict Grade Boundaries: Sentence length limit = {teaching_config.sentence_limit} words, Vocabulary = {teaching_config.vocabulary_level}",
+            f"Required Concepts for Grade {grade}: {', '.join(teaching_config.required_concepts)}",
         ]
+        if teaching_config.prohibited_concepts:
+            user_content.append(f"DO NOT include these advanced concepts (above Grade {grade}): {', '.join(teaching_config.prohibited_concepts)}")
+        if teaching_config.required_equation:
+            user_content.append(f"Required Equation/Formula: {teaching_config.required_equation}")
         if math_data and math_data.get("success"):
             user_content.append(f"SymPy Verified Symbolic Computation Steps:\n{math_data.get('steps')}")
         if history_dossier and history_dossier.get("success"):
             user_content.append(f"Historical 16-Point Dossier Data:\n{history_dossier.get('dossier')}")
-        if research_snippets:
-            user_content.append(f"Verified External Research Citations:\n{research_snippets}")
+        if adapted_research["core_adapted_snippets"]:
+            user_content.append(f"Grade-Filtered Verified Research:\n{adapted_research['core_adapted_snippets']}")
 
         messages = [
             {"role": "system", "content": system_prompt},
@@ -164,13 +201,23 @@ class KnowledgeNexusRouter:
             explanation=raw_text,
             subject=resolved_subject,
             math_verified=math_verified,
-            sources_count=len(sanitized_citations) + len(research_snippets),
+            sources_count=len(sanitized_citations) + len(adapted_research["core_adapted_snippets"]),
         )
 
         # 3D Scene resolution
         three_scene = None
         if visual_3d_key:
             three_scene = threejs_orchestrator.get_scene_spec(visual_3d_key)
+
+        # Record interaction in adaptive learning memory
+        adaptive_memory.record_interaction(
+            user_id=effective_user_id,
+            topic=cleaned_query,
+            subject=resolved_subject,
+            grade=grade,
+            question_answered=False,
+            was_correct=True,
+        )
 
         elapsed_ms = int((time.time() - start_time) * 1000)
 
@@ -193,13 +240,32 @@ class KnowledgeNexusRouter:
             "physics_data": phys_data.get("data") if phys_data else None,
             "svg_visual": svg_visual,
             "scene_3d": three_scene,
-            "research_sources": research_snippets,
+            "research_sources": adapted_research["core_adapted_snippets"],
+            "advanced_optional_material": adapted_research["advanced_optional_material"],
+            "teaching_configuration": teaching_config.to_dict(),
+            "personalized_adaptations": {
+                "active_difficulties": adaptation_payload["applied_difficulties"],
+                "spelling_card": adaptation_payload["spelling_card"],
+                "reading_support": adaptation_payload["reading_support"],
+                "writing_scaffold": adaptation_payload["writing_scaffold"],
+                "definition_breakdown": adaptation_payload["definition_breakdown"],
+                "memory_aids": adaptation_payload["memory_aids"],
+                "math_scaffolding": adaptation_payload["math_scaffolding"],
+                "diagram_callouts": adaptation_payload["diagram_callouts"],
+            },
             "metadata": {
                 "provider": ai_response.get("provider"),
                 "model": ai_response.get("model"),
                 "fallback_used": ai_response.get("fallback_used"),
                 "ai_latency_ms": ai_response.get("latency_ms"),
                 "total_processing_ms": elapsed_ms,
+                "grade_profile": {
+                    "stage": grade_controller.get_grade_profile(grade).get("stage"),
+                    "vocabulary_level": teaching_config.vocabulary_level,
+                    "sentence_limit": teaching_config.sentence_limit,
+                    "required_concepts_count": len(teaching_config.required_concepts),
+                    "prohibited_concepts_count": len(teaching_config.prohibited_concepts),
+                }
             },
         }
 

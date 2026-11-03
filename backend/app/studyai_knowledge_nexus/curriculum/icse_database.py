@@ -215,6 +215,92 @@ ICSE_CURRICULUM_TREE: Dict[int, Dict[str, List[Dict[str, Any]]]] = {
             {"chapter": "The Harappan Civilisation & Vedic Period", "topics": ["Town planning, Great Bath, Seals", "Early and Later Vedic society, literature"], "books": ["Total History and Civics (Morning Star)"]},
             {"chapter": "The Mughal Empire", "topics": ["Akbar's policies, Din-i-Ilahi, Mansabdari system, architecture"], "books": ["Total History and Civics (Morning Star)"]}
         ]
+    },
+    8: {
+        "Biology": [
+            {"chapter": "Transport in Plants and Photosynthesis", "topics": ["Diffusion and Osmosis overview", "Chloroplasts and food making in green leaves", "Factors affecting rate (light, CO2, temperature)", "Simple balanced equation"], "books": ["Concise Biology (Selina)", "Candid ICSE Biology"]},
+            {"chapter": "Circulatory System in Humans", "topics": ["Blood vessels: Arteries, Veins, Capillaries", "Structure of human heart overview", "Heartbeat and pulse rate"], "books": ["Concise Biology (Selina)"]}
+        ],
+        "Physics": [
+            {"chapter": "Force and Pressure", "topics": ["Turning effect of force intro", "Pressure in fluids", "Atmospheric pressure and barometers"], "books": ["Concise Physics (Selina)"]},
+            {"chapter": "Light Energy", "topics": ["Refraction through plane surfaces", "Dispersion of light and spectrum intro"], "books": ["Concise Physics (Selina)"]}
+        ],
+        "Chemistry": [
+            {"chapter": "Matter and Its Composition", "topics": ["Kinetic theory of matter", "States of matter and interconversion"], "books": ["Concise Chemistry (Selina)"]},
+            {"chapter": "Atomic Structure", "topics": ["Fundamental particles (Proton, Neutron, Electron)", "Atomic number and Mass number"], "books": ["Concise Chemistry (Selina)"]}
+        ],
+        "Mathematics": [
+            {"chapter": "Rational Numbers and Exponents", "topics": ["Operations on rational numbers", "Laws of exponents"], "books": ["Understanding ICSE Mathematics (M.L. Aggarwal)"]},
+            {"chapter": "Linear Equations and Factorisation", "topics": ["Solving single-variable linear equations", "Factorisation by common monomial terms"], "books": ["Understanding ICSE Mathematics (M.L. Aggarwal)"]}
+        ]
+    },
+    7: {
+        "Biology": [
+            {"chapter": "Plant Life: Basic Photosynthesis and Respiration", "topics": ["Green leaf as food factory", "Chloroplast organelle role", "Word equation and basic chemical formula", "Iodine test for starch"], "books": ["Concise Biology (Selina)"]},
+            {"chapter": "Tissues and Organisation", "topics": ["Plant tissues (Meristematic, Permanent)", "Animal tissues (Epithelial, Connective)"], "books": ["Concise Biology (Selina)"]}
+        ],
+        "Science": [
+            {"chapter": "Physical Quantities and Measurement", "topics": ["Volume of irregular solids", "Density calculation"], "books": ["Living Science (Ratna Sagar)"]},
+            {"chapter": "Motion and Energy", "topics": ["Speed = Distance / Time", "Kinetic and Potential energy basics"], "books": ["Living Science (Ratna Sagar)"]}
+        ],
+        "Mathematics": [
+            {"chapter": "Integers and Fractions", "topics": ["Addition, subtraction, multiplication of integers", "Proper and improper fractions"], "books": ["Understanding ICSE Mathematics (M.L. Aggarwal)"]},
+            {"chapter": "Simple Linear Equations", "topics": ["Forming equations from word problems", "Transposition method"], "books": ["Understanding ICSE Mathematics (M.L. Aggarwal)"]}
+        ]
+    },
+    6: {
+        "Biology": [
+            {"chapter": "The Leaf and Photosynthesis", "topics": ["Parts of a leaf (petiole, lamina, veins)", "Photosynthesis basic process (sunlight, chlorophyll, water, carbon dioxide)", "Products: Glucose and Oxygen", "Word equation: Carbon dioxide + Water -> Glucose + Oxygen"], "books": ["Concise Biology (Selina)"]},
+            {"chapter": "The Cell: Basic Unit of Life", "topics": ["Discovery of cell", "Plant cell vs Animal cell basic differences"], "books": ["Concise Biology (Selina)"]}
+        ],
+        "Science": [
+            {"chapter": "Matter: Solids, Liquids and Gases", "topics": ["Characteristics of states of matter", "Particle arrangement"], "books": ["Living Science (Ratna Sagar)"]},
+            {"chapter": "Simple Machines", "topics": ["Levers (Class 1, 2, 3)", "Pulleys and inclined planes"], "books": ["Living Science (Ratna Sagar)"]}
+        ],
+        "Mathematics": [
+            {"chapter": "Number System and Fractions", "topics": ["Natural numbers and Whole numbers", "Fractions and Decimals intro"], "books": ["Understanding ICSE Mathematics (M.L. Aggarwal)"]}
+        ]
+    },
+    5: {
+        "Science": [
+            {"chapter": "Plant Reproduction and Seed Germination", "topics": ["Parts of a seed", "Conditions for germination (air, water, warmth)"], "books": ["Living Science (Ratna Sagar)"]},
+            {"chapter": "Our Environment and Natural Resources", "topics": ["Renewable vs Non-renewable resources", "Conservation of water"], "books": ["Living Science (Ratna Sagar)"]}
+        ],
+        "Mathematics": [
+            {"chapter": "Fractions, Decimals and Percentages", "topics": ["Fraction addition", "Decimal conversions"], "books": ["ICSE Primary Maths"]}
+        ]
+    },
+    4: {
+        "Science": [
+            {"chapter": "Food and Digestion", "topics": ["Nutrients: Carbohydrates, Proteins, Fats, Vitamins", "Teeth types and care"], "books": ["Living Science (Ratna Sagar)"]}
+        ],
+        "Mathematics": [
+            {"chapter": "Multiplication, Division and Shapes", "topics": ["Long division basics", "2D and 3D shapes"], "books": ["ICSE Primary Maths"]}
+        ]
+    },
+    3: {
+        "Science": [
+            {"chapter": "Parts of a Plant", "topics": ["Roots, Stem, Leaves, Flowers, Fruits"], "books": ["Living Science (Ratna Sagar)"]}
+        ],
+        "Mathematics": [
+            {"chapter": "Addition, Subtraction and Tables", "topics": ["Carrying and borrowing", "Multiplication tables 1-10"], "books": ["ICSE Primary Maths"]}
+        ]
+    },
+    2: {
+        "Science": [
+            {"chapter": "Plants and Animals Around Us", "topics": ["Domestic vs wild animals", "Green plants grow from seeds"], "books": ["Living Science (Ratna Sagar)"]}
+        ],
+        "Mathematics": [
+            {"chapter": "Numbers up to 100", "topics": ["Counting, place value, simple addition"], "books": ["ICSE Primary Maths"]}
+        ]
+    },
+    1: {
+        "Science": [
+            {"chapter": "My Body and Living Things", "topics": ["Five senses", "Things around us"], "books": ["Living Science (Ratna Sagar)"]}
+        ],
+        "Mathematics": [
+            {"chapter": "Numbers and Counting", "topics": ["Numbers 1 to 20", "Basic shapes and sizes"], "books": ["ICSE Primary Maths"]}
+        ]
     }
 }
 

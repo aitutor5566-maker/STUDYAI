@@ -81,6 +81,82 @@ async function runBattery() {
   assert.ok(sceneData.scene.annotations.length >= 2);
   console.log('   ✅ Passed: Safe declarative Three.js 3D scene specification verified.\n');
 
+  // Test 7: Grade-Wise Depth Controller Profiles (Grade 6 vs Grade 10)
+  console.log('7️⃣ Testing Grade-Wise Content Depth Controller (Grade 6 vs Grade 10)...');
+  const g6Res = await fetch(`${BASE_URL}/nexus/grade-profile/6`);
+  assert.strictEqual(g6Res.status, 200);
+  const g6Data = await g6Res.json();
+  assert.strictEqual(g6Data.max_sentence_length, 18);
+  assert.strictEqual(g6Data.vocabulary_level, 'introductory_scientific');
+
+  const g10Res = await fetch(`${BASE_URL}/nexus/grade-profile/10`);
+  assert.strictEqual(g10Res.status, 200);
+  const g10Data = await g10Res.json();
+  assert.strictEqual(g10Data.max_sentence_length, 28);
+  assert.strictEqual(g10Data.vocabulary_level, 'rigorous_icse_board_certification');
+  console.log('   ✅ Passed: Distinct Grade 6 vs Grade 10 depth & vocabulary profiles verified.\n');
+
+  // Test 8: Modular Student Adaptations Preview (Multiple Simultaneous Difficulties)
+  console.log('8️⃣ Testing Modular Student Adaptations Preview (Spelling, Reading, Memory)...');
+  const adaptRes = await fetch(`${BASE_URL}/nexus/adaptations-preview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      topic: 'Photosynthesis',
+      subject: 'Biology',
+      grade: 7,
+      difficulties: ['spelling', 'reading', 'remembering_information']
+    })
+  });
+  assert.strictEqual(adaptRes.status, 200);
+  const adaptData = await adaptRes.json();
+  assert.ok(adaptData.spelling_card, 'Spelling syllabary card generated');
+  assert.ok(adaptData.reading_support, 'Reading support generated');
+  assert.ok(adaptData.memory_aids, 'Memory mnemonics generated');
+  assert.strictEqual(adaptData.applied_difficulties.length, 3);
+  console.log('   ✅ Passed: Multiple learning difficulty adaptations generated harmoniously.\n');
+
+  // Test 9: Adaptive Learning Memory & Continuous Tracking
+  console.log('9️⃣ Testing Adaptive Learning Memory & Closed-Loop Performance Tracking...');
+  const testUserId = 'student-test-phase16';
+  const updateRes = await fetch(`${BASE_URL}/nexus/adaptive-profile/${testUserId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      difficulties: ['spelling', 'mathematical_calculations'],
+      explanation_style: 'concise',
+      grade: 8
+    })
+  });
+  assert.strictEqual(updateRes.status, 200);
+
+  const getProfRes = await fetch(`${BASE_URL}/nexus/adaptive-profile/${testUserId}`);
+  assert.strictEqual(getProfRes.status, 200);
+  const profData = await getProfRes.json();
+  assert.strictEqual(profData.grade, 8);
+  assert.strictEqual(profData.explanation_style, 'concise');
+  assert.ok(profData.difficulties.includes('spelling'));
+
+  // Record an interaction
+  const interactRes = await fetch(`${BASE_URL}/nexus/record-interaction`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      user_id: testUserId,
+      topic: 'Photosynthesis',
+      subject: 'Biology',
+      grade: 8,
+      question_answered: true,
+      was_correct: true,
+      student_feedback: 'just_right'
+    })
+  });
+  assert.strictEqual(interactRes.status, 200);
+  const interactData = await interactRes.json();
+  assert.strictEqual(interactData.practice_metrics.total_questions_attempted, 1);
+  assert.strictEqual(interactData.practice_metrics.total_correct, 1);
+  console.log('   ✅ Passed: Adaptive memory updated preferences and recorded empirical performance.\n');
+
   console.log('🎉 ALL STUDYAI KNOWLEDGE NEXUS VERIFICATION TESTS PASSED SUCCESSFULLY! (100%)\n');
 }
 

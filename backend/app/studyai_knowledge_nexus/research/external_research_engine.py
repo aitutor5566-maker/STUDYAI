@@ -113,5 +113,42 @@ class ExternalResearchEngine:
 
         return []
 
+    def filter_and_adapt_research_for_grade(
+        self,
+        snippets: List[Dict[str, Any]],
+        grade: int,
+        prohibited_concepts: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Applies Grade-Aware filtering to external research results:
+        1. Filters out unnecessary college-level / upper-grade terminology for younger students.
+        2. Preserves full factual accuracy.
+        3. Segregates content into Grade-Adapted Core Knowledge vs Advanced Optional Reading.
+        """
+        prohibited = set(c.lower() for c in (prohibited_concepts or []))
+        core_snippets = []
+        advanced_optional = []
+
+        for item in snippets:
+            snippet_text = item.get("snippet", "")
+            contains_prohibited = any(p in snippet_text.lower() for p in prohibited)
+
+            if grade <= 7 and contains_prohibited:
+                # Place advanced content in optional extension reading
+                advanced_optional.append({
+                    "title": item.get("title"),
+                    "url": item.get("url"),
+                    "note": f"Advanced optional extension material (above Grade {grade} ICSE scope)",
+                })
+            else:
+                core_snippets.append(item)
+
+        return {
+            "grade": grade,
+            "core_adapted_snippets": core_snippets if core_snippets else snippets[:2],
+            "advanced_optional_material": advanced_optional,
+            "filter_applied": len(advanced_optional) > 0,
+        }
+
 
 external_research = ExternalResearchEngine()

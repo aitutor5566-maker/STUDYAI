@@ -10,6 +10,9 @@ from backend.app.studyai_knowledge_nexus.subjects.mathematics_engine import math
 from backend.app.studyai_knowledge_nexus.subjects.history_engine import history_engine
 from backend.app.studyai_knowledge_nexus.vision.document_ingestion import doc_ingestion
 from backend.app.studyai_knowledge_nexus.visualization.threejs_orchestrator import threejs_orchestrator
+from backend.app.studyai_knowledge_nexus.core.grade_controller import grade_controller
+from backend.app.studyai_knowledge_nexus.core.adaptation_engine import adaptation_engine
+from backend.app.studyai_knowledge_nexus.core.adaptive_memory import adaptive_memory
 
 logger = logging.getLogger("knowledge_nexus.api_router")
 
@@ -129,3 +132,80 @@ async def get_3d_scene(model_id: str):
     if not scene:
         raise HTTPException(status_code=404, detail=f"3D Scene '{model_id}' not found")
     return scene
+
+
+@nexus_api_router.get("/grade-profile/{grade}")
+async def get_grade_profile(grade: int):
+    """Returns the 12 depth and vocabulary parameters for the specified grade."""
+    if grade < 1 or grade > 10:
+        raise HTTPException(status_code=400, detail="Grade must be between 1 and 10")
+    return grade_controller.get_grade_profile(grade)
+
+
+@nexus_api_router.get("/adaptive-profile/{user_id}")
+async def get_student_adaptive_profile(user_id: str):
+    """Retrieves empirical student learning profile and continuous adaptation adjustments."""
+    return adaptive_memory.get_or_create_profile(user_id)
+
+
+class UpdateAdaptiveProfileRequest(BaseModel):
+    difficulties: Optional[List[str]] = None
+    explanation_style: Optional[str] = None
+    preferred_learning_methods: Optional[List[str]] = None
+    grade: Optional[int] = None
+
+
+@nexus_api_router.post("/adaptive-profile/{user_id}")
+async def update_student_adaptive_profile(user_id: str, payload: UpdateAdaptiveProfileRequest):
+    """Allows student to review and edit learning difficulties and preferences."""
+    return adaptive_memory.update_student_preferences(
+        user_id=user_id,
+        difficulties=payload.difficulties,
+        explanation_style=payload.explanation_style,
+        preferred_learning_methods=payload.preferred_learning_methods,
+        grade=payload.grade,
+    )
+
+
+class RecordInteractionRequest(BaseModel):
+    user_id: str
+    topic: str
+    subject: str
+    grade: int
+    question_answered: bool = False
+    was_correct: bool = True
+    student_feedback: Optional[str] = None
+    mistake_type: Optional[str] = None
+
+
+@nexus_api_router.post("/record-interaction")
+async def record_student_interaction(payload: RecordInteractionRequest):
+    """Records real student learning interactions and empirical accuracy updates."""
+    return adaptive_memory.record_interaction(
+        user_id=payload.user_id,
+        topic=payload.topic,
+        subject=payload.subject,
+        grade=payload.grade,
+        question_answered=payload.question_answered,
+        was_correct=payload.was_correct,
+        student_feedback=payload.student_feedback,
+        mistake_type=payload.mistake_type,
+    )
+
+
+class AdaptationsPreviewRequest(BaseModel):
+    topic: str
+    subject: str = "Science"
+    grade: int = 10
+    difficulties: List[str]
+
+
+@nexus_api_router.post("/adaptations-preview")
+async def preview_adaptations(payload: AdaptationsPreviewRequest):
+    """Previews independent pedagogical scaffolding for declared learning difficulties."""
+    return adaptation_engine.generate_adaptations(
+        topic=payload.topic,
+        subject=payload.subject,
+        grade=payload.grade,
+        difficulties=payload.difficulties,
+    )

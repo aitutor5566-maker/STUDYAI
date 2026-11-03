@@ -25,6 +25,9 @@ export interface StudentAdaptiveProfile {
   concept_difficulty: boolean;
   memory_difficulty: boolean;
   math_calculation_difficulty: boolean;
+  diagram_difficulty?: boolean;
+  long_explanation_difficulty?: boolean;
+  step_by_step_difficulty?: boolean;
   explanation_style: 'concise' | 'balanced' | 'deep' | 'visual_first';
   preferred_learning_methods: string[];
   topic_understanding?: Record<string, { score: number; status: string; lastAssessed?: string }>;
@@ -41,6 +44,9 @@ const DEFAULT_PROFILE: StudentAdaptiveProfile = {
   concept_difficulty: false,
   memory_difficulty: false,
   math_calculation_difficulty: false,
+  diagram_difficulty: false,
+  long_explanation_difficulty: false,
+  step_by_step_difficulty: false,
   explanation_style: 'balanced',
   preferred_learning_methods: ['diagrams', 'examples']
 };
@@ -334,6 +340,21 @@ export const AdaptiveProfileModal: React.FC<Props> = ({
                       key: 'math_calculation_difficulty',
                       title: 'Math & formula calculations',
                       desc: 'Break every mathematical equation and numerical derivation into numbered micro-steps.'
+                    },
+                    {
+                      key: 'diagram_difficulty',
+                      title: 'Understanding diagrams & spatial models',
+                      desc: 'Break diagrams into labelled components and explain the exact biological/physical function of each part.'
+                    },
+                    {
+                      key: 'long_explanation_difficulty',
+                      title: 'Following long explanations',
+                      desc: 'Chunk explanations into self-contained single-concept steps with checkpoint questions.'
+                    },
+                    {
+                      key: 'step_by_step_difficulty',
+                      title: 'Following complex solutions',
+                      desc: 'Explicitly explain the reasoning behind each intermediate step without skipping arithmetic.'
                     }
                   ].map((item) => {
                     const isChecked = Boolean((profile as any)[item.key]);

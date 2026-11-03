@@ -191,14 +191,54 @@ STUDYAI Knowledge Nexus is the universal curriculum, research, retrieval, and te
 ### 4.3 Production Nexus API Endpoints (`/api/v1/nexus/*`)
 | Endpoint | Method | Description |
 | :--- | :--- | :--- |
-| `/api/v1/nexus/ask` | `POST` | Central multimodal learning orchestrator returning 8-part structured lessons. |
+| `/api/v1/nexus/ask` | `POST` | Central multimodal learning orchestrator returning 8-part structured lessons with personalized adaptations. |
 | `/api/v1/nexus/curriculum/{grade}` | `GET` | Complete ICSE curriculum tree and approved publishers for Grades 1–10. |
+| `/api/v1/nexus/grade-profile/{grade}` | `GET` | 12-attribute depth, sentence length, and vocabulary parameters for Grades 1–10. |
+| `/api/v1/nexus/adaptive-profile/{user_id}` | `GET` / `POST` | Retrieves or updates student learning difficulties, explanation styles, and empirical metrics. |
+| `/api/v1/nexus/record-interaction` | `POST` | Records real student question accuracy, feedback, and mistakes for continuous adaptation. |
+| `/api/v1/nexus/adaptations-preview` | `POST` | Previews independent modular scaffolding cards for declared learning difficulties. |
 | `/api/v1/nexus/solve-math` | `POST` | Exact SymPy algebraic & quadratic equation solver with step-by-step discriminant. |
 | `/api/v1/nexus/verify-math` | `POST` | Independent verification of candidate mathematical solutions against equations. |
 | `/api/v1/nexus/history-event` | `POST` | Comprehensive 16-point historical dossier generator and timeline SVG. |
 | `/api/v1/nexus/classify` | `POST` | Subject, grade, and chapter classifier for natural language student queries. |
 | `/api/v1/nexus/ingest-document` | `POST` | Multimodal PDF and scanned document parser with question detection. |
 | `/api/v1/nexus/3d-scene/{model_id}` | `GET` | Declarative Three.js 3D scene specifications without string evals. |
+
+### 4.4 Grade-Wise Content Depth Controller (Grades 1–10)
+
+The AI never provides the same explanation depth to different grades. It dynamically bounds vocabulary, sentence complexity, and scientific/mathematical mechanisms:
+
+| Grade | Educational Stage | Max Sentence Length | Vocabulary Standard | Chemical & Mathematical Complexity |
+| :---: | :--- | :---: | :--- | :--- |
+| **1–2** | Early Primary | 8–10 words | Simple phonetic | Single-digit counting, sensory concrete phenomena. |
+| **3–4** | Upper Primary | 12–14 words | Elementary academic | Multiplication/division, simple cycles, no chemical formulas. |
+| **5** | Middle Transition | 16 words | Developing academic | Percentages, fractions, organ system overviews. |
+| **6** | Lower Middle | 18 words | Introductory scientific | **Word equations only**, qualitative mechanisms, simple machines. |
+| **7** | Middle School | 20 words | Intermediate scientific | Elementary chemical symbols, structural chains, ratios & integers. |
+| **8** | Upper Middle | 22 words | Pre-certificate academic | **Simple balanced equations**, chloroplast/atomic structure, linear equations. |
+| **9** | ICSE Foundation | 24 words | Formal ICSE standard | Full balanced equations with state symbols, experimental setups, surds/geometry. |
+| **10** | ICSE Board Exam | 28 words | Rigorous board standard | **Complete biochemical & thermodynamic mechanisms**, quadratic formulas, trigonometry. |
+
+#### Example: Photosynthesis Concept Progression across Grades
+- **Grade 6**: Explains the basic food-making process in green leaves using sunlight, water, carbon dioxide, and chlorophyll to produce glucose and oxygen. *Equation*: `Carbon dioxide + Water -> Glucose + Oxygen`. **Strictly prohibits** photolysis, Calvin cycle, ATP/NADPH, and thylakoid biophysics.
+- **Grade 8**: Introduces chloroplast organelles, internal mesophyll structure, guard cells opening/closing stomata, factors affecting the rate (light, CO2, temperature), and the simple balanced formula: `6CO₂ + 6H₂O -> C₆H₁₂O₆ + 6O₂`.
+- **Grade 10**: Exhaustive biochemical mechanism required by ICSE syllabus:
+  1. *Light Reaction (Photochemical / Hill Reaction)* in thylakoid grana: Photolysis of water ($2H_2O \to 4H^+ + 4e^- + O_2\uparrow$), photophosphorylation ($ADP + P_i \to ATP$), and NADP reduction to NADPH.
+  2. *Dark Reaction (Biosynthetic / Calvin Cycle)* in stroma: Enzymatic carbon fixation to glucose.
+  3. *Experimental Validations*: Destarching protocols, Ganong's light screen, Moll's half-leaf experiment for CO2, and Blackman's principle of limiting factors.
+  4. *Exact Equation*: `6CO₂ + 12H₂O ⎯(Chlorophyll/Sunlight)⎯→ C₆H₁₂O₆ + 6H₂O + 6O₂↑`.
+
+### 4.5 Student Learning Adaptation Engine (10 Scaffolding Strategies)
+1. **Spelling Support**: Syllabification breakdowns (e.g. `pho-to-syn-the-sis`, `chlo-ro-phyll`), phonetic pronunciation guides, etymological roots, and gentle word-building cards without punitive grading.
+2. **Reading Support**: Strict sentence word ceiling ($\le 18$ words), micro-chunked 2-sentence paragraphs, inline vocabulary glossaries, and instant audio read-aloud buttons.
+3. **Writing Support**: Structured ICSE examination answer templates (Definition $\to$ Key Mechanism $\to$ Equation/Date $\to$ Significance), sentence starters, and full-mark model answers.
+4. **Definition Support**: Preserves 100% of the formal academic definition + provides a 3-tier cognitive scaffold: 1) Formal ICSE definition, 2) Everyday meaning, 3) Relatable analogy + comprehension check.
+5. **Memory Support**: High-yield takeaway revision bullets, chronological visual timelines, memorable mnemonics (e.g., `OIL RIG`, `PMAT`, `VIBGYOR`, `LORD`), and spaced-retrieval flashcards.
+6. **Mathematics Support**: Explicit arithmetic steps with zero skipped derivations, clear highlighted formula boxes, visual function graphs, and substitute-back verification checks.
+7. **Diagram Support**: Component-by-component callouts, active part highlights, and interactive SVG/3D WebGL camera presets.
+8. **Long-Explanation Chunking**: Divides topics into logical single-concept gates with embedded checkpoint questions before advancing.
+9. **Scientific Concepts Support**: Concrete everyday analogies (e.g. kitchen/schoolyard) before theoretical molecular abstractions.
+10. **Step-by-Step Solutions**: Sequentially numbered atomic steps explaining the exact *Why* behind every single step.
 
 ---
 
