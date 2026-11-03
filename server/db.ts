@@ -219,6 +219,53 @@ export function initDatabase() {
       last_note_id TEXT,
       updated_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS icse_curriculum_nodes (
+      id TEXT PRIMARY KEY,
+      board TEXT NOT NULL DEFAULT 'ICSE',
+      grade INTEGER NOT NULL,
+      subject TEXT NOT NULL,
+      book_title TEXT NOT NULL,
+      publisher TEXT NOT NULL,
+      edition TEXT DEFAULT 'Current Edition',
+      chapter_number INTEGER,
+      chapter_title TEXT NOT NULL,
+      topic_name TEXT NOT NULL,
+      subtopics_json TEXT DEFAULT '[]',
+      learning_objectives_json TEXT DEFAULT '[]',
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS multimodal_ingestions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      file_name TEXT NOT NULL,
+      content_type TEXT NOT NULL,
+      raw_transcription TEXT,
+      detected_questions_json TEXT DEFAULT '[]',
+      source_type TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS external_research_cache (
+      id TEXT PRIMARY KEY,
+      query_hash TEXT NOT NULL UNIQUE,
+      query_text TEXT NOT NULL,
+      source_engine TEXT NOT NULL,
+      verified_snippets_json TEXT NOT NULL DEFAULT '[]',
+      confidence_score REAL NOT NULL DEFAULT 0.90,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS subject_dossiers (
+      id TEXT PRIMARY KEY,
+      subject TEXT NOT NULL,
+      dossier_type TEXT NOT NULL,
+      entity_name TEXT NOT NULL,
+      payload_json TEXT NOT NULL,
+      verified INTEGER DEFAULT 1,
+      created_at TEXT NOT NULL
+    );
   `);
 
   seedInitialDataIfEmpty();

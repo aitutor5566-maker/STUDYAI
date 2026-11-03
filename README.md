@@ -28,24 +28,25 @@
 1. [Target Audience & Application Purpose](#1-target-audience--application-purpose)
 2. [Ecosystem Architecture & System Overview](#2-ecosystem-architecture--system-overview)
 3. [The Ultimate Adaptive AI Tutor Upgrade](#3-the-ultimate-adaptive-ai-tutor-upgrade)
-4. [Programming Languages & Technology Stack](#4-programming-languages--technology-stack)
-5. [The Complete Student Learning Journey](#5-the-complete-student-learning-journey)
-6. [Flutter Frontend Architecture & Apple Glass UI Design](#6-flutter-frontend-architecture--apple-glass-ui-design)
-7. [Core Features in Detail](#7-core-features-in-detail)
-   - [AI Tutor Engine (Mode A vs Mode B)](#71-ai-tutor-engine-mode-a-vs-mode-b)
-   - [3D Visual Learning Lab](#72-3d-visual-learning-lab)
-   - [AI Smart Notes & Flashcards](#73-ai-smart-notes--flashcards)
-   - [Three Adaptive Educational Games](#74-three-adaptive-educational-games)
-   - [40-Mark Weekly Examination Engine](#75-40-mark-weekly-examination-engine)
-   - [Points, Badges & Anti-Cheat Gamification](#76-points-badges--anti-cheat-gamification)
-   - [Parent Dashboard & Child-Safety Governance](#77-parent-dashboard--child-safety-governance)
-8. [Administrative Portals](#8-administrative-portals)
-   - [Admin Portal (`admin.studyai.com`)](#81-admin-portal)
-   - [Super Admin Portal (`superadmin.studyai.com`)](#82-super-admin-portal)
-9. [Backend Architecture & Database Schema](#9-backend-architecture--database-schema)
-10. [Workflows & Sequence Flowcharts](#10-workflows--sequence-flowcharts)
-11. [Step-by-Step Installation & Quick Start](#11-step-by-step-installation--quick-start)
-12. [Verification & Automated Test Suite](#12-verification--automated-test-suite)
+4. [STUDYAI Knowledge Nexus (Universal Educational Intelligence)](#4-studyai-knowledge-nexus-universal-educational-intelligence)
+5. [Programming Languages & Technology Stack](#5-programming-languages--technology-stack)
+6. [The Complete Student Learning Journey](#6-the-complete-student-learning-journey)
+7. [Flutter Frontend Architecture & Apple Glass UI Design](#7-flutter-frontend-architecture--apple-glass-ui-design)
+8. [Core Features in Detail](#8-core-features-in-detail)
+   - [AI Tutor Engine (Mode A vs Mode B)](#81-ai-tutor-engine-mode-a-vs-mode-b)
+   - [3D Visual Learning Lab](#82-3d-visual-learning-lab)
+   - [AI Smart Notes & Flashcards](#83-ai-smart-notes--flashcards)
+   - [Three Adaptive Educational Games](#84-three-adaptive-educational-games)
+   - [40-Mark Weekly Examination Engine](#85-40-mark-weekly-examination-engine)
+   - [Points, Badges & Anti-Cheat Gamification](#86-points-badges--anti-cheat-gamification)
+   - [Parent Dashboard & Child-Safety Governance](#87-parent-dashboard--child-safety-governance)
+9. [Administrative Portals](#9-administrative-portals)
+   - [Admin Portal (`admin.studyai.com`)](#91-admin-portal)
+   - [Super Admin Portal (`superadmin.studyai.com`)](#92-super-admin-portal)
+10. [Backend Architecture & Database Schema](#10-backend-architecture--database-schema)
+11. [Workflows & Sequence Flowcharts](#11-workflows--sequence-flowcharts)
+12. [Step-by-Step Installation & Quick Start](#12-step-by-step-installation--quick-start)
+13. [Verification & Automated Test Suite](#13-verification--automated-test-suite)
 
 ---
 
@@ -162,7 +163,46 @@ Directly from the AI Tutor conversation, students can click **"🎮 Play Game fo
 
 ---
 
-## 4. Programming Languages & Technology Stack
+## 4. STUDYAI Knowledge Nexus (Universal Educational Intelligence)
+
+STUDYAI Knowledge Nexus is the universal curriculum, research, retrieval, and teaching intelligence system built specifically for **ICSE Grades 1–10**.
+
+### 4.1 Four Knowledge Collections
+1. **Curriculum Knowledge**: Official CISCE ICSE syllabus, board regulations, verified chapter trees, and multi-publisher alignments:
+   - *Selina Publishers* (Concise Physics, Concise Chemistry, Concise Biology, Concise Mathematics)
+   - *Morning Star* (Total History & Civics, Total Geography, Total English)
+   - *Arya Publishing Company / APC* (Understanding ICSE Mathematics by M.L. Aggarwal, Understanding Computer Applications with BlueJ)
+   - *Goyal Brothers, Ratna Sagar, Evergreen Publications*
+2. **Extended Educational Knowledge**: Specialized subject intelligence engines:
+   - **Mathematics**: Symbolic computation & verification via **SymPy** (exact quadratic formula roots, discriminant calculation, polynomial simplification, coordinate geometry).
+   - **History & Civics**: **16-Point Event Analysis Dossiers**, chronological timelines, authentic personality dossiers (Mangal Pandey, Rani Lakshmibai, Bahadur Shah Zafar, Lord Canning), and interactive SVG visual timelines.
+   - **Chemistry**: Balanced chemical equations, reaction conditions (Haber Process, Contact Process), catalysts, promoters, and stoichiometry.
+   - **Biology**: Detailed anatomical blueprints (Human Heart 4 chambers & double circulation, Nephron ultrafiltration & reabsorption) and 3D organ presets.
+   - **Physics**: Lens ray optics, Cartesian sign conventions, Ohm's law, and equivalent resistance calculators.
+3. **Student-Provided Knowledge**: Multimodal ingestion of PDFs, scanned textbook pages, photographed homework, and handwritten questions with question detection and diagram identification.
+4. **Verified Research Knowledge**: Real-time verified external research via Google Search, xAI Grok, and authorized educational Telegram feeds.
+
+### 4.2 Anti-Hallucination & Guardrail Architecture
+- **SymPy Symbolic Mathematical Verification**: Every mathematical solution is evaluated against independent symbolic computation.
+- **Strict Citation Rules**: Prohibits fabricating citations, editions, or URLs. All references are verified against authoritative ICSE textbooks.
+- **Prompt Injection Sanitization**: Multimodal document and query inputs are filtered against injection patterns before processing.
+- **Confidence Scoring**: Each generated lesson includes a computed confidence score (0.00 – 1.00) based on source verification and math verification.
+
+### 4.3 Production Nexus API Endpoints (`/api/v1/nexus/*`)
+| Endpoint | Method | Description |
+| :--- | :--- | :--- |
+| `/api/v1/nexus/ask` | `POST` | Central multimodal learning orchestrator returning 8-part structured lessons. |
+| `/api/v1/nexus/curriculum/{grade}` | `GET` | Complete ICSE curriculum tree and approved publishers for Grades 1–10. |
+| `/api/v1/nexus/solve-math` | `POST` | Exact SymPy algebraic & quadratic equation solver with step-by-step discriminant. |
+| `/api/v1/nexus/verify-math` | `POST` | Independent verification of candidate mathematical solutions against equations. |
+| `/api/v1/nexus/history-event` | `POST` | Comprehensive 16-point historical dossier generator and timeline SVG. |
+| `/api/v1/nexus/classify` | `POST` | Subject, grade, and chapter classifier for natural language student queries. |
+| `/api/v1/nexus/ingest-document` | `POST` | Multimodal PDF and scanned document parser with question detection. |
+| `/api/v1/nexus/3d-scene/{model_id}` | `GET` | Declarative Three.js 3D scene specifications without string evals. |
+
+---
+
+## 5. Programming Languages & Technology Stack
 
 ```mermaid
 pie title Programming Language Distribution in STUDYAI
