@@ -4,7 +4,7 @@ import re
 from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse, RedirectResponse
 from pydantic import BaseModel, Field, field_validator
 
 from .config import OLLAMA_MODEL, OLLAMA_URL, PORT
@@ -61,6 +61,12 @@ class TutorChatRequest(BaseModel):
     stream: bool = Field(default=False, description="Whether to stream response tokens via SSE")
     topic: Optional[str] = Field(default=None, max_length=200, description="Specific topic title")
     mode: Optional[str] = Field(default="detailed", description="simple or detailed explanation")
+
+
+@app.get("/")
+def root():
+    """Redirect root to client frontend."""
+    return RedirectResponse(url="http://localhost:5173")
 
 
 @app.get("/health")

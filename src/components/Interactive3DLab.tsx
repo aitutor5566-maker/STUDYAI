@@ -827,3 +827,20 @@ export const Interactive3DLabModal: React.FC = () => {
     </div>
   );
 };
+
+export const Interactive3DLab: React.FC<{
+  modelKey?: string;
+  topic?: string;
+  title?: string;
+  compact?: boolean;
+  onClose?: () => void;
+}> = ({ modelKey, topic, title, compact = true, onClose }) => {
+  return (
+    <Interactive3DViewer
+      topic={topic || title || 'Science'}
+      modelType={modelKey}
+      compact={compact}
+      onClose={onClose}
+    />
+  );
+};
