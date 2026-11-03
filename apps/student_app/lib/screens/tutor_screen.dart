@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_ui/shared_ui.dart';
 import '../state/student_app_state.dart';
 import '../widgets/interactive_3d_dialog.dart';
+import '../widgets/voice_teacher_dialog.dart';
 
 class TutorScreen extends StatefulWidget {
   final StudentAppState state;
@@ -263,6 +264,72 @@ class _TutorScreenState extends State<TutorScreen> {
                   ),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // PROMINENT GEMINI AI TEACHER VOICE LESSON BUTTON
+          InkWell(
+            onTap: () {
+              final effectiveTopic = _topicController.text.trim().isNotEmpty ? _topicController.text.trim() : 'Human Heart';
+              final parsedGrade = int.tryParse(_selectedGrade.replaceAll(RegExp(r'[^0-9]'), '')) ?? 10;
+              showDialog(
+                context: context,
+                builder: (_) => VoiceTeacherDialog(
+                  apiClient: widget.state.apiClient,
+                  topic: effectiveTopic,
+                  grade: parsedGrade,
+                  subject: _selectedSubject,
+                  mode: _learningMode,
+                ),
+              );
+            },
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [StudyAiColors.primary, Color(0xFFEA580C)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: StudyAiColors.primary.withOpacity(0.4),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.mic, color: Colors.white, size: 22),
+                  const SizedBox(width: 10),
+                  const Text(
+                    'Start Voice Lesson',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: const Text(
+                      'Gemini Conversational Audio',
+                      style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 18),

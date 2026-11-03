@@ -33,6 +33,7 @@ import { Interactive3DViewer } from '../components/Interactive3DLab';
 import { FuturisticIcon } from '../components/FuturisticIcons';
 import { useLearning } from '../context/LearningContext';
 import { AdaptiveProfileModal } from '../components/AdaptiveProfileModal';
+import { VoiceTeacherModal } from '../components/VoiceTeacherModal';
 
 type LanguageType = 'English' | 'Telugu' | 'Hindi';
 type ModeType = 'simple' | 'detailed';
@@ -196,6 +197,7 @@ export const TutorPage: React.FC = () => {
   const [revealedQuestions, setRevealedQuestions] = useState<Record<string, boolean>>({});
   const [explanationLength, setExplanationLength] = useState<'concise' | 'balanced' | 'detailed'>('balanced');
   const [showAdaptiveModal, setShowAdaptiveModal] = useState<boolean>(false);
+  const [showVoiceModal, setShowVoiceModal] = useState<boolean>(false);
   const [evaluations, setEvaluations] = useState<Record<string, { selectedOption: string; evaluated: boolean; isCorrect?: boolean; feedback?: string; score?: number; loading?: boolean }>>({});
   const [feedbacks, setFeedbacks] = useState<Record<string, string>>({});
 
@@ -932,6 +934,30 @@ export const TutorPage: React.FC = () => {
         >
           <Sliders size={16} color="#7C3AED" />
           <span>Learning Profile</span>
+        </button>
+
+        {/* Prominent Gemini AI Teacher Voice Mode Button */}
+        <button
+          type="button"
+          onClick={() => setShowVoiceModal(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '8px 18px',
+            borderRadius: 999,
+            border: 'none',
+            background: 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)',
+            color: '#FFFFFF',
+            fontWeight: 800,
+            fontSize: '0.82rem',
+            cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(255, 106, 0, 0.35)',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <Mic size={16} color="#FFFFFF" />
+          <span>Start Voice Lesson</span>
         </button>
       </section>
 
@@ -2614,6 +2640,17 @@ export const TutorPage: React.FC = () => {
           setActionToast('Adaptive learning preferences applied to AI Tutor!');
           setTimeout(() => setActionToast(''), 3500);
         }}
+      />
+
+      {/* Gemini AI Teacher Voice Mode Modal */}
+      <VoiceTeacherModal
+        isOpen={showVoiceModal}
+        onClose={() => setShowVoiceModal(false)}
+        topic={activeTopic || 'Photosynthesis'}
+        grade={grade}
+        subject={subject}
+        mode={mode}
+        apiFetch={apiFetch}
       />
     </div>
   );

@@ -157,7 +157,99 @@ async function runBattery() {
   assert.strictEqual(interactData.practice_metrics.total_correct, 1);
   console.log('   ✅ Passed: Adaptive memory updated preferences and recorded empirical performance.\n');
 
-  console.log('🎉 ALL STUDYAI KNOWLEDGE NEXUS VERIFICATION TESTS PASSED SUCCESSFULLY! (100%)\n');
+  // Test 10: Phase 17 Gemini Voice Teacher - Start Spoken Lesson
+  console.log('🔟 Testing Phase 17 Gemini Voice Teacher Start Lesson & Audio Synthesis...');
+  const voiceStartRes = await fetch(`${BASE_URL}/voice/start-lesson`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      topic: 'Photosynthesis',
+      grade: 8,
+      subject: 'Biology',
+      board: 'ICSE',
+      learning_difficulties: ['reading'],
+      preferred_style: 'visual',
+      voice_persona: 'Kore'
+    })
+  });
+  assert.strictEqual(voiceStartRes.status, 200, 'Voice start-lesson returned HTTP 200');
+  const voiceStartData = await voiceStartRes.json();
+  assert.ok(voiceStartData.session_id.startsWith('vsession-'), 'Session ID generated');
+  assert.strictEqual(voiceStartData.status, 'active');
+  assert.strictEqual(voiceStartData.current_step_index, 0);
+  assert.ok(voiceStartData.total_steps >= 4, 'Multiple curriculum steps prepared');
+  assert.ok(voiceStartData.teacher_speech.length > 20, 'Spoken lesson hook generated');
+  assert.ok(voiceStartData.audio_url.startsWith('data:audio/wav;base64,'), 'Playable WAV base64 audio returned');
+  assert.ok(voiceStartData.audio_duration_seconds > 0, 'Audio duration calculated');
+  assert.ok(voiceStartData.synced_visual, 'Synchronized visual (3D/diagram) attached');
+  console.log(`   ✅ Passed: Spoken lesson started (Session: ${voiceStartData.session_id}, Audio: ${voiceStartData.audio_duration_seconds}s).\n`);
+
+  // Test 11: Phase 17 Gemini Voice Teacher - Conversational Clarification & Step Advancement
+  console.log('1️⃣1️⃣ Testing Phase 17 Voice Conversational Turn-Taking & Clarification...');
+  const voiceId = voiceStartData.session_id;
+
+  // 11a: Confusion / Simpler words
+  const clarifyRes = await fetch(`${BASE_URL}/voice/interact`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      session_id: voiceId,
+      student_speech: "I don't understand, can you explain in simpler words?"
+    })
+  });
+  assert.strictEqual(clarifyRes.status, 200);
+  const clarifyData = await clarifyRes.json();
+  assert.strictEqual(clarifyData.current_step_index, 0, 'Step remains current on confusion');
+  assert.ok(clarifyData.teacher_speech.length > 20, 'Simpler clarification returned');
+  assert.ok(clarifyData.audio_url.startsWith('data:audio/wav;base64,'), 'Playable audio for clarification returned');
+  console.log('   ✅ Passed: Empathetic clarification generated without skipping lesson steps.');
+
+  // 11b: Comprehension / Advancement
+  const advanceRes = await fetch(`${BASE_URL}/voice/interact`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      session_id: voiceId,
+      student_speech: "Yes, I understand now! Let us continue."
+    })
+  });
+  assert.strictEqual(advanceRes.status, 200);
+  const advanceData = await advanceRes.json();
+  assert.strictEqual(advanceData.current_step_index, 1, 'Lesson advanced to Step 1 on comprehension');
+  assert.ok(advanceData.audio_url.startsWith('data:audio/wav;base64,'), 'Step 1 audio generated');
+  console.log('   ✅ Passed: Natural advancement to next curriculum step confirmed.\n');
+
+  // Test 12: Phase 17 Voice Session Controls (Pause, Resume, Repeat, Stop)
+  console.log('1️⃣2️⃣ Testing Phase 17 Voice Session Controls (Pause, Resume, Repeat, Stop)...');
+  const pauseRes = await fetch(`${BASE_URL}/voice/control`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: voiceId, action: 'pause' })
+  });
+  assert.strictEqual(pauseRes.status, 200);
+  const pauseData = await pauseRes.json();
+  assert.strictEqual(pauseData.status, 'paused');
+
+  const resumeRes = await fetch(`${BASE_URL}/voice/control`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: voiceId, action: 'resume' })
+  });
+  assert.strictEqual(resumeRes.status, 200);
+  const resumeData = await resumeRes.json();
+  assert.strictEqual(resumeData.status, 'active');
+
+  const stopRes = await fetch(`${BASE_URL}/voice/control`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: voiceId, action: 'stop' })
+  });
+  assert.strictEqual(stopRes.status, 200);
+  const stopData = await stopRes.json();
+  assert.strictEqual(stopData.is_lesson_finished, true);
+  console.log('   ✅ Passed: Pause, resume, and graceful lesson termination verified.\n');
+
+  console.log('🎉 ALL STUDYAI KNOWLEDGE NEXUS & GEMINI VOICE VERIFICATION TESTS PASSED SUCCESSFULLY! (100%)\n');
 }
 
 runBattery().catch((err) => {

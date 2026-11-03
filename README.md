@@ -29,6 +29,10 @@
 2. [Ecosystem Architecture & System Overview](#2-ecosystem-architecture--system-overview)
 3. [The Ultimate Adaptive AI Tutor Upgrade](#3-the-ultimate-adaptive-ai-tutor-upgrade)
 4. [STUDYAI Knowledge Nexus (Universal Educational Intelligence)](#4-studyai-knowledge-nexus-universal-educational-intelligence)
+   - [Production Nexus API Endpoints](#43-production-nexus-api-endpoints-apiv1nexus)
+   - [Grade-Wise Content Depth Controller (Grades 1–10)](#44-grade-wise-content-depth-controller-grades-110)
+   - [Student Learning Adaptation Engine (10 Scaffolding Strategies)](#45-student-learning-adaptation-engine-10-scaffolding-strategies)
+   - [Phase 17 — Gemini-Powered AI Teacher Voice Mode](#46-phase-17--gemini-powered-ai-teacher-voice-mode)
 5. [Programming Languages & Technology Stack](#5-programming-languages--technology-stack)
 6. [The Complete Student Learning Journey](#6-the-complete-student-learning-journey)
 7. [Flutter Frontend Architecture & Apple Glass UI Design](#7-flutter-frontend-architecture--apple-glass-ui-design)
@@ -239,6 +243,44 @@ The AI never provides the same explanation depth to different grades. It dynamic
 8. **Long-Explanation Chunking**: Divides topics into logical single-concept gates with embedded checkpoint questions before advancing.
 9. **Scientific Concepts Support**: Concrete everyday analogies (e.g. kitchen/schoolyard) before theoretical molecular abstractions.
 10. **Step-by-Step Solutions**: Sequentially numbered atomic steps explaining the exact *Why* behind every single step.
+
+### 4.6 Phase 17 — Gemini-Powered AI Teacher Voice Mode
+
+STUDYAI incorporates an interactive, production-grade spoken teaching system powered by Google's native Gemini Audio capabilities (`gemini-2.5-flash-preview-tts`), delivering 24kHz linear PCM 16-bit high-fidelity speech.
+
+#### Dual-Model Separation of Responsibilities
+```mermaid
+flowchart LR
+    A[Student Voice Request] --> B[Knowledge Nexus - Qwen 2.5 7B]
+    B -->|Grade 1-10 Curriculum Depth & Scaffolding| C[Voice Lesson Orchestrator]
+    C -->|Spoken Dialogue & Tone| D[Google Gemini TTS API]
+    D -->|24kHz WAV Audio Stream| E[Student Web & Flutter Apps]
+    C -->|3D Model & SVG Sync| E
+```
+
+- **Qwen 2.5 7B (Academic Intelligence)**: Structures syllabus-compliant curriculum boundaries for Grades 1–10, prevents hallucination, computes mathematical/scientific formulas, and designs 5-step conversational lesson plans.
+- **Google Gemini (Conversational Voice Intelligence)**: Synthesizes expressive, patient, natural teacher audio (`Kore`, `Puck`, `Fenrir`, `Aoede`) with authentic vocal warmth and synchronized visual pacing.
+
+#### 5-Step Conversational Lesson Sequence
+1. **Friendly Hook & Real-World Curiosity**: Relates the topic to immediate everyday life (e.g., how leaves capture light like microscopic solar power stations).
+2. **Core Definition & Everyday Meaning**: Presents the formal ICSE definition alongside an everyday conceptual scaffold.
+3. **Step-by-Step Mechanisms**: Atomic explanation of stages (e.g. Light Reaction photolysis $\to$ Dark Reaction carbon fixation) with synchronized 3D WebGL models and SVG diagrams.
+4. **Checkpoint Question**: Interactive spoken assessment checking the student's understanding before advancing.
+5. **Comprehensive Recap**: Concise high-yield review bullets and positive encouragement.
+
+#### Conversational Turn-Taking & Clarifications
+The voice orchestrator continuously tracks comprehension and student intent:
+- **Confusion ("I don't understand", "Explain in simpler words")**: The teacher pauses advancement, acknowledges the difficulty empathetically, and delivers a concrete real-life analogy.
+- **Confirmation ("I got it", "Let us continue")**: The teacher provides positive reinforcement and advances to the next step.
+- **Controls**: Full voice and button support for `Pause`, `Resume`, `Repeat`, `Mute`, and `Stop Lesson`.
+
+#### Voice Mode API Endpoints (`/api/v1/voice/*`)
+| Endpoint | Method | Description |
+| :--- | :--- | :--- |
+| `/api/v1/voice/start-lesson` | `POST` | Initiates 5-step voice lesson, resolves curriculum depth, syncs 3D/SVG visuals, and streams initial 24kHz WAV audio. |
+| `/api/v1/voice/interact` | `POST` | Processes student spoken turns, evaluates checkpoint responses, and delivers adaptive clarifications. |
+| `/api/v1/voice/control` | `POST` | Controls playback state (`pause`, `resume`, `mute`, `unmute`, `repeat`, `stop`). |
+| `/api/v1/voice/session/{id}` | `GET` | Retrieves live session metadata, current step index, and complete conversation transcript. |
 
 ---
 

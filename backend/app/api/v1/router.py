@@ -6,6 +6,7 @@ from .endpoints import (
     payments, admin, superadmin, media, visual
 )
 from backend.app.studyai_knowledge_nexus.router import nexus_api_router
+from backend.app.studyai_knowledge_nexus.voice.router import voice_api_router
 
 api_v1_router = APIRouter()
 
@@ -34,3 +35,4 @@ api_v1_router.include_router(superadmin.router, prefix="/superadmin", tags=["Sup
 api_v1_router.include_router(media.router, prefix="/media", tags=["Media Governance"])
 api_v1_router.include_router(visual.router, prefix="/visual", tags=["Visual Intelligence"])
 api_v1_router.include_router(nexus_api_router)
+api_v1_router.include_router(voice_api_router)
