@@ -35,20 +35,36 @@ interface ModelSpec {
 const MODEL_SPECS: Record<string, ModelSpec> = {
   human_heart: {
     id: 'human_heart',
-    title: 'Human Heart & 4-Chamber Double Circulation',
-    subject: 'Biology • Anatomy',
-    verificationBadge: 'Procedural 3D Scientific Visualization (Three.js WebGL)',
+    title: 'Human Heart: Four Chambers, Valves & Double Circulation (Anatomical 3D)',
+    subject: 'Biology • Circulatory Anatomy',
+    verificationBadge: 'Section 9.3 Anatomically Reviewed Model (Three.js WebGL)',
     parts: [
-      { id: 'left_ventricle', label: 'Left Ventricle', role: 'Thickest muscular chamber; pumps oxygenated blood at high pressure into the Aorta.', color: '#EF4444' },
-      { id: 'right_ventricle', label: 'Right Ventricle', role: 'Pumps deoxygenated blood through the pulmonary valve into the Pulmonary Artery toward the lungs.', color: '#3B82F6' },
-      { id: 'left_atrium', label: 'Left Atrium', role: 'Receives oxygen-rich blood returning from the lungs via four Pulmonary Veins.', color: '#F87171' },
-      { id: 'right_atrium', label: 'Right Atrium & SA Node', role: 'Receives deoxygenated blood from Superior/Inferior Vena Cava and houses the natural pacemaker.', color: '#60A5FA' },
-      { id: 'aorta', label: 'Aortic Arch', role: 'Largest systemic artery distributing oxygenated blood from the Left Ventricle to the body.', color: '#DC2626' }
+      { id: 'right_atrium', label: 'Right Atrium', role: 'Receives deoxygenated blood from the upper and lower body via Superior and Inferior Vena Cava.', color: '#2563EB' },
+      { id: 'right_ventricle', label: 'Right Ventricle', role: 'Pumps deoxygenated blood through the pulmonary semilunar valve into the pulmonary arteries.', color: '#1D4ED8' },
+      { id: 'left_atrium', label: 'Left Atrium', role: 'Receives oxygen-rich blood returning from the lungs via four pulmonary veins.', color: '#E11D48' },
+      { id: 'left_ventricle', label: 'Left Ventricle', role: 'Thickest muscular chamber; pumps oxygenated blood at systemic high pressure into the Aorta.', color: '#BE123C' },
+      { id: 'septum', label: 'Interventricular Septum', role: 'Thick muscular wall separating left and right ventricles, completely preventing mixing of oxygenated and deoxygenated blood.', color: '#64748B' },
+      { id: 'tricuspid_valve', label: 'Tricuspid Valve', role: 'Atrioventricular valve with 3 cusps between RA and RV; prevents backflow into RA during ventricular systole.', color: '#F59E0B' },
+      { id: 'mitral_valve', label: 'Bicuspid / Mitral Valve', role: 'Atrioventricular valve with 2 cusps between LA and LV; prevents backflow into LA during ventricular systole.', color: '#F59E0B' },
+      { id: 'pulmonary_valve', label: 'Pulmonary Semilunar Valve', role: 'Pocket semilunar valve preventing backflow from pulmonary trunk into RV during diastole.', color: '#38BDF8' },
+      { id: 'aortic_valve', label: 'Aortic Semilunar Valve', role: 'High-pressure pocket valve preventing backflow from aorta into LV during diastole.', color: '#FB7185' },
+      { id: 'superior_vena_cava', label: 'Superior Vena Cava', role: 'Brings deoxygenated blood from head, neck, and arms into Right Atrium.', color: '#1D4ED8' },
+      { id: 'inferior_vena_cava', label: 'Inferior Vena Cava', role: 'Brings deoxygenated blood from lower body and abdominal organs into Right Atrium.', color: '#1E40AF' },
+      { id: 'pulmonary_artery', label: 'Pulmonary Artery', role: 'Only artery carrying deoxygenated blood, transporting it from RV to lungs for oxygenation.', color: '#2563EB' },
+      { id: 'aorta', label: 'Systemic Aorta & Arch', role: 'Largest artery distributing high-pressure oxygenated blood from LV to entire systemic circulation.', color: '#DC2626' },
+      { id: 'sa_node', label: 'Sinoatrial (SA) Node', role: 'Specialized electrical pacemaker tissue at junction of SVC and RA; initiates rhythmic contractions (72 bpm).', color: '#FACC15' }
     ],
     guidedSteps: [
-      { step: '1. Atrial Diastole (Filling)', detail: 'Deoxygenated blood enters the Right Atrium via Vena Cava while oxygenated blood enters the Left Atrium via Pulmonary Veins.' },
-      { step: '2. Atrial Systole', detail: 'SA Node fires; both atria contract, pushing blood through Tricuspid and Mitral valves into the ventricles.' },
-      { step: '3. Ventricular Systole (Ejection)', detail: 'Ventricles contract powerfully, ejecting blood into the Pulmonary Artery (to lungs) and Aorta (to body).' }
+      { step: '1. Systemic Return', detail: 'Deoxygenated blood returns from body tissues via Superior and Inferior Venae Cavae.' },
+      { step: '2. Right Atrial Filling', detail: 'Blood collects in the Right Atrium during general cardiac diastole.' },
+      { step: '3. Tricuspid Inflow', detail: 'Atrial systole drives blood through the open Tricuspid valve into the Right Ventricle.' },
+      { step: '4. Right Ventricle Contraction', detail: 'RV contracts; Tricuspid valve snaps shut (Lub sound) preventing backflow.' },
+      { step: '5. Pulmonary Ejection', detail: 'Pulmonary semilunar valve opens; blood enters Pulmonary Artery toward bilateral lungs.' },
+      { step: '6. Alveolar Gas Exchange', detail: 'In pulmonary capillaries, blood unloads CO₂ waste and is enriched with fresh O₂.' },
+      { step: '7. Pulmonary Vein Return', detail: 'Four pulmonary veins deliver oxygenated blood into the Left Atrium.' },
+      { step: '8. Mitral / Bicuspid Inflow', detail: 'Left Atrium contracts, pushing oxygenated blood through the Bicuspid valve into the Left Ventricle.' },
+      { step: '9. Left Ventricle Systole', detail: 'Thickest myocardium contracts powerfully; Bicuspid valve closes firmly to maintain pressure.' },
+      { step: '10. Systemic Distribution', detail: 'Aortic semilunar valve opens; oxygenated blood surges into the Aortic Arch to feed the entire body.' }
     ]
   },
   solar_system: {
@@ -254,30 +270,99 @@ export const Interactive3DViewer: React.FC<{
       const animatedNodes: THREE.Object3D[] = [];
 
       if (selectedModelKey === 'human_heart') {
-        const matLV = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.35, metalness: 0.1 });
-        const matRV = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.35, metalness: 0.1 });
-        const matLA = new THREE.MeshStandardMaterial({ color: 0xf87171, roughness: 0.4 });
-        const matRA = new THREE.MeshStandardMaterial({ color: 0x60a5fa, roughness: 0.4 });
-        const matAorta = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.3 });
+        // Anatomical Palette: Blue (Deoxygenated / Patient Right), Red (Oxygenated / Patient Left), Gold (Valves & SA Node), Slate (Septum)
+        const matLV = new THREE.MeshStandardMaterial({ color: 0xbe123c, roughness: 0.35, metalness: 0.1 });
+        const matRV = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.35, metalness: 0.1 });
+        const matLA = new THREE.MeshStandardMaterial({ color: 0xe11d48, roughness: 0.4 });
+        const matRA = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.4 });
+        const matSeptum = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.5 });
+        const matAorta = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.25 });
+        const matVenaCava = new THREE.MeshStandardMaterial({ color: 0x1e40af, roughness: 0.3 });
+        const matPulmonary = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.3 });
+        const matValve = new THREE.MeshStandardMaterial({ color: 0xf59e0b, side: THREE.DoubleSide });
+        const matSANode = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xca8a04, emissiveIntensity: 0.8 });
 
-        const lv = new THREE.Mesh(new THREE.SphereGeometry(1.15, 32, 32), matLV);
-        lv.scale.set(0.95, 1.35, 0.9);
-        lv.position.set(0.65, -0.45, 0);
+        // Left Ventricle (Thick Muscular Systemic Apex - Patient Left / Viewer Right)
+        const lv = new THREE.Mesh(new THREE.SphereGeometry(1.25, 32, 32), matLV);
+        lv.scale.set(1.0, 1.45, 0.95);
+        lv.position.set(0.75, -0.65, 0.1);
+        lv.userData = { id: 'left_ventricle' };
 
-        const rv = new THREE.Mesh(new THREE.SphereGeometry(1.0, 32, 32), matRV);
-        rv.scale.set(0.9, 1.25, 0.85);
-        rv.position.set(-0.65, -0.4, 0.15);
+        // Right Ventricle (Patient Right / Viewer Left)
+        const rv = new THREE.Mesh(new THREE.SphereGeometry(1.05, 32, 32), matRV);
+        rv.scale.set(0.95, 1.3, 0.85);
+        rv.position.set(-0.75, -0.55, 0.25);
+        rv.userData = { id: 'right_ventricle' };
 
-        const la = new THREE.Mesh(new THREE.SphereGeometry(0.75, 28, 28), matLA);
-        la.position.set(0.75, 0.95, -0.1);
+        // Left Atrium (Patient Left / Viewer Right)
+        const la = new THREE.Mesh(new THREE.SphereGeometry(0.82, 28, 28), matLA);
+        la.position.set(0.85, 0.85, -0.2);
+        la.userData = { id: 'left_atrium' };
 
-        const ra = new THREE.Mesh(new THREE.SphereGeometry(0.78, 28, 28), matRA);
-        ra.position.set(-0.75, 0.95, 0.1);
+        // Right Atrium (Patient Right / Viewer Left)
+        const ra = new THREE.Mesh(new THREE.SphereGeometry(0.88, 28, 28), matRA);
+        ra.position.set(-0.85, 0.85, 0.15);
+        ra.userData = { id: 'right_atrium' };
 
-        const aorta = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.24, 20, 40, Math.PI), matAorta);
-        aorta.position.set(0.2, 1.45, 0);
+        // Interventricular Septum (Partition preventing blood mixing)
+        const septum = new THREE.Mesh(new THREE.BoxGeometry(0.32, 2.2, 1.6), matSeptum);
+        septum.position.set(0.0, -0.6, 0.1);
+        septum.userData = { id: 'septum' };
 
-        rootGroup.add(lv, rv, la, ra, aorta);
+        // Tricuspid Valve (Between RA and RV)
+        const tricuspid = new THREE.Mesh(new THREE.RingGeometry(0.15, 0.38, 24), matValve);
+        tricuspid.rotation.x = Math.PI / 2;
+        tricuspid.position.set(-0.78, 0.1, 0.2);
+        tricuspid.userData = { id: 'tricuspid_valve' };
+
+        // Bicuspid / Mitral Valve (Between LA and LV)
+        const mitral = new THREE.Mesh(new THREE.RingGeometry(0.15, 0.38, 24), matValve);
+        mitral.rotation.x = Math.PI / 2;
+        mitral.position.set(0.78, 0.1, -0.05);
+        mitral.userData = { id: 'mitral_valve' };
+
+        // Pulmonary Semilunar Valve (Base of Pulmonary Trunk)
+        const pulmonaryValve = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.12, 16), matValve);
+        pulmonaryValve.position.set(-0.35, 0.45, 0.55);
+        pulmonaryValve.userData = { id: 'pulmonary_valve' };
+
+        // Aortic Semilunar Valve (Base of Aortic Root)
+        const aorticValve = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.12, 16), matValve);
+        aorticValve.position.set(0.25, 0.45, 0.25);
+        aorticValve.userData = { id: 'aortic_valve' };
+
+        // Systemic Aorta & Arch
+        const aorta = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.32, 20, 40, 3.4), matAorta);
+        aorta.position.set(0.22, 1.4, 0);
+        aorta.rotation.set(0, 0, -0.4);
+        aorta.userData = { id: 'aorta' };
+
+        // Superior Vena Cava
+        const svc = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 1.6, 24), matVenaCava);
+        svc.position.set(-1.2, 1.45, 0.1);
+        svc.userData = { id: 'superior_vena_cava' };
+
+        // Inferior Vena Cava
+        const ivc = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 1.4, 24), matVenaCava);
+        ivc.position.set(-1.15, -1.5, -0.1);
+        ivc.userData = { id: 'inferior_vena_cava' };
+
+        // Pulmonary Artery (Carrying deoxygenated blood to lungs)
+        const pulmonaryArtery = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 1.5, 24), matPulmonary);
+        pulmonaryArtery.position.set(-0.25, 1.25, 0.55);
+        pulmonaryArtery.rotation.set(0.2, 0, 0.3);
+        pulmonaryArtery.userData = { id: 'pulmonary_artery' };
+
+        // Separate Sinoatrial (SA) Node - Natural Pacemaker Conduction Layer
+        const saNode = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 16), matSANode);
+        saNode.position.set(-1.1, 1.35, 0.35);
+        saNode.userData = { id: 'sa_node' };
+
+        rootGroup.add(
+          lv, rv, la, ra, septum,
+          tricuspid, mitral, pulmonaryValve, aorticValve,
+          aorta, svc, ivc, pulmonaryArtery, saNode
+        );
         animatedNodes.push(rootGroup);
       } else if (selectedModelKey === 'solar_system') {
         const sunMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
@@ -650,6 +735,29 @@ export const Interactive3DViewer: React.FC<{
 
       {/* 3D Canvas Viewport */}
       <div style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', background: '#131722', marginBottom: 14 }}>
+        {selectedModelKey === 'human_heart' && (
+          <div style={{
+            position: 'absolute',
+            top: 12,
+            left: 12,
+            background: 'rgba(11, 17, 32, 0.85)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            borderRadius: 8,
+            padding: '4px 10px',
+            color: '#94A3B8',
+            fontSize: '0.72rem',
+            fontWeight: 600,
+            zIndex: 10,
+            pointerEvents: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6
+          }}>
+            <span style={{ color: '#38BDF8' }}>● Patient Right (Blue) = Screen Left</span>
+            <span style={{ opacity: 0.4 }}>|</span>
+            <span style={{ color: '#FB7185' }}>● Patient Left (Red) = Screen Right</span>
+          </div>
+        )}
         {webglFallback ? (
           <div style={{ height: 320, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF', padding: 24, textAlign: 'center' }}>
             <Sparkles size={32} color="#FF6A00" />

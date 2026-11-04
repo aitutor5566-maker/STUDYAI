@@ -1,8 +1,26 @@
 import re
+import datetime
 import logging
 from typing import Any, Dict, List, Optional, Tuple
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger("knowledge_nexus.hallucination_guard")
+
+
+class EvidenceRecord(BaseModel):
+    """
+    Section 12.3 Evidence record schema:
+    Ensures every syllabus-specific factual claim retains claim-to-source traceability,
+    scope isolation (board, grade, subject), and verification timestamp.
+    """
+    claim_id: str
+    claim_text: str
+    source_ids: List[str] = Field(default_factory=list)
+    source_location: Optional[str] = None
+    scope: Dict[str, Any] = Field(default_factory=lambda: {"board": "ICSE", "grade": 10, "subject": "General"})
+    verification_status: str = "checked"
+    reviewed_at: str = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat())
+
 
 PROMPT_INJECTION_PATTERNS = [
     r"ignore\s+(all\s+)?(previous|above)\s+instructions",

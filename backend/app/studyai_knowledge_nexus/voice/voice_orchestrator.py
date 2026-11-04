@@ -7,6 +7,7 @@ import base64
 import logging
 from typing import Any, Dict, List, Optional
 import httpx
+from pydantic import BaseModel, Field
 
 from backend.app.studyai_knowledge_nexus.core.knowledge_router import knowledge_nexus_router
 from backend.app.studyai_knowledge_nexus.core.grade_controller import grade_controller
@@ -46,6 +47,25 @@ def wrap_pcm16_in_wav(pcm_bytes: bytes, sample_rate: int = 24000, num_channels: 
         data_size,
     )
     return header + pcm_bytes
+
+
+class VoiceEventSegment(BaseModel):
+    """
+    Section 10.2 Voice event schema:
+    Synchronizes spoken segments with lesson blocks, diagram highlights,
+    and 3D step activations.
+    """
+    session_id: str
+    turn_id: str
+    lesson_id: str
+    event: str = "speak_segment"
+    segment_id: str
+    lesson_block_id: str
+    text: str
+    language: str = "en-IN"
+    visual_action: Optional[Dict[str, Any]] = None # e.g. {"type": "highlight", "target_id": "right_atrium"}
+    sequence: int
+    is_final: bool = False
 
 
 class VoiceSession:
@@ -166,6 +186,15 @@ class VoiceLessonOrchestrator:
 
         self.sessions[session_id] = session
 
+        turn_id = f"turn-{uuid.uuid4().hex[:8]}"
+        voice_events = self._generate_step_voice_events(
+            session_id=session_id,
+            turn_id=turn_id,
+            step=first_step,
+            step_index=0,
+            topic=topic
+        )
+
         return {
             "session_id": session_id,
             "status": "active",
@@ -177,6 +206,7 @@ class VoiceLessonOrchestrator:
             "total_steps": len(session.lesson_steps),
             "step_title": first_step["title"],
             "teacher_speech": spoken_text,
+            "voice_events": voice_events,
             "audio_url": audio_payload.get("audio_url"),
             "audio_duration_seconds": audio_payload.get("duration_seconds", 5.0),
             "provider_used": audio_payload.get("provider", "Gemini Native Audio"),
@@ -299,6 +329,15 @@ class VoiceLessonOrchestrator:
         active_step = session.lesson_steps[session.current_step_index]
         is_finished = session.current_step_index >= len(session.lesson_steps) - 1
 
+        turn_id = f"turn-{uuid.uuid4().hex[:8]}"
+        voice_events = self._generate_step_voice_events(
+            session_id=session_id,
+            turn_id=turn_id,
+            step={"teacher_speech": teacher_reply_text},
+            step_index=session.current_step_index,
+            topic=session.topic
+        )
+
         return {
             "session_id": session_id,
             "status": "completed" if is_finished else "active",
@@ -306,12 +345,53 @@ class VoiceLessonOrchestrator:
             "total_steps": len(session.lesson_steps),
             "step_title": active_step["title"],
             "teacher_speech": teacher_reply_text,
+            "voice_events": voice_events,
             "audio_url": audio_payload.get("audio_url"),
             "audio_duration_seconds": audio_payload.get("duration_seconds", 4.0),
             "synced_visual": session.active_visual,
             "checkpoint_question": active_step.get("checkpoint_question"),
             "is_lesson_finished": is_finished,
         }
+
+    def _generate_step_voice_events(
+        self,
+        session_id: str,
+        turn_id: str,
+        step: Dict[str, Any],
+        step_index: int,
+        topic: str
+    ) -> List[Dict[str, Any]]:
+        target_id = None
+        lower_t = topic.lower()
+        if "heart" in lower_t or "circulat" in lower_t:
+            targets = [
+                "superior_vena_cava",
+                "right_atrium",
+                "tricuspid_valve",
+                "right_ventricle",
+                "pulmonary_artery",
+                "left_atrium",
+                "mitral_valve",
+                "left_ventricle",
+                "aorta"
+            ]
+            target_id = targets[min(step_index, len(targets) - 1)]
+
+        return [
+            VoiceEventSegment(
+                session_id=session_id,
+                turn_id=turn_id,
+                lesson_id=f"lesson-{session_id}",
+                event="speak_segment",
+                segment_id=f"seg-{step_index:02d}-01",
+                lesson_block_id=f"step-block-{step_index}",
+                text=step.get("teacher_speech", "")[:300],
+                language="en-IN",
+                visual_action={"type": "highlight", "target_id": target_id} if target_id else None,
+                sequence=step_index + 1,
+                is_final=True
+            ).dict()
+        ]
 
     async def generate_gemini_audio(
         self,

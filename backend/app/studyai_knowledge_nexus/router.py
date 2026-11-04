@@ -10,7 +10,9 @@ from backend.app.studyai_knowledge_nexus.curriculum.curriculum_manager import cu
 from backend.app.studyai_knowledge_nexus.subjects.subject_registry import subject_registry
 from backend.app.studyai_knowledge_nexus.subjects.mathematics_engine import math_engine
 from backend.app.studyai_knowledge_nexus.subjects.history_engine import history_engine
+from backend.app.studyai_knowledge_nexus.subjects.physics_engine import physics_engine, PhysicsNumericalCard
 from backend.app.studyai_knowledge_nexus.vision.document_ingestion import doc_ingestion
+from backend.app.studyai_knowledge_nexus.vision.image_generation_service import image_service, ImageCandidateMetadata
 from backend.app.studyai_knowledge_nexus.visualization.visual_decision_engine import visual_decision_engine
 from backend.app.studyai_knowledge_nexus.visualization.threejs_orchestrator import threejs_orchestrator
 from backend.app.studyai_knowledge_nexus.core.grade_controller import grade_controller
@@ -190,7 +192,7 @@ async def get_3d_scene_spec(model_id: str):
     scene = threejs_orchestrator.get_scene_spec(model_id)
     if not scene:
         raise HTTPException(status_code=404, detail="3D model specification not found")
-    return scene
+    return {"scene": scene, **scene}
 
 
 @nexus_api_router.get("/adaptive-profile/{user_id}")
@@ -259,4 +261,44 @@ async def preview_adaptations(payload: AdaptationsPreviewRequest):
         subject=payload.subject,
         grade=payload.grade,
         difficulties=payload.difficulties,
+    )
+
+
+@nexus_api_router.get("/google-api-status")
+async def get_google_api_status():
+    """Returns official status and sunset/migration plan for Google Custom Search JSON API."""
+    return image_service.GOOGLE_SEARCH_API_STATUS
+
+
+@nexus_api_router.get("/image-candidates")
+async def get_image_candidates(query: str = Query(...), subject: str = Query("General"), grade: int = Query(10)):
+    """Returns Section 7.1 ImageCandidateMetadata with licensing and attribution."""
+    return image_service.search_image_candidates(query=query, subject=subject, grade=grade)
+
+
+class PhysicsNumericalRequest(BaseModel):
+    given: Dict[str, str]
+    find: str
+    principle_formula: str
+    why_formula_applies: str
+    substitution_with_units: str
+    calculation: str
+    final_answer_with_unit: str
+    check: str
+    common_mistake: str
+
+
+@nexus_api_router.post("/physics-numerical")
+async def create_physics_numerical(payload: PhysicsNumericalRequest):
+    """Builds and validates a Section 4.4 9-point numerical card."""
+    return physics_engine.solve_physics_numerical(
+        given=payload.given,
+        find=payload.find,
+        principle_formula=payload.principle_formula,
+        why_formula_applies=payload.why_formula_applies,
+        substitution_with_units=payload.substitution_with_units,
+        calculation=payload.calculation,
+        final_answer_with_unit=payload.final_answer_with_unit,
+        check=payload.check,
+        common_mistake=payload.common_mistake
     )

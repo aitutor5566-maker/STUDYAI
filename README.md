@@ -339,6 +339,21 @@ Visual modalities are deterministically selected using a strict pedagogical rule
 | **Knowledge Nexus Battery** | 16 / 16 | **100%** | Multi-publisher retrieval, SymPy symbolic solver, 16-point history dossiers, Grade 6 vs 10 depth, 10 student adaptations, Phase 17 Gemini voice synthesis and turn-taking, 10 Subject Engines, Visual Decision Matrix, Board profiles, SFT Benchmark. |
 | **Student Acceptance Battery (T01–T15)** | 15 / 15 | **100%** | T01 Grade 6 bounds, T02 Definition scaffold, T03 Topic-switch clearing, T04 History 3D prohibition, T05 Heart 3D pathway, T06 SymPy exact roots, T07 Shakespeare exegesis, T08 Topo sheet grid reference, T09 Voice confusion adaptation, T10 Voice interruption recovery, T11 3D honest 404 fallback, T12 Archival photo provenance, T13 Provider failover, T14 Sanitization of `[object Object]`, T15 Isolated document ingestion. |
 | **Supervised Fine-Tuning (SFT) Benchmark** | 10 / 10 | **100%** | Board syllabus compliance, definition constraint preservation, visual type alignment. Decision: `KEEP_KNOWLEDGE_SYSTEM`. |
+| **Master Spec v4.0 Battery (Test 1–10)** | 10 / 10 | **100%** | ICSE Physics Ch 1–3 benchmark, Section 4.4 9-point numerical card, Image licensing & Google 2027 sunset status, Section 8/9 rebuilt Heart 3D model & 2D fallback, Section 10.2 Voice visual events, Section 13 typed LessonBlocks & 13.1 envelope. |
+
+### 4.10 Master Specification v4.0 Quality & Architectural Enhancements
+
+- **ICSE Physics Chapters 1–3 Benchmark**: Implements turning effect of force, torque ($\tau = F \times d_{\perp}$), couple ($C = F \times d$), center of gravity, work sign conventions ($\theta = 0^\circ, 90^\circ, 180^\circ$), conservation of mechanical energy ($KE + U = \text{constant}$), commercial kilowatt-hour ($1 \text{ kWh} = 3.6 \text{ MJ}$), and machines ($MA = L/E, VR = d_E/d_L, \eta = MA/VR$).
+- **Section 4.4 9-Point Deterministic Numerical Scaffold**: Structured numerical resolution covering `Given`, `Find`, `Principle / formula`, `Why this formula applies`, `Substitution with units`, `Calculation`, `Final answer with unit`, `Dimensional / reasonableness check`, and `Common mistake`.
+- **Section 8 & 9 Anatomical Heart 3D Rebuild**:
+  - Replaces primitive sphere blobs with 4 anatomically connected muscular chambers (`right_atrium`, `right_ventricle`, `left_atrium`, `left_ventricle`).
+  - Implements the interventricular septum, 4 distinct cardiac valves (`tricuspid`, `mitral`, `pulmonary`, `aortic`), and all great vessels (`superior/inferior venae cavae`, `pulmonary artery/veins`, `systemic aorta`).
+  - Separates the Sinoatrial (SA) Node into a dedicated electrical conduction layer (natural pacemaker, 72 bpm), uncoupling it from atrial anatomy.
+  - Documents patient-orientation convention (Patient Left = Screen Right; Patient Right = Screen Left).
+  - Guides students through the complete 13-stage blood flow sequence with synchronized pause-and-narrate controls and 2D SVG fallback.
+- **Section 10.2 Voice Event Synchronization**: Spoken turns decomposed into granular `speak_segment` events with `visual_action: {type: 'highlight', target_id}` to trigger simultaneous 3D and diagram part callouts.
+- **Section 13 Typed `LessonBlock` Array & Section 13.1 `API response envelope`**: Enforces strict UI contracts (`heading`, `definition`, `paragraph`, `formula`, `worked_example`, `three_d_scene`, `diagram`, `summary`) preventing raw serialization artifacts.
+- **Section 7.1 Image Candidate Metadata**: Implements rights, licensing, attribution metadata (`ImageCandidateMetadata`) and documents Google Custom Search JSON API 2027 transition requirements.
 
 ---
 
