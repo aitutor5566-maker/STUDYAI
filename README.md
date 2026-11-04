@@ -33,6 +33,9 @@
    - [Grade-Wise Content Depth Controller (Grades 1–10)](#44-grade-wise-content-depth-controller-grades-110)
    - [Student Learning Adaptation Engine (10 Scaffolding Strategies)](#45-student-learning-adaptation-engine-10-scaffolding-strategies)
    - [Phase 17 — Gemini-Powered AI Teacher Voice Mode](#46-phase-17--gemini-powered-ai-teacher-voice-mode)
+   - [Master Academic Intelligence & 10 Subject Engines](#47-master-academic-intelligence--10-subject-engines)
+   - [Deterministic Visual Decision Engine (12 Modalities & 3D Gatekeeping)](#48-deterministic-visual-decision-engine-12-modalities--3d-gatekeeping)
+   - [Automated Verification Batteries & SFT Benchmark](#49-automated-verification-batteries--sft-benchmark)
 5. [Programming Languages & Technology Stack](#5-programming-languages--technology-stack)
 6. [The Complete Student Learning Journey](#6-the-complete-student-learning-journey)
 7. [Flutter Frontend Architecture & Apple Glass UI Design](#7-flutter-frontend-architecture--apple-glass-ui-design)
@@ -281,6 +284,61 @@ The voice orchestrator continuously tracks comprehension and student intent:
 | `/api/v1/voice/interact` | `POST` | Processes student spoken turns, evaluates checkpoint responses, and delivers adaptive clarifications. |
 | `/api/v1/voice/control` | `POST` | Controls playback state (`pause`, `resume`, `mute`, `unmute`, `repeat`, `stop`). |
 | `/api/v1/voice/session/{id}` | `GET` | Retrieves live session metadata, current step index, and complete conversation transcript. |
+
+### 4.7 Master Academic Intelligence & 10 Subject Engines
+
+The system implements 10 independent, curriculum-aligned subject intelligence engines powered by a unified Qwen 2.5 7B foundation with zero subject mixing:
+
+1. **English I (Language)**: Chomsky-style syntax trees, active-to-passive transformation matrices, preposition collocation rules, tense concord, and direct-indirect speech. *(Strictly 2D/syntax tree; no 3D)*.
+2. **English II (Literature)**: Act/Scene line-level citations (*Merchant of Venice*, *The Tempest*, ICSE poetry), meter analysis, dramatic irony, character motivation exegesis. *(Strictly no 3D)*.
+3. **History**: 16-point event dossiers (causes, timeline, primary figures, international repercussions), interactive SVG chronological timelines. Archival photo provenance verification. *(Strictly no 3D models)*.
+4. **Geography**: Topographical Survey Sheet 45D/7 6-figure grid references, contour interval analysis, drainage patterns, monsoon pressure gradients, and map layer coordinates.
+5. **Civics / Political Science**: Lok Sabha vs Rajya Sabha bicameralism, Money Bill procedure (Article 110), Supreme Court writ jurisdiction (*Habeas Corpus*, *Mandamus*, *Certiorari*), separation of powers. *(Strictly no 3D)*.
+6. **Mathematics**: Exact deterministic SymPy algebraic/calculus solver, quadratic discriminant analysis, parabola vertex calculations, and interactive SVG coordinate plane graphs.
+7. **Physics**: Cartesian sign conventions for spherical mirrors/lenses ($1/f = 1/v - 1/u$), Ohm's Law circuit schematics, vector force resolution, and conservation of energy calculations.
+8. **Chemistry**: Balanced chemical equations with states and reaction conditions ($T, P, \text{catalyst}$), coordinate covalent/dative bonding, mole concept calculations, and periodic trend gradients.
+9. **Biology**: Double circulation in human heart, nephron ultrafiltration stages, Mendelian genetics Punnett squares, and declarative Three.js WebGL 3D organelle/organ simulations.
+10. **Computer Science**: BlueJ Java object-oriented principles, dry-run memory trace tables, algorithmic time complexity ($O(1)$ to $O(2^n)$), iteration bounds, and recursion depth tracking. *(Strictly no 3D)*.
+
+#### Multi-Curriculum Support
+- **ICSE (Council for the Indian School Certificate Examinations)**: Grades 1–10 (Selina Concise, Morning Star, Goyal Brothers, Frank Brothers).
+- **ISC (Indian School Certificate)**: Grades 11–12 (APC Understanding, Nootan, Kalyani).
+- **CBSE (Central Board of Secondary Education)**: Grades 1–12 (NCERT, S. Chand, Exemplar).
+
+#### 5-Part Definition Scaffold
+Every formal academic definition requested in simplified or shortened form adheres to a strict 5-part cognitive scaffold:
+1. **Original Academic Definition**: Formal textbook wording preserving 100% of mathematical and scientific boundary conditions.
+2. **Simplified Meaning**: Grade-appropriate vocabulary explaining the core concept without omitting critical constraints.
+3. **Difficult Words & Syllabification**: Phonic breakdowns (e.g. `qua-drat-ic`, `pho-to-syn-the-sis`) with concise in-context meanings.
+4. **Concrete Everyday Example**: Relatable real-world analogy grounding the theoretical concept.
+5. **Meaning Preservation & Equivalence Proof**: Mathematical or logical proof demonstrating that zero academic validity was compromised.
+
+### 4.8 Deterministic Visual Decision Engine (12 Modalities & 3D Gatekeeping)
+
+Visual modalities are deterministically selected using a strict pedagogical rules matrix across 12 discrete formats:
+
+| Modality | Description | Allowed Subjects & Topics |
+| :--- | :--- | :--- |
+| `three_d_model` | WebGL 60fps spatial simulation with touch rotation and exploded views | Biology (Heart, Nephron, Chloroplast, DNA, Ear, Eye), Chemistry (Molecules, Crystal lattices), Physics (Magnetic fields, Atom). **Strictly gatekept**. |
+| `labelled_2d_diagram` | Structured SVG callout diagram | Plant physiology, geography landforms, topo sheets, biological systems. |
+| `flowchart` | Stepwise directional sequence | Organic reactions, digestion pathway, algorithm flow. |
+| `timeline` | Chronological event chart | History events, war progression, constitutional developments. |
+| `comparison_table` | Contrast matrix | Lok Sabha vs Rajya Sabha, Mitosis vs Meiosis, Ionic vs Covalent. |
+| `stepwise_formula_card` | Boxed mathematical derivation | Math algebra, physics numericals, stoichiometry. |
+| `code_trace_table` | Variable dry-run memory table | Java looping, binary search, conditional traces. |
+| `map_layer_view` | Cartographic grid reference | Geography survey sheets, rainfall distribution. |
+| `syntax_tree` | Hierarchical sentence parsing | English I grammar, clause structure, phrase parsing. |
+| `historical_image` | Archival photograph with provenance | Verified historical figures (Gandhi, Nehru, Rani Lakshmibai). **AI-generated portraits strictly prohibited**. |
+| `interactive_graph` | Dynamic function plot | Math quadratics, kinematics $v-t$ graphs. |
+| `text_only` | Pure conceptual narrative | Short definitional queries, simple factual prompts. |
+
+### 4.9 Automated Verification Batteries & SFT Benchmark
+
+| Test Suite | Total Tests | Pass Rate | Key Validations |
+| :--- | :--- | :--- | :--- |
+| **Knowledge Nexus Battery** | 16 / 16 | **100%** | Multi-publisher retrieval, SymPy symbolic solver, 16-point history dossiers, Grade 6 vs 10 depth, 10 student adaptations, Phase 17 Gemini voice synthesis and turn-taking, 10 Subject Engines, Visual Decision Matrix, Board profiles, SFT Benchmark. |
+| **Student Acceptance Battery (T01–T15)** | 15 / 15 | **100%** | T01 Grade 6 bounds, T02 Definition scaffold, T03 Topic-switch clearing, T04 History 3D prohibition, T05 Heart 3D pathway, T06 SymPy exact roots, T07 Shakespeare exegesis, T08 Topo sheet grid reference, T09 Voice confusion adaptation, T10 Voice interruption recovery, T11 3D honest 404 fallback, T12 Archival photo provenance, T13 Provider failover, T14 Sanitization of `[object Object]`, T15 Isolated document ingestion. |
+| **Supervised Fine-Tuning (SFT) Benchmark** | 10 / 10 | **100%** | Board syllabus compliance, definition constraint preservation, visual type alignment. Decision: `KEEP_KNOWLEDGE_SYSTEM`. |
 
 ---
 

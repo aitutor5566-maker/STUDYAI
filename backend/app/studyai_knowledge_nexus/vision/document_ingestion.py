@@ -50,6 +50,7 @@ class DocumentIngestionEngine:
         tables_count = len(re.findall(r"\|.*\|", extracted_text))
 
         return {
+            "success": True,
             "file_name": file_name,
             "file_type": file_ext,
             "is_image": is_image,
@@ -63,10 +64,13 @@ class DocumentIngestionEngine:
 
     def _extract_questions(self, text: str) -> List[str]:
         """Identifies numbered and question-marked educational queries."""
-        lines = text.split("\n")
+        # Split across lines or sentence boundaries preceding new question markers
+        chunks = re.split(r"(?:\r?\n|(?<=[.!?])\s+(?=(?:Question\s*\d+|Q\d+|[0-9]{1,2}[\.\)])))", text)
         detected = []
-        for line in lines:
-            trimmed = line.strip()
+        for chunk in chunks:
+            trimmed = chunk.strip()
+            if not trimmed:
+                continue
             if re.match(r"^(?:Q\d+|[0-9]{1,2}[\.\)]|Question\s*\d+)", trimmed, re.IGNORECASE):
                 detected.append(trimmed)
             elif "?" in trimmed and len(trimmed) > 10:

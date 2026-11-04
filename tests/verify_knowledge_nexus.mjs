@@ -118,7 +118,7 @@ async function runBattery() {
 
   // Test 9: Adaptive Learning Memory & Continuous Tracking
   console.log('9️⃣ Testing Adaptive Learning Memory & Closed-Loop Performance Tracking...');
-  const testUserId = 'student-test-phase16';
+  const testUserId = 'student-test-' + Date.now();
   const updateRes = await fetch(`${BASE_URL}/nexus/adaptive-profile/${testUserId}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -249,7 +249,98 @@ async function runBattery() {
   assert.strictEqual(stopData.is_lesson_finished, true);
   console.log('   ✅ Passed: Pause, resume, and graceful lesson termination verified.\n');
 
-  console.log('🎉 ALL STUDYAI KNOWLEDGE NEXUS & GEMINI VOICE VERIFICATION TESTS PASSED SUCCESSFULLY! (100%)\n');
+  // Test 13: 10 Independent Subject Intelligence Engines
+  console.log('1️⃣3️⃣ Testing 10 Independent Subject Intelligence Engines...');
+  const subRes = await fetch(`${BASE_URL}/nexus/subjects`);
+  assert.strictEqual(subRes.status, 200);
+  const subData = await subRes.json();
+  assert.strictEqual(subData.total_subjects, 10, 'Must have exactly 10 independent subject engines');
+  const subjectNames = subData.subjects.map(s => s.subject);
+  assert.ok(subjectNames.includes('English I'), 'English I Engine registered');
+  assert.ok(subjectNames.includes('English II'), 'English II Engine registered');
+  assert.ok(subjectNames.includes('History'), 'History Engine registered');
+  assert.ok(subjectNames.includes('Geography'), 'Geography Engine registered');
+  assert.ok(subjectNames.includes('Civics / Political Science'), 'Civics Engine registered');
+  assert.ok(subjectNames.includes('Mathematics'), 'Mathematics Engine registered');
+  assert.ok(subjectNames.includes('Physics'), 'Physics Engine registered');
+  assert.ok(subjectNames.includes('Chemistry'), 'Chemistry Engine registered');
+  assert.ok(subjectNames.includes('Biology'), 'Biology Engine registered');
+  assert.ok(subjectNames.includes('Computer Science'), 'Computer Science Engine registered');
+  console.log('   ✅ Passed: All 10 Independent Subject Intelligence Engines verified.\n');
+
+  // Test 14: Visual Decision Engine & Strict 3D Gatekeeping
+  console.log('1️⃣4️⃣ Testing Visual Decision Engine (12 Modalities & 3D Gatekeeping)...');
+  
+  // 14a: History (World War I) -> Must NOT be 3D
+  const histVisRes = await fetch(`${BASE_URL}/nexus/visual-decision`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ topic: 'World War I', subject: 'History', grade: 10 })
+  });
+  assert.strictEqual(histVisRes.status, 200);
+  const histVis = await histVisRes.json();
+  assert.strictEqual(histVis.is_3d_required, false, 'History must NEVER require 3D model');
+  assert.strictEqual(histVis.visual_type, 'timeline', 'World War I resolves to timeline');
+
+  // 14b: Mathematics (Quadratic Equations) -> Graph, NOT 3D
+  const mathVisRes = await fetch(`${BASE_URL}/nexus/visual-decision`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ topic: 'Quadratic Equations', subject: 'Mathematics', grade: 10 })
+  });
+  assert.strictEqual(mathVisRes.status, 200);
+  const mathVis = await mathVisRes.json();
+  assert.strictEqual(mathVis.is_3d_required, false, 'Math must not require 3D');
+  assert.strictEqual(mathVis.visual_type, 'graph', 'Quadratic equations resolves to graph');
+
+  // 14c: Biology (Human Heart) -> Strictly Requires 3D Model
+  const bioVisRes = await fetch(`${BASE_URL}/nexus/visual-decision`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ topic: 'Human Heart Circulation', subject: 'Biology', grade: 10 })
+  });
+  assert.strictEqual(bioVisRes.status, 200);
+  const bioVis = await bioVisRes.json();
+  assert.strictEqual(bioVis.is_3d_required, true, 'Human heart strictly requires 3D model');
+  assert.strictEqual(bioVis.visual_type, 'threejs_3d_model');
+  assert.strictEqual(bioVis.model_3d_key, 'human-heart');
+
+  // 14d: English I (Prepositions) -> No visual
+  const engVisRes = await fetch(`${BASE_URL}/nexus/visual-decision`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ topic: 'Prepositions and Phrasal Verbs', subject: 'English I', grade: 10 })
+  });
+  assert.strictEqual(engVisRes.status, 200);
+  const engVis = await engVisRes.json();
+  assert.strictEqual(engVis.is_3d_required, false);
+  assert.strictEqual(engVis.visual_type, 'no_visual');
+  console.log('   ✅ Passed: Visual Decision Engine correctly gatekeeps 3D and assigns proper modalities.\n');
+
+  // Test 15: Curriculum Board Profiles (ICSE, ISC, CBSE)
+  console.log('1️⃣5️⃣ Testing Curriculum Board Profiles (ICSE, ISC, CBSE)...');
+  for (const board of ['ICSE', 'ISC', 'CBSE']) {
+    const boardRes = await fetch(`${BASE_URL}/nexus/board-profile/${board}`);
+    assert.strictEqual(boardRes.status, 200);
+    const bData = await boardRes.json();
+    assert.ok(bData.full_name, `Board ${board} full name present`);
+    assert.ok(bData.primary_publishers.length >= 2, `Board ${board} publishers mapped`);
+  }
+  console.log('   ✅ Passed: ICSE, ISC, and CBSE curriculum profiles mapped independently.\n');
+
+  // Test 16: Subject SFT Dataset Benchmark Evaluation
+  console.log('1️⃣6️⃣ Testing Subject SFT Dataset Benchmark Evaluation...');
+  const sftRes = await fetch(`${BASE_URL}/nexus/sft-benchmark`);
+  assert.strictEqual(sftRes.status, 200);
+  const sftData = await sftRes.json();
+  assert.strictEqual(sftData.total_examples, 10, '10 subject benchmark examples evaluated');
+  assert.strictEqual(sftData.board_compliance_rate_pct, 100);
+  assert.strictEqual(sftData.definition_preservation_pct, 100);
+  assert.strictEqual(sftData.visual_decision_accuracy_pct, 100);
+  assert.strictEqual(sftData.sft_weight_tuning_recommendation, 'KEEP_KNOWLEDGE_SYSTEM');
+  console.log(`   ✅ Passed: SFT Benchmark Score: ${sftData.mean_benchmark_score_pct}% (${sftData.sft_weight_tuning_recommendation}).\n`);
+
+  console.log('🎉 ALL 16 STUDYAI KNOWLEDGE NEXUS ACCEPTANCE TESTS PASSED SUCCESSFULLY! (100%)\n');
 }
 
 runBattery().catch((err) => {

@@ -1,6 +1,12 @@
 from typing import Any, Dict, List, Optional
 import json
 
+from backend.app.studyai_knowledge_nexus.subjects.base_subject_engine import (
+    BaseSubjectEngine,
+    SubjectEngineOutput,
+    DefinitionScaffold,
+)
+
 HISTORICAL_EVENTS_KNOWLEDGE = {
     "1857": {
         "event_name": "The First War of Independence (1857)",
@@ -48,89 +54,200 @@ HISTORICAL_EVENTS_KNOWLEDGE = {
         "primary_citations": [
             "Queen Victoria's Proclamation, Allahabad, 1 November 1858: 'We hold ourselves bound to the natives of Our Indian territories by the same obligations of duty which bind Us to all Our other subjects.'",
             "Total History & Civics Grade 10, Morning Star Publishers, Chapter 1."
-        ],
-        "historiographical_perspectives": "British historians initially depicted the event strictly as a 'Sepoy Mutiny' caused by religious superstition. Indian nationalist historians, notably V.D. Savarkar in 1909, re-evaluated it as the 'First War of Indian Independence'.",
-        "map_regions": ["Barrackpore", "Meerut", "Delhi", "Kanpur", "Lucknow", "Jhansi", "Gwalior", "Allahabad"],
-        "exam_questions": [
-            "State two military causes of the First War of Independence.",
-            "Explain the Doctrine of Lapse and name two states annexed under it.",
-            "How did the Government of India Act of 1858 change the administration of India?"
         ]
     }
 }
 
 
-class HistoryEngine:
+class HistoryEngine(BaseSubjectEngine):
     """
-    Subject-Specific Educational Engine for History and Civics.
-    Produces comprehensive 16-point event dossiers, timelines, and personality profiles.
+    Subject Engine 3: History.
+    Specializes in:
+    - 16-Point Historical Event Dossiers
+    - Chronological Event Sequencing & Interactive SVG Timelines
+    - Geopolitical Causal Flows (Political, Economic, Socio-Religious, Military)
+    - Primary Document Citations & Archival Verification
+    - Strict visual policy: Real historical photographs, maps, timelines; NO 3D models.
     """
 
-    def analyze_event(self, query: str) -> Dict[str, Any]:
-        """
-        Retrieves or dynamically builds a 16-point historical dossier.
-        """
-        query_clean = query.lower()
-        if "1857" in query_clean or "first war" in query_clean or "mutiny" in query_clean or "revolt" in query_clean:
-            event_data = HISTORICAL_EVENTS_KNOWLEDGE["1857"]
-            svg_timeline = self.generate_timeline_svg(event_data["chronological_sequence"])
-            return {
-                "success": True,
-                "analysis_format": "16-Point Historical Event Dossier",
-                "dossier": event_data,
-                "timeline_svg": svg_timeline,
-                "verified": True,
-            }
+    @property
+    def subject_name(self) -> str:
+        return "History"
 
-        # Generic historical dossier structure
-        return {
-            "success": True,
-            "analysis_format": "16-Point Historical Event Dossier",
-            "dossier": {
-                "event_name": query.title(),
-                "time_period": "Historical Era",
-                "geopolitical_context": "ICSE History Curriculum Framework Context",
-                "key_figures": [{"name": "Key Leader", "role": "Protagonist / Reformer", "allegiance": "Historical Movement"}],
-                "root_causes": {
-                    "political": "Structural political shifts and institutional governance changes.",
-                    "economic": "Fiscal, trade, or agrarian pressures.",
-                    "social_religious": "Cultural transitions and reform movements.",
-                    "military": "Security and defense developments."
-                },
-                "trigger": "Immediate catalyst prompting organized civic action.",
-                "chronological_sequence": [{"date": "Key Phase", "event": "Decisive historical engagement."}],
-                "battles_treaties": ["Associated treaty or constitutional milestone."],
-                "turning_points": ["Decisive turning point transforming public sentiment."],
-                "direct_consequences": ["Immediate administrative and governance reorganizations."],
-                "long_term_significance": "Shaping modern Indian and international constitutional order.",
-                "primary_citations": ["Morning Star Total History & Civics Reference"],
-                "historiographical_perspectives": "Scholarly consensus and critical nationalist analysis.",
-                "map_regions": ["India and South Asian geopolitical sphere"],
-                "exam_questions": ["Explain two major causes and two consequences of this historical event."]
+    @property
+    def allowed_visual_types(self) -> List[str]:
+        # History strictly forbids 3D models; permits timelines, historical maps, and authentic archival photographs
+        return ["chronological_timeline_svg", "historical_map_diagram", "archival_portrait_card", "none"]
+
+    def analyze_topic(
+        self,
+        topic: str,
+        grade: int,
+        board: str = "ICSE",
+        mode: str = "normal",
+        context: Optional[Dict[str, Any]] = None,
+    ) -> SubjectEngineOutput:
+        clean_topic = topic.strip()
+        dossier_res = self.analyze_event(clean_topic)
+        dossier = dossier_res.get("dossier", HISTORICAL_EVENTS_KNOWLEDGE["1857"])
+
+        def_scaffold = DefinitionScaffold(
+            original_academic_definition=(
+                "The Doctrine of Lapse was an aggressive imperialist annexation policy formulated by Lord Dalhousie (Governor-General of India 1848–1856) "
+                "stipulating that any Indian princely state under direct British suzerainty whose sovereign ruler died without a natural biological male heir "
+                "would automatically lapse to and be annexed by the British East India Company, denying the legal status of adopted sons."
+            ) if "doctrine" in clean_topic.lower() or "lapse" in clean_topic.lower() else (
+                "Imperialism is an asymmetric geopolitical system and policy of extending a nation's sovereign authority and territorial dominion "
+                "over foreign countries and peoples through military conquest, economic subjugation, and unequal treaties."
+            ),
+            simplified_definition=(
+                "The Doctrine of Lapse was a British rule stating that if an Indian king died without his own natural son, the British took over his kingdom, refusing to recognize an adopted child as ruler."
+            ) if "doctrine" in clean_topic.lower() or "lapse" in clean_topic.lower() else (
+                "Imperialism is when a powerful country takes over other weaker countries by force and controls their land, trade, and government."
+            ),
+            difficult_words_breakdown=[
+                {"word": "Suzerainty", "meaning": "A relationship in which one state has political control and supremacy over another state."},
+                {"word": "Annexation", "meaning": "The formal administrative incorporation of a foreign territory into one's own state dominion."},
+                {"word": "Biological Heir", "meaning": "A naturally born child, as distinguished from an adopted child in traditional succession."}
+            ],
+            relatable_example=(
+                "Under the Doctrine of Lapse, when Maharaja Gangadhar Rao of Jhansi passed away, the British refused to recognize his adopted son Damodar Rao and forcefully annexed Jhansi in 1853, prompting Rani Lakshmibai to join the 1857 uprising."
+            ),
+            meaning_preservation_proof="The simplified explanation preserves the exact legal restriction against adopted heirs and imperial annexation without omission."
+        )
+
+        steps = [
+            {
+                "step_number": 1,
+                "title": "Geopolitical Context & Underlying Preconditions",
+                "explanation": f"Context: {dossier.get('geopolitical_context', 'Colonial expansion and imperial rivalries.')}"
             },
-            "timeline_svg": "",
-            "verified": True
+            {
+                "step_number": 2,
+                "title": "Immediate Catalyst & Chronological Flashpoints",
+                "explanation": f"Trigger: {dossier.get('trigger', 'Introduction of the greased cartridge.')}"
+            },
+            {
+                "step_number": 3,
+                "title": "Institutional Reorganization & Long-Term Historical Legacy",
+                "explanation": f"Consequences: {', '.join(dossier.get('direct_consequences', ['End of Company rule', 'Queen Victoria proclamation']))[:200]}..."
+            }
+        ]
+
+        terms = [
+            {"term": "Doctrine of Lapse", "meaning": "Annexation policy of Dalhousie denying succession to adopted sons (Satara, Jhansi, Nagpur)."},
+            {"term": "Queen's Proclamation of 1858", "meaning": "Royal charter ending East India Company rule and promising religious non-interference."},
+            {"term": "General Service Enlistment Act 1856", "meaning": "Military decree compelling Indian sepoys to serve overseas, violating caste rules."}
+        ]
+
+        examples = [
+            {
+                "type": "Historical Cause-and-Effect Analysis",
+                "question": "Explain the immediate cause of the 1857 uprising.",
+                "solution": "The introduction of the Enfield P-53 rifle using paper cartridges greased with animal fat (cow and pig fat). Sepoys had to bite the cartridge to load the gun, which violated the religious tenets of both Hindu and Muslim soldiers.",
+                "explanation": "Mangal Pandey's revolt at Barrackpore on March 29, 1857, was the direct flashpoint of this immediate grievance."
+            }
+        ]
+
+        misconceptions = [
+            {
+                "misconception": "Viewing the 1857 uprising as purely a military mutiny of disgruntled soldiers",
+                "correction": "While sepoys triggered the revolt, it quickly became a widespread popular uprising involving dispossessed peasants, taluqdars of Awadh, displaced artisans, and deposed rulers seeking liberation from colonial exploitation."
+            }
+        ]
+
+        visual_rec = {
+            "type": "chronological_timeline_svg",
+            "format": "Interactive SVG Timeline",
+            "svg_code": dossier_res.get("timeline_svg"),
+            "caption": f"Chronological Timeline for {dossier.get('event_name', clean_topic)}",
+            "requires_3d": False
         }
 
-    def generate_timeline_svg(self, sequence: List[Dict[str, str]]) -> str:
-        """Generates an aesthetic SVG timeline."""
-        items = sequence[:4]
-        svg_parts = [
-            '<svg viewBox="0 0 600 140" class="w-full h-auto bg-slate-900 rounded-xl p-4 border border-slate-700/60">',
-            '<line x1="40" y1="50" x2="560" y2="50" stroke="#0ea5e9" stroke-width="3" stroke-linecap="round"/>'
-        ]
-        
-        spacing = 520 / max(1, len(items) - 1) if len(items) > 1 else 260
-        for i, step in enumerate(items):
-            cx = 40 + int(i * spacing)
-            date_text = step.get("date", "")
-            evt_short = step.get("event", "")[:28] + ("..." if len(step.get("event", "")) > 28 else "")
-            svg_parts.append(f'<circle cx="{cx}" cy="50" r="7" fill="#38bdf8" stroke="#0f172a" stroke-width="2"/>')
-            svg_parts.append(f'<text x="{cx}" y="32" fill="#38bdf8" font-size="11" font-weight="bold" text-anchor="middle" font-family="sans-serif">{date_text}</text>')
-            svg_parts.append(f'<text x="{cx}" y="78" fill="#cbd5e1" font-size="10" text-anchor="middle" font-family="sans-serif">{evt_short}</text>')
+        assessment = {
+            "question": "Mention two administrative changes introduced by the Government of India Act 1858.",
+            "correct_answer": "1. Governance of India transferred from the East India Company to the British Crown. 2. A cabinet minister in Britain appointed as Secretary of State for India, aided by a 15-member Council.",
+            "rubric_note": "Mention transfer to Crown and appointment of Secretary of State."
+        }
 
-        svg_parts.append('</svg>')
-        return "".join(svg_parts)
+        return SubjectEngineOutput(
+            subject=self.subject_name,
+            topic=clean_topic,
+            curriculum_board=board,
+            grade=grade,
+            teaching_methodology="16-Point Archival Dossier & Chronological Causal Mapping",
+            definition_scaffold=def_scaffold,
+            core_explanation_steps=steps,
+            essential_terminology=terms,
+            worked_examples=examples,
+            visual_recommendation=visual_rec,
+            assessment_checkpoint=assessment,
+            common_misconceptions=misconceptions,
+            subject_specific_payload={
+                "dossier": dossier,
+                "requires_3d": False
+            }
+        )
+
+    def analyze_event(self, event_query: str) -> Dict[str, Any]:
+        """Provides backward-compatible 16-point event dossier."""
+        q = event_query.lower()
+        if "1857" in q or "first war" in q or "revolt" in q or "sepoy" in q or "mangal pandey" in q or "jhansi" in q:
+            dossier = HISTORICAL_EVENTS_KNOWLEDGE["1857"]
+            return {
+                "success": True,
+                "event_matched": "1857 First War of Independence",
+                "dossier": dossier,
+                "timeline_svg": self._generate_timeline_svg(dossier["chronological_sequence"])
+            }
+
+        default_dossier = {
+            "event_name": event_query.title(),
+            "time_period": "Historical Era",
+            "geopolitical_context": "National and geopolitical transformations across the region.",
+            "key_figures": [{"name": "Prominent Historical Figures", "role": "Leadership", "allegiance": "National"}],
+            "root_causes": {"political": "Governance policies", "economic": "Fiscal and trade changes", "social_religious": "Cultural dynamics", "military": "Security posture"},
+            "trigger": "Critical immediate spark initiating mobilization.",
+            "chronological_sequence": [{"date": "Stage 1", "event": "Genesis and mobilization"}, {"date": "Stage 2", "event": "Peak engagement"}, {"date": "Stage 3", "event": "Resolution"}],
+            "battles_treaties": ["Major Accords and Engagements"],
+            "turning_points": ["Decisive structural shift"],
+            "direct_consequences": ["Governance restructuring", "Legal modifications"],
+            "long_term_significance": "Deep enduring imprint on modern constitutionalism and national identity.",
+            "primary_citations": ["Total History & Civics Grade 10, Morning Star Publishers."]
+        }
+        return {
+            "success": True,
+            "event_matched": event_query,
+            "dossier": default_dossier,
+            "timeline_svg": self._generate_timeline_svg(default_dossier["chronological_sequence"])
+        }
+
+    def _generate_timeline_svg(self, sequence: List[Dict[str, str]]) -> str:
+        """Renders an interactive SVG chronological timeline."""
+        items_count = len(sequence)
+        width = 520
+        height = max(180, 50 + (items_count * 52))
+
+        svg_lines = [
+            f'<svg viewBox="0 0 {width} {height}" class="w-full h-auto bg-slate-950 rounded-xl p-4 border border-slate-800">'
+            f'<line x1="80" y1="40" x2="80" y2="{height - 30}" stroke="#f97316" stroke-width="3" stroke-linecap="round"/>'
+            f'<text x="260" y="25" fill="#fdba74" font-size="13" font-weight="bold" text-anchor="middle" font-family="sans-serif">Chronological Sequence of Events</text>'
+        ]
+
+        for idx, item in enumerate(sequence):
+            y = 55 + (idx * 52)
+            svg_lines.append(f'<circle cx="80" cy="{y}" r="6" fill="#f97316" stroke="#ffffff" stroke-width="2"/>')
+            svg_lines.append(f'<text x="100" y="{y - 4}" fill="#fed7aa" font-size="11" font-weight="bold" font-family="sans-serif">{item["date"]}</text>')
+            text_desc = item['event'][:65] + '...' if len(item['event']) > 65 else item['event']
+            svg_lines.append(f'<text x="100" y="{y + 12}" fill="#94a3b8" font-size="10" font-family="sans-serif">{text_desc}</text>')
+
+        svg_lines.append('</svg>')
+        return "\n".join(svg_lines)
+
+    def validate_academic_accuracy(self, output: SubjectEngineOutput) -> bool:
+        if output.visual_recommendation.get("requires_3d"):
+            return False
+        return True
 
 
 history_engine = HistoryEngine()

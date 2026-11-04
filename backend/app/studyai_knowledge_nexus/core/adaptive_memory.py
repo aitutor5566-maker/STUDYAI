@@ -124,5 +124,26 @@ class AdaptiveLearningMemory:
         profile["last_updated"] = time.time()
         return profile
 
+    def get_profile(self, user_id: str) -> Dict[str, Any]:
+        """Alias for get_or_create_profile."""
+        return self.get_or_create_profile(user_id)
+
+    def update_profile(
+        self,
+        user_id: str,
+        difficulties: Optional[List[str]] = None,
+        explanation_style: Optional[str] = None,
+        preferred_learning_methods: Optional[List[str]] = None,
+        grade: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Alias for update_student_preferences."""
+        return self.update_student_preferences(
+            user_id=user_id,
+            difficulties=difficulties,
+            explanation_style=explanation_style,
+            preferred_learning_methods=preferred_learning_methods,
+            grade=grade,
+        )
+
 
 adaptive_memory = AdaptiveLearningMemory()
