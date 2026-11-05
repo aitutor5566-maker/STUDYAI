@@ -27,6 +27,10 @@ from backend.app.studyai_knowledge_nexus.knowledge_hub import (
     knowledge_library,
     central_image_library,
 )
+from backend.app.studyai_knowledge_nexus.research_pipeline import (
+    master_research_pipeline_coordinator,
+    PipelineExecutionRequest,
+)
 
 logger = logging.getLogger("knowledge_nexus.api_router")
 
@@ -388,3 +392,35 @@ async def get_hub_providers_status():
             "path": central_image_library.db_path,
         },
     }
+
+
+# --- Master AI Research & Educational Generation Pipeline Endpoints ---
+
+@nexus_api_router.post("/research-pipeline/execute")
+async def execute_research_pipeline(payload: PipelineExecutionRequest):
+    """
+    Executes the Master AI Research and Educational Generation Pipeline (Phase 1):
+    1. Question Understanding (subject, topic, subtopic, grade, curriculum, depth, research necessity)
+    2. Focused Research Planner (purposeful search queries)
+    3. Multi-Provider Search & Retrieval (Gemini Search Grounding + Curriculum Repositories)
+    4. Knowledge Processor (Isolated 12-element Knowledge Package)
+    5. Fact-Verification Layer (Evidence check + SymPy validation)
+    6. Educational Content Generator (15 Pedagogical Sections)
+    7. Visual, Three.js & Voice Integration Contracts
+    8. Context Preservation for Follow-Ups
+    """
+    try:
+        response = await master_research_pipeline_coordinator.execute_pipeline(payload)
+        return response.dict()
+    except Exception as e:
+        logger.error(f"Error executing Master Research Pipeline: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@nexus_api_router.get("/research-pipeline/context/{session_id}")
+async def get_pipeline_context(session_id: str):
+    """Retrieves preserved lesson context for follow-up questions."""
+    ctx = master_research_pipeline_coordinator.get_session_context(session_id)
+    if not ctx:
+        raise HTTPException(status_code=404, detail="Session context not found")
+    return ctx.dict()
