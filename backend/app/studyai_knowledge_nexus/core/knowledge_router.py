@@ -73,16 +73,23 @@ class KnowledgeNexusRouter:
                 if vision_result.get("transcription"):
                     cleaned_query = f"{cleaned_query}\n[Visual Image Input Analysis]: {vision_result['transcription']}"
 
-        # Step 3: Subject & Curriculum Classification
+        # Step 3: Subject & Curriculum Classification (Dedicated Subject & Topic Intelligence Engine)
         classification = subject_classifier.classify(
             query=cleaned_query,
             user_grade=grade,
             preferred_subject=subject,
+            board=effective_board,
+            session_id=effective_user_id,
         )
-        resolved_subject = classification["subject"]
-        resolved_chapter = classification["matched_chapter"]
+        resolved_subject = classification.subject
+        resolved_chapter = classification.matched_chapter
+        resolved_topic = classification.topic
+        resolved_subtopic = classification.subtopic
+        resolved_question_type = classification.question_type
 
-        # Curriculum Node Resolution (ICSE, ISC, CBSE)
+        # 7-Level Knowledge Hierarchy Resolution:
+        # Level 1: Board -> Level 2: Grade -> Level 3: Subject -> Level 4: Chapter ->
+        # Level 5: Topic -> Level 6: Subtopic -> Level 7: Verified Knowledge Item
         curr_node = curriculum_manager.find_curriculum_node(
             board=effective_board,
             grade=grade,
@@ -172,6 +179,7 @@ class KnowledgeNexusRouter:
             grade=grade,
             subject=resolved_subject,
             chapter=resolved_chapter,
+            question_type=resolved_question_type,
             mode=mode,
             profile=profile,
             retrieved_knowledge=[{"curriculum": curr_node}] if curr_node else [],
@@ -223,7 +231,7 @@ class KnowledgeNexusRouter:
         raw_text = ai_response["text"]
 
         # Step 8: Parse Citations & Confidence Score
-        recommended_books = classification.get("recommended_books", [curr_node.get("textbook", "Authorized Curriculum Textbook")])
+        recommended_books = getattr(classification, "recommended_books", None) or [curr_node.get("textbook", "Authorized Curriculum Textbook")] if curr_node else ["Concise Series (Selina Publishers)"]
         citations_data = [
             {
                 "book": book,
@@ -342,18 +350,27 @@ class KnowledgeNexusRouter:
                 "academic_checks": "passed",
                 "warnings": []
             },
-            # Backwards-compatible fields preserved for existing UI & tests
+            # Universal Teacher Intelligence metadata
             "query": cleaned_query,
             "board": effective_board,
             "grade": grade,
             "subject": resolved_subject,
             "chapter": resolved_chapter,
+            "topic": resolved_topic,
+            "subtopic": resolved_subtopic,
+            "question_type": resolved_question_type,
+            "question_type_display": classification.question_type_display,
+            "confidence_tier": classification.confidence_tier,
+            "confidence_score": classification.confidence_score,
+            "clarification_needed": classification.clarification_needed,
+            "clarification_prompt": classification.clarification_prompt,
+            "suggested_subjects": classification.suggested_subjects,
+            "is_follow_up": classification.is_follow_up,
             "curriculum_node": curr_node,
             "teaching_mode": mode,
             "language": language,
             "explanation": raw_text,
             "citations": sanitized_citations,
-            "confidence_score": confidence_score,
             "definition_scaffold": engine_output.definition_scaffold.dict(),
             "subject_intelligence": {
                 "engine_name": subject_engine.__class__.__name__,
@@ -400,16 +417,28 @@ class KnowledgeNexusRouter:
             },
         }
 
-        # Step 9: Multi-Stage Response Validation & Sanitization
+        # Step 10: Multi-Stage Response Validation & Sanitization (10 Academic Checks)
         validation = response_validator.validate_and_sanitize(
             response_payload=raw_result,
             query=cleaned_query,
             expected_subject=resolved_subject,
             expected_grade=grade,
             expected_board=effective_board,
+            expected_question_type=resolved_question_type,
+            mode=mode,
         )
 
-        return validation.sanitized_response
+        sanitized_res = validation.sanitized_response
+        sanitized_res["quality"] = {
+            "schema_valid": validation.is_valid,
+            "academic_checks": "passed" if validation.is_valid else "flagged",
+            "passed_checks": validation.passed_checks,
+            "failed_checks": validation.failed_checks,
+            "warnings": validation.warnings,
+            "total_checks_run": validation.total_checks_run,
+        }
+
+        return sanitized_res
 
 
 knowledge_nexus_router = KnowledgeNexusRouter()

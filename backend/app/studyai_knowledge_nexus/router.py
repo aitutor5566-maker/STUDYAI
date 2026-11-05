@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 from backend.app.studyai_knowledge_nexus.core.knowledge_router import knowledge_nexus_router
 from backend.app.studyai_knowledge_nexus.core.subject_classifier import subject_classifier
+from backend.app.studyai_knowledge_nexus.core.question_type_classifier import question_type_classifier
 from backend.app.studyai_knowledge_nexus.curriculum.icse_database import icse_db, ICSE_CURRICULUM_TREE
 from backend.app.studyai_knowledge_nexus.curriculum.curriculum_manager import curriculum_manager
 from backend.app.studyai_knowledge_nexus.subjects.subject_registry import subject_registry
@@ -162,12 +163,31 @@ async def get_history_16_point_dossier(payload: HistoryEventRequest):
 
 @nexus_api_router.post("/classify")
 async def classify_student_query(payload: NexusAskRequest):
-    """Classifies student query into subject, grade, and chapter curriculum nodes."""
-    return subject_classifier.classify(
+    """Classifies student query into subject, grade, chapter, question type, and 3D gatekeeping."""
+    res = subject_classifier.classify(
         query=payload.query,
         user_grade=payload.grade,
         preferred_subject=payload.subject,
+        board=payload.board,
+        session_id=(payload.profile or {}).get("user_id") or "default_session",
     )
+    return res.to_dict()
+
+
+@nexus_api_router.get("/question-types")
+async def list_twenty_three_question_types():
+    """Lists all 23 educational question types with required sections and guidance."""
+    return {
+        "total_types": len(question_type_classifier.QUESTION_TYPES),
+        "types": [meta.dict() for meta in question_type_classifier.QUESTION_TYPES.values()]
+    }
+
+
+@nexus_api_router.post("/reset-session")
+async def reset_student_session(session_id: Optional[str] = Query(default="default_session")):
+    """Resets conversational memory and follow-up context for a session."""
+    subject_classifier.reset_session(session_id)
+    return {"status": "success", "session_id": session_id, "message": "Session context reset."}
 
 
 @nexus_api_router.post("/ingest-document")

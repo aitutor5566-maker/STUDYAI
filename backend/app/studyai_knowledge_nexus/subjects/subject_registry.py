@@ -25,9 +25,12 @@ class SubjectRegistry:
     def __init__(self):
         self._engines: Dict[str, BaseSubjectEngine] = {
             "english i": english_i_engine,
+            "english language": english_i_engine,
             "english ii": english_ii_engine,
+            "english literature": english_ii_engine,
             "history": history_engine,
             "geography": geography_engine,
+            "civics": civics_engine,
             "civics / political science": civics_engine,
             "mathematics": math_engine,
             "physics": physics_engine,
