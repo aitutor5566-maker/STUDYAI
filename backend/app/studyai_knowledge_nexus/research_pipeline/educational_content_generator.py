@@ -106,78 +106,114 @@ class EducationalContentGenerator:
         sections.append(PedagogicalLessonSection(section_index=idx, section_key="concept_overview", title="3. Concept Overview", content=overview_text))
         idx += 1
 
-        # 4. Prerequisites
-        prereqs = "• Basic cellular organization\n• Blood composition (RBCs, Plasma)\n• Differences between arteries and veins" if "heart" in topic_lower else f"• Standard Grade {grade - 1} foundational concepts in {subject}"
-        sections.append(PedagogicalLessonSection(section_index=idx, section_key="prerequisites", title="4. Prerequisites", content=prereqs))
+        # 4. Background Knowledge
+        background_text = (
+            "Historical and Anatomical Discovery: William Harvey first published the comprehensive double circulation "
+            "model in 1628 ('De Motu Cordis'), demonstrating that the heart acts as a muscular pressure pump rather than producing blood."
+        ) if "heart" in topic_lower else f"Foundational scientific development and curriculum context of {topic}."
+        sections.append(PedagogicalLessonSection(section_index=idx, section_key="background_knowledge", title="4. Background Knowledge", content=background_text))
         idx += 1
 
-        # 5. Topic Breakdown
+        # 5. Prerequisites
+        prereqs = "• Basic cellular organization\n• Blood composition (RBCs, Plasma)\n• Differences between arteries and veins" if "heart" in topic_lower else f"• Standard Grade {grade - 1} foundational concepts in {subject}"
+        sections.append(PedagogicalLessonSection(section_index=idx, section_key="prerequisites", title="5. Prerequisites", content=prereqs))
+        idx += 1
+
+        # 6. Topic Breakdown
         breakdown_text = (
             "The heart functions as two coordinated pumps separated by an impermeable muscular septum:\n"
             "1. **Right Side (Pulmonary Circuit)**: Handles deoxygenated blood returning from tissues and sends it to the lungs.\n"
             "2. **Left Side (Systemic Circuit)**: Receives freshly oxygenated blood from the lungs and pumps it to the entire body."
         ) if "heart" in topic_lower else f"Key structural components and divisions of {topic}."
-        sections.append(PedagogicalLessonSection(section_index=idx, section_key="topic_breakdown", title="5. Topic Breakdown", content=breakdown_text))
+        sections.append(PedagogicalLessonSection(section_index=idx, section_key="topic_breakdown", title="6. Topic Breakdown", content=breakdown_text))
         idx += 1
 
-        # 6. Detailed Explanations
+        # 7. Detailed Subtopic Explanations
         explanation_content = "\n\n".join(knowledge.key_facts)
-        sections.append(PedagogicalLessonSection(section_index=idx, section_key="detailed_explanations", title="6. Detailed Scientific Explanation", content=explanation_content))
+        sections.append(PedagogicalLessonSection(section_index=idx, section_key="detailed_explanations", title="7. Detailed Subtopic Explanations", content=explanation_content))
         idx += 1
 
-        # 7. Important Terminology
+        # 8. Important Terminology
         terms_content = "\n".join([f"• **{t.get('term')}**: {t.get('definition')}" for t in knowledge.important_terms]) if knowledge.important_terms else f"• **{topic}**: Core curricular terminology."
-        sections.append(PedagogicalLessonSection(section_index=idx, section_key="important_terminology", title="7. Important Terminology", content=terms_content))
+        sections.append(PedagogicalLessonSection(section_index=idx, section_key="important_terminology", title="8. Important Terminology", content=terms_content))
         idx += 1
 
-        # 8. Examples
+        # 9. Examples
         example_text = knowledge.examples[0] if knowledge.examples else f"Everyday observation and real-world application of {topic}."
-        sections.append(PedagogicalLessonSection(section_index=idx, section_key="examples", title="8. Illustrative Examples", content=example_text))
+        sections.append(PedagogicalLessonSection(section_index=idx, section_key="examples", title="9. Illustrative Examples", content=example_text))
         idx += 1
 
-        # 9. Step-by-Step Mechanisms
+        # 10. Scientific or Logical Mechanisms
         if knowledge.processes:
             proc = knowledge.processes[0]
             step_text = "\n".join(proc.get("step_sequence", []))
-            sections.append(PedagogicalLessonSection(section_index=idx, section_key="step_by_step_mechanisms", title="9. Step-by-Step Mechanism", content=step_text, visual_target="three_d_model" if understanding.required_3d_model else "diagram"))
+            sections.append(PedagogicalLessonSection(section_index=idx, section_key="step_by_step_mechanisms", title="10. Scientific & Logical Mechanisms", content=step_text, visual_target="three_d_model" if understanding.required_3d_model else "diagram"))
             idx += 1
 
-        # 10. Relevant Diagrams and Visual Instructions
+        # 11. Images and Diagrams Guide
         visual_instr = (
             "**Diagram Guide**:\n"
             "Observe the 4 chambers in the anatomical visual. Follow the blue arrows for deoxygenated blood entering the Right Atrium "
             "and Right Ventricle, and the red arrows for oxygenated blood passing through the Left Atrium and Left Ventricle into the Aorta."
         ) if "heart" in topic_lower else f"Refer to the standard {curriculum} labelled diagram for {topic}."
-        sections.append(PedagogicalLessonSection(section_index=idx, section_key="diagram_instructions", title="10. Visual Diagram Guide", content=visual_instr))
+        sections.append(PedagogicalLessonSection(section_index=idx, section_key="diagram_instructions", title="11. Images & Labeled Diagrams", content=visual_instr))
         idx += 1
 
-        # 11. Applications
+        # 12. Interactive 3D Model Exploration
+        three_d_text = (
+            "**Interactive 3D Lab Guide**:\n"
+            "• Rotate the 3D anatomical heart to inspect the patient's Right vs Left chambers.\n"
+            "• Click on the 'Right Ventricle' or 'Left Ventricle' to inspect wall thickness.\n"
+            "• Toggle the 'Conduction' layer to isolate the yellow Sinoatrial (SA) Node pacemaker.\n"
+            "• Follow the 13-stage blood-flow pulse animation."
+        ) if "heart" in topic_lower else f"Use the interactive 3D model controls to rotate, zoom, and inspect {topic}."
+        sections.append(PedagogicalLessonSection(section_index=idx, section_key="interactive_3d_guidance", title="12. Interactive 3D Exploration", content=three_d_text))
+        idx += 1
+
+        # 13. Step-by-Step Process
+        process_text = (
+            "1. Superior & Inferior Vena Cava collect deoxygenated blood -> 2. Enters Right Atrium -> 3. Passes Tricuspid Valve into Right Ventricle -> "
+            "4. Pulmonary Valve -> Pulmonary Arteries -> Lungs -> 5. Pulmonary Veins -> Left Atrium -> 6. Bicuspid (Mitral) Valve -> Left Ventricle -> 7. Aorta -> Body."
+        ) if "heart" in topic_lower else f"Stepwise curricular progression for {topic}."
+        sections.append(PedagogicalLessonSection(section_index=idx, section_key="step_by_step_process", title="13. Step-by-Step Process", content=process_text))
+        idx += 1
+
+        # 14. Real-World Applications
         app_text = (
             "Clinical Relevance: Measuring blood pressure (systolic/diastolic), understanding heart murmurs (valvular defects), "
             "and maintaining cardiovascular health through aerobic exercise."
         ) if "heart" in topic_lower else f"Technological and practical applications of {topic} in modern industry and daily life."
-        sections.append(PedagogicalLessonSection(section_index=idx, section_key="applications", title="11. Applications & Clinical Context", content=app_text))
+        sections.append(PedagogicalLessonSection(section_index=idx, section_key="applications", title="14. Real-World Applications", content=app_text))
         idx += 1
 
-        # 12. Common Misconceptions
+        # 15. Common Misconceptions
         misconception_text = (
             "• **Misconception**: Blood inside human veins is blue.\n"
             "  *Fact*: Human blood is ALWAYS red. Oxygen-rich blood is bright scarlet, while deoxygenated blood is dark crimson.\n"
             "• **Misconception**: Atria and ventricles contract simultaneously.\n"
             "  *Fact*: Atria contract first (atrial systole) to fill ventricles, followed by ventricular contraction (ventricular systole)."
         ) if "heart" in topic_lower else f"Common exam traps and conceptual errors in {topic}."
-        sections.append(PedagogicalLessonSection(section_index=idx, section_key="common_misconceptions", title="12. Common Misconceptions", content=misconception_text))
+        sections.append(PedagogicalLessonSection(section_index=idx, section_key="common_misconceptions", title="15. Common Misconceptions", content=misconception_text))
         idx += 1
 
-        # 13. Summary
+        # 16. Memory Techniques & Mnemonics
+        memory_text = (
+            "• **LORD Mnemonic**: **L**eft = **O**xygenated | **R**ight = **D**eoxygenated.\n"
+            "• **TRI before you BI**: You must step on the **Tri**cuspid valve on the Right before reaching the **Bi**cuspid valve on the Left.\n"
+            "• **Arteries = Away**: All arteries carry blood **A**way from the heart."
+        ) if "heart" in topic_lower else f"Memory anchors and mnemonic techniques for {topic}."
+        sections.append(PedagogicalLessonSection(section_index=idx, section_key="memory_techniques", title="16. Memory Techniques & Mnemonics", content=memory_text))
+        idx += 1
+
+        # 17. Key Takeaways & Summary
         summary_text = (
             f"In summary, **{topic}** maintains unidirectional double circulation through coordinated contraction "
             f"of the 4 muscular chambers, regulated strictly by valves and the cardiac pacemaker."
         )
-        sections.append(PedagogicalLessonSection(section_index=idx, section_key="summary", title="13. Key Takeaways & Summary", content=summary_text))
+        sections.append(PedagogicalLessonSection(section_index=idx, section_key="summary", title="17. Key Takeaways & Summary", content=summary_text))
         idx += 1
 
-        # 14. Practice Questions
+        # 18. Examination Questions
         practice_qs = [
             {
                 "question": "Name the four chambers of the human heart and explain why the left ventricle has the thickest muscular wall.",
@@ -193,22 +229,36 @@ class EducationalContentGenerator:
             {"question": f"State the primary principles of {topic}.", "marks": 3, "model_answer": f"Standard {curriculum} answer for {topic}."}
         ]
         practice_text = "\n\n".join([f"**Q{i+1} ({q['marks']} Marks)**: {q['question']}\n*Model Answer*: {q['model_answer']}" for i, q in enumerate(practice_qs)])
-        sections.append(PedagogicalLessonSection(section_index=idx, section_key="practice_questions", title="14. Practice Questions", content=practice_text))
+        sections.append(PedagogicalLessonSection(section_index=idx, section_key="practice_questions", title="18. Board Examination Questions", content=practice_text))
         idx += 1
 
-        # 15. Examination Guidance
+        # 19. Examination Guidance
         exam_guidance = {
-            "key_keywords_required_by_examiners": ["Right Atrium", "Left Atrium", "Right Ventricle", "Left Ventricle", "Bicuspid", "Tricuspid", "Septum", "Aorta", "Vena Cava"],
-            "mark_allocation_tip": "In 3-mark questions, always draw directional arrows and label all 4 chambers accurately.",
-            "common_point_deductions": "Confusing the patient's anatomical left/right with your viewing left/right.",
+            "focus_areas": ["Chamber labelling", "Direction of blood flow", "Tricuspid vs Bicuspid valves"],
+            "common_mistakes": ["Reversing patient's left and right sides", "Confusing pulmonary artery and pulmonary vein"],
+            "marking_scheme_notes": "1 mark for correct chamber identification, 1 mark for valve function, 1 mark for direction of blood flow."
+        } if "heart" in topic_lower else {
+            "focus_areas": [f"{topic} core definitions", "Key formula/rules"],
+            "common_mistakes": ["Calculation without units", "Incomplete steps"],
+            "marking_scheme_notes": f"Standard {curriculum} marking criteria."
         }
         guidance_text = (
-            f"**Examiner Tips for {curriculum} Grade {grade}**:\n"
-            f"• Mandatory Keywords: {', '.join(exam_guidance['key_keywords_required_by_examiners'])}\n"
-            f"• Mark Allocation: {exam_guidance['mark_allocation_tip']}\n"
-            f"• Common Pitfall: {exam_guidance['common_point_deductions']}"
+            f"**Board Examination Guidance ({curriculum} Class {grade})**:\n"
+            f"• **Key Focus Areas**: {', '.join(exam_guidance['focus_areas'])}\n"
+            f"• **Pitfalls to Avoid**: {', '.join(exam_guidance['common_mistakes'])}\n"
+            f"• **Marking Scheme**: {exam_guidance['marking_scheme_notes']}"
         )
-        sections.append(PedagogicalLessonSection(section_index=idx, section_key="examination_guidance", title="15. Board Examination Guidance", content=guidance_text))
+        sections.append(PedagogicalLessonSection(section_index=idx, section_key="examination_guidance", title="19. Examination Guidance & Marking Criteria", content=guidance_text))
+        idx += 1
+
+        # 20. Understanding Checkpoint
+        check_text = (
+            "Quick Self-Assessment Checkpoint:\n"
+            "✓ Can you identify all 4 chambers without confusing patient Left and Right?\n"
+            "✓ Can you state the exact heart sound ('lub' vs 'dub') caused by AV valve closure?\n"
+            "✓ Can you explain why the interventricular septum is vital in warm-blooded mammals?"
+        ) if "heart" in topic_lower else f"Self-assessment verification checkpoints for {topic}."
+        sections.append(PedagogicalLessonSection(section_index=idx, section_key="understanding_check", title="20. Understanding Checkpoint", content=check_text))
 
         # Build Visual Contract
         cached_img = central_image_library.find_images_for_topic(topic, subject=subject, grade=grade, board=curriculum)

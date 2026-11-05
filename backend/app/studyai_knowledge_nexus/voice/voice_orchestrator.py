@@ -242,12 +242,43 @@ class VoiceLessonOrchestrator:
         teacher_reply_text = ""
         advance_step = False
 
-        # 1. Handle "I don't understand" / "Confused"
-        if any(phrase in clean_utterance for phrase in ["don't understand", "dont understand", "confused", "not clear", "hard"]):
+        # 0. Handle Component Query / 3D Selection (e.g. "explain right ventricle", "show left atrium")
+        component_parts = {
+            "right ventricle": "right_ventricle",
+            "left ventricle": "left_ventricle",
+            "right atrium": "right_atrium",
+            "left atrium": "left_atrium",
+            "septum": "septum",
+            "tricuspid": "tricuspid_valve",
+            "mitral": "mitral_valve",
+            "bicuspid": "mitral_valve",
+            "aorta": "aorta",
+            "sa node": "sa_node",
+            "pacemaker": "sa_node",
+            "pulmonary artery": "pulmonary_artery",
+        }
+        selected_target_id = None
+        for name, pid in component_parts.items():
+            if name in clean_utterance:
+                selected_target_id = pid
+                break
+
+        if selected_target_id:
+            part_label = selected_target_id.replace("_", " ").title()
+            session.active_visual = {"type": "highlight", "target_id": selected_target_id}
             teacher_reply_text = (
-                f"No worries at all! Let me put it in an easier way. "
-                f"Think of {session.topic} like this: {current_step.get('simple_analogy', 'an everyday process we see around us.')} "
-                f"Does that picture make more sense to you?"
+                f"Looking closely at the {part_label} highlighted in our 3D model: "
+                f"Notice how it performs a crucial role in maintaining unidirectional blood flow without any regurgitation. "
+                f"I have highlighted the {part_label} on your screen."
+            )
+
+        # 1. Handle "Make it simpler" / "I don't understand" / "Confused"
+        elif any(phrase in clean_utterance for phrase in ["simpler", "make it simple", "easier", "don't understand", "dont understand", "confused", "not clear", "hard"]):
+            teacher_reply_text = (
+                f"Let's make it simpler with an everyday analogy: "
+                f"Think of the heart as a house with 4 rooms and 2 separate apartments. "
+                f"The right side takes in used delivery boxes (deoxygenated blood) and sends them to the post office (lungs) to be refreshed. "
+                f"The left side takes freshly packed boxes (oxygenated blood) and sends them to every home in the city (body tissues)."
             )
 
         # 2. Handle "Explain again" / "Repeat"

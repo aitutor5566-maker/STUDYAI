@@ -40,6 +40,7 @@ class ThreeJSDeclarativeScene(BaseModel):
     blood_flow_sequence: List[str] = Field(default_factory=list)
     electrical_conduction_system: Dict[str, Any] = Field(default_factory=dict)
     fallback_diagram_svg: Optional[str] = None
+    quality_level: str = "level_3_advanced_scientific"  # level_1_schematic, level_2_instructional, level_3_advanced_scientific
     animation_type: str = "none" # pulse, spin, orbit, flow
     supports_cross_section: bool = True
     supports_exploded_view: bool = True
@@ -258,7 +259,9 @@ class ThreeJSSceneOrchestrator:
                 {"id": "aortic_valve", "label": "Aortic Semilunar Valve", "role": "High-pressure valve at root of aorta preventing backflow into LV during diastole.", "color": "#fb7185", "layer": "valves", "exploded_offset": [0.2, 0.3, 0.2]},
                 {"id": "aorta", "label": "Systemic Aorta & Arch", "role": "Largest systemic artery carrying oxygen-rich blood from LV to the head, arms, and entire body.", "color": "#dc2626", "layer": "vessels", "exploded_offset": [0.2, 0.8, 0.0]},
                 {"id": "superior_vena_cava", "label": "Superior Vena Cava", "role": "Great vein collecting deoxygenated blood from head, neck, and upper limbs.", "color": "#1d4ed8", "layer": "vessels", "exploded_offset": [-0.8, 0.6, 0.1]},
+                {"id": "inferior_vena_cava", "label": "Inferior Vena Cava", "role": "Great vein returning deoxygenated blood from lower body and abdominal viscera.", "color": "#1e40af", "layer": "vessels", "exploded_offset": [-0.8, -0.6, 0.1]},
                 {"id": "pulmonary_artery", "label": "Pulmonary Artery", "role": "Only artery in human body that carries deoxygenated blood (from RV to lungs).", "color": "#2563eb", "layer": "vessels", "exploded_offset": [-0.2, 0.7, 0.4]},
+                {"id": "pulmonary_veins", "label": "Pulmonary Veins", "role": "Four pulmonary veins carrying freshly oxygenated blood from lungs into Left Atrium.", "color": "#ef4444", "layer": "vessels", "exploded_offset": [0.8, 0.5, -0.3]},
                 {"id": "sa_node", "label": "SA Node (Pacemaker)", "role": "Specialized nodal tissue in upper RA wall; self-generates electrical impulses that pace heartbeats (72 bpm).", "color": "#facc15", "layer": "conduction", "exploded_offset": [-0.9, 0.8, 0.3]}
             ],
             "annotations": [
@@ -318,6 +321,207 @@ class ThreeJSSceneOrchestrator:
             ],
             "animation_type": "spin",
             "supports_cross_section": True,
+            "supports_exploded_view": True,
+            "mobile_touch_enabled": True
+        },
+        "water-molecule": {
+            "title": "3D Water Molecule (H₂O) Bent Molecular Geometry & Dipole Moment",
+            "model_key": "water-molecule",
+            "subject": "Chemistry",
+            "academic_topic": "Chemical Bonding, Covalent Bonds & Molecular Geometry",
+            "quality_level": "level_3_advanced_scientific",
+            "background": "#0b101b",
+            "camera": {"fov": 45, "position": [0, 0, 6], "min_distance": 2.5, "max_distance": 14.0},
+            "camera_presets": [
+                {"name": "Standard View", "position": [0, 0, 6], "target": [0, 0, 0], "fov": 45},
+                {"name": "Bond Angle 104.5°", "position": [0, 1.5, 4.5], "target": [0, 0, 0], "fov": 35}
+            ],
+            "lights": [
+                {"type": "ambient", "color": "#ffffff", "intensity": 0.8},
+                {"type": "directional", "color": "#60a5fa", "position": [3, 5, 4], "intensity": 1.2}
+            ],
+            "objects": [
+                {
+                    "id": "oxygen_atom",
+                    "geometry": {"type": "sphere", "radius": 0.9, "widthSegments": 32, "heightSegments": 32},
+                    "material": {"type": "meshStandard", "color": "#ef4444", "roughness": 0.2, "metalness": 0.1},
+                    "position": [0, 0.4, 0],
+                    "label": "Oxygen Atom (δ- Electronegative)"
+                },
+                {
+                    "id": "hydrogen_1",
+                    "geometry": {"type": "sphere", "radius": 0.55, "widthSegments": 24, "heightSegments": 24},
+                    "material": {"type": "meshStandard", "color": "#3b82f6", "roughness": 0.3},
+                    "position": [-1.35, -0.75, 0],
+                    "label": "Hydrogen Atom 1 (δ+ Electropositive)"
+                },
+                {
+                    "id": "hydrogen_2",
+                    "geometry": {"type": "sphere", "radius": 0.55, "widthSegments": 24, "heightSegments": 24},
+                    "material": {"type": "meshStandard", "color": "#3b82f6", "roughness": 0.3},
+                    "position": [1.35, -0.75, 0],
+                    "label": "Hydrogen Atom 2 (δ+ Electropositive)"
+                },
+                {
+                    "id": "covalent_bond_1",
+                    "geometry": {"type": "cylinder", "radiusTop": 0.14, "radiusBottom": 0.14, "height": 1.4, "radialSegments": 16},
+                    "material": {"type": "meshStandard", "color": "#94a3b8", "roughness": 0.4},
+                    "position": [-0.68, -0.17, 0],
+                    "rotation": [0, 0, 0.68],
+                    "label": "Polar Covalent Single Bond 1"
+                },
+                {
+                    "id": "covalent_bond_2",
+                    "geometry": {"type": "cylinder", "radiusTop": 0.14, "radiusBottom": 0.14, "height": 1.4, "radialSegments": 16},
+                    "material": {"type": "meshStandard", "color": "#94a3b8", "roughness": 0.4},
+                    "position": [0.68, -0.17, 0],
+                    "rotation": [0, 0, -0.68],
+                    "label": "Polar Covalent Single Bond 2"
+                },
+                {
+                    "id": "lone_pair_lobes",
+                    "geometry": {"type": "sphere", "radius": 0.4, "widthSegments": 16, "heightSegments": 16},
+                    "material": {"type": "meshStandard", "color": "#facc15", "transparent": True, "opacity": 0.45},
+                    "position": [0, 1.4, 0.4],
+                    "label": "Unshared Non-Bonding Lone Electron Pairs"
+                }
+            ],
+            "parts": [
+                {"id": "oxygen_atom", "label": "Central Oxygen Atom (O)", "role": "High electronegativity (3.44) draws shared electron density, creating partial negative pole.", "color": "#ef4444", "layer": "atoms"},
+                {"id": "hydrogen_1", "label": "Hydrogen Atom 1 (H)", "role": "Forms polar single covalent bond by sharing single 1s electron with oxygen 2p orbital.", "color": "#3b82f6", "layer": "atoms"},
+                {"id": "hydrogen_2", "label": "Hydrogen Atom 2 (H)", "role": "Forms second polar single covalent bond, creating a partial positive charge center.", "color": "#3b82f6", "layer": "atoms"},
+                {"id": "covalent_bond_1", "label": "Covalent Bond 1", "role": "Shared electron pair linkage.", "color": "#94a3b8", "layer": "bonds"},
+                {"id": "covalent_bond_2", "label": "Covalent Bond 2", "role": "Shared electron pair linkage.", "color": "#94a3b8", "layer": "bonds"},
+                {"id": "lone_pair_lobes", "label": "Non-Bonding Lone Pairs", "role": "Two lone pairs exert strong electrostatic repulsion, compressing H-O-H angle to 104.5°.", "color": "#facc15", "layer": "orbitals"}
+            ],
+            "annotations": [
+                {"id": "angle_label", "text": "H-O-H Bond Angle: 104.5°", "position": [0, -0.2, 0.3]},
+                {"id": "dipole_label", "text": "Net Dipole Moment (μ = 1.85 D)", "position": [0, 2.0, 0]}
+            ],
+            "animation_type": "spin",
+            "supports_cross_section": False,
+            "supports_exploded_view": True,
+            "mobile_touch_enabled": True
+        },
+        "volcano": {
+            "title": "3D Composite Volcano Geomorphology & Magma Conduit",
+            "model_key": "volcano",
+            "subject": "Geography",
+            "academic_topic": "Plate Tectonics, Volcanism & Internal Earth Processes",
+            "quality_level": "level_3_advanced_scientific",
+            "background": "#0f172a",
+            "camera": {"fov": 45, "position": [0, 2, 8], "min_distance": 3.0, "max_distance": 16.0},
+            "camera_presets": [
+                {"name": "Volcano Overview", "position": [0, 2, 8], "target": [0, 0, 0], "fov": 45},
+                {"name": "Magma Chamber Cross-Section", "position": [0, -1, 5], "target": [0, -1, 0], "fov": 38}
+            ],
+            "lights": [
+                {"type": "ambient", "color": "#ffffff", "intensity": 0.7},
+                {"type": "directional", "color": "#f97316", "position": [3, 6, 4], "intensity": 1.4}
+            ],
+            "objects": [
+                {
+                    "id": "volcano_cone",
+                    "geometry": {"type": "cone", "radius": 2.8, "height": 3.2, "radialSegments": 32},
+                    "material": {"type": "meshStandard", "color": "#57534e", "roughness": 0.8},
+                    "position": [0, 0, 0],
+                    "label": "Stratified Volcanic Cone (Ash & Tephra)"
+                },
+                {
+                    "id": "magma_chamber",
+                    "geometry": {"type": "sphere", "radius": 1.1, "widthSegments": 24, "heightSegments": 24},
+                    "material": {"type": "meshStandard", "color": "#dc2626", "emissive": "#b91c1c", "emissiveIntensity": 0.8},
+                    "position": [0, -1.8, 0],
+                    "label": "Underground Magma Chamber"
+                },
+                {
+                    "id": "central_conduit",
+                    "geometry": {"type": "cylinder", "radiusTop": 0.22, "radiusBottom": 0.35, "height": 3.0, "radialSegments": 16},
+                    "material": {"type": "meshStandard", "color": "#ea580c", "emissive": "#c2410c", "emissiveIntensity": 0.6},
+                    "position": [0, -0.1, 0],
+                    "label": "Main Conduit (Pipe)"
+                },
+                {
+                    "id": "crater_vent",
+                    "geometry": {"type": "torus", "radius": 0.45, "tube": 0.12, "radialSegments": 16, "tubularSegments": 24},
+                    "material": {"type": "meshStandard", "color": "#292524", "roughness": 0.9},
+                    "position": [0, 1.6, 0],
+                    "rotation": [1.57, 0, 0],
+                    "label": "Summit Crater Vent"
+                }
+            ],
+            "parts": [
+                {"id": "volcano_cone", "label": "Composite Volcanic Cone", "role": "Stratified layers of hardened lava, cinders, and volcanic ash built up over eruptions.", "color": "#57534e", "layer": "landform"},
+                {"id": "magma_chamber", "label": "Magma Chamber", "role": "Subsurface pool of superheated molten rock under extreme tectonic pressure.", "color": "#dc2626", "layer": "internal"},
+                {"id": "central_conduit", "label": "Central Conduit / Pipe", "role": "Vertical channel through which magma rises from the chamber to the surface.", "color": "#ea580c", "layer": "internal"},
+                {"id": "crater_vent", "label": "Summit Crater & Vent", "role": "Circular depression at the peak through which gases, pyroclastic debris, and lava erupt.", "color": "#292524", "layer": "landform"}
+            ],
+            "annotations": [
+                {"id": "magma_vs_lava", "text": "Magma (Underground) -> Lava (Surface Ejection)", "position": [0, 2.2, 0]}
+            ],
+            "animation_type": "pulse",
+            "supports_cross_section": True,
+            "supports_exploded_view": True,
+            "mobile_touch_enabled": True
+        },
+        "lever-moments": {
+            "title": "3D Principle of Moments & Rotational Equilibrium Lever",
+            "model_key": "lever-moments",
+            "subject": "Physics",
+            "academic_topic": "Turning Effect of Force, Fulcrum & Rotational Equilibrium",
+            "quality_level": "level_3_advanced_scientific",
+            "background": "#0a0f1d",
+            "camera": {"fov": 45, "position": [0, 1.5, 7], "min_distance": 2.5, "max_distance": 15.0},
+            "camera_presets": [
+                {"name": "Equilibrium Front View", "position": [0, 1.5, 7], "target": [0, 0, 0], "fov": 45},
+                {"name": "Fulcrum Close-Up", "position": [0, 0.5, 3.5], "target": [0, 0, 0], "fov": 32}
+            ],
+            "lights": [
+                {"type": "ambient", "color": "#ffffff", "intensity": 0.8},
+                {"type": "directional", "color": "#38bdf8", "position": [2, 5, 4], "intensity": 1.2}
+            ],
+            "objects": [
+                {
+                    "id": "lever_arm",
+                    "geometry": {"type": "box", "width": 5.4, "height": 0.22, "depth": 0.5},
+                    "material": {"type": "meshStandard", "color": "#475569", "roughness": 0.4},
+                    "position": [0, 0, 0],
+                    "label": "Uniform Meter Rule Lever Arm"
+                },
+                {
+                    "id": "fulcrum_wedge",
+                    "geometry": {"type": "cone", "radius": 0.5, "height": 0.9, "radialSegments": 4},
+                    "material": {"type": "meshStandard", "color": "#0284c7", "roughness": 0.2},
+                    "position": [0, -0.45, 0],
+                    "rotation": [0, 0.78, 0],
+                    "label": "Fixed Fulcrum (Pivot Point)"
+                },
+                {
+                    "id": "load_f1",
+                    "geometry": {"type": "box", "width": 0.6, "height": 0.7, "depth": 0.6},
+                    "material": {"type": "meshStandard", "color": "#dc2626", "roughness": 0.3},
+                    "position": [-2.0, 0.46, 0],
+                    "label": "Load Force F₁ (Anticlockwise Moment)"
+                },
+                {
+                    "id": "effort_f2",
+                    "geometry": {"type": "box", "width": 0.6, "height": 0.45, "depth": 0.6},
+                    "material": {"type": "meshStandard", "color": "#16a34a", "roughness": 0.3},
+                    "position": [2.0, 0.34, 0],
+                    "label": "Effort Force F₂ (Clockwise Moment)"
+                }
+            ],
+            "parts": [
+                {"id": "lever_arm", "label": "Rigid Lever Arm", "role": "Horizontal bar capable of rotating about a fixed pivot.", "color": "#475569", "layer": "mechanics"},
+                {"id": "fulcrum_wedge", "label": "Fulcrum / Pivot", "role": "The fixed support point about which the turning moment is evaluated.", "color": "#0284c7", "layer": "mechanics"},
+                {"id": "load_f1", "label": "Force F₁ (d₁ = 2.0 m)", "role": "Creates anticlockwise torque: τ₁ = F₁ × d₁.", "color": "#dc2626", "layer": "forces"},
+                {"id": "effort_f2", "label": "Force F₂ (d₂ = 2.0 m)", "role": "Creates clockwise torque: τ₂ = F₂ × d₂.", "color": "#16a34a", "layer": "forces"}
+            ],
+            "annotations": [
+                {"id": "principle_formula", "text": "Rotational Equilibrium: F₁ × d₁ = F₂ × d₂ (Στ = 0)", "position": [0, 1.4, 0]}
+            ],
+            "animation_type": "none",
+            "supports_cross_section": False,
             "supports_exploded_view": True,
             "mobile_touch_enabled": True
         }

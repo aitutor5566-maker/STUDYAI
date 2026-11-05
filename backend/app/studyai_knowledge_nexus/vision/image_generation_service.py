@@ -78,6 +78,24 @@ class ImageGenerationService:
         "status": "deprecated_transition_mode"
     }
 
+    IMAGE_QUALITY_LEVELS = {
+        "level_1_simple_educational": {
+            "name": "LEVEL 1 — SIMPLE EDUCATIONAL",
+            "description": "Clean and readable diagrams for basic concepts without visual clutter.",
+            "rendering_guidance": "High contrast, flat 2D vector styling, simple contour lines, minimal shading."
+        },
+        "level_2_detailed_educational": {
+            "name": "LEVEL 2 — DETAILED EDUCATIONAL",
+            "description": "Detailed structures, clear visual relationships, suitable lighting, and application-rendered overlay labels.",
+            "rendering_guidance": "Subtle gradients, anatomical cross-sections, distinct color-coded regions, clean background."
+        },
+        "level_3_scientific_visualization": {
+            "name": "LEVEL 3 — HIGH-QUALITY SCIENTIFIC VISUALIZATION",
+            "description": "High-resolution composition, physically grounded material appearances, volumetric lighting, and professional rendering.",
+            "rendering_guidance": "Physically based specular highlights, accurate depth of field, high-fidelity biological/physical textures, strictly no AI-hallucinated embedded text."
+        }
+    }
+
     AUTHENTIC_ARCHIVES: Dict[str, Dict[str, Any]] = {
         "1857": {
             "title": "Rani Lakshmibai & Leaders of 1857 First War of Independence",
@@ -105,6 +123,24 @@ class ImageGenerationService:
             "is_synthetic": False,
             "creator": "Government of India Archives",
             "domain": "wikimedia.org"
+        },
+        "wwi": {
+            "title": "First World War Archival Trench Documentation (1914–1918)",
+            "url": "https://upload.wikimedia.org/wikipedia/commons/e/ea/Cheshire_Regiment_trench_1916.jpg",
+            "source": "Imperial War Museums & National Archives",
+            "license": "Public Domain Mark 1.0",
+            "is_synthetic": False,
+            "creator": "Official War Archive Photographer",
+            "domain": "iwm.org.uk"
+        },
+        "first world war": {
+            "title": "Archduke Franz Ferdinand & Sarajevo Crisis Primary Record (28 June 1914)",
+            "url": "https://upload.wikimedia.org/wikipedia/commons/9/91/Archduke_Franz_Ferdinand_of_Austria.jpg",
+            "source": "Austrian State Archives / Historical Documentation",
+            "license": "Public Domain",
+            "is_synthetic": False,
+            "creator": "Court Historical Archives",
+            "domain": "oesta.gv.at"
         }
     }
 

@@ -52,7 +52,12 @@ class VisualDecisionEngine:
         "plant cell": {"key": "plant-cell", "caption": "Interactive 3D Plant Cell with Cell Wall & Vacuole"},
         "dna": {"key": "dna-double-helix", "caption": "Interactive 3D DNA Double Helix & Base Pairing"},
         "chromosome": {"key": "dna-double-helix", "caption": "Interactive 3D Chromosome & Nucleosome Histones"},
-        "molecule": {"key": "dna-double-helix", "caption": "Interactive 3D Molecular Geometry"},
+        "molecule": {"key": "water-molecule", "caption": "Interactive 3D Molecular Geometry"},
+        "water molecule": {"key": "water-molecule", "caption": "Interactive 3D Water Molecule (H₂O) Bent Geometry"},
+        "water": {"key": "water-molecule", "caption": "Interactive 3D Water Molecule (H₂O) Bent Geometry"},
+        "volcano": {"key": "volcano", "caption": "Interactive 3D Composite Volcano Geomorphology"},
+        "lever": {"key": "lever-moments", "caption": "Interactive 3D Principle of Moments & Balanced Lever"},
+        "moment": {"key": "lever-moments", "caption": "Interactive 3D Principle of Moments & Balanced Lever"},
         "solar system": {"key": "plant-cell", "caption": "Interactive 3D Orbital Dynamics"}
     }
 
@@ -93,8 +98,15 @@ class VisualDecisionEngine:
                 is_3d_required=False
             )
 
-        # 2. Check for Geography -> Maps, Contours, Climographs
+        # 2. Check for Geography -> Maps, Contours, Climographs, Volcanic 3D
         if "geog" in sub_clean:
+            if "volcano" in t_clean:
+                return VisualDecision(
+                    visual_type="threejs_3d_model",
+                    justification="Understanding volcanic internal structures (magma chamber, central conduit, crater) is significantly enhanced by 3D cross-section inspection.",
+                    is_3d_required=True,
+                    model_3d_key="volcano"
+                )
             if any(w in t_clean for w in ["topo", "contour", "survey", "grid", "slope", "height"]):
                 return VisualDecision(
                     visual_type="labelled_2d_diagram",
@@ -157,8 +169,15 @@ class VisualDecisionEngine:
                 is_3d_required=False
             )
 
-        # 6. Check for Physics -> Ray Optics, Circuit Schematics, Vector Force
+        # 6. Check for Physics -> Ray Optics, Circuit Schematics, Vector Force, 3D Lever Moments
         if "phys" in sub_clean:
+            if any(w in t_clean for w in ["moment", "lever", "torque", "equilibrium"]):
+                return VisualDecision(
+                    visual_type="threejs_3d_model",
+                    justification="Understanding turning effects of forces, fulcrum placement, and rotational equilibrium (tau = F * d) requires interactive 3D spatial lever manipulation.",
+                    is_3d_required=True,
+                    model_3d_key="lever-moments"
+                )
             if any(w in t_clean for w in ["circuit", "ohm", "resistor", "series", "parallel", "fuse", "earthing"]):
                 return VisualDecision(
                     visual_type="labelled_2d_diagram",
@@ -180,12 +199,12 @@ class VisualDecisionEngine:
 
         # 7. Check for Chemistry -> Chemical Equations, Electron-Dot, Molecular Geometry (Selective 3D)
         if "chem" in sub_clean:
-            if any(w in t_clean for w in ["vsepr", "tetrahedr", "molecular geometry", "orbital"]):
+            if any(w in t_clean for w in ["water", "h2o", "vsepr", "tetrahedr", "molecular geometry", "orbital"]):
                 return VisualDecision(
                     visual_type="threejs_3d_model",
-                    justification="3D spatial visualization is educationally essential to understand bond angles (109.5°) and non-planar molecular geometries.",
+                    justification="3D spatial visualization is educationally essential to understand bond angles (104.5°) and bent molecular geometry.",
                     is_3d_required=True,
-                    model_3d_key="dna-double-helix"
+                    model_3d_key="water-molecule"
                 )
             if any(w in t_clean for w in ["bond", "electron", "covalent", "coordinate", "dot"]):
                 return VisualDecision(
