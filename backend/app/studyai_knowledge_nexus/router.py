@@ -19,6 +19,14 @@ from backend.app.studyai_knowledge_nexus.core.grade_controller import grade_cont
 from backend.app.studyai_knowledge_nexus.core.adaptation_engine import adaptation_engine
 from backend.app.studyai_knowledge_nexus.core.adaptive_memory import adaptive_memory
 from backend.app.studyai_knowledge_nexus.training.sft_evaluator import sft_evaluator
+from backend.app.studyai_knowledge_nexus.knowledge_hub import (
+    studyai_knowledge_orchestrator,
+    KnowledgeRequest,
+    gemini_research,
+    openai_knowledge,
+    knowledge_library,
+    central_image_library,
+)
 
 logger = logging.getLogger("knowledge_nexus.api_router")
 
@@ -302,3 +310,81 @@ async def create_physics_numerical(payload: PhysicsNumericalRequest):
         check=payload.check,
         common_mistake=payload.common_mistake
     )
+
+
+# --- Universal Knowledge Hub Endpoints ---
+
+@nexus_api_router.post("/knowledge-hub/acquire")
+async def acquire_hub_knowledge(payload: KnowledgeRequest):
+    """
+    Central Universal Knowledge Hub Endpoint:
+    Coordinates Google Search Grounding, OpenAI GPT Structured Outputs,
+    7-Stage Multi-Source Verification, Central Educational Knowledge Library,
+    Central Image Library, and Three.js 3D Generation Interface.
+    """
+    try:
+        pkg = await studyai_knowledge_orchestrator.acquire_and_orchestrate_knowledge(payload)
+        return pkg.dict()
+    except Exception as e:
+        logger.error(f"Error in Knowledge Hub acquisition: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@nexus_api_router.get("/knowledge-hub/record")
+async def get_hub_record(
+    topic: str = Query(...),
+    grade: int = Query(10),
+    board: str = Query("ICSE"),
+    subject: Optional[str] = Query(None),
+):
+    """Retrieves verified curriculum knowledge record with content hash and version history."""
+    rec = knowledge_library.find_record(topic=topic, grade=grade, board=board, subject=subject)
+    if not rec:
+        raise HTTPException(status_code=404, detail="Knowledge record not found in Central Library")
+    return rec
+
+
+@nexus_api_router.get("/knowledge-hub/images")
+async def get_hub_images(
+    topic: str = Query(...),
+    subject: Optional[str] = Query(None),
+    grade: Optional[int] = Query(None),
+    board: str = Query("ICSE"),
+):
+    """Retrieves curated diagrams, SVG vector assets, maps, and 3D companion specs from Central Image Library."""
+    images = central_image_library.find_images_for_topic(topic=topic, subject=subject, grade=grade, board=board)
+    return {
+        "topic": topic,
+        "count": len(images),
+        "images": images,
+    }
+
+
+@nexus_api_router.get("/knowledge-hub/providers-status")
+async def get_hub_providers_status():
+    """Returns provider status, capabilities, and deprecation sunset notices for Google, OpenAI, Gemini, and Ollama."""
+    import os
+    return {
+        "gemini": gemini_research.get_capabilities(),
+        "openai": openai_knowledge.get_capabilities(),
+        "ollama": {
+            "provider": "Ollama (Local Qwen 2.5 7B)",
+            "url": os.getenv("OLLAMA_URL", "http://localhost:11434"),
+            "model": os.getenv("OLLAMA_MODEL", "qwen2.5:7b"),
+            "status": "active",
+        },
+        "central_knowledge_library": {
+            "status": "active",
+            "storage": "SQLite / PostgreSQL",
+            "path": knowledge_library.db_path,
+            "verification_statuses": [
+                "new", "processing", "needs_review", "verified_against_sources",
+                "conflicting_evidence", "outdated", "rejected"
+            ],
+        },
+        "central_image_library": {
+            "status": "active",
+            "storage": "SQLite / PostgreSQL",
+            "path": central_image_library.db_path,
+        },
+    }

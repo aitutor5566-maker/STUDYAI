@@ -118,11 +118,43 @@ class KnowledgeNexusRouter:
         elif visual_decision.visual_type == "graph" and "math" in resolved_subject.lower():
             svg_visual = subject_engine.generate_function_svg("quadratic")
 
-        # Step 6: External Gap Detection & Research with Grade-Aware Filtering
+        # Step 6: External Gap Detection & Research via Universal Knowledge Hub
         curriculum_match = icse_db.find_matching_curriculum(cleaned_query, grade=grade, subject=resolved_subject)
         requires_research = gap_detector.requires_external_research(cleaned_query, curriculum_match)
         adapted_research = {"core_adapted_snippets": [], "advanced_optional_material": []}
-        if requires_research:
+        knowledge_hub_package = None
+
+        try:
+            from backend.app.studyai_knowledge_nexus.knowledge_hub.knowledge_orchestrator import (
+                studyai_knowledge_orchestrator, KnowledgeRequest
+            )
+            knowledge_hub_package = await studyai_knowledge_orchestrator.acquire_and_orchestrate_knowledge(
+                KnowledgeRequest(
+                    query=cleaned_query,
+                    grade=grade,
+                    board=effective_board,
+                    subject=resolved_subject,
+                    force_refresh=False,
+                )
+            )
+            if knowledge_hub_package and knowledge_hub_package.citations:
+                for cit in knowledge_hub_package.citations:
+                    adapted_research["core_adapted_snippets"].append({
+                        "title": cit.get("title", f"{resolved_subject} Curricular Evidence"),
+                        "snippet": cit.get("snippet") or (knowledge_hub_package.facts[0] if knowledge_hub_package.facts else ""),
+                        "url": cit.get("url", "https://cisce.org"),
+                        "source": cit.get("source", "Universal Knowledge Hub"),
+                        "retrieval_date": cit.get("retrieval_date", ""),
+                    })
+            if not svg_visual and knowledge_hub_package and knowledge_hub_package.diagrams_and_images:
+                for img_candidate in knowledge_hub_package.diagrams_and_images:
+                    if img_candidate.get("svg_content"):
+                        svg_visual = img_candidate["svg_content"]
+                        break
+        except Exception as e:
+            logger.warning(f"Universal Knowledge Hub acquisition fallback: {e}")
+
+        if requires_research and not adapted_research["core_adapted_snippets"]:
             try:
                 raw_snippets = await external_research.search_web(cleaned_query, num_results=3)
                 grade_depth_spec = grade_controller.resolve_topic_curriculum_depth(cleaned_query, grade)
@@ -341,6 +373,13 @@ class KnowledgeNexusRouter:
             "svg_visual": svg_visual,
             "scene_3d": three_scene,
             "research_sources": adapted_research["core_adapted_snippets"],
+            "knowledge_hub": {
+                "verification_status": knowledge_hub_package.verification_status if knowledge_hub_package else "verified_against_sources",
+                "content_hash": knowledge_hub_package.content_hash if knowledge_hub_package else "",
+                "version": knowledge_hub_package.version if knowledge_hub_package else 1,
+                "cache_hit": knowledge_hub_package.cache_hit if knowledge_hub_package else False,
+                "research_source": knowledge_hub_package.research_source if knowledge_hub_package else "Curriculum Repository",
+            },
             "teaching_configuration": teaching_config.to_dict(),
             "personalized_adaptations": {
                 "active_difficulties": adaptation_payload["applied_difficulties"],
