@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { RotateCcw, ZoomIn, ZoomOut, Play, Pause, Bookmark, Box, ShieldCheck, X, Sparkles } from 'lucide-react';
+import { RotateCcw, ZoomIn, ZoomOut, Play, Pause, Bookmark, Box, ShieldCheck, X, Sparkles, Camera } from 'lucide-react';
 import { useLearning } from '../context/LearningContext';
 
 export interface ModelPartInfo {
@@ -118,6 +118,59 @@ const MODEL_SPECS: Record<string, ModelSpec> = {
       { step: '3. Calvin Cycle Carbon Fixation', detail: 'ATP and NADPH power the synthesis of Glucose (C₆H₁₂O₆) in the surrounding stroma.' }
     ]
   },
+  water_molecule: {
+    id: 'water_molecule',
+    title: 'Water Molecule (H₂O): Covalent Bonding & 104.5° Bent Geometry',
+    subject: 'Chemistry • Chemical Bonding & Molecular Shape',
+    verificationBadge: 'VSEPR Theory Reviewed 3D Molecular Model (Three.js WebGL)',
+    parts: [
+      { id: 'oxygen_atom', label: 'Oxygen Atom (O)', role: 'Highly electronegative (3.44) central atom with partial negative charge (δ⁻).', color: '#EF4444' },
+      { id: 'hydrogen_1', label: 'Hydrogen Atom 1 (H)', role: 'Shares single 1s electron with oxygen, acquiring partial positive charge (δ⁺).', color: '#3B82F6' },
+      { id: 'hydrogen_2', label: 'Hydrogen Atom 2 (H)', role: 'Forms second polar covalent single bond with partial positive charge (δ⁺).', color: '#3B82F6' },
+      { id: 'covalent_bonds', label: 'Polar Covalent Single Bonds', role: 'Shared electron pairs forming strong sigma bonds.', color: '#94A3B8' },
+      { id: 'lone_pairs', label: 'Non-Bonding Lone Electron Pairs', role: 'Two lone pairs exert strong electrostatic repulsion, compressing the bond angle from 109.5° to 104.5°.', color: '#FACC15' },
+      { id: 'dipole_moment', label: 'Net Dipole Moment (μ = 1.85 D)', role: 'Asymmetric bent structure creates a permanent molecular dipole, making water a universal polar solvent.', color: '#38BDF8' }
+    ],
+    guidedSteps: [
+      { step: '1. sp³ Orbital Hybridization', detail: 'Oxygen hybridizes its 2s and three 2p orbitals into four sp³ tetrahedral hybrid orbitals.' },
+      { step: '2. Lone Pair Repulsion', detail: 'Lone-pair/lone-pair repulsion is greater than bond-pair repulsion, bending the H-O-H angle to exactly 104.5°.' },
+      { step: '3. Molecular Polarity & Hydrogen Bonding', detail: 'Net vector dipole (1.85 D) enables strong intermolecular hydrogen bonds responsible for high boiling point.' }
+    ]
+  },
+  volcano: {
+    id: 'volcano',
+    title: 'Composite Volcano: Internal Magma Conduit & Cross-Section',
+    subject: 'Geography • Plate Tectonics & Volcanism',
+    verificationBadge: 'Physical Geography Reviewed 3D Geomorphology (Three.js WebGL)',
+    parts: [
+      { id: 'magma_chamber', label: 'Subsurface Magma Chamber', role: 'Underground reservoir of superheated molten rock under extreme tectonic pressure.', color: '#DC2626' },
+      { id: 'central_conduit', label: 'Central Conduit / Pipe', role: 'Vertical pipe through which pressurized magma rises toward the surface.', color: '#EA580C' },
+      { id: 'crater_vent', label: 'Summit Crater & Vent', role: 'Circular depression at the summit through which molten lava, steam, and pyroclastic debris erupt.', color: '#292524' },
+      { id: 'composite_cone', label: 'Stratified Volcanic Cone', role: 'Alternating layers of hardened lava flows, volcanic ash, cinders, and tephra built up over repeated eruptions.', color: '#78350F' }
+    ],
+    guidedSteps: [
+      { step: '1. Subduction & Magma Generation', detail: 'Tectonic subduction melts crustal rock into less dense magma that rises into the magma chamber.' },
+      { step: '2. Conduit Ascent & Pressure Build-up', detail: 'Dissolved volcanic gases expand, driving molten magma up the vertical central conduit.' },
+      { step: '3. Crater Eruption: Magma to Lava', detail: 'Upon breaching the surface crater vent, magma is termed lava, cooling into successive stratified cone layers.' }
+    ]
+  },
+  lever_moments: {
+    id: 'lever_moments',
+    title: 'Principle of Moments: Balanced Lever & Rotational Equilibrium',
+    subject: 'Physics • Classical Mechanics',
+    verificationBadge: 'ICSE Section 4.4 Verified Mechanics Simulation (Three.js WebGL)',
+    parts: [
+      { id: 'lever_arm', label: 'Uniform Rigid Meter Rule', role: 'Horizontal beam capable of rotating about a fixed pivot line.', color: '#64748B' },
+      { id: 'fulcrum_pivot', label: 'Fixed Fulcrum (Pivot Point)', role: 'Support point about which turning effects (torques) are evaluated.', color: '#0284C7' },
+      { id: 'load_f1', label: 'Force F₁ (Anticlockwise Moment)', role: 'Force F₁ = 20 N applied at distance d₁ = 0.30 m produces τ₁ = 6.0 N·m anticlockwise torque.', color: '#DC2626' },
+      { id: 'effort_f2', label: 'Force F₂ (Clockwise Moment)', role: 'Effort F₂ = 10 N applied at distance d₂ = 0.60 m produces τ₂ = 6.0 N·m clockwise torque.', color: '#16A34A' }
+    ],
+    guidedSteps: [
+      { step: '1. Moment of Force Definition', detail: 'Torque (τ) = Force (F) × Perpendicular distance from pivot (d). Measured in SI units of Newton-metre (N·m).' },
+      { step: '2. Sign Convention', detail: 'Anticlockwise moments are conventionally taken as Positive (+); Clockwise moments are Negative (-).' },
+      { step: '3. Principle of Moments in Equilibrium', detail: 'For static rotational equilibrium: Sum of Anticlockwise Moments = Sum of Clockwise Moments (F₁ × d₁ = F₂ × d₂).' }
+    ]
+  },
   math_surface: {
     id: 'math_surface',
     title: '3D Quadratic Paraboloid & Root Plane Intersection',
@@ -140,6 +193,9 @@ function resolveSpec(modelType?: string, topic?: string): ModelSpec {
   if (modelType && MODEL_SPECS[modelType]) return MODEL_SPECS[modelType];
   const t = (topic || '').toLowerCase();
   if (/(heart|cardiac|blood|ventricle)/.test(t)) return MODEL_SPECS.human_heart;
+  if (/(water|h2o|covalent|bent|molecular|molecule)/.test(t)) return MODEL_SPECS.water_molecule;
+  if (/(volcano|magma|lava|eruption|conduit)/.test(t)) return MODEL_SPECS.volcano;
+  if (/(moment|lever|torque|equilibrium|fulcrum)/.test(t)) return MODEL_SPECS.lever_moments;
   if (/(solar|planet|orbit|space|sun)/.test(t)) return MODEL_SPECS.solar_system;
   if (/(dna|gene|helix|chromosome)/.test(t)) return MODEL_SPECS.dna_helix;
   if (/(quadratic|math|parabola|equation|surface)/.test(t)) return MODEL_SPECS.math_surface;
@@ -174,6 +230,24 @@ export const Interactive3DViewer: React.FC<{
   const rotRef = useRef<{ x: number; y: number }>({ x: 0.25, y: 0.4 });
   const zoomRef = useRef<number>(1.0);
   const playingRef = useRef<boolean>(true);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+
+  const handleCaptureSnapshot = () => {
+    if (!rendererRef.current) return;
+    try {
+      const dataUrl = rendererRef.current.domElement.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `${spec.id}_3d_snapshot_diagram.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setSavedNotice('📸 2D Technical Diagram Captured & Downloaded!');
+      setTimeout(() => setSavedNotice(''), 3000);
+    } catch {
+      setSavedNotice('Snapshot capture error');
+    }
+  };
 
   const handleGenerateAi3D = async (targetTopic: string) => {
     const clean = targetTopic.trim();
@@ -247,7 +321,8 @@ export const Interactive3DViewer: React.FC<{
       const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
       camera.position.set(0, 1.5, 7.5);
 
-      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'default' });
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'default', preserveDrawingBuffer: true });
+      rendererRef.current = renderer;
       renderer.setSize(width, height);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       container.innerHTML = '';
@@ -442,6 +517,120 @@ export const Interactive3DViewer: React.FC<{
         const wire = new THREE.Mesh(geom, new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true }));
         wire.rotation.x = -Math.PI / 2;
         rootGroup.add(mesh, wire);
+      } else if (selectedModelKey === 'water_molecule') {
+        // Central Oxygen Atom (CPK Red)
+        const matO = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.2, metalness: 0.1 });
+        const oAtom = new THREE.Mesh(new THREE.SphereGeometry(0.85, 32, 32), matO);
+        oAtom.position.set(0, 0.4, 0);
+        oAtom.userData = { id: 'oxygen_atom' };
+
+        // Hydrogen Atoms (CPK Blue/White)
+        const matH = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.25 });
+        const h1 = new THREE.Mesh(new THREE.SphereGeometry(0.52, 24, 24), matH);
+        h1.position.set(-1.35, -0.75, 0);
+        h1.userData = { id: 'hydrogen_1' };
+
+        const h2 = new THREE.Mesh(new THREE.SphereGeometry(0.52, 24, 24), matH);
+        h2.position.set(1.35, -0.75, 0);
+        h2.userData = { id: 'hydrogen_2' };
+
+        // Covalent Bond Cylinders
+        const matBond = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.4 });
+        const bond1 = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.4, 16), matBond);
+        bond1.position.set(-0.68, -0.17, 0);
+        bond1.rotation.set(0, 0, 0.68);
+        bond1.userData = { id: 'covalent_bonds' };
+
+        const bond2 = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.4, 16), matBond);
+        bond2.position.set(0.68, -0.17, 0);
+        bond2.rotation.set(0, 0, -0.68);
+        bond2.userData = { id: 'covalent_bonds' };
+
+        // Non-Bonding Lone Electron Pairs (Repulsion Lobes)
+        const matLone = new THREE.MeshStandardMaterial({ color: 0xfacc15, transparent: true, opacity: 0.45 });
+        const lone1 = new THREE.Mesh(new THREE.SphereGeometry(0.38, 16, 16), matLone);
+        lone1.position.set(-0.45, 1.15, 0.35);
+        lone1.userData = { id: 'lone_pairs' };
+
+        const lone2 = new THREE.Mesh(new THREE.SphereGeometry(0.38, 16, 16), matLone);
+        lone2.position.set(0.45, 1.15, 0.35);
+        lone2.userData = { id: 'lone_pairs' };
+
+        // Dipole Moment Indicator Vector
+        const matDipole = new THREE.MeshStandardMaterial({ color: 0x38bdf8 });
+        const dipoleArrow = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.45, 16), matDipole);
+        dipoleArrow.position.set(0, 1.85, 0);
+        dipoleArrow.userData = { id: 'dipole_moment' };
+
+        rootGroup.add(oAtom, h1, h2, bond1, bond2, lone1, lone2, dipoleArrow);
+        animatedNodes.push(oAtom, h1, h2);
+
+      } else if (selectedModelKey === 'volcano') {
+        // Stratified Composite Cone
+        const matCone = new THREE.MeshStandardMaterial({ color: 0x57534e, roughness: 0.7, side: THREE.DoubleSide });
+        const cone = new THREE.Mesh(new THREE.ConeGeometry(2.5, 2.7, 32, 1, true), matCone);
+        cone.position.set(0, 0.15, 0);
+        cone.userData = { id: 'composite_cone' };
+
+        // Subterranean Magma Chamber
+        const matMagma = new THREE.MeshStandardMaterial({ color: 0xdc2626, emissive: 0xb91c1c, emissiveIntensity: 0.8 });
+        const chamber = new THREE.Mesh(new THREE.SphereGeometry(1.15, 24, 24), matMagma);
+        chamber.position.set(0, -1.8, 0);
+        chamber.userData = { id: 'magma_chamber' };
+
+        // Central Conduit Pipe
+        const matConduit = new THREE.MeshStandardMaterial({ color: 0xea580c, emissive: 0xc2410c, emissiveIntensity: 0.6 });
+        const conduit = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 2.2, 24), matConduit);
+        conduit.position.set(0, -0.1, 0);
+        conduit.userData = { id: 'central_conduit' };
+
+        // Summit Crater Vent
+        const matCrater = new THREE.MeshStandardMaterial({ color: 0x292524, roughness: 0.9 });
+        const crater = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.15, 16, 32), matCrater);
+        crater.position.set(0, 1.5, 0);
+        crater.rotation.x = Math.PI / 2;
+        crater.userData = { id: 'crater_vent' };
+
+        // Erupting ash cloud puff
+        const matAsh = new THREE.MeshStandardMaterial({ color: 0x94a3b8, transparent: true, opacity: 0.6 });
+        const ash1 = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 16), matAsh);
+        ash1.position.set(0, 2.05, 0);
+
+        rootGroup.add(cone, chamber, conduit, crater, ash1);
+        animatedNodes.push(chamber, ash1);
+
+      } else if (selectedModelKey === 'lever_moments') {
+        // Rigid Meter Rule (Horizontal Lever Beam)
+        const matBeam = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.35, metalness: 0.2 });
+        const beam = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.2, 0.45), matBeam);
+        beam.position.set(0, 0, 0);
+        beam.userData = { id: 'lever_arm' };
+
+        // Fixed Triangular Fulcrum Pivot
+        const matFulcrum = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.25 });
+        const fulcrum = new THREE.Mesh(new THREE.ConeGeometry(0.45, 0.85, 4), matFulcrum);
+        fulcrum.position.set(0, -0.42, 0);
+        fulcrum.rotation.y = Math.PI / 4;
+        fulcrum.userData = { id: 'fulcrum_pivot' };
+
+        // Load Force F1 (Anticlockwise Weight at d1 = -1.9)
+        const matF1 = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.3 });
+        const loadF1 = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.65, 0.55), matF1);
+        loadF1.position.set(-1.9, 0.42, 0);
+        loadF1.userData = { id: 'load_f1' };
+
+        // Effort Force F2 (Clockwise Weight at d2 = +1.9)
+        const matF2 = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.3 });
+        const effortF2 = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.42, 0.55), matF2);
+        effortF2.position.set(1.9, 0.31, 0);
+        effortF2.userData = { id: 'effort_f2' };
+
+        // Base stand
+        const matBase = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+        const base = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.12, 1.2), matBase);
+        base.position.set(0, -0.9, 0);
+
+        rootGroup.add(beam, fulcrum, loadF1, effortF2, base);
       } else if (selectedModelKey === 'ai_custom_3d' && customSpec?.primitives && customSpec.primitives.length > 0) {
         customSpec.primitives.forEach((pr) => {
           let geom: THREE.BufferGeometry;
@@ -834,6 +1023,16 @@ export const Interactive3DViewer: React.FC<{
             >
               <RotateCcw size={12} />
               <span>Reset</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleCaptureSnapshot}
+              aria-label="Capture 2D Diagram Image"
+              title="Export 2D High-Resolution Technical Diagram rendered by Three.js"
+              style={{ background: 'rgba(56,189,248,0.18)', color: '#38BDF8', border: '1px solid rgba(56,189,248,0.4)', borderRadius: 999, padding: '5px 10px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+            >
+              <Camera size={12} />
+              <span>Capture 2D Diagram</span>
             </button>
           </div>
 
