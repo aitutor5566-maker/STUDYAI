@@ -1158,19 +1158,57 @@ export function createAppServer() {
 
         let generated: any;
         try {
-          generated = await generateStructuredNote({
-            topic,
-            subject: sanitizeText(body.subject || '', 60) || undefined,
-            level: sanitizeText(body.level || 'Grade 10', 40),
-            depth: body.depth === 'concise' || body.depth === 'exam-prep' ? body.depth : 'detailed',
-            sourceText: sanitizeText(body.sourceText || '', 120000),
-            sourceType: sanitizeText(body.sourceType || 'topic', 40),
-            notebook: sanitizeText(body.notebook || '', 60) || undefined,
-            sources: Array.isArray(body.sources) ? body.sources : undefined,
-            youtubeUrl: body.youtubeUrl ? sanitizeText(body.youtubeUrl, 500) : undefined,
-            webUrl: body.webUrl ? sanitizeText(body.webUrl, 500) : undefined,
-            pdfPages: Array.isArray(body.pdfPages) ? body.pdfPages : undefined
-          });
+          // Attempt unified Shared Knowledge Library note generation first
+          try {
+            const nexusRes = await fetch('http://127.0.0.1:8000/api/v1/nexus/notes/generate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                topic,
+                subject: sanitizeText(body.subject || '', 60) || undefined,
+                grade: 10,
+                board: 'ICSE',
+                source_type: sanitizeText(body.sourceType || 'topic', 40),
+                source_content: sanitizeText(body.sourceText || '', 120000),
+                user_id: studentId,
+                depth: body.depth === 'concise' || body.depth === 'exam-prep' ? body.depth : 'detailed'
+              }),
+              signal: AbortSignal.timeout(4000)
+            });
+            if (nexusRes.ok) {
+              const data = (await nexusRes.json()) as any;
+              generated = {
+                title: data.title,
+                subject: data.subject,
+                topic: data.topic,
+                level: data.level,
+                depth: data.depth,
+                notebook: data.notebook,
+                content_markdown: data.content_markdown,
+                structured: data.structured,
+                flashcards: data.flashcards || [],
+                quiz: data.quiz || []
+              };
+            }
+          } catch (_nexusErr) {
+            // Fallback to local structured engine below
+          }
+
+          if (!generated) {
+            generated = await generateStructuredNote({
+              topic,
+              subject: sanitizeText(body.subject || '', 60) || undefined,
+              level: sanitizeText(body.level || 'Grade 10', 40),
+              depth: body.depth === 'concise' || body.depth === 'exam-prep' ? body.depth : 'detailed',
+              sourceText: sanitizeText(body.sourceText || '', 120000),
+              sourceType: sanitizeText(body.sourceType || 'topic', 40),
+              notebook: sanitizeText(body.notebook || '', 60) || undefined,
+              sources: Array.isArray(body.sources) ? body.sources : undefined,
+              youtubeUrl: body.youtubeUrl ? sanitizeText(body.youtubeUrl, 500) : undefined,
+              webUrl: body.webUrl ? sanitizeText(body.webUrl, 500) : undefined,
+              pdfPages: Array.isArray(body.pdfPages) ? body.pdfPages : undefined
+            });
+          }
         } catch (err: any) {
           sendJson(res, err?.statusCode || 422, {
             error: err?.message || 'Source extraction failed.',

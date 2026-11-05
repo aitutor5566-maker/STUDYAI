@@ -32,6 +32,8 @@ from backend.app.studyai_knowledge_nexus.research_pipeline import (
     master_research_pipeline_coordinator,
     PipelineExecutionRequest,
 )
+from backend.app.studyai_knowledge_nexus.knowledge_hub.image_diagram_library import image_diagram_library
+from backend.app.studyai_knowledge_nexus.notes.unified_notes_service import unified_notes_service
 
 logger = logging.getLogger("knowledge_nexus.api_router")
 
@@ -471,3 +473,126 @@ async def get_pipeline_context(session_id: str):
     if not ctx:
         raise HTTPException(status_code=404, detail="Session context not found")
     return ctx.dict()
+
+
+# --- Shared Knowledge Library, Images & Unified Notes Endpoints ---
+
+class NoteGenerateReq(BaseModel):
+    topic: str
+    subject: Optional[str] = None
+    grade: int = 10
+    board: str = "ICSE"
+    source_type: str = "topic"
+    source_content: Optional[str] = None
+    lesson_id: Optional[str] = None
+    user_id: str = "student_default"
+    depth: str = "detailed"
+
+
+class NoteUpdateReq(BaseModel):
+    title: Optional[str] = None
+    content_markdown: Optional[str] = None
+    change_summary: Optional[str] = "Student edit"
+
+
+@nexus_api_router.get("/knowledge/record")
+async def get_knowledge_record(
+    topic: str = Query(...),
+    grade: int = Query(10),
+    board: str = Query("ICSE"),
+    subject: Optional[str] = Query(None),
+):
+    """Retrieves verified knowledge item from central knowledge repository by topic / semantic meaning."""
+    record = knowledge_library.find_record(topic=topic, grade=grade, board=board, subject=subject)
+    if not record:
+        raise HTTPException(status_code=404, detail=f"Knowledge record for '{topic}' not found")
+    return record
+
+
+@nexus_api_router.get("/knowledge/semantic")
+async def search_knowledge_semantic(
+    query: str = Query(...),
+    limit: int = Query(5, ge=1, le=20)
+):
+    """Semantic meaning-based search across universal knowledge items."""
+    return {
+        "query": query,
+        "results": knowledge_library.semantic_search(query=query, limit=limit)
+    }
+
+
+@nexus_api_router.get("/images")
+async def get_educational_images(
+    topic: str = Query(...),
+    subject: Optional[str] = Query(None),
+    category: Optional[str] = Query(None),
+    limit: int = Query(10, ge=1, le=50)
+):
+    """Retrieves images and diagrams across the 5 categorized asset types."""
+    assets = image_diagram_library.find_assets_for_topic(
+        topic=topic, subject=subject, category=category, limit=limit
+    )
+    return {
+        "topic": topic,
+        "count": len(assets),
+        "assets": assets
+    }
+
+
+@nexus_api_router.post("/notes/generate")
+async def generate_unified_note(req: NoteGenerateReq):
+    """Generates a structured 16-section AI study notebook with verified facts from the Knowledge Library."""
+    try:
+        note = unified_notes_service.generate_note(
+            topic=req.topic,
+            subject=req.subject,
+            grade=req.grade,
+            board=req.board,
+            source_type=req.source_type,
+            source_content=req.source_content,
+            lesson_id=req.lesson_id,
+            user_id=req.user_id,
+            depth=req.depth
+        )
+        return note
+    except Exception as e:
+        logger.error(f"Error generating note: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@nexus_api_router.get("/notes/{note_id}")
+async def get_unified_note(note_id: str, user_id: Optional[str] = Query(None)):
+    """Retrieves an existing notebook with its complete version history."""
+    note = unified_notes_service.get_note(note_id=note_id, user_id=user_id)
+    if not note:
+        raise HTTPException(status_code=404, detail=f"Note '{note_id}' not found")
+    return note
+
+
+@nexus_api_router.put("/notes/{note_id}")
+async def update_unified_note(note_id: str, req: NoteUpdateReq, user_id: Optional[str] = Query(None)):
+    """Updates an existing notebook, archiving previous versions."""
+    try:
+        updates = req.dict(exclude_unset=True)
+        updated = unified_notes_service.update_note(note_id=note_id, updates=updates, user_id=user_id)
+        return updated
+    except ValueError as ve:
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        logger.error(f"Error updating note: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@nexus_api_router.get("/notes/{note_id}/export")
+async def export_unified_note(note_id: str):
+    """Exports notebook to publication-grade, printable HTML (zero blank pages)."""
+    try:
+        html_content = unified_notes_service.export_to_pdf_html(note_id=note_id)
+        from fastapi.responses import HTMLResponse
+        return HTMLResponse(content=html_content, status_code=200)
+    except ValueError as ve:
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        logger.error(f"Error exporting note: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+

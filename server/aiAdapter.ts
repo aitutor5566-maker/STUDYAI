@@ -1063,7 +1063,7 @@ export async function generateTutorExplanation(input: TutorRequestInput): Promis
     baseLesson.adaptiveProfile = input.adaptiveProfile;
   }
   if (!baseLesson.explanationLength) {
-    baseLesson.explanationLength = input.explanationLength || input.adaptiveProfile?.explanation_style || 'balanced';
+    (baseLesson as any).explanationLength = input.explanationLength || input.adaptiveProfile?.explanation_style || 'balanced';
   }
   return enrichLessonWithRebuildStructure(baseLesson, generateScientificSvgDataUrl);
 }
@@ -3469,7 +3469,7 @@ Respond strictly in valid JSON with the following keys:
       : [];
 
     return {
-      id: inferredId,
+      id: inferredId || 'ai_custom_3d',
       title: String(p.title || `${cleanTopic} — 3D Interactive Model`),
       subject: String(p.subject || `${subject} • 3D Lab`),
       verificationBadge: `AI-Architected 3D Scientific Model (${llm.providerUsed} + Three.js WebGL)`,
