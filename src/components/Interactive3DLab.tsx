@@ -186,20 +186,55 @@ const MODEL_SPECS: Record<string, ModelSpec> = {
       { step: '2. Discriminant & Plane Intersection', detail: 'When D > 0, the surface slices through the z = 0 plane, producing real roots.' },
       { step: '3. Axis of Symmetry', detail: 'Rotating around the central vertical axis preserves the parabolic cross-section.' }
     ]
+  },
+  atom_bohr: {
+    id: 'atom_bohr',
+    title: 'Rutherford-Bohr Atomic Structure & Quantized Electron Shells',
+    subject: 'Physics / Chemistry • Atomic Physics',
+    verificationBadge: '3D Quantized Orbital Model (Three.js WebGL)',
+    parts: [
+      { id: 'protons', label: 'Protons (Z+)', role: 'Positively charged nucleons defining the atomic number.', color: '#EF4444' },
+      { id: 'neutrons', label: 'Neutrons (n⁰)', role: 'Neutral nucleons providing nuclear binding stability.', color: '#94A3B8' },
+      { id: 'k_shell', label: 'K-Shell (n=1, Max 2e⁻)', role: 'Innermost quantized stationary energy orbit.', color: '#38BDF8' },
+      { id: 'l_shell', label: 'L-Shell (n=2, Max 8e⁻)', role: 'Second energy shell populated according to the 2n² rule.', color: '#818CF8' }
+    ],
+    guidedSteps: [
+      { step: '1. Central Nucleus', detail: 'Protons and neutrons reside tightly bound in the tiny, dense central core.' },
+      { step: '2. Quantized Energy Shells', detail: 'Electrons orbit only in discrete non-radiating stationary states (K, L, M).' },
+      { step: '3. Electron Capacity (2n²)', detail: 'Shell 1 (K) holds up to 2 electrons; Shell 2 (L) holds up to 8 electrons.' }
+    ]
+  },
+  cone_cylinder_volume: {
+    id: 'cone_cylinder_volume',
+    title: '3D Solid Mensuration: Cone & Cylinder Volume Relationship',
+    subject: 'Mathematics • 3D Mensuration',
+    verificationBadge: '3D Spatial Geometry Relationship (Three.js WebGL)',
+    parts: [
+      { id: 'cylinder_hull', label: 'Cylinder (V = πr²h)', role: 'Right circular cylinder with base radius r and perpendicular height h.', color: '#0284C7' },
+      { id: 'inscribed_cone', label: 'Cone (V = 1/3 πr²h)', role: 'Inscribed cone with identical base radius and height; occupies exactly 1/3 volume.', color: '#F59E0B' },
+      { id: 'circular_base', label: 'Shared Base (πr²)', role: 'Congruent circular base shared by both solids.', color: '#38BDF8' }
+    ],
+    guidedSteps: [
+      { step: '1. Shared Base & Height', detail: 'Both cone and cylinder have the exact same circular base of radius r and height h.' },
+      { step: '2. Volume Ratio', detail: 'It takes exactly three full cones of liquid or sand to fill the cylinder completely.' },
+      { step: '3. Mathematical Formula', detail: 'Volume of cone = (1/3) × base area × height = (1/3)πr²h.' }
+    ]
   }
 };
 
 function resolveSpec(modelType?: string, topic?: string): ModelSpec {
   if (modelType && MODEL_SPECS[modelType]) return MODEL_SPECS[modelType];
   const t = (topic || '').toLowerCase();
-  if (/(heart|cardiac|blood|ventricle)/.test(t)) return MODEL_SPECS.human_heart;
+  if (/(heart|cardiac|blood|ventricle|valve|circulation)/.test(t)) return MODEL_SPECS.human_heart;
   if (/(water|h2o|covalent|bent|molecular|molecule)/.test(t)) return MODEL_SPECS.water_molecule;
   if (/(volcano|magma|lava|eruption|conduit)/.test(t)) return MODEL_SPECS.volcano;
   if (/(moment|lever|torque|equilibrium|fulcrum)/.test(t)) return MODEL_SPECS.lever_moments;
-  if (/(solar|planet|orbit|space|sun)/.test(t)) return MODEL_SPECS.solar_system;
+  if (/(solar|planet|orbit|space|sun|kepler)/.test(t)) return MODEL_SPECS.solar_system;
   if (/(dna|gene|helix|chromosome)/.test(t)) return MODEL_SPECS.dna_helix;
+  if (/(atom|bohr|electron shell|proton|neutron)/.test(t)) return MODEL_SPECS.atom_bohr;
+  if (/(cone and cylinder|cone volume|cylinder volume)/.test(t)) return MODEL_SPECS.cone_cylinder_volume;
   if (/(quadratic|math|parabola|equation|surface)/.test(t)) return MODEL_SPECS.math_surface;
-  return MODEL_SPECS.chloroplast_molecule;
+  return MODEL_SPECS.human_heart;
 }
 
 export const Interactive3DViewer: React.FC<{
@@ -631,6 +666,58 @@ export const Interactive3DViewer: React.FC<{
         base.position.set(0, -0.9, 0);
 
         rootGroup.add(beam, fulcrum, loadF1, effortF2, base);
+      } else if (selectedModelKey === 'atom_bohr') {
+        // Protons & Neutrons Nucleus
+        const matP = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.2 });
+        const matN = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.3 });
+        const p1 = new THREE.Mesh(new THREE.SphereGeometry(0.42, 20, 20), matP);
+        p1.position.set(-0.15, 0.1, 0);
+        p1.userData = { id: 'protons' };
+
+        const n1 = new THREE.Mesh(new THREE.SphereGeometry(0.42, 20, 20), matN);
+        n1.position.set(0.15, -0.1, 0);
+        n1.userData = { id: 'neutrons' };
+
+        // K-Shell Ring (Radius 1.8)
+        const matK = new THREE.MeshStandardMaterial({ color: 0x38bdf8, side: THREE.DoubleSide });
+        const kShell = new THREE.Mesh(new THREE.RingGeometry(1.78, 1.82, 64), matK);
+        kShell.rotation.x = Math.PI / 2;
+        kShell.userData = { id: 'k_shell' };
+
+        // L-Shell Ring (Radius 3.1)
+        const matL = new THREE.MeshStandardMaterial({ color: 0x818cf8, side: THREE.DoubleSide });
+        const lShell = new THREE.Mesh(new THREE.RingGeometry(3.08, 3.12, 64), matL);
+        lShell.rotation.x = Math.PI / 2.6;
+        lShell.userData = { id: 'l_shell' };
+
+        // Orbiting Electron
+        const matE = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.8 });
+        const e1 = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 16), matE);
+        e1.position.set(1.8, 0, 0);
+
+        rootGroup.add(p1, n1, kShell, lShell, e1);
+        animatedNodes.push(e1);
+      } else if (selectedModelKey === 'cone_cylinder_volume') {
+        // Cylinder Hull (Transparent PBR)
+        const matCyl = new THREE.MeshStandardMaterial({ color: 0x0284c7, transparent: true, opacity: 0.35, roughness: 0.2 });
+        const cylinder = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 2.8, 32), matCyl);
+        cylinder.position.set(0, 0, 0);
+        cylinder.userData = { id: 'cylinder_hull' };
+
+        // Inscribed Cone
+        const matCone = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.4 });
+        const cone = new THREE.Mesh(new THREE.ConeGeometry(1.6, 2.8, 32), matCone);
+        cone.position.set(0, 0, 0);
+        cone.userData = { id: 'inscribed_cone' };
+
+        // Common Base
+        const matBase = new THREE.MeshStandardMaterial({ color: 0x38bdf8, side: THREE.DoubleSide });
+        const baseRing = new THREE.Mesh(new THREE.RingGeometry(0, 1.6, 32), matBase);
+        baseRing.position.set(0, -1.4, 0);
+        baseRing.rotation.x = Math.PI / 2;
+        baseRing.userData = { id: 'circular_base' };
+
+        rootGroup.add(cylinder, cone, baseRing);
       } else if (selectedModelKey === 'ai_custom_3d' && customSpec?.primitives && customSpec.primitives.length > 0) {
         customSpec.primitives.forEach((pr) => {
           let geom: THREE.BufferGeometry;

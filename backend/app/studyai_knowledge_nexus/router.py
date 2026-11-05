@@ -116,6 +116,13 @@ async def list_ten_subject_engines():
     return {"total_subjects": len(subjects_info), "subjects": subjects_info}
 
 
+class GeometryConstructionRequest(BaseModel):
+    ab: float = Field(default=6.0, description="Length of base AB")
+    bc: float = Field(default=5.0, description="Length of side BC")
+    ac: float = Field(default=4.0, description="Length of side AC")
+    units: str = Field(default="cm", description="Measurement units")
+
+
 @nexus_api_router.post("/visual-decision")
 async def test_visual_decision(payload: VisualDecisionRequest):
     """Evaluates an educational topic across the 12 visual decision modalities with strict 3D gatekeeping."""
@@ -126,6 +133,26 @@ async def test_visual_decision(payload: VisualDecisionRequest):
         board=payload.board,
     )
     return decision.dict()
+
+
+@nexus_api_router.post("/visual-specification")
+async def generate_visual_specification(payload: VisualDecisionRequest):
+    """Produces the 16-field validated Visual Specification before rendering any model."""
+    decision = visual_decision_engine.decide_visual(
+        topic=payload.topic,
+        subject=payload.subject,
+        grade=payload.grade,
+        board=payload.board,
+    )
+    return decision.dict()
+
+
+@nexus_api_router.post("/geometry-construction")
+async def generate_geometry_construction(payload: GeometryConstructionRequest):
+    """Generates step-by-step ruler-and-compass 2D geometry construction with Euclidean validation."""
+    from backend.app.studyai_knowledge_nexus.visualization.geometry_construction_engine import geometry_construction_engine
+    plan = geometry_construction_engine.construct_triangle(payload.ab, payload.bc, payload.ac, payload.units)
+    return plan.dict()
 
 
 @nexus_api_router.get("/board-profile/{board}")

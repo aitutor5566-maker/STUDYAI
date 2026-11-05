@@ -524,6 +524,190 @@ class ThreeJSSceneOrchestrator:
             "supports_cross_section": False,
             "supports_exploded_view": True,
             "mobile_touch_enabled": True
+        },
+        "dna-double-helix": {
+            "title": "3D DNA Double Helix & Complementary Base Pairing (A=T & G≡C)",
+            "model_key": "dna-double-helix",
+            "subject": "Biology",
+            "academic_topic": "Molecular Genetics, DNA Structure & Nucleotide Hydrogen Bonding",
+            "quality_level": "level_3_advanced_scientific",
+            "background": "#090d16",
+            "camera": {"fov": 45, "position": [0, 0, 7.5], "min_distance": 2.5, "max_distance": 15.0},
+            "camera_presets": [
+                {"name": "Helical Axis View", "position": [0, 0, 7.5], "target": [0, 0, 0], "fov": 45},
+                {"name": "Base Pair Rung Detail", "position": [0, 1.0, 3.5], "target": [0, 0.5, 0], "fov": 32}
+            ],
+            "lights": [
+                {"type": "ambient", "color": "#ffffff", "intensity": 0.8},
+                {"type": "directional", "color": "#38bdf8", "position": [4, 6, 5], "intensity": 1.2}
+            ],
+            "objects": [
+                {
+                    "id": "backbone_strand_1",
+                    "geometry": {"type": "cylinder", "radiusTop": 0.12, "radiusBottom": 0.12, "height": 5.0, "radialSegments": 16},
+                    "material": {"type": "meshStandard", "color": "#f97316", "roughness": 0.3},
+                    "position": [-0.8, 0, 0],
+                    "label": "5' to 3' Sugar-Phosphate Backbone"
+                },
+                {
+                    "id": "backbone_strand_2",
+                    "geometry": {"type": "cylinder", "radiusTop": 0.12, "radiusBottom": 0.12, "height": 5.0, "radialSegments": 16},
+                    "material": {"type": "meshStandard", "color": "#f97316", "roughness": 0.3},
+                    "position": [0.8, 0, 0],
+                    "label": "3' to 5' Antiparallel Sugar-Phosphate Backbone"
+                },
+                {
+                    "id": "base_pair_at",
+                    "geometry": {"type": "box", "width": 1.6, "height": 0.18, "depth": 0.18},
+                    "material": {"type": "meshStandard", "color": "#22c55e", "roughness": 0.3},
+                    "position": [0, 0.8, 0],
+                    "label": "Adenine = Thymine Base Pair (2 Hydrogen Bonds)"
+                },
+                {
+                    "id": "base_pair_gc",
+                    "geometry": {"type": "box", "width": 1.6, "height": 0.18, "depth": 0.18},
+                    "material": {"type": "meshStandard", "color": "#3b82f6", "roughness": 0.3},
+                    "position": [0, -0.6, 0],
+                    "rotation": [0, 0.6, 0],
+                    "label": "Guanine ≡ Cytosine Base Pair (3 Hydrogen Bonds)"
+                }
+            ],
+            "parts": [
+                {"id": "backbone_strand_1", "label": "5'→3' Backbone", "role": "Deoxyribose sugar and phosphate ester polymer rail.", "color": "#f97316", "layer": "backbone"},
+                {"id": "backbone_strand_2", "label": "3'→5' Antiparallel Strand", "role": "Oppositely oriented complementary polynucleotide rail.", "color": "#f97316", "layer": "backbone"},
+                {"id": "base_pair_at", "label": "A=T Pair (2 H-bonds)", "role": "Purine Adenine pairs with Pyrimidine Thymine via 2 hydrogen bonds.", "color": "#22c55e", "layer": "base_pairs"},
+                {"id": "base_pair_gc", "label": "G≡C Pair (3 H-bonds)", "role": "Purine Guanine pairs with Pyrimidine Cytosine via 3 hydrogen bonds.", "color": "#3b82f6", "layer": "base_pairs"}
+            ],
+            "annotations": [
+                {"id": "chargaff_rule", "text": "Chargaff's Rule: %A = %T and %G = %C", "position": [0, 2.2, 0]}
+            ],
+            "animation_type": "spin",
+            "supports_cross_section": False,
+            "supports_exploded_view": True,
+            "mobile_touch_enabled": True
+        },
+        "atomic-structure": {
+            "title": "3D Rutherford-Bohr Atomic Structure & Quantized Electron Shells",
+            "model_key": "atomic-structure",
+            "subject": "Physics / Chemistry",
+            "academic_topic": "Atomic Structure, Nucleus, Protons, Neutrons & Electron Orbitals",
+            "quality_level": "level_3_advanced_scientific",
+            "background": "#080b14",
+            "camera": {"fov": 45, "position": [0, 0, 8.0], "min_distance": 2.5, "max_distance": 16.0},
+            "camera_presets": [
+                {"name": "Whole Atom View", "position": [0, 0, 8.0], "target": [0, 0, 0], "fov": 45},
+                {"name": "Nucleus Core", "position": [0, 0, 3.2], "target": [0, 0, 0], "fov": 30}
+            ],
+            "lights": [
+                {"type": "ambient", "color": "#ffffff", "intensity": 0.8},
+                {"type": "directional", "color": "#e0e7ff", "position": [3, 6, 5], "intensity": 1.2}
+            ],
+            "objects": [
+                {
+                    "id": "nucleus_protons",
+                    "geometry": {"type": "sphere", "radius": 0.6, "widthSegments": 24, "heightSegments": 24},
+                    "material": {"type": "meshStandard", "color": "#ef4444", "roughness": 0.25},
+                    "position": [-0.15, 0, 0],
+                    "label": "Protons (Positive Charge Z+)"
+                },
+                {
+                    "id": "nucleus_neutrons",
+                    "geometry": {"type": "sphere", "radius": 0.6, "widthSegments": 24, "heightSegments": 24},
+                    "material": {"type": "meshStandard", "color": "#94a3b8", "roughness": 0.3},
+                    "position": [0.15, 0, 0],
+                    "label": "Neutrons (Electrically Neutral)"
+                },
+                {
+                    "id": "k_shell_orbit",
+                    "geometry": {"type": "ring", "innerRadius": 1.78, "outerRadius": 1.82, "thetaSegments": 64},
+                    "material": {"type": "meshStandard", "color": "#38bdf8", "side": "doubleSide"},
+                    "position": [0, 0, 0],
+                    "rotation": [1.57, 0, 0],
+                    "label": "K-Shell Orbit (n=1, Max 2e⁻)"
+                },
+                {
+                    "id": "l_shell_orbit",
+                    "geometry": {"type": "ring", "innerRadius": 3.18, "outerRadius": 3.22, "thetaSegments": 64},
+                    "material": {"type": "meshStandard", "color": "#818cf8", "side": "doubleSide"},
+                    "position": [0, 0, 0],
+                    "rotation": [1.0, 0.4, 0],
+                    "label": "L-Shell Orbit (n=2, Max 8e⁻)"
+                },
+                {
+                    "id": "orbiting_electron",
+                    "geometry": {"type": "sphere", "radius": 0.16, "widthSegments": 16, "heightSegments": 16},
+                    "material": {"type": "meshStandard", "color": "#38bdf8", "emissive": "#0284c7", "emissiveIntensity": 0.8},
+                    "position": [1.8, 0, 0],
+                    "label": "Quantized Electron (e⁻)"
+                }
+            ],
+            "parts": [
+                {"id": "nucleus_protons", "label": "Protons (p⁺)", "role": "Positive nuclear charge determining atomic number Z.", "color": "#ef4444", "layer": "nucleus"},
+                {"id": "nucleus_neutrons", "label": "Neutrons (n⁰)", "role": "Neutral nucleons binding the nucleus via strong force.", "color": "#94a3b8", "layer": "nucleus"},
+                {"id": "k_shell_orbit", "label": "K-Shell (n=1)", "role": "Lowest energy quantized Bohr orbital shell holding up to 2 electrons.", "color": "#38bdf8", "layer": "shells"},
+                {"id": "l_shell_orbit", "label": "L-Shell (n=2)", "role": "Second principal energy level holding up to 8 electrons (2n² rule).", "color": "#818cf8", "layer": "shells"},
+                {"id": "orbiting_electron", "label": "Electrons (e⁻)", "role": "Negatively charged fundamental leptons orbiting in discrete stationary energy states.", "color": "#38bdf8", "layer": "particles"}
+            ],
+            "annotations": [
+                {"id": "bohr_rule", "text": "Bohr Formula: Max Electrons per Shell = 2n²", "position": [0, 2.5, 0]}
+            ],
+            "animation_type": "orbit",
+            "supports_cross_section": False,
+            "supports_exploded_view": True,
+            "mobile_touch_enabled": True
+        },
+        "cone-cylinder-volume": {
+            "title": "3D Solid Geometry: Cone & Cylinder Volume Relationship [V = (1/3)πr²h]",
+            "model_key": "cone-cylinder-volume",
+            "subject": "Mathematics",
+            "academic_topic": "Mensuration: Surface Areas & Volumes of 3D Solids",
+            "quality_level": "level_3_advanced_scientific",
+            "background": "#090d16",
+            "camera": {"fov": 45, "position": [0, 1.5, 7.5], "min_distance": 2.5, "max_distance": 16.0},
+            "camera_presets": [
+                {"name": "Solid Alignment Front View", "position": [0, 1.5, 7.5], "target": [0, 0, 0], "fov": 45},
+                {"name": "Top Base Dimension", "position": [0, 5.0, 4.0], "target": [0, 0, 0], "fov": 38}
+            ],
+            "lights": [
+                {"type": "ambient", "color": "#ffffff", "intensity": 0.8},
+                {"type": "directional", "color": "#38bdf8", "position": [3, 6, 5], "intensity": 1.2}
+            ],
+            "objects": [
+                {
+                    "id": "cylinder_hull",
+                    "geometry": {"type": "cylinder", "radiusTop": 1.6, "radiusBottom": 1.6, "height": 3.0, "radialSegments": 32},
+                    "material": {"type": "meshStandard", "color": "#0284c7", "transparent": True, "opacity": 0.35, "roughness": 0.2},
+                    "position": [0, 0, 0],
+                    "label": "Circumscribed Cylinder (Volume V = πr²h)"
+                },
+                {
+                    "id": "inscribed_cone",
+                    "geometry": {"type": "cone", "radius": 1.6, "height": 3.0, "radialSegments": 32},
+                    "material": {"type": "meshStandard", "color": "#f59e0b", "roughness": 0.4},
+                    "position": [0, 0, 0],
+                    "label": "Inscribed Cone (Volume V = 1/3 πr²h)"
+                },
+                {
+                    "id": "circular_base",
+                    "geometry": {"type": "ring", "innerRadius": 0, "outerRadius": 1.6, "thetaSegments": 32},
+                    "material": {"type": "meshStandard", "color": "#38bdf8", "side": "doubleSide"},
+                    "position": [0, -1.5, 0],
+                    "rotation": [1.57, 0, 0],
+                    "label": "Shared Circular Base (Area A = πr²)"
+                }
+            ],
+            "parts": [
+                {"id": "cylinder_hull", "label": "Cylinder (V = πr²h)", "role": "Right circular cylinder of radius r and vertical height h.", "color": "#0284c7", "layer": "solids"},
+                {"id": "inscribed_cone", "label": "Cone (V = 1/3 πr²h)", "role": "Right circular cone with identical base radius r and perpendicular height h.", "color": "#f59e0b", "layer": "solids"},
+                {"id": "circular_base", "label": "Common Base (πr²)", "role": "Congruent circular base shared by both solids.", "color": "#38bdf8", "layer": "dimensions"}
+            ],
+            "annotations": [
+                {"id": "ratio_law", "text": "Fundamental Ratio: Volume(Cone) = (1/3) × Volume(Cylinder)", "position": [0, 2.2, 0]}
+            ],
+            "animation_type": "none",
+            "supports_cross_section": True,
+            "supports_exploded_view": True,
+            "mobile_touch_enabled": True
         }
     }
 

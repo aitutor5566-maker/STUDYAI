@@ -179,19 +179,27 @@ export function inferSubjectFromTopic(topic: string): string {
   return 'Science';
 }
 
-export function infer3DModelType(topic: string): string {
+export function infer3DModelType(topic: string): string | null {
   const t = topic.toLowerCase();
-  if (/(heart|cardiac|blood|circulat|ventricle|atrium|pulse|organ)/.test(t)) return 'human_heart';
-  if (/(solar|planet|orbit|space|sun|earth|mars|jupiter|saturn|kepler|astronomy|gravity)/.test(t)) return 'solar_system';
-  if (/(dna|gene|helix|chromosome|heredity|nucleotide|rna|mutation)/.test(t)) return 'dna_helix';
-  if (/(quadratic|parabola|surface|graph|function|calculus|geometry|3d|coordinate|math|equation)/.test(t)) return 'math_surface';
-  if (/(atom|electron|proton|neutron|bohr|quantum|orbital|chemistry|element|periodic)/.test(t)) return 'atom_bohr';
-  if (/(photosynthesis|chloroplast|plant|leaf|stomata|calvin|chlorophyll)/.test(t)) return 'chloroplast_molecule';
-  return 'ai_custom_3d';
+  // Strictly prevent 3D for non-spatial subjects: History, Civics, English, and 2D math constructions
+  if (/(construct|ruler and compass|bisect|draw a triangle|geometry construction)/.test(t)) return null;
+  if (/(war|revolt|1857|treaty|timeline|gandhi|parliament|civics|constitution|speech|grammar|sentence)/.test(t)) return null;
+
+  if (/(heart|cardiac|circulat|ventricle|atrium|valve|double circulation)/.test(t)) return 'human_heart';
+  if (/(solar|planet|orbit|kepler|astronomy)/.test(t)) return 'solar_system';
+  if (/(dna|helix|double helix|nucleotide)/.test(t)) return 'dna_helix';
+  if (/(water molecule|bent geometry|h2o)/.test(t)) return 'water_molecule';
+  if (/(atom|bohr|electron shell|proton|neutron)/.test(t)) return 'atom_bohr';
+  if (/(chloroplast|photosynthesis organelle)/.test(t)) return 'chloroplast_molecule';
+  if (/(volcano|magma chamber|crater)/.test(t)) return 'volcano';
+  if (/(lever|fulcrum|moments|rotational equilibrium)/.test(t)) return 'lever_moments';
+  if (/(cone and cylinder|cone volume|cylinder volume)/.test(t)) return 'cone_cylinder_volume';
+  return null;
 }
 
 export function inferDiagramType(topic: string): string {
   const t = topic.toLowerCase();
+  if (/(construct|ruler and compass|triangle construction)/.test(t)) return 'geometrical_construction';
   if (/\b(atp|adenosine triphosphate|adp)\b/.test(t)) return 'atp_structure';
   if (/(photosynthesis|chloroplast|calvin|stomata|chlorophyll)/.test(t)) return 'photosynthesis';
   if (/(heart|cardiac|ventricle|atrium|double circulation|coronary)/.test(t)) return 'human_heart';
@@ -3480,22 +3488,26 @@ Respond strictly in valid JSON with the following keys:
     };
   }
 
+  const actualModelId = inferredId || 'human_heart';
   return {
-    id: inferredId === 'ai_custom_3d' ? 'chloroplast_molecule' : inferredId,
+    id: actualModelId,
     title: `${cleanTopic} — 3D Interactive Visualization`,
     subject: `${subject} • 3D Learning Lab`,
-    verificationBadge: 'Interactive Procedural 3D Scientific Visualization (Three.js WebGL)',
-    parts: [
-      { id: 'core_hub', label: `${cleanTopic} Core`, role: `Central governing structure of ${cleanTopic} in ${subject}.`, color: '#FF6A00' },
-      { id: 'input_channel', label: 'Primary Input Zone', role: `Receives initial energy or variables driving ${cleanTopic}.`, color: '#38BDF8' },
-      { id: 'reaction_matrix', label: 'Transformation Matrix', role: `Executes the core mechanism and structural conversion.`, color: '#22C55E' },
-      { id: 'output_vector', label: 'Resultant Output', role: `Delivers the final product or observable state of ${cleanTopic}.`, color: '#A855F7' }
+    verificationBadge: 'Verified Procedural 3D Scientific Visualization (Three.js WebGL)',
+    parts: actualModelId === 'human_heart' ? [
+      { id: 'right_atrium', label: 'Right Atrium', role: 'Receives deoxygenated blood from Superior and Inferior Vena Cava.', color: '#2563EB' },
+      { id: 'right_ventricle', label: 'Right Ventricle', role: 'Pumps deoxygenated blood through pulmonary valve into lungs.', color: '#1D4ED8' },
+      { id: 'left_atrium', label: 'Left Atrium', role: 'Receives oxygen-rich blood returning from lungs via pulmonary veins.', color: '#E11D48' },
+      { id: 'left_ventricle', label: 'Left Ventricle', role: 'Thick muscular chamber pumping oxygenated blood into Aorta at systemic pressure.', color: '#BE123C' },
+      { id: 'septum', label: 'Interventricular Septum', role: 'Partition preventing mixing of oxygenated and deoxygenated blood.', color: '#64748B' }
+    ] : [
+      { id: 'primary_element', label: `${cleanTopic} Structure`, role: 'Verified scientific component from Three.js library.', color: '#38BDF8' }
     ],
     guidedSteps: [
-      { step: '1. Initialization & Input', detail: `Key inputs and boundary conditions enter the ${cleanTopic} system.` },
-      { step: '2. Core Mechanism Execution', detail: `Internal components interact dynamically according to ${subject} laws.` },
-      { step: '3. Output & Equilibrium', detail: `The system reaches its target state and produces verified outputs.` }
+      { step: '1. Spatial Alignment', detail: `Examine 3D structure and anatomical orientation.` },
+      { step: '2. Functional Components', detail: `Observe internal boundaries and interactions.` },
+      { step: '3. Physiological Dynamics', detail: `Inspect flow, turning moments, or molecular bonds.` }
     ],
-    providerUsed: 'Three.js Procedural 3D Engine'
+    providerUsed: 'Three.js Official Scientific Library'
   };
 }

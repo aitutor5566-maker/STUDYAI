@@ -42,16 +42,144 @@ export type TeachingMode = 'normal' | 'exam';
 export function inferTopicModel3D(topicName: string): string | null {
   const t = (topicName || '').toLowerCase();
   if (t.includes('heart') || t.includes('circulation') || t.includes('cardio')) return 'human_heart';
-  if (t.includes('dna') || t.includes('helix') || t.includes('genetic') || t.includes('nucleotide')) return 'dna_helix';
-  if (t.includes('photo') || t.includes('chloroplast') || t.includes('plant cell')) return 'chloroplast_molecule';
-  if (t.includes('circuit') || t.includes('ohm') || t.includes('electric') || t.includes('resistor')) return 'electric_circuit';
-  if (t.includes('atom') || t.includes('bohr') || t.includes('electron') || t.includes('nucleus')) return 'atom_bohr';
-  if (t.includes('solar') || t.includes('planet') || t.includes('orbit')) return 'solar_system';
-  if (t.includes('pythagor') || t.includes('geometry') || t.includes('triangle')) return 'geometry_pythagoras';
-  if (t.includes('volcano')) return 'volcano_cross_section';
-  if (t.includes('water') || t.includes('molecule')) return 'water_molecule';
+  if (t.includes('dna') || t.includes('helix') || t.includes('nucleotide')) return 'dna_helix';
+  if (t.includes('chloroplast') || t.includes('plant cell')) return 'chloroplast_molecule';
+  if (t.includes('atom') || t.includes('bohr') || t.includes('electron shell')) return 'atom_bohr';
+  if (t.includes('solar') || t.includes('planet') || t.includes('kepler')) return 'solar_system';
+  if (t.includes('volcano')) return 'volcano';
+  if (t.includes('water') && (t.includes('molecule') || t.includes('h2o') || t.includes('bent'))) return 'water_molecule';
+  if (t.includes('lever') || t.includes('fulcrum') || t.includes('moments')) return 'lever_moments';
+  if (t.includes('cone') && t.includes('cylinder')) return 'cone_cylinder_volume';
   return null;
 }
+
+const InteractiveGeometryConstruction: React.FC<{ topic?: string }> = ({ topic }) => {
+  const [currentStep, setCurrentStep] = useState<number>(4);
+  const totalSteps = 4;
+
+  const ab = 6;
+  const bc = 5;
+  const ac = 4;
+  const scale = 42;
+  const ax = 70;
+  const ay = 210;
+  const bx = ax + ab * scale;
+  const by = ay;
+
+  const cosA = (ab * ab + ac * ac - bc * bc) / (2 * ab * ac);
+  const sinA = Math.sqrt(Math.max(0, 1 - cosA * cosA));
+  const cx = ax + ac * scale * cosA;
+  const cy = ay - ac * scale * sinA;
+  const rac = ac * scale;
+  const rbc = bc * scale;
+
+  return (
+    <div
+      style={{
+        marginBottom: 18,
+        padding: 16,
+        borderRadius: 18,
+        background: 'linear-gradient(135deg, #090D16 0%, #131D31 100%)',
+        color: '#F8FAFC',
+        border: '1.5px solid rgba(56, 189, 248, 0.4)'
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+        <div>
+          <span style={{ fontWeight: 800, fontSize: '0.94rem', color: '#38BDF8' }}>
+            📐 Step-by-Step 2D Geometry Construction (Compass & Straightedge)
+          </span>
+          <div style={{ fontSize: '0.78rem', color: '#94A3B8' }}>
+            Constructing Triangle ABC: AB = {ab} cm, BC = {bc} cm, AC = {ac} cm (SSS Theorem)
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button
+            onClick={() => setCurrentStep((s) => Math.max(1, s - 1))}
+            disabled={currentStep === 1}
+            style={{ padding: '4px 10px', borderRadius: 8, background: '#1E293B', color: '#F8FAFC', border: '1px solid #334155', cursor: 'pointer', fontSize: '0.76rem' }}
+          >
+            ◀ Prev
+          </button>
+          <button
+            onClick={() => setCurrentStep((s) => Math.min(totalSteps, s + 1))}
+            disabled={currentStep === totalSteps}
+            style={{ padding: '4px 10px', borderRadius: 8, background: '#1E293B', color: '#F8FAFC', border: '1px solid #334155', cursor: 'pointer', fontSize: '0.76rem' }}
+          >
+            Next ▶
+          </button>
+          <button
+            onClick={() => setCurrentStep(1)}
+            style={{ padding: '4px 10px', borderRadius: 8, background: '#1E293B', color: '#FDBA74', border: '1px solid #334155', cursor: 'pointer', fontSize: '0.76rem' }}
+          >
+            ↺ Replay
+          </button>
+          <button
+            onClick={() => setCurrentStep(4)}
+            style={{ padding: '4px 10px', borderRadius: 8, background: '#0284C7', color: '#FFFFFF', border: 'none', cursor: 'pointer', fontSize: '0.76rem', fontWeight: 700 }}
+          >
+            Show All
+          </button>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 14, alignItems: 'center' }}>
+        <svg viewBox="0 0 460 250" style={{ width: '100%', height: 210, background: '#070A12', borderRadius: 12, border: '1px solid #1E293B' }}>
+          {/* Step 1: Base line AB */}
+          {currentStep >= 1 && (
+            <>
+              <line x1={ax} y1={ay} x2={bx} y2={by} stroke="#38BDF8" strokeWidth="3" strokeLinecap="round" />
+              <circle cx={ax} cy={ay} r="4" fill="#38BDF8" />
+              <circle cx={bx} cy={by} r="4" fill="#38BDF8" />
+              <text x={ax - 16} y={ay + 5} fill="#F8FAFC" fontSize="13" fontWeight="700">A</text>
+              <text x={bx + 8} y={by + 5} fill="#F8FAFC" fontSize="13" fontWeight="700">B</text>
+              <text x={(ax + bx) / 2} y={ay + 20} fill="#38BDF8" fontSize="11" fontWeight="600" textAnchor="middle">Base AB = {ab} cm</text>
+            </>
+          )}
+
+          {/* Step 2: Compass Arc from A with radius AC */}
+          {currentStep >= 2 && (
+            <>
+              <path d={`M ${cx - 30} ${cy + 25} A ${rac} ${rac} 0 0 1 ${cx + 30} ${cy - 25}`} fill="none" stroke="#F59E0B" strokeWidth="1.8" strokeDasharray="4 4" />
+              <text x={ax + 10} y={(ay + cy) / 2} fill="#F59E0B" fontSize="10">Radius = {ac} cm</text>
+            </>
+          )}
+
+          {/* Step 3: Compass Arc from B with radius BC */}
+          {currentStep >= 3 && (
+            <>
+              <path d={`M ${cx + 25} ${cy + 30} A ${rbc} ${rbc} 0 0 0 ${cx - 25} ${cy - 30}`} fill="none" stroke="#A855F7" strokeWidth="1.8" strokeDasharray="4 4" />
+              <circle cx={cx} cy={cy} r="5" fill="#22C55E" />
+              <text x={cx} y={cy - 10} fill="#22C55E" fontSize="13" fontWeight="700" textAnchor="middle">C</text>
+            </>
+          )}
+
+          {/* Step 4: Join AC and BC */}
+          {currentStep >= 4 && (
+            <>
+              <polygon points={`${ax},${ay} ${bx},${by} ${cx},${cy}`} fill="rgba(56, 189, 248, 0.15)" stroke="#38BDF8" strokeWidth="2.5" />
+              <text x={(ax + cx) / 2 - 18} y={(ay + cy) / 2} fill="#F59E0B" fontSize="11" fontWeight="600">b = {ac} cm</text>
+              <text x={(bx + cx) / 2 + 10} y={(by + cy) / 2} fill="#A855F7" fontSize="11" fontWeight="600">a = {bc} cm</text>
+            </>
+          )}
+        </svg>
+
+        <div style={{ background: '#0F172A', padding: 12, borderRadius: 10, fontSize: '0.78rem', border: '1px solid #1E293B' }}>
+          <div style={{ color: '#FDBA74', fontWeight: 700, marginBottom: 4 }}>
+            Step {currentStep} of {totalSteps}:
+          </div>
+          {currentStep === 1 && <div>1. Draw base segment AB of length {ab} cm with a straightedge.</div>}
+          {currentStep === 2 && <div>2. Set compass to radius {ac} cm. Needle at vertex A; draw an arc above AB.</div>}
+          {currentStep === 3 && <div>3. Set compass to radius {bc} cm. Needle at vertex B; draw an arc intersecting the first arc at C.</div>}
+          {currentStep === 4 && <div>4. Join AC ({ac} cm) and BC ({bc} cm) with straightedge. Triangle ABC is complete and verified!</div>}
+          <div style={{ marginTop: 8, color: '#4ADE80', fontSize: '0.72rem' }}>
+            ✓ SSS Congruence Theorem: {ab} + {ac} &gt; {bc} (Valid)
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface TutorHealthInfo {
   status: string;
@@ -1846,6 +1974,11 @@ export const TutorPage: React.FC = () => {
 
                     {/* Quadratic Parabola Plot if applicable */}
                     {s?.interactivePlotSpec && <InteractiveQuadraticPlot spec={s.interactivePlotSpec} />}
+
+                    {/* 2D Step-by-Step Compass Geometry Construction if applicable */}
+                    {(s?.diagramType === 'geometrical_construction' || /(construct|ruler and compass|triangle construction)/i.test(s?.topic || activeTopic || '')) && (
+                      <InteractiveGeometryConstruction topic={s?.topic || activeTopic} />
+                    )}
                   </div>
 
                   {/* 6. Step-by-Step Mechanism */}
