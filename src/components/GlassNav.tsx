@@ -51,7 +51,7 @@ export const TopBrandBar: React.FC<{
   streakDays?: number;
 }> = ({ showBack = false, streakDays = 7 }) => {
   const navigate = useNavigate();
-  const { studentId, setStudentId, activeTopic } = useLearning();
+  const { studentId, setStudentId, studentProfiles, activeTopic } = useLearning();
 
   return (
     <header
@@ -116,7 +116,7 @@ export const TopBrandBar: React.FC<{
         <select
           aria-label="Select Student Profile Mode"
           value={studentId}
-          onChange={(e) => setStudentId(e.target.value as 'student-vishwak' | 'student-new')}
+          onChange={(e) => setStudentId(e.target.value)}
           style={{
             padding: '7px 12px',
             borderRadius: 999,
@@ -128,8 +128,18 @@ export const TopBrandBar: React.FC<{
             cursor: 'pointer'
           }}
         >
-          <option value="student-vishwak">Vishwak Sai (Grade 10)</option>
-          <option value="student-new">Aarav (New Student • Empty State)</option>
+          {studentProfiles && studentProfiles.length > 0 ? (
+            studentProfiles.map((p) => (
+              <option key={p.id} value={p.slug || p.id}>
+                {p.display_name} ({p.current_grade} • {p.current_board})
+              </option>
+            ))
+          ) : (
+            <>
+              <option value="student-vishwak">Vishwak Sai (Grade 10 • CBSE)</option>
+              <option value="student-new">Aarav (Grade 9 • ICSE)</option>
+            </>
+          )}
         </select>
 
         {streakDays > 0 && (

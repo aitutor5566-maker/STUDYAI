@@ -266,9 +266,168 @@ export function initDatabase() {
       verified INTEGER DEFAULT 1,
       created_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS families (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      created_by TEXT NOT NULL,
+      max_students INTEGER NOT NULL DEFAULT 5,
+      subscription_tier TEXT NOT NULL DEFAULT 'standard',
+      subscription_status TEXT NOT NULL DEFAULT 'active',
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS family_members (
+      id TEXT PRIMARY KEY,
+      family_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      role_id TEXT NOT NULL,
+      is_primary_guardian INTEGER NOT NULL DEFAULT 0,
+      joined_at TEXT NOT NULL,
+      FOREIGN KEY (family_id) REFERENCES families(id) ON DELETE CASCADE,
+      UNIQUE(family_id, user_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS student_profiles (
+      id TEXT PRIMARY KEY,
+      family_id TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      slug TEXT UNIQUE,
+      avatar_url TEXT DEFAULT '/avatars/default.svg',
+      birth_date TEXT,
+      current_grade TEXT NOT NULL DEFAULT 'Grade 10',
+      current_board TEXT NOT NULL DEFAULT 'CBSE',
+      is_active INTEGER NOT NULL DEFAULT 1,
+      daily_screen_time_limit_mins INTEGER DEFAULT 180,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (family_id) REFERENCES families(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS student_profile_access (
+      id TEXT PRIMARY KEY,
+      student_profile_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      access_level TEXT NOT NULL DEFAULT 'student',
+      granted_at TEXT NOT NULL,
+      approved_by TEXT,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      FOREIGN KEY (student_profile_id) REFERENCES student_profiles(id) ON DELETE CASCADE,
+      UNIQUE(student_profile_id, user_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS family_invitations (
+      id TEXT PRIMARY KEY,
+      family_id TEXT NOT NULL,
+      invited_email TEXT NOT NULL,
+      target_student_profile_id TEXT,
+      role_id TEXT NOT NULL DEFAULT 'student',
+      invitation_code TEXT NOT NULL UNIQUE,
+      invited_by TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      expires_at TEXT NOT NULL,
+      accepted_at TEXT,
+      accepted_by TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (family_id) REFERENCES families(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS academic_preferences (
+      id TEXT PRIMARY KEY,
+      student_profile_id TEXT NOT NULL UNIQUE,
+      target_board TEXT NOT NULL DEFAULT 'CBSE',
+      class_grade TEXT NOT NULL DEFAULT 'Grade 10',
+      academic_year TEXT NOT NULL DEFAULT '2026-2027',
+      enrolled_subjects_json TEXT NOT NULL DEFAULT '["Mathematics","Science","Social Science","English"]',
+      stream TEXT DEFAULT 'General',
+      preserve_history_on_promotion INTEGER NOT NULL DEFAULT 1,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (student_profile_id) REFERENCES student_profiles(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS consent_records (
+      id TEXT PRIMARY KEY,
+      family_id TEXT NOT NULL,
+      student_profile_id TEXT NOT NULL,
+      parent_user_id TEXT NOT NULL,
+      consent_type TEXT NOT NULL,
+      is_granted INTEGER NOT NULL DEFAULT 1,
+      ip_address TEXT,
+      user_agent TEXT,
+      granted_at TEXT NOT NULL,
+      revoked_at TEXT,
+      FOREIGN KEY (family_id) REFERENCES families(id) ON DELETE CASCADE,
+      FOREIGN KEY (student_profile_id) REFERENCES student_profiles(id) ON DELETE CASCADE
+    );
   `);
 
   seedInitialDataIfEmpty();
+  seedFamilyDataIfEmpty();
+}
+
+function seedFamilyDataIfEmpty() {
+  const existingFamily = db.prepare('SELECT id FROM families LIMIT 1').get() as { id: string } | undefined;
+  if (existingFamily) return;
+
+  const now = new Date().toISOString();
+
+  // Ensure parent user exists
+  const existingParent = db.prepare('SELECT id FROM users WHERE id = ?').get('parent-primary');
+  if (!existingParent) {
+    db.prepare(`
+      INSERT INTO users (id, name, email, grade, board, avatar_url, streak_days, parent_passcode_hash, created_at)
+      VALUES ('parent-primary', 'Parent Guardian', 'parent@studyai.edu', 'Adult', 'CBSE', '/avatars/default.svg', 0, ?, ?)
+    `).run(hashSecret('2468'), now);
+  }
+
+  // 1. Create Default Family
+  db.prepare(`
+    INSERT INTO families (id, name, created_by, max_students, subscription_tier, subscription_status, created_at)
+    VALUES ('family-sai', 'Sai Family', 'parent-primary', 5, 'premium', 'active', ?)
+  `).run(now);
+
+  // 2. Family Members
+  db.prepare(`
+    INSERT INTO family_members (id, family_id, user_id, role_id, is_primary_guardian, joined_at)
+    VALUES
+      ('fm-parent', 'family-sai', 'parent-primary', 'family_owner', 1, ?),
+      ('fm-vishwak', 'family-sai', 'student-vishwak', 'student', 0, ?),
+      ('fm-aarav', 'family-sai', 'student-new', 'student', 0, ?)
+  `).run(now, now, now);
+
+  // 3. Student Profiles
+  db.prepare(`
+    INSERT INTO student_profiles (id, family_id, display_name, slug, avatar_url, birth_date, current_grade, current_board, is_active, daily_screen_time_limit_mins, created_at, updated_at)
+    VALUES
+      ('profile-vishwak', 'family-sai', 'Vishwak Sai', 'student-vishwak', '/avatars/vishwak.svg', '2010-05-15', 'Grade 10', 'CBSE', 1, 180, ?, ?),
+      ('profile-aarav', 'family-sai', 'Aarav Sharma', 'student-new', '/avatars/new.svg', '2011-08-20', 'Grade 9', 'ICSE', 1, 180, ?, ?)
+  `).run(now, now, now, now);
+
+  // 4. Student Profile Access
+  db.prepare(`
+    INSERT INTO student_profile_access (id, student_profile_id, user_id, access_level, granted_at, approved_by, is_active)
+    VALUES
+      ('spa-v-1', 'profile-vishwak', 'student-vishwak', 'student', ?, 'parent-primary', 1),
+      ('spa-v-2', 'profile-vishwak', 'parent-primary', 'owner_parent', ?, 'parent-primary', 1),
+      ('spa-a-1', 'profile-aarav', 'student-new', 'student', ?, 'parent-primary', 1),
+      ('spa-a-2', 'profile-aarav', 'parent-primary', 'owner_parent', ?, 'parent-primary', 1)
+  `).run(now, now, now, now);
+
+  // 5. Academic Preferences
+  db.prepare(`
+    INSERT INTO academic_preferences (id, student_profile_id, target_board, class_grade, academic_year, enrolled_subjects_json, stream, preserve_history_on_promotion, updated_at)
+    VALUES
+      ('acad-v', 'profile-vishwak', 'CBSE', 'Grade 10', '2026-2027', '["Mathematics","Science","Social Science","English"]', 'General', 1, ?),
+      ('acad-a', 'profile-aarav', 'ICSE', 'Grade 9', '2026-2027', '["Mathematics","Physics","Chemistry","Biology","English"]', 'General', 1, ?)
+  `).run(now, now);
+
+  // 6. Consent Records
+  db.prepare(`
+    INSERT INTO consent_records (id, family_id, student_profile_id, parent_user_id, consent_type, is_granted, ip_address, user_agent, granted_at, revoked_at)
+    VALUES
+      ('cr-v', 'family-sai', 'profile-vishwak', 'parent-primary', 'coppa_parental_consent', 1, '127.0.0.1', 'Seed Initializer', ?, NULL),
+      ('cr-a', 'family-sai', 'profile-aarav', 'parent-primary', 'coppa_parental_consent', 1, '127.0.0.1', 'Seed Initializer', ?, NULL)
+  `).run(now, now);
 }
 
 function seedInitialDataIfEmpty() {

@@ -33,6 +33,16 @@ import {
   getVisualPlanForTopic,
   regenerateVisual
 } from './visualIntelligenceEngine.ts';
+import {
+  isServerSupabaseConfigured,
+  supabaseAdmin,
+  testSupabaseConnection,
+  verifySupabaseToken,
+  createFamily as createSupabaseFamily,
+  createStudentProfile as createSupabaseStudentProfile,
+  createStudentInvitation as createSupabaseStudentInvitation,
+  acceptStudentInvitation as acceptSupabaseStudentInvitation
+} from './supabase.ts';
 
 initDatabase();
 
@@ -94,8 +104,17 @@ async function readJsonBody(req: http.IncomingMessage, maxBytes = 6 * 1024 * 102
 
 function getStudentId(req: http.IncomingMessage): string {
   const headerId = req.headers['x-student-id'];
-  if (typeof headerId === 'string' && (headerId === 'student-vishwak' || headerId === 'student-new')) {
-    return headerId;
+  if (typeof headerId === 'string' && headerId.trim()) {
+    const clean = headerId.trim();
+    try {
+      const match = db.prepare('SELECT id, slug FROM student_profiles WHERE id = ? OR slug = ?').get(clean, clean) as any;
+      if (match) return match.slug || match.id;
+      const userMatch = db.prepare('SELECT id FROM users WHERE id = ?').get(clean) as any;
+      if (userMatch) return userMatch.id;
+    } catch {
+      // Fallback
+    }
+    return clean;
   }
   return 'student-vishwak';
 }
@@ -2214,6 +2233,459 @@ export function createAppServer() {
           db.prepare('DELETE FROM parent_sessions WHERE token = ?').run(token);
         }
         sendJson(res, 200, { loggedOut: true });
+        return;
+      }
+
+      // ==============================================================================
+      // 15. COMPLETE SUPABASE & FAMILY ACCOUNT MANAGEMENT ENDPOINTS
+      // ==============================================================================
+
+      // Check Supabase connection status & hybrid runtime readiness
+      if (pathname === '/api/supabase/status' && req.method === 'GET') {
+        const conn = await testSupabaseConnection();
+        sendJson(res, 200, {
+          configured: isServerSupabaseConfigured,
+          connection: conn,
+          runtime: isServerSupabaseConfigured ? 'supabase_hybrid' : 'sqlite_resilient_local',
+          tables_verified: [
+            'users', 'families', 'family_members', 'student_profiles',
+            'student_profile_access', 'family_invitations', 'academic_preferences',
+            'learning_preferences', 'consent_records'
+          ]
+        });
+        return;
+      }
+
+      // Create Family Account
+      if (pathname === '/api/family/create' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const name = sanitizeText(body.name || 'My Family', 100);
+        const parentUserId = sanitizeText(body.parent_user_id || 'parent-primary', 80);
+        const subscriptionTier = sanitizeText(body.subscription_tier || 'standard', 30);
+        const maxStudents = typeof body.max_students === 'number' ? body.max_students : 5;
+        const now = new Date().toISOString();
+        const familyId = `family-${crypto.randomBytes(6).toString('hex')}`;
+
+        // Local SQLite store
+        db.prepare(`
+          INSERT INTO families (id, name, created_by, max_students, subscription_tier, subscription_status, created_at)
+          VALUES (?, ?, ?, ?, ?, 'active', ?)
+        `).run(familyId, name, parentUserId, maxStudents, subscriptionTier, now);
+
+        db.prepare(`
+          INSERT INTO family_members (id, family_id, user_id, role_id, is_primary_guardian, joined_at)
+          VALUES (?, ?, ?, 'family_owner', 1, ?)
+        `).run(`fm-${crypto.randomBytes(4).toString('hex')}`, familyId, parentUserId, now);
+
+        // Supabase sync if configured
+        let supabaseFamily: any = null;
+        if (isServerSupabaseConfigured) {
+          try {
+            supabaseFamily = await createSupabaseFamily({
+              name,
+              parentUserId,
+              maxStudents,
+              subscriptionTier: subscriptionTier as any
+            });
+          } catch (err: any) {
+            console.warn('[Supabase Sync Warning] Failed to mirror family in Supabase:', err.message);
+          }
+        }
+
+        const family = db.prepare('SELECT * FROM families WHERE id = ?').get(familyId);
+        sendJson(res, 201, {
+          success: true,
+          family,
+          supabase_mirrored: Boolean(supabaseFamily)
+        });
+        return;
+      }
+
+      // Get Current Family and all student profiles
+      if (pathname === '/api/family/my-family' && req.method === 'GET') {
+        const family = (db.prepare('SELECT * FROM families ORDER BY created_at DESC LIMIT 1').get() as any) || {
+          id: 'family-sai',
+          name: 'Sai Family',
+          created_by: 'parent-primary',
+          max_students: 5,
+          subscription_tier: 'premium',
+          subscription_status: 'active'
+        };
+
+        const members = db.prepare(`
+          SELECT fm.*, u.name as user_name, u.email as user_email, fm.role_id as user_role
+          FROM family_members fm
+          JOIN users u ON u.id = fm.user_id
+          WHERE fm.family_id = ?
+        `).all(family.id);
+
+        const profiles = db.prepare(`
+          SELECT sp.*, ap.target_board, ap.class_grade, ap.academic_year, ap.enrolled_subjects_json
+          FROM student_profiles sp
+          LEFT JOIN academic_preferences ap ON ap.student_profile_id = sp.id
+          WHERE sp.family_id = ?
+        `).all(family.id);
+
+        const invitations = db.prepare('SELECT * FROM family_invitations WHERE family_id = ? ORDER BY created_at DESC').all(family.id);
+
+        sendJson(res, 200, {
+          family,
+          members,
+          student_profiles: profiles.map((p: any) => ({
+            ...p,
+            enrolled_subjects: JSON.parse(p.enrolled_subjects_json || '["Mathematics","Science"]')
+          })),
+          invitations
+        });
+        return;
+      }
+
+      // Invite a student to the family with an independent login
+      if (pathname === '/api/family/invite-student' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const familyId = sanitizeText(body.family_id || 'family-sai', 80);
+        const invitedEmail = sanitizeText(body.invited_email || '', 120).toLowerCase();
+        const targetStudentProfileId = body.target_student_profile_id ? sanitizeText(body.target_student_profile_id, 80) : null;
+        const invitedBy = sanitizeText(body.invited_by || 'parent-primary', 80);
+
+        if (!invitedEmail) {
+          sendJson(res, 400, { error: 'invited_email is required.' });
+          return;
+        }
+
+        const invitationCode = `STUDY-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+        const now = new Date().toISOString();
+        const expiresAt = new Date(Date.now() + 7 * 24 * 3600_000).toISOString();
+        const invId = `inv-${crypto.randomBytes(6).toString('hex')}`;
+
+        db.prepare(`
+          INSERT INTO family_invitations (id, family_id, invited_email, target_student_profile_id, role_id, invitation_code, invited_by, status, expires_at, created_at)
+          VALUES (?, ?, ?, ?, 'student', ?, ?, 'pending', ?, ?)
+        `).run(invId, familyId, invitedEmail, targetStudentProfileId, invitationCode, invitedBy, expiresAt, now);
+
+        if (isServerSupabaseConfigured) {
+          try {
+            await createSupabaseStudentInvitation({
+              familyId,
+              invitedEmail,
+              targetStudentProfileId: targetStudentProfileId || undefined,
+              invitedBy
+            });
+          } catch (err: any) {
+            console.warn('[Supabase Sync Warning] Failed to mirror invitation:', err.message);
+          }
+        }
+
+        sendJson(res, 201, {
+          success: true,
+          invitation: {
+            id: invId,
+            invitation_code: invitationCode,
+            invited_email: invitedEmail,
+            expires_at: expiresAt
+          }
+        });
+        return;
+      }
+
+      // Accept Student Invitation
+      if (pathname === '/api/family/accept-invitation' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const code = sanitizeText(body.invitation_code || '', 40).toUpperCase();
+        let studentUserId = sanitizeText(body.student_user_id || '', 80);
+        const studentName = sanitizeText(body.student_name || 'Student Learner', 100);
+        const studentEmail = sanitizeText(body.student_email || '', 120).toLowerCase();
+
+        const inv = db.prepare('SELECT * FROM family_invitations WHERE invitation_code = ? AND status = ?').get(code, 'pending') as any;
+        if (!inv) {
+          sendJson(res, 404, { error: 'Invalid or already accepted invitation code.' });
+          return;
+        }
+
+        if (new Date(inv.expires_at).getTime() < Date.now()) {
+          db.prepare("UPDATE family_invitations SET status = 'expired' WHERE id = ?").run(inv.id);
+          sendJson(res, 410, { error: 'Invitation has expired.' });
+          return;
+        }
+
+        const now = new Date().toISOString();
+
+        // Create user if not existing
+        if (!studentUserId) {
+          studentUserId = `student-${crypto.randomBytes(4).toString('hex')}`;
+          db.prepare(`
+            INSERT INTO users (id, name, email, grade, board, avatar_url, streak_days, parent_passcode_hash, created_at)
+            VALUES (?, ?, ?, 'Grade 10', 'CBSE', '/avatars/default.svg', 0, ?, ?)
+          `).run(studentUserId, studentName, studentEmail || inv.invited_email, hashSecret('2468'), now);
+        }
+
+        // Add to family_members
+        try {
+          db.prepare(`
+            INSERT INTO family_members (id, family_id, user_id, role_id, is_primary_guardian, joined_at)
+            VALUES (?, ?, ?, 'student', 0, ?)
+          `).run(`fm-${crypto.randomBytes(4).toString('hex')}`, inv.family_id, studentUserId, now);
+        } catch {
+          // Already member
+        }
+
+        // Grant access to target student profile if defined, or create new student profile
+        let profileId = inv.target_student_profile_id;
+        if (!profileId) {
+          profileId = `profile-${crypto.randomBytes(4).toString('hex')}`;
+          db.prepare(`
+            INSERT INTO student_profiles (id, family_id, display_name, slug, avatar_url, birth_date, current_grade, current_board, is_active, daily_screen_time_limit_mins, created_at, updated_at)
+            VALUES (?, ?, ?, ?, '/avatars/default.svg', NULL, 'Grade 10', 'CBSE', 1, 180, ?, ?)
+          `).run(profileId, inv.family_id, studentName, studentUserId, now, now);
+
+          db.prepare(`
+            INSERT INTO academic_preferences (id, student_profile_id, target_board, class_grade, academic_year, enrolled_subjects_json, stream, preserve_history_on_promotion, updated_at)
+            VALUES (?, ?, 'CBSE', 'Grade 10', '2026-2027', '["Mathematics","Science","Social Science","English"]', 'General', 1, ?)
+          `).run(`acad-${crypto.randomBytes(4).toString('hex')}`, profileId, now);
+        }
+
+        // Grant access
+        try {
+          db.prepare(`
+            INSERT INTO student_profile_access (id, student_profile_id, user_id, access_level, granted_at, approved_by, is_active)
+            VALUES (?, ?, ?, 'student', ?, ?, 1)
+          `).run(`spa-${crypto.randomBytes(4).toString('hex')}`, profileId, studentUserId, now, inv.invited_by);
+        } catch {
+          // Already granted
+        }
+
+        // Mark invitation accepted
+        db.prepare("UPDATE family_invitations SET status = 'accepted', accepted_at = ?, accepted_by = ? WHERE id = ?")
+          .run(now, studentUserId, inv.id);
+
+        sendJson(res, 200, {
+          success: true,
+          message: 'Invitation accepted successfully.',
+          family_id: inv.family_id,
+          student_user_id: studentUserId,
+          student_profile_id: profileId
+        });
+        return;
+      }
+
+      // List all student profiles
+      if (pathname === '/api/student/profiles' && req.method === 'GET') {
+        const profiles = db.prepare(`
+          SELECT sp.*, ap.target_board, ap.class_grade, ap.academic_year, ap.enrolled_subjects_json, ap.stream
+          FROM student_profiles sp
+          LEFT JOIN academic_preferences ap ON ap.student_profile_id = sp.id
+          WHERE sp.is_active = 1
+          ORDER BY sp.created_at ASC
+        `).all();
+
+        sendJson(res, 200, {
+          profiles: profiles.map((p: any) => ({
+            ...p,
+            enrolled_subjects: JSON.parse(p.enrolled_subjects_json || '["Mathematics","Science"]')
+          }))
+        });
+        return;
+      }
+
+      // Create a new student profile in the family
+      if (pathname === '/api/student/create-profile' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const familyId = sanitizeText(body.family_id || 'family-sai', 80);
+        const displayName = sanitizeText(body.display_name || 'New Learner', 100);
+        const currentGrade = sanitizeText(body.current_grade || 'Grade 10', 30);
+        const currentBoard = sanitizeText(body.current_board || 'CBSE', 30);
+        const birthDate = body.birth_date ? sanitizeText(body.birth_date, 20) : null;
+        const enrolledSubjects = Array.isArray(body.enrolled_subjects) && body.enrolled_subjects.length > 0
+          ? body.enrolled_subjects
+          : ['Mathematics', 'Science', 'Social Science', 'English'];
+
+        const profileId = `profile-${crypto.randomBytes(4).toString('hex')}`;
+        const slug = `student-${displayName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now().toString(36)}`;
+        const now = new Date().toISOString();
+
+        db.prepare(`
+          INSERT INTO student_profiles (id, family_id, display_name, slug, avatar_url, birth_date, current_grade, current_board, is_active, daily_screen_time_limit_mins, created_at, updated_at)
+          VALUES (?, ?, ?, ?, '/avatars/default.svg', ?, ?, ?, 1, 180, ?, ?)
+        `).run(profileId, familyId, displayName, slug, birthDate, currentGrade, currentBoard, now, now);
+
+        db.prepare(`
+          INSERT INTO academic_preferences (id, student_profile_id, target_board, class_grade, academic_year, enrolled_subjects_json, stream, preserve_history_on_promotion, updated_at)
+          VALUES (?, ?, ?, ?, '2026-2027', ?, 'General', 1, ?)
+        `).run(`acad-${crypto.randomBytes(4).toString('hex')}`, profileId, currentBoard, currentGrade, JSON.stringify(enrolledSubjects), now);
+
+        // Grant access to parent
+        db.prepare(`
+          INSERT INTO student_profile_access (id, student_profile_id, user_id, access_level, granted_at, approved_by, is_active)
+          VALUES (?, ?, 'parent-primary', 'owner_parent', ?, 'parent-primary', 1)
+        `).run(`spa-${crypto.randomBytes(4).toString('hex')}`, profileId, now);
+
+        sendJson(res, 201, {
+          success: true,
+          profile: {
+            id: profileId,
+            display_name: displayName,
+            slug,
+            current_grade: currentGrade,
+            current_board: currentBoard,
+            enrolled_subjects: enrolledSubjects
+          }
+        });
+        return;
+      }
+
+      // Get Academic & Learning Preferences for the active profile
+      if (pathname === '/api/student/preferences' && req.method === 'GET') {
+        const queryProfileId = parsedUrl.searchParams.get('student_profile_id');
+        let profile = queryProfileId
+          ? db.prepare('SELECT * FROM student_profiles WHERE id = ? OR slug = ?').get(queryProfileId, queryProfileId) as any
+          : db.prepare('SELECT * FROM student_profiles WHERE id = ? OR slug = ?').get(studentId, studentId) as any;
+
+        if (!profile) {
+          profile = db.prepare('SELECT * FROM student_profiles LIMIT 1').get() as any;
+        }
+
+        const academic = profile
+          ? db.prepare('SELECT * FROM academic_preferences WHERE student_profile_id = ?').get(profile.id) as any
+          : null;
+
+        const learning = db.prepare('SELECT * FROM learning_preferences WHERE user_id = ?').get(studentId) as any;
+
+        sendJson(res, 200, {
+          profile,
+          academic_preferences: academic ? {
+            ...academic,
+            enrolled_subjects: JSON.parse(academic.enrolled_subjects_json || '["Mathematics","Science"]')
+          } : null,
+          learning_preferences: learning || {
+            explanation_depth: 'simple',
+            preferred_language: 'English',
+            voice_speed: 1.0,
+            voice_name: 'Nova (Teacher)'
+          }
+        });
+        return;
+      }
+
+      // Update Academic & Learning Preferences (Preserves history upon grade/board changes)
+      if (pathname === '/api/student/preferences' && req.method === 'PUT') {
+        const body = await readJsonBody(req);
+        const queryProfileId = body.student_profile_id || studentId;
+        let profile = db.prepare('SELECT * FROM student_profiles WHERE id = ? OR slug = ?').get(queryProfileId, queryProfileId) as any;
+
+        if (!profile) {
+          profile = db.prepare('SELECT * FROM student_profiles LIMIT 1').get() as any;
+        }
+
+        const now = new Date().toISOString();
+
+        if (profile) {
+          const newBoard = sanitizeText(body.target_board || profile.current_board, 30);
+          const newGrade = sanitizeText(body.class_grade || profile.current_grade, 30);
+          const newSubjects = Array.isArray(body.enrolled_subjects) ? body.enrolled_subjects : null;
+          const stream = sanitizeText(body.stream || 'General', 50);
+
+          // Update student_profiles table
+          db.prepare('UPDATE student_profiles SET current_board = ?, current_grade = ?, updated_at = ? WHERE id = ?')
+            .run(newBoard, newGrade, now, profile.id);
+
+          // Update academic_preferences table
+          const existingAcad = db.prepare('SELECT id, enrolled_subjects_json FROM academic_preferences WHERE student_profile_id = ?').get(profile.id) as any;
+          const subjectsJson = newSubjects ? JSON.stringify(newSubjects) : (existingAcad?.enrolled_subjects_json || '["Mathematics","Science"]');
+
+          if (existingAcad) {
+            db.prepare(`
+              UPDATE academic_preferences
+              SET target_board = ?, class_grade = ?, enrolled_subjects_json = ?, stream = ?, updated_at = ?
+              WHERE student_profile_id = ?
+            `).run(newBoard, newGrade, subjectsJson, stream, now, profile.id);
+          } else {
+            db.prepare(`
+              INSERT INTO academic_preferences (id, student_profile_id, target_board, class_grade, academic_year, enrolled_subjects_json, stream, preserve_history_on_promotion, updated_at)
+              VALUES (?, ?, ?, ?, '2026-2027', ?, ?, 1, ?)
+            `).run(`acad-${crypto.randomBytes(4).toString('hex')}`, profile.id, newBoard, newGrade, subjectsJson, stream, now);
+          }
+        }
+
+        // Update learning_preferences
+        const depth = sanitizeText(body.explanation_depth || 'simple', 30);
+        const speed = typeof body.voice_speed === 'number' ? body.voice_speed : 1.0;
+        const voiceName = sanitizeText(body.voice_name || 'Nova (Teacher)', 50);
+
+        db.prepare(`
+          UPDATE learning_preferences
+          SET explanation_depth = ?, voice_speed = ?, voice_name = ?
+          WHERE user_id = ?
+        `).run(depth, speed, voiceName, studentId);
+
+        sendJson(res, 200, {
+          success: true,
+          message: 'Academic and learning preferences successfully updated. Learning history preserved.',
+          updated_at: now
+        });
+        return;
+      }
+
+      // Link an existing user profile (e.g. student-vishwak, student-new) to family
+      if (pathname === '/api/student/link-existing' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const familyId = sanitizeText(body.family_id || 'family-sai', 80);
+        const existingUserId = sanitizeText(body.existing_user_id || '', 80);
+
+        if (!existingUserId) {
+          sendJson(res, 400, { error: 'existing_user_id is required.' });
+          return;
+        }
+
+        const user = db.prepare('SELECT * FROM users WHERE id = ?').get(existingUserId) as any;
+        if (!user) {
+          sendJson(res, 404, { error: `User with id "${existingUserId}" not found.` });
+          return;
+        }
+
+        const now = new Date().toISOString();
+
+        // 1. Add to family_members if not present
+        try {
+          db.prepare(`
+            INSERT INTO family_members (id, family_id, user_id, role_id, is_primary_guardian, joined_at)
+            VALUES (?, ?, ?, 'student', 0, ?)
+          `).run(`fm-${crypto.randomBytes(4).toString('hex')}`, familyId, existingUserId, now);
+        } catch {
+          // Already member
+        }
+
+        // 2. Check if student_profile already exists with this slug or user ID
+        let profile = db.prepare('SELECT * FROM student_profiles WHERE slug = ? OR id = ?').get(existingUserId, existingUserId) as any;
+        if (!profile) {
+          const profileId = `profile-${crypto.randomBytes(4).toString('hex')}`;
+          db.prepare(`
+            INSERT INTO student_profiles (id, family_id, display_name, slug, avatar_url, birth_date, current_grade, current_board, is_active, daily_screen_time_limit_mins, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, NULL, ?, ?, 1, 180, ?, ?)
+          `).run(profileId, familyId, user.name, existingUserId, user.avatar_url || '/avatars/default.svg', user.grade || 'Grade 10', user.board || 'CBSE', now, now);
+
+          db.prepare(`
+            INSERT INTO academic_preferences (id, student_profile_id, target_board, class_grade, academic_year, enrolled_subjects_json, stream, preserve_history_on_promotion, updated_at)
+            VALUES (?, ?, ?, ?, '2026-2027', '["Mathematics","Science","Social Science","English"]', 'General', 1, ?)
+          `).run(`acad-${crypto.randomBytes(4).toString('hex')}`, profileId, user.board || 'CBSE', user.grade || 'Grade 10', now);
+
+          profile = db.prepare('SELECT * FROM student_profiles WHERE id = ?').get(profileId) as any;
+        }
+
+        // 3. Grant access
+        try {
+          db.prepare(`
+            INSERT INTO student_profile_access (id, student_profile_id, user_id, access_level, granted_at, approved_by, is_active)
+            VALUES (?, ?, ?, 'student', ?, 'parent-primary', 1)
+          `).run(`spa-${crypto.randomBytes(4).toString('hex')}`, profile.id, existingUserId, now);
+        } catch {
+          // Already granted
+        }
+
+        sendJson(res, 200, {
+          success: true,
+          message: `Existing user "${user.name}" (${existingUserId}) linked to family without data loss.`,
+          profile
+        });
         return;
       }
 

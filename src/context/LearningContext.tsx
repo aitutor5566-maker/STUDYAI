@@ -28,9 +28,25 @@ export interface AudioLessonState {
   reusedCache?: boolean;
 }
 
+export interface StudentProfileItem {
+  id: string;
+  family_id: string;
+  display_name: string;
+  slug?: string;
+  avatar_url?: string;
+  current_grade: string;
+  current_board: string;
+  enrolled_subjects?: string[];
+  target_board?: string;
+  class_grade?: string;
+}
+
 export interface LearningContextType {
-  studentId: 'student-vishwak' | 'student-new';
-  setStudentId: (id: 'student-vishwak' | 'student-new') => void;
+  studentId: string;
+  setStudentId: (id: string) => void;
+  studentProfiles: StudentProfileItem[];
+  activeProfile: StudentProfileItem | null;
+  refreshProfiles: () => Promise<void>;
   activeTopic: string;
   activeSubject: string;
   activeLevel: string;
@@ -69,7 +85,11 @@ export interface LearningContextType {
 const LearningContext = createContext<LearningContextType | null>(null);
 
 export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [studentId, setStudentIdState] = useState<'student-vishwak' | 'student-new'>('student-vishwak');
+  const [studentId, setStudentIdState] = useState<string>('student-vishwak');
+  const [studentProfiles, setStudentProfiles] = useState<StudentProfileItem[]>([
+    { id: 'profile-vishwak', family_id: 'family-sai', display_name: 'Vishwak Sai', slug: 'student-vishwak', current_grade: 'Grade 10', current_board: 'CBSE' },
+    { id: 'profile-aarav', family_id: 'family-sai', display_name: 'Aarav Sharma', slug: 'student-new', current_grade: 'Grade 9', current_board: 'ICSE' }
+  ]);
   const [activeTopic, setActiveTopic] = useState<string>('Photosynthesis');
   const [activeSubject, setActiveSubject] = useState<string>('Science');
   const [activeLevel, setActiveLevel] = useState<string>('Grade 10');
@@ -143,8 +163,29 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       .catch(() => {});
   }, [apiFetch]);
 
-  const setStudentId = (id: 'student-vishwak' | 'student-new') => {
+  const refreshProfiles = useCallback(async () => {
+    try {
+      const res = await apiFetch<{ profiles: StudentProfileItem[] }>('/api/student/profiles');
+      if (Array.isArray(res?.profiles) && res.profiles.length > 0) {
+        setStudentProfiles(res.profiles);
+      }
+    } catch {
+      // Fallback
+    }
+  }, [apiFetch]);
+
+  useEffect(() => {
+    refreshProfiles();
+  }, [refreshProfiles]);
+
+  const activeProfile = studentProfiles.find((p) => p.slug === studentId || p.id === studentId) || studentProfiles[0] || null;
+
+  const setStudentId = (id: string) => {
     setStudentIdState(id);
+    const matched = studentProfiles.find((p) => p.slug === id || p.id === id);
+    if (matched?.current_grade) {
+      setActiveLevel(matched.current_grade);
+    }
     setRefreshTick((t) => t + 1);
   };
 
@@ -244,6 +285,9 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       value={{
         studentId,
         setStudentId,
+        studentProfiles,
+        activeProfile,
+        refreshProfiles,
         activeTopic,
         activeSubject,
         activeLevel,
