@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Shield, Key, Lock, Server, Cpu, Database, 
   Activity, AlertTriangle, CheckCircle2, ChevronRight, 
-  RefreshCw, DollarSign, Layers, Globe, LogOut, Eye, EyeOff
+  RefreshCw, DollarSign, Layers, Globe, LogOut, Eye, EyeOff,
+  Users, UserPlus, Bug, ClipboardList, Check, X, Sliders, BarChart3
 } from 'lucide-react';
 
 interface DeploymentItem {
@@ -49,7 +50,7 @@ export const SuperAdminPage: React.FC = () => {
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
 
   // Console Active Tab
-  const [activeTab, setActiveTab] = useState<'overview' | 'providers' | 'costs' | 'health' | 'flags' | 'audit' | 'deployment'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'testers' | 'permissions' | 'assignments' | 'bugs' | 'analytics' | 'providers' | 'costs' | 'health' | 'flags' | 'audit' | 'deployment'>('overview');
 
   // Telemetry Data State
   const [overviewData, setOverviewData] = useState<any>(null);
@@ -61,6 +62,20 @@ export const SuperAdminPage: React.FC = () => {
   const [isLoadingData, setIsLoadingData] = useState<boolean>(false);
   const [actionNotice, setActionNotice] = useState<string>('');
 
+  // Tester & QA State
+  const [testersList, setTestersList] = useState<any[]>([]);
+  const [selectedTesterForPerms, setSelectedTesterForPerms] = useState<string>('tester-overall-1');
+  const [permMatrix, setPermMatrix] = useState<any>(null);
+  const [newTesterEmail, setNewTesterEmail] = useState<string>('');
+  const [newTesterName, setNewTesterName] = useState<string>('');
+  const [newTesterRole, setNewTesterRole] = useState<string>('tester_overall');
+  const [bugsList, setBugsList] = useState<any[]>([]);
+  const [assignmentsList, setAssignmentsList] = useState<any[]>([]);
+  const [assignTestCase, setAssignTestCase] = useState<string>('TC-TUTOR-01');
+  const [assignTesterId, setAssignTesterId] = useState<string>('tester-tutor-1');
+  const [assignPriority, setAssignPriority] = useState<string>('high');
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+
   const API_BASE = 'http://127.0.0.1:8000/api/v1';
 
   // Handle Login
@@ -70,24 +85,35 @@ export const SuperAdminPage: React.FC = () => {
     setLoginError('');
 
     try {
-      const res = await fetch(`${API_BASE}/auth/superadmin/login`, {
+      // 1. Try unified node auth gateway
+      let res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: email.trim(),
-          password: password,
-          mfa_code: mfaCode.trim()
-        })
-      });
+        body: JSON.stringify({ email: email.trim(), password, mfa_code: mfaCode.trim() })
+      }).catch(() => null);
+
+      if (!res || !res.ok) {
+        // Fallback to FastAPI
+        res = await fetch(`${API_BASE}/auth/superadmin/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email.trim(),
+            password: password,
+            mfa_code: mfaCode.trim()
+          })
+        });
+      }
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail?.message || 'Authentication failed. Please verify credentials and MFA code.');
+        throw new Error(err.detail?.message || err.error || 'Authentication failed. Please verify credentials and MFA code.');
       }
 
       const data = await res.json();
-      localStorage.setItem('studyai_superadmin_token', data.access_token);
-      setToken(data.access_token);
+      const accessToken = data.token || data.access_token;
+      localStorage.setItem('studyai_superadmin_token', accessToken);
+      setToken(accessToken);
       setIsAuthenticated(true);
     } catch (err: any) {
       setLoginError(err.message || 'Network connection error');
@@ -109,36 +135,205 @@ export const SuperAdminPage: React.FC = () => {
     const headers = { Authorization: `Bearer ${token}` };
 
     try {
-      // 1. Overview
-      const oRes = await fetch(`${API_BASE}/superadmin/overview`, { headers });
-      if (oRes.ok) setOverviewData(await oRes.json());
+      // Fetch core and QA telemetry in parallel
+      const [oRes, pRes, cRes, hRes, aRes, dRes, tRes, bRes, asRes, anRes] = await Promise.all([
+        fetch(`${API_BASE}/superadmin/overview`, { headers }).catch(() => null),
+        fetch(`${API_BASE}/superadmin/ai-providers`, { headers }).catch(() => null),
+        fetch(`${API_BASE}/superadmin/ai-usage-analytics`, { headers }).catch(() => null),
+        fetch(`${API_BASE}/superadmin/system-health`, { headers }).catch(() => null),
+        fetch(`${API_BASE}/superadmin/audit-logs?limit=15`, { headers }).catch(() => null),
+        fetch(`${API_BASE}/superadmin/deployment-status`, { headers }).catch(() => null),
+        fetch('/api/admin/testers', { headers }).then((r) => r.json()).catch(() => ({ testers: [] })),
+        fetch('/api/bugs', { headers }).then((r) => r.json()).catch(() => ({ bugs: [] })),
+        fetch('/api/tester/assignments', { headers }).then((r) => r.json()).catch(() => ({ assignments: [] })),
+        fetch('/api/admin/analytics', { headers }).then((r) => r.json()).catch(() => null)
+      ]);
 
-      // 2. AI Providers
-      const pRes = await fetch(`${API_BASE}/superadmin/ai-providers`, { headers });
-      if (pRes.ok) setProviders(await pRes.json());
-
-      // 3. Costs
-      const cRes = await fetch(`${API_BASE}/superadmin/ai-usage-analytics`, { headers });
-      if (cRes.ok) setCostAnalytics(await cRes.json());
-
-      // 4. Health
-      const hRes = await fetch(`${API_BASE}/superadmin/system-health`, { headers });
-      if (hRes.ok) setSystemHealth(await hRes.json());
-
-      // 5. Audit Logs
-      const aRes = await fetch(`${API_BASE}/superadmin/audit-logs?limit=15`, { headers });
-      if (aRes.ok) setAuditLogs(await aRes.json());
-
-      // 6. Deployment
-      const dRes = await fetch(`${API_BASE}/superadmin/deployment-status`, { headers });
-      if (dRes.ok) {
+      if (oRes?.ok) setOverviewData(await oRes.json());
+      if (pRes?.ok) setProviders(await pRes.json());
+      if (cRes?.ok) setCostAnalytics(await cRes.json());
+      if (hRes?.ok) setSystemHealth(await hRes.json());
+      if (aRes?.ok) setAuditLogs(await aRes.json());
+      if (dRes?.ok) {
         const dData = await dRes.json();
         setDeployments(dData.deployments || []);
       }
+      if (tRes?.testers) {
+        setTestersList(tRes.testers);
+        if (tRes.testers.length > 0 && !selectedTesterForPerms) {
+          setSelectedTesterForPerms(tRes.testers[0].id);
+        }
+      }
+      if (bRes?.bugs) setBugsList(bRes.bugs);
+      if (asRes?.assignments) setAssignmentsList(asRes.assignments);
+      if (anRes) setAnalyticsData(anRes);
     } catch (err) {
       console.error('Failed to refresh superadmin telemetry:', err);
     } finally {
       setIsLoadingData(false);
+    }
+  };
+
+  const loadTesterPermissions = async (testerId: string) => {
+    if (!token || !testerId) return;
+    try {
+      const res = await fetch(`/api/admin/testers/${testerId}/permissions`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data?.matrix) {
+        setPermMatrix(data.matrix);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch tester permissions:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedTesterForPerms) {
+      loadTesterPermissions(selectedTesterForPerms);
+    }
+  }, [selectedTesterForPerms]);
+
+  const handleUpdatePermissionSwitch = async (permKey: string, newState: 'YES' | 'NO' | 'INHERIT') => {
+    if (!selectedTesterForPerms) return;
+    try {
+      const res = await fetch(`/api/admin/testers/${selectedTesterForPerms}/permissions`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          overrides: [{ permission_key: permKey, override_state: newState }]
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.matrix) {
+        setPermMatrix(data.matrix);
+        setActionNotice(`Permission switch "${permKey}" updated to ${newState}. Immediately enforced in active sessions.`);
+        setTimeout(() => setActionNotice(''), 4000);
+      }
+    } catch (err: any) {
+      setActionNotice(`Failed to update permission switch: ${err.message}`);
+    }
+  };
+
+  const handleCategoryAction = async (action: 'enable_all' | 'disable_all' | 'restore_defaults') => {
+    if (!selectedTesterForPerms) return;
+    try {
+      const res = await fetch(`/api/admin/testers/${selectedTesterForPerms}/permissions`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ action })
+      });
+      const data = await res.json();
+      if (data.success && data.matrix) {
+        setPermMatrix(data.matrix);
+        setActionNotice(`Category action "${action}" successfully applied.`);
+        setTimeout(() => setActionNotice(''), 4000);
+      }
+    } catch (err: any) {
+      setActionNotice(`Failed to execute category action: ${err.message}`);
+    }
+  };
+
+  const handleInviteTester = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTesterEmail) return;
+    try {
+      const res = await fetch('/api/admin/testers/invite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          email: newTesterEmail,
+          full_name: newTesterName || 'QA Tester',
+          role_template_id: newTesterRole,
+          expires_days: 90
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActionNotice(`Tester "${newTesterEmail}" successfully provisioned under role template "${newTesterRole}"!`);
+        setNewTesterEmail('');
+        setNewTesterName('');
+        setTimeout(() => setActionNotice(''), 4000);
+        loadConsoleData();
+      }
+    } catch (err: any) {
+      setActionNotice(`Failed to provision tester: ${err.message}`);
+    }
+  };
+
+  const handleUpdateTesterStatus = async (testerId: string, newStatus: string) => {
+    try {
+      const res = await fetch(`/api/admin/testers/${testerId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActionNotice(`Tester ${testerId} status changed to ${newStatus}. Active sessions updated immediately.`);
+        setTimeout(() => setActionNotice(''), 4000);
+        loadConsoleData();
+      }
+    } catch (err: any) {
+      setActionNotice(`Status update failed: ${err.message}`);
+    }
+  };
+
+  const handleAssignTestCase = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/admin/assignments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          tester_id: assignTesterId,
+          test_case_id: assignTestCase,
+          priority: assignPriority
+        })
+      });
+      const data = await res.json();
+      setActionNotice(`Assignment created for ${assignTestCase}!`);
+      setTimeout(() => setActionNotice(''), 4000);
+      loadConsoleData();
+    } catch (err: any) {
+      setActionNotice(`Assignment failed: ${err.message}`);
+    }
+  };
+
+  const handleUpdateBugStatus = async (bugId: string, status: string) => {
+    try {
+      const res = await fetch(`/api/bugs/${bugId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ status })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActionNotice(`Bug ${bugId} transitioned to ${status}.`);
+        setTimeout(() => setActionNotice(''), 3000);
+        loadConsoleData();
+      }
+    } catch (err: any) {
+      setActionNotice(`Bug transition failed: ${err.message}`);
     }
   };
 

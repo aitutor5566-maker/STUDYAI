@@ -27,6 +27,8 @@ interface ModelSpec {
   title: string;
   subject: string;
   verificationBadge: string;
+  isUnavailable?: boolean;
+  unavailableReason?: string;
   parts: ModelPartInfo[];
   guidedSteps: Array<{ step: string; detail: string }>;
   primitives?: Custom3DPrimitive[];
@@ -219,14 +221,77 @@ const MODEL_SPECS: Record<string, ModelSpec> = {
       { step: '2. Volume Ratio', detail: 'It takes exactly three full cones of liquid or sand to fill the cylinder completely.' },
       { step: '3. Mathematical Formula', detail: 'Volume of cone = (1/3) × base area × height = (1/3)πr²h.' }
     ]
+  },
+  newtons_laws: {
+    id: 'newtons_laws',
+    title: 'Newton’s Laws of Motion & Action-Reaction Mechanics',
+    subject: 'Physics • Classical Mechanics',
+    verificationBadge: 'Mechanics Vector Simulation (Three.js WebGL)',
+    parts: [
+      { id: 'cart', label: 'Inertial Mass Cart (m)', role: 'Low-friction dynamics body with mass m (kg); resists changes in velocity (1st Law: Law of Inertia).', color: '#0284C7' },
+      { id: 'applied_force', label: 'Applied Force Vector (F)', role: 'Net external force vector driving acceleration along the track (2nd Law: F = ma).', color: '#EF4444' },
+      { id: 'acceleration_vector', label: 'Acceleration Vector (a)', role: 'Directly proportional to net force and inversely proportional to mass (a = F/m).', color: '#22C55E' },
+      { id: 'normal_gravity', label: 'Vertical Balance (N vs mg)', role: 'Normal force N = mg balances gravity perpendicularly to keep vertical acceleration zero.', color: '#A855F7' },
+      { id: 'action_reaction', label: 'Action-Reaction Buffer (F₁₂ = -F₂₁)', role: 'Equal and opposite contact forces acting on two interacting bodies simultaneously (3rd Law).', color: '#F59E0B' }
+    ],
+    guidedSteps: [
+      { step: '1. First Law (Inertia)', detail: 'With zero net horizontal force, the cart maintains constant velocity forever.' },
+      { step: '2. Second Law (F = ma)', detail: 'Applying net force F produces acceleration a = F/m directly in the direction of the force.' },
+      { step: '3. Third Law (Action-Reaction)', detail: 'When the cart strikes the buffer, both bodies experience simultaneous equal and opposite forces.' }
+    ]
+  },
+  chemical_bonding: {
+    id: 'chemical_bonding',
+    title: 'Chemical Bonding: Polar Covalent (H₂O) & Ionic Lattice (NaCl)',
+    subject: 'Chemistry • Molecular & Ionic Structure',
+    verificationBadge: 'VSEPR & Crystal Lattice Geometry (Three.js WebGL)',
+    parts: [
+      { id: 'oxygen_atom', label: 'Central Oxygen (δ⁻)', role: 'Electronegative central atom with partial negative charge in bent H₂O.', color: '#EF4444' },
+      { id: 'hydrogen_atoms', label: 'Hydrogen Atoms (δ⁺)', role: 'Covalently bonded hydrogen atoms with partial positive charge (104.5° angle).', color: '#38BDF8' },
+      { id: 'lone_pair_lobes', label: 'Non-Bonding Lone Pairs', role: 'Electron pairs exerting repulsion that compresses the H-O-H angle from 109.5° to 104.5°.', color: '#FACC15' },
+      { id: 'dipole_vector', label: 'Net Dipole Moment (μ = 1.85 D)', role: 'Asymmetric polar covalent structure creating a permanent dipole moment.', color: '#3B82F6' },
+      { id: 'ionic_crystal', label: 'Ionic NaCl Lattice', role: 'Alternating Na⁺ and Cl⁻ ions held together by strong omnidirectional electrostatic attraction.', color: '#10B981' }
+    ],
+    guidedSteps: [
+      { step: '1. Covalent Electron Sharing', detail: 'Atoms share valence electron pairs to attain stable noble-gas electron configurations.' },
+      { step: '2. VSEPR Lone Pair Repulsion', detail: 'Lone pairs push bonding orbitals closer, forming the 104.5° bent geometry of water.' },
+      { step: '3. Ionic Electron Transfer', detail: 'Sodium transfers one valence electron to Chlorine, forming an alternating cubic crystal lattice.' }
+    ]
   }
 };
 
 function resolveSpec(modelType?: string, topic?: string): ModelSpec {
   if (modelType && MODEL_SPECS[modelType]) return MODEL_SPECS[modelType];
   const t = (topic || '').toLowerCase();
+
+  // 1. Strictly enforce Honest Unavailable State for historical, grammatical, civics, and 2D construction topics
+  if (/(revolution|bastille|treaty|french|constitution|dynasty|empire|war|history|civics|parliament|gandhi|colonial|revolt|british|ruler and compass|construct a triangle|grammar|clause|tense|shakespeare)/.test(t)) {
+    return {
+      id: '3d_unavailable_honest_state',
+      title: `${topic || 'Topic'} — Pedagogical 2D Concept`,
+      subject: 'Social Studies / History • Vector Diagram & Analysis',
+      verificationBadge: 'Pedagogical Integrity: 3D Not Applicable (Showing 2D Technical Diagram)',
+      isUnavailable: true,
+      unavailableReason: `This topic is a sociopolitical, chronological, or 2D geometric construction process. Constructing an arbitrary 3D model would be scientifically incorrect and misleading. STUDYAI delivers a verified 2D Technical Vector Diagram and structured chronological mechanism instead.`,
+      parts: [
+        { id: 'chronology', label: 'Chronological Timeline', role: 'Sequenced causal progression of historical/logical phases.', color: '#0284C7' },
+        { id: 'causes', label: 'Primary Drivers / Causes', role: 'Underlying structural catalysts, economic conditions, and legal frameworks.', color: '#DC2626' },
+        { id: 'outcomes', label: 'Historical Outcomes / Impact', role: 'Lasting transformations in governance, society, and rights.', color: '#16A34A' }
+      ],
+      guidedSteps: [
+        { step: '1. Root Causes & Catalysts', detail: 'Analysis of fiscal bankruptcy, social inequity (Three Estates), and Enlightenment philosophy.' },
+        { step: '2. Revolutionary Turning Point', detail: 'Storming of the Bastille (14 July 1789) and Declaration of the Rights of Man.' },
+        { step: '3. Institutional Legacy', detail: 'Abolition of feudalism, constitutional democracy, and rise of modern civil codes.' }
+      ]
+    };
+  }
+
+  // 2. Exact benchmark and spatial scientific models
   if (/(heart|cardiac|blood|ventricle|valve|circulation)/.test(t)) return MODEL_SPECS.human_heart;
-  if (/(water|h2o|covalent|bent|molecular|molecule)/.test(t)) return MODEL_SPECS.water_molecule;
+  if (/(newton|laws of motion|inertia|f\s*=\s*ma|action and reaction|momentum|mechanics|free body)/.test(t)) return MODEL_SPECS.newtons_laws;
+  if (/(chloroplast|photosynthesis|plant cell|thylakoid|grana|stroma|calvin)/.test(t)) return MODEL_SPECS.chloroplast_molecule;
+  if (/(chemical bond|covalent|ionic|bonding|water molecule|h2o|crystal lattice|nacl)/.test(t)) return MODEL_SPECS.chemical_bonding;
+  if (/(water|bent geometry|molecular|molecule)/.test(t)) return MODEL_SPECS.water_molecule;
   if (/(volcano|magma|lava|eruption|conduit)/.test(t)) return MODEL_SPECS.volcano;
   if (/(moment|lever|torque|equilibrium|fulcrum)/.test(t)) return MODEL_SPECS.lever_moments;
   if (/(solar|planet|orbit|space|sun|kepler)/.test(t)) return MODEL_SPECS.solar_system;
@@ -234,7 +299,26 @@ function resolveSpec(modelType?: string, topic?: string): ModelSpec {
   if (/(atom|bohr|electron shell|proton|neutron)/.test(t)) return MODEL_SPECS.atom_bohr;
   if (/(cone and cylinder|cone volume|cylinder volume)/.test(t)) return MODEL_SPECS.cone_cylinder_volume;
   if (/(quadratic|math|parabola|equation|surface)/.test(t)) return MODEL_SPECS.math_surface;
-  return MODEL_SPECS.human_heart;
+
+  // 3. Fallback for unclassified scientific queries: return honest unavailable state
+  return {
+    id: '3d_unavailable_honest_state',
+    title: `${topic || 'Topic'} — Conceptual Analysis`,
+    subject: 'Conceptual Education • Technical Diagram View',
+    verificationBadge: 'Pedagogical Integrity: 2D Concept / Physical 3D Asset Not Verified',
+    isUnavailable: true,
+    unavailableReason: `No verified scientific 3D physical model exists for "${topic || 'this topic'}". STUDYAI never renders fake geometric placeholders or unrelated models. We provide a rigorous 2D Technical Vector Diagram and structured pedagogical walkthrough instead.`,
+    parts: [
+      { id: 'core_concept', label: 'Core Principle', role: 'The governing rule or foundational axiom of the topic.', color: '#0284C7' },
+      { id: 'transformation', label: 'Mechanism / Transformation', role: 'Step-by-step progression of variables or events.', color: '#F59E0B' },
+      { id: 'validation', label: 'Verification / SI Units', role: 'Empirical or mathematical confirmation of the result.', color: '#10B981' }
+    ],
+    guidedSteps: [
+      { step: '1. Foundational Axiom', detail: 'Understand the primary definitions and governing laws.' },
+      { step: '2. Step-by-Step Breakdown', detail: 'Follow the causal chain and variable transformations.' },
+      { step: '3. Examination Application', detail: 'Apply formulas and verified concepts to solve exam-level questions.' }
+    ]
+  };
 }
 
 export const Interactive3DViewer: React.FC<{
@@ -312,12 +396,18 @@ export const Interactive3DViewer: React.FC<{
 
   useEffect(() => {
     setCustomTopicInput(topic || 'Photosynthesis');
+    const nextSpec = resolveSpec(modelType, topic);
+    if (nextSpec.isUnavailable) {
+      setSelectedModelKey(nextSpec.id);
+      setSelectedPart(nextSpec.parts[0]);
+      setActiveStepIdx(0);
+      return;
+    }
     const t = (topic || '').toLowerCase();
-    const isKnownPreset = /(heart|cardiac|blood|ventricle|solar|planet|orbit|space|sun|dna|gene|helix|chromosome|quadratic|math|parabola|equation|surface|photosynthesis|chloroplast|plant|leaf)/.test(t);
+    const isKnownPreset = /(heart|cardiac|blood|ventricle|solar|planet|orbit|space|sun|dna|gene|helix|chromosome|quadratic|math|parabola|equation|surface|photosynthesis|chloroplast|plant|leaf|newton|force|motion|inertia|bonding|covalent|ionic)/.test(t);
     if (topic && !isKnownPreset && !modelType) {
       handleGenerateAi3D(topic);
     } else {
-      const nextSpec = resolveSpec(modelType, topic);
       setSelectedModelKey(nextSpec.id);
       setSelectedPart(nextSpec.parts[0]);
       setActiveStepIdx(0);
@@ -380,100 +470,293 @@ export const Interactive3DViewer: React.FC<{
       const animatedNodes: THREE.Object3D[] = [];
 
       if (selectedModelKey === 'human_heart') {
-        // Anatomical Palette: Blue (Deoxygenated / Patient Right), Red (Oxygenated / Patient Left), Gold (Valves & SA Node), Slate (Septum)
-        const matLV = new THREE.MeshStandardMaterial({ color: 0xbe123c, roughness: 0.35, metalness: 0.1 });
-        const matRV = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.35, metalness: 0.1 });
-        const matLA = new THREE.MeshStandardMaterial({ color: 0xe11d48, roughness: 0.4 });
+        // High-Fidelity Anatomical Palette
+        const matLV = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.35, metalness: 0.1 });
+        const matRV = new THREE.MeshStandardMaterial({ color: 0x1e40af, roughness: 0.35, metalness: 0.1 });
+        const matLA = new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.4 });
         const matRA = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.4 });
         const matSeptum = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.5 });
         const matAorta = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.25 });
-        const matVenaCava = new THREE.MeshStandardMaterial({ color: 0x1e40af, roughness: 0.3 });
-        const matPulmonary = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.3 });
-        const matValve = new THREE.MeshStandardMaterial({ color: 0xf59e0b, side: THREE.DoubleSide });
-        const matSANode = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xca8a04, emissiveIntensity: 0.8 });
+        const matVenaCava = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.3 });
+        const matPulmonary = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3 });
+        const matValve = new THREE.MeshStandardMaterial({ color: 0xf59e0b, side: THREE.DoubleSide, roughness: 0.2 });
+        const matSANode = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xeab308, emissiveIntensity: 1.0 });
+        const matCoronary = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.2 });
+        const matChordae = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.6 });
 
-        // Left Ventricle (Thick Muscular Systemic Apex - Patient Left / Viewer Right)
-        const lv = new THREE.Mesh(new THREE.SphereGeometry(1.25, 32, 32), matLV);
-        lv.scale.set(1.0, 1.45, 0.95);
-        lv.position.set(0.75, -0.65, 0.1);
-        lv.userData = { id: 'left_ventricle' };
+        // 1. Left Ventricle: Conical Apex Myocardium (Tilted ~25° toward Patient Left / Viewer Right)
+        const lvGroup = new THREE.Group();
+        const lvConeGeom = new THREE.ConeGeometry(1.28, 2.3, 32);
+        const lvCone = new THREE.Mesh(lvConeGeom, matLV);
+        lvCone.rotation.z = Math.PI - 0.32; // Inverted cone pointing downward to apex
+        lvCone.position.set(0.68, -0.65, 0.05);
+        lvCone.userData = { id: 'left_ventricle' };
+        lvGroup.add(lvCone);
 
-        // Right Ventricle (Patient Right / Viewer Left)
-        const rv = new THREE.Mesh(new THREE.SphereGeometry(1.05, 32, 32), matRV);
-        rv.scale.set(0.95, 1.3, 0.85);
-        rv.position.set(-0.75, -0.55, 0.25);
-        rv.userData = { id: 'right_ventricle' };
+        // LV Internal Papillary Muscles & Chordae Tendineae
+        const papM1 = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.6, 12), matLV);
+        papM1.position.set(0.85, -0.7, 0.25);
+        const papM2 = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.6, 12), matLV);
+        papM2.position.set(0.45, -0.7, -0.2);
+        lvGroup.add(papM1, papM2);
 
-        // Left Atrium (Patient Left / Viewer Right)
-        const la = new THREE.Mesh(new THREE.SphereGeometry(0.82, 28, 28), matLA);
-        la.position.set(0.85, 0.85, -0.2);
-        la.userData = { id: 'left_atrium' };
+        // Chordae Tendineae Strings linking papillary muscles to mitral cusps
+        const cord1 = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.75, 8), matChordae);
+        cord1.position.set(0.82, -0.28, 0.18);
+        const cord2 = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.75, 8), matChordae);
+        cord2.position.set(0.52, -0.28, -0.12);
+        lvGroup.add(cord1, cord2);
 
-        // Right Atrium (Patient Right / Viewer Left)
-        const ra = new THREE.Mesh(new THREE.SphereGeometry(0.88, 28, 28), matRA);
-        ra.position.set(-0.85, 0.85, 0.15);
-        ra.userData = { id: 'right_atrium' };
+        // 2. Right Ventricle: Crescentic Anterolateral Wall
+        const rvGroup = new THREE.Group();
+        const rvMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.88, 1.15, 1.85, 24, 1, false, 0, Math.PI * 1.15), matRV);
+        rvMesh.position.set(-0.7, -0.55, 0.22);
+        rvMesh.rotation.y = -0.55;
+        rvMesh.userData = { id: 'right_ventricle' };
+        rvGroup.add(rvMesh);
 
-        // Interventricular Septum (Partition preventing blood mixing)
-        const septum = new THREE.Mesh(new THREE.BoxGeometry(0.32, 2.2, 1.6), matSeptum);
-        septum.position.set(0.0, -0.6, 0.1);
+        // RV Outflow Tract (Infundibulum / Conus Arteriosus)
+        const infundibulum = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.52, 1.1, 20), matPulmonary);
+        infundibulum.position.set(-0.35, 0.45, 0.42);
+        infundibulum.rotation.z = -0.25;
+        rvGroup.add(infundibulum);
+
+        // 3. Interventricular Septum (Thick Muscular Partition)
+        const septum = new THREE.Mesh(new THREE.BoxGeometry(0.28, 2.2, 1.55), matSeptum);
+        septum.position.set(0.05, -0.6, 0.08);
         septum.userData = { id: 'septum' };
 
-        // Tricuspid Valve (Between RA and RV)
-        const tricuspid = new THREE.Mesh(new THREE.RingGeometry(0.15, 0.38, 24), matValve);
-        tricuspid.rotation.x = Math.PI / 2;
-        tricuspid.position.set(-0.78, 0.1, 0.2);
-        tricuspid.userData = { id: 'tricuspid_valve' };
+        // 4. Left Atrium & Right Atrium with Auricles (Appendages)
+        const la = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.8, 1.1, 24), matLA);
+        la.position.set(0.82, 0.82, -0.25);
+        la.userData = { id: 'left_atrium' };
 
-        // Bicuspid / Mitral Valve (Between LA and LV)
-        const mitral = new THREE.Mesh(new THREE.RingGeometry(0.15, 0.38, 24), matValve);
-        mitral.rotation.x = Math.PI / 2;
-        mitral.position.set(0.78, 0.1, -0.05);
-        mitral.userData = { id: 'mitral_valve' };
+        const ra = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 0.85, 1.25, 24), matRA);
+        ra.position.set(-0.95, 0.82, 0.12);
+        ra.userData = { id: 'right_atrium' };
 
-        // Pulmonary Semilunar Valve (Base of Pulmonary Trunk)
-        const pulmonaryValve = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.12, 16), matValve);
-        pulmonaryValve.position.set(-0.35, 0.45, 0.55);
-        pulmonaryValve.userData = { id: 'pulmonary_valve' };
+        // 5. The 4 Functional Valves with Real Cusps
+        // Tricuspid Valve (3 Cusps between RA and RV)
+        const tricuspidGroup = new THREE.Group();
+        for (let c = 0; c < 3; c++) {
+          const cusp = new THREE.Mesh(new THREE.CircleGeometry(0.22, 16, (c * Math.PI * 2) / 3, Math.PI * 0.6), matValve);
+          cusp.rotation.x = Math.PI / 2;
+          tricuspidGroup.add(cusp);
+        }
+        tricuspidGroup.position.set(-0.75, 0.12, 0.22);
+        tricuspidGroup.userData = { id: 'tricuspid_valve' };
 
-        // Aortic Semilunar Valve (Base of Aortic Root)
-        const aorticValve = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.12, 16), matValve);
-        aorticValve.position.set(0.25, 0.45, 0.25);
+        // Bicuspid / Mitral Valve (2 Cusps between LA and LV)
+        const mitralGroup = new THREE.Group();
+        for (let c = 0; c < 2; c++) {
+          const cusp = new THREE.Mesh(new THREE.CircleGeometry(0.24, 16, c * Math.PI, Math.PI * 0.9), matValve);
+          cusp.rotation.x = Math.PI / 2;
+          mitralGroup.add(cusp);
+        }
+        mitralGroup.position.set(0.75, 0.12, -0.05);
+        mitralGroup.userData = { id: 'mitral_valve' };
+
+        // Aortic Semilunar Valve (3 Pocket Cusps at Aortic Root)
+        const aorticValve = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.14, 16), matValve);
+        aorticValve.position.set(0.22, 0.52, 0.15);
         aorticValve.userData = { id: 'aortic_valve' };
 
-        // Systemic Aorta & Arch
-        const aorta = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.32, 20, 40, 3.4), matAorta);
-        aorta.position.set(0.22, 1.4, 0);
-        aorta.rotation.set(0, 0, -0.4);
-        aorta.userData = { id: 'aorta' };
+        // Pulmonary Semilunar Valve (3 Pocket Cusps at Infundibulum Base)
+        const pulmonaryValve = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.14, 16), matValve);
+        pulmonaryValve.position.set(-0.32, 0.52, 0.46);
+        pulmonaryValve.userData = { id: 'pulmonary_valve' };
 
-        // Superior Vena Cava
-        const svc = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 1.6, 24), matVenaCava);
-        svc.position.set(-1.2, 1.45, 0.1);
+        // 6. Great Vessels: Systemic Aorta with 3 Arch Branches
+        const aortaGroup = new THREE.Group();
+        const aortaArch = new THREE.Mesh(new THREE.TorusGeometry(0.98, 0.32, 20, 48, 3.5), matAorta);
+        aortaArch.position.set(0.25, 1.45, 0);
+        aortaArch.rotation.set(0, 0, -0.42);
+        aortaArch.userData = { id: 'aorta' };
+        aortaGroup.add(aortaArch);
+
+        // Three Classic Aortic Arch Branches: Brachiocephalic, Left Common Carotid, Left Subclavian
+        const archBranches = [
+          { x: -0.22, y: 2.32, rotZ: 0.15, label: 'Brachiocephalic Trunk' },
+          { x: 0.12, y: 2.45, rotZ: 0.0, label: 'Left Common Carotid Artery' },
+          { x: 0.45, y: 2.38, rotZ: -0.15, label: 'Left Subclavian Artery' }
+        ];
+        archBranches.forEach((b) => {
+          const branchMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.85, 16), matAorta);
+          branchMesh.position.set(b.x, b.y, -0.05);
+          branchMesh.rotation.z = b.rotZ;
+          aortaGroup.add(branchMesh);
+        });
+
+        // Pulmonary Trunk & Bifurcation into Left/Right Pulmonary Arteries
+        const pulmTrunkGroup = new THREE.Group();
+        const pulmMain = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.34, 1.4, 24), matPulmonary);
+        pulmMain.position.set(-0.25, 1.3, 0.48);
+        pulmMain.rotation.set(0.25, 0, 0.35);
+        pulmMain.userData = { id: 'pulmonary_artery' };
+        pulmTrunkGroup.add(pulmMain);
+
+        // Left & Right Pulmonary Branches crossing behind aorta
+        const pulmLeft = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.2, 16), matPulmonary);
+        pulmLeft.position.set(0.65, 1.62, 0.25);
+        pulmLeft.rotation.set(0, 0, 1.15);
+        const pulmRight = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.2, 16), matPulmonary);
+        pulmRight.position.set(-1.15, 1.62, 0.25);
+        pulmRight.rotation.set(0, 0, -1.15);
+        pulmTrunkGroup.add(pulmLeft, pulmRight);
+
+        // Superior & Inferior Vena Cava
+        const svc = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 1.7, 24), matVenaCava);
+        svc.position.set(-1.3, 1.5, 0.1);
         svc.userData = { id: 'superior_vena_cava' };
 
-        // Inferior Vena Cava
-        const ivc = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 1.4, 24), matVenaCava);
-        ivc.position.set(-1.15, -1.5, -0.1);
+        const ivc = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 1.5, 24), matVenaCava);
+        ivc.position.set(-1.22, -1.55, -0.05);
         ivc.userData = { id: 'inferior_vena_cava' };
 
-        // Pulmonary Artery (Carrying deoxygenated blood to lungs)
-        const pulmonaryArtery = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 1.5, 24), matPulmonary);
-        pulmonaryArtery.position.set(-0.25, 1.25, 0.55);
-        pulmonaryArtery.rotation.set(0.2, 0, 0.3);
-        pulmonaryArtery.userData = { id: 'pulmonary_artery' };
+        // 7. Left Anterior Descending (LAD) Coronary Artery in Anterior Groove
+        const ladCurve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(0.05, 0.3, 0.8),
+          new THREE.Vector3(0.18, -0.2, 0.85),
+          new THREE.Vector3(0.42, -0.7, 0.72),
+          new THREE.Vector3(0.65, -1.2, 0.45)
+        ]);
+        const ladMesh = new THREE.Mesh(new THREE.TubeGeometry(ladCurve, 20, 0.045, 8, false), matCoronary);
 
-        // Separate Sinoatrial (SA) Node - Natural Pacemaker Conduction Layer
-        const saNode = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 16), matSANode);
-        saNode.position.set(-1.1, 1.35, 0.35);
+        // 8. Sinoatrial (SA) Node Conduction Pacemaker
+        const saNode = new THREE.Mesh(new THREE.SphereGeometry(0.24, 20, 20), matSANode);
+        saNode.position.set(-1.25, 1.42, 0.35);
         saNode.userData = { id: 'sa_node' };
 
         rootGroup.add(
-          lv, rv, la, ra, septum,
-          tricuspid, mitral, pulmonaryValve, aorticValve,
-          aorta, svc, ivc, pulmonaryArtery, saNode
+          lvGroup, rvGroup, septum, la, ra,
+          tricuspidGroup, mitralGroup, aorticValve, pulmonaryValve,
+          aortaGroup, pulmTrunkGroup, svc, ivc, ladMesh, saNode
         );
         animatedNodes.push(rootGroup);
+      } else if (selectedModelKey === 'newtons_laws') {
+        // Frictionless Linear Track with Graduation Markers
+        const matTrack = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.25 });
+        const track = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.18, 1.4), matTrack);
+        track.position.set(0, -0.9, 0);
+        rootGroup.add(track);
+
+        // Test Dynamics Cart (Mass m)
+        const matCart = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.5, roughness: 0.3 });
+        const cartBody = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.55, 0.95), matCart);
+        cartBody.position.set(-1.2, -0.45, 0);
+        cartBody.userData = { id: 'cart' };
+
+        // Cart Wheels (4 Rotating Discs)
+        const matWheel = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9, roughness: 0.2 });
+        [
+          [-0.55, -0.25, 0.5],
+          [0.55, -0.25, 0.5],
+          [-0.55, -0.25, -0.5],
+          [0.55, -0.25, -0.5]
+        ].forEach(([wx, wy, wz]) => {
+          const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.1, 16), matWheel);
+          wheel.rotation.x = Math.PI / 2;
+          wheel.position.set(wx, wy, wz);
+          cartBody.add(wheel);
+        });
+        rootGroup.add(cartBody);
+
+        // Applied Net Force Vector F (Red 3D Arrow emerging from cart)
+        const matForce = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xb91c1c, emissiveIntensity: 0.6 });
+        const forceShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.6, 16), matForce);
+        forceShaft.rotation.z = -Math.PI / 2;
+        forceShaft.position.set(0.8, 0, 0);
+        const forceHead = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.45, 16), matForce);
+        forceHead.rotation.z = -Math.PI / 2;
+        forceHead.position.set(1.7, 0, 0);
+        const forceArrow = new THREE.Group();
+        forceArrow.add(forceShaft, forceHead);
+        forceArrow.userData = { id: 'applied_force' };
+        cartBody.add(forceArrow);
+
+        // Acceleration Vector a (Neon Green 3D Arrow)
+        const matAcc = new THREE.MeshStandardMaterial({ color: 0x22c55e, emissive: 0x15803d, emissiveIntensity: 0.6 });
+        const accShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 1.2, 16), matAcc);
+        accShaft.rotation.z = -Math.PI / 2;
+        accShaft.position.set(0.6, 0.42, 0);
+        const accHead = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.35, 16), matAcc);
+        accHead.rotation.z = -Math.PI / 2;
+        accHead.position.set(1.3, 0.42, 0);
+        const accArrow = new THREE.Group();
+        accArrow.add(accShaft, accHead);
+        accArrow.userData = { id: 'acceleration_vector' };
+        cartBody.add(accArrow);
+
+        // Normal Force N (Cyan Arrow Up) & Gravity W = mg (Purple Arrow Down)
+        const matNorm = new THREE.MeshStandardMaterial({ color: 0x38bdf8 });
+        const normShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.0, 16), matNorm);
+        normShaft.position.set(0, 0.75, 0);
+        const normHead = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.28, 16), matNorm);
+        normHead.position.set(0, 1.35, 0);
+        const normArrow = new THREE.Group();
+        normArrow.add(normShaft, normHead);
+
+        const matGrav = new THREE.MeshStandardMaterial({ color: 0xa855f7 });
+        const gravShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.0, 16), matGrav);
+        gravShaft.position.set(0, -0.75, 0);
+        const gravHead = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.28, 16), matGrav);
+        gravHead.rotation.x = Math.PI;
+        gravHead.position.set(0, -1.35, 0);
+        const gravArrow = new THREE.Group();
+        gravArrow.add(gravShaft, gravHead);
+        normArrow.add(gravArrow);
+        normArrow.userData = { id: 'normal_gravity' };
+        cartBody.add(normArrow);
+
+        // Action-Reaction Impact Buffer / 2nd Body at track end
+        const matBuffer = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3 });
+        const buffer = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.8, 1.1), matBuffer);
+        buffer.position.set(3.2, -0.45, 0);
+        buffer.userData = { id: 'action_reaction' };
+        rootGroup.add(buffer);
+        animatedNodes.push(cartBody);
+      } else if (selectedModelKey === 'chemical_bonding') {
+        // Polar Covalent Water Molecule (104.5° Bent VSEPR Geometry)
+        const matO = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.2, metalness: 0.1 });
+        const oAtom = new THREE.Mesh(new THREE.SphereGeometry(0.85, 32, 32), matO);
+        oAtom.position.set(0, 0.45, 0);
+        oAtom.userData = { id: 'oxygen_atom' };
+
+        const matH = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.25 });
+        const h1 = new THREE.Mesh(new THREE.SphereGeometry(0.48, 24, 24), matH);
+        h1.position.set(-1.32, -0.72, 0);
+        h1.userData = { id: 'hydrogen_atoms' };
+
+        const h2 = new THREE.Mesh(new THREE.SphereGeometry(0.48, 24, 24), matH);
+        h2.position.set(1.32, -0.72, 0);
+        h2.userData = { id: 'hydrogen_atoms' };
+
+        // Covalent Shared Electron Bond Cylinders
+        const matBond = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.4 });
+        const bond1 = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.35, 16), matBond);
+        bond1.position.set(-0.66, -0.15, 0);
+        bond1.rotation.set(0, 0, 0.68);
+        const bond2 = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.35, 16), matBond);
+        bond2.position.set(0.66, -0.15, 0);
+        bond2.rotation.set(0, 0, -0.68);
+
+        // Lone Electron Pair Repulsion Lobes
+        const matLone = new THREE.MeshStandardMaterial({ color: 0xfacc15, transparent: true, opacity: 0.42 });
+        const lone1 = new THREE.Mesh(new THREE.SphereGeometry(0.36, 16, 16), matLone);
+        lone1.position.set(-0.45, 1.15, 0.35);
+        lone1.userData = { id: 'lone_pair_lobes' };
+        const lone2 = new THREE.Mesh(new THREE.SphereGeometry(0.36, 16, 16), matLone);
+        lone2.position.set(0.45, 1.15, 0.35);
+        lone2.userData = { id: 'lone_pair_lobes' };
+
+        // Net Dipole Moment Vector Arrow (1.85 D)
+        const matDipole = new THREE.MeshStandardMaterial({ color: 0x0284c7, emissive: 0x0369a1, emissiveIntensity: 0.7 });
+        const dipoleHead = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.5, 16), matDipole);
+        dipoleHead.position.set(0, 1.95, 0);
+        dipoleHead.userData = { id: 'dipole_vector' };
+
+        rootGroup.add(oAtom, h1, h2, bond1, bond2, lone1, lone2, dipoleHead);
+        animatedNodes.push(oAtom, h1, h2);
       } else if (selectedModelKey === 'solar_system') {
         const sunMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
         const sun = new THREE.Mesh(new THREE.SphereGeometry(0.95, 32, 32), sunMat);
@@ -983,11 +1266,15 @@ export const Interactive3DViewer: React.FC<{
             }}
           >
             {customSpec && <option value="ai_custom_3d">✨ AI Custom: {customSpec.title.slice(0, 26)}</option>}
-            <option value="chloroplast_molecule">Chloroplast & Photosynthesis 3D</option>
-            <option value="human_heart">Human Heart (4 Chambers) 3D</option>
+            <option value="human_heart">Human Heart (4 Chambers &amp; Valves) 3D</option>
+            <option value="newtons_laws">Newton’s Laws of Motion Mechanics 3D</option>
+            <option value="chloroplast_molecule">Chloroplast &amp; Photosynthesis 3D</option>
+            <option value="chemical_bonding">Chemical Bonding (Covalent H₂O &amp; Ionic NaCl) 3D</option>
+            <option value="atom_bohr">Rutherford-Bohr Quantized Atom 3D</option>
             <option value="solar_system">Solar System Orbits 3D</option>
             <option value="dna_helix">DNA Double Helix 3D</option>
             <option value="math_surface">Quadratic Paraboloid Surface 3D</option>
+            <option value="cone_cylinder_volume">Cone &amp; Cylinder 3D Mensuration</option>
           </select>
 
           <button type="button" onClick={handleSaveToLibrary} className="btn-glass" style={{ padding: '7px 14px', fontSize: '0.8rem' }}>
@@ -1009,45 +1296,86 @@ export const Interactive3DViewer: React.FC<{
         </div>
       </div>
 
-      {/* 3D Canvas Viewport */}
+      {/* 3D Canvas Viewport OR Honest Pedagogical Analysis */}
       <div style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', background: '#131722', marginBottom: 14 }}>
-        {selectedModelKey === 'human_heart' && (
-          <div style={{
-            position: 'absolute',
-            top: 12,
-            left: 12,
-            background: 'rgba(11, 17, 32, 0.85)',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            borderRadius: 8,
-            padding: '4px 10px',
-            color: '#94A3B8',
-            fontSize: '0.72rem',
-            fontWeight: 600,
-            zIndex: 10,
-            pointerEvents: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6
-          }}>
-            <span style={{ color: '#38BDF8' }}>● Patient Right (Blue) = Screen Left</span>
-            <span style={{ opacity: 0.4 }}>|</span>
-            <span style={{ color: '#FB7185' }}>● Patient Left (Red) = Screen Right</span>
-          </div>
-        )}
-        {webglFallback ? (
-          <div style={{ height: 320, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF', padding: 24, textAlign: 'center' }}>
-            <Sparkles size={32} color="#FF6A00" />
-            <p style={{ marginTop: 10, fontWeight: 700 }}>{spec.title} — Interactive Schematic Mode</p>
-            <p style={{ fontSize: '0.85rem', color: '#9CA3AF', maxWidth: 440, marginTop: 4 }}>
-              WebGL hardware context is restricted in this environment; inspect annotated model structures and guided steps below.
+        {spec.isUnavailable ? (
+          <div style={{ padding: '28px 24px', background: '#0F172A', color: '#F8FAFC', borderRadius: 20, textAlign: 'center' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 999, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', color: '#FCA5A5', fontSize: '0.82rem', fontWeight: 700, marginBottom: 12 }}>
+              <ShieldCheck size={16} />
+              <span>Pedagogical Integrity: 3D Spatial Model Not Applicable</span>
+            </div>
+            <h4 style={{ fontSize: '1.18rem', fontWeight: 800, color: '#FFFFFF', marginBottom: 8 }}>{spec.title}</h4>
+            <p style={{ fontSize: '0.88rem', color: '#CBD5E1', maxWidth: 640, margin: '0 auto 16px', lineHeight: 1.55 }}>
+              {spec.unavailableReason}
             </p>
+            <div style={{ display: 'inline-flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+              <span style={{ fontSize: '0.78rem', color: '#94A3B8', padding: '6px 12px', background: 'rgba(255,255,255,0.08)', borderRadius: 8 }}>
+                Recommended Visual: 2D Technical Chronological Flowchart
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedModelKey('human_heart')}
+                style={{ padding: '6px 14px', borderRadius: 999, background: '#FF6A00', color: '#FFF', border: 'none', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Explore Human Heart 3D
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedModelKey('newtons_laws')}
+                style={{ padding: '6px 14px', borderRadius: 999, background: '#0284C7', color: '#FFF', border: 'none', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Explore Newton’s Mechanics 3D
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedModelKey('chemical_bonding')}
+                style={{ padding: '6px 14px', borderRadius: 999, background: '#10B981', color: '#FFF', border: 'none', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Explore Chemical Bonding 3D
+              </button>
+            </div>
           </div>
         ) : (
-          <div
-            ref={mountRef}
-            style={{ width: '100%', height: compact ? 300 : 380, cursor: 'grab' }}
-            aria-label={`Interactive 3D Canvas for ${spec.title}`}
-          />
+          <>
+            {selectedModelKey === 'human_heart' && (
+              <div style={{
+                position: 'absolute',
+                top: 12,
+                left: 12,
+                background: 'rgba(11, 17, 32, 0.85)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: 8,
+                padding: '4px 10px',
+                color: '#94A3B8',
+                fontSize: '0.72rem',
+                fontWeight: 600,
+                zIndex: 10,
+                pointerEvents: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6
+              }}>
+                <span style={{ color: '#38BDF8' }}>● Patient Right (Blue) = Screen Left</span>
+                <span style={{ opacity: 0.4 }}>|</span>
+                <span style={{ color: '#FB7185' }}>● Patient Left (Red) = Screen Right</span>
+              </div>
+            )}
+            {webglFallback ? (
+              <div style={{ height: 320, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF', padding: 24, textAlign: 'center' }}>
+                <Sparkles size={32} color="#FF6A00" />
+                <p style={{ marginTop: 10, fontWeight: 700 }}>{spec.title} — Interactive Schematic Mode</p>
+                <p style={{ fontSize: '0.85rem', color: '#9CA3AF', maxWidth: 440, marginTop: 4 }}>
+                  WebGL hardware context is restricted in this environment; inspect annotated model structures and guided steps below.
+                </p>
+              </div>
+            ) : (
+              <div
+                ref={mountRef}
+                style={{ width: '100%', height: compact ? 300 : 380, cursor: 'grab' }}
+                aria-label={`Interactive 3D Canvas for ${spec.title}`}
+              />
+            )}
+          </>
         )}
 
         {/* Floating Viewport Controls */}

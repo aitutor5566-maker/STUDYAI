@@ -359,10 +359,143 @@ export function initDatabase() {
       FOREIGN KEY (family_id) REFERENCES families(id) ON DELETE CASCADE,
       FOREIGN KEY (student_profile_id) REFERENCES student_profiles(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS tester_role_templates (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      description TEXT NOT NULL,
+      default_modules_json TEXT NOT NULL,
+      default_permissions_json TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS tester_accounts (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      email TEXT UNIQUE NOT NULL,
+      full_name TEXT NOT NULL,
+      role_template_id TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'active',
+      is_email_verified INTEGER NOT NULL DEFAULT 1,
+      expires_at TEXT,
+      last_login_at TEXT,
+      created_by TEXT,
+      invitation_token TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (role_template_id) REFERENCES tester_role_templates(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS tester_permission_overrides (
+      id TEXT PRIMARY KEY,
+      tester_account_id TEXT NOT NULL,
+      permission_key TEXT NOT NULL,
+      override_state TEXT NOT NULL,
+      updated_by TEXT,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (tester_account_id) REFERENCES tester_accounts(id) ON DELETE CASCADE,
+      UNIQUE(tester_account_id, permission_key)
+    );
+
+    CREATE TABLE IF NOT EXISTS test_cases (
+      id TEXT PRIMARY KEY,
+      module TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      expected_outcome TEXT NOT NULL,
+      severity TEXT NOT NULL DEFAULT 'medium',
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS tester_assignments (
+      id TEXT PRIMARY KEY,
+      tester_id TEXT NOT NULL,
+      test_case_id TEXT NOT NULL,
+      module TEXT NOT NULL,
+      priority TEXT NOT NULL DEFAULT 'medium',
+      status TEXT NOT NULL DEFAULT 'assigned',
+      deadline TEXT,
+      assigned_by TEXT,
+      notes TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (tester_id) REFERENCES tester_accounts(id) ON DELETE CASCADE,
+      FOREIGN KEY (test_case_id) REFERENCES test_cases(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS test_runs (
+      id TEXT PRIMARY KEY,
+      tester_id TEXT NOT NULL,
+      environment TEXT NOT NULL DEFAULT 'staging',
+      status TEXT NOT NULL DEFAULT 'in_progress',
+      started_at TEXT NOT NULL,
+      completed_at TEXT,
+      FOREIGN KEY (tester_id) REFERENCES tester_accounts(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS test_results (
+      id TEXT PRIMARY KEY,
+      test_run_id TEXT NOT NULL,
+      test_case_id TEXT NOT NULL,
+      tester_id TEXT NOT NULL,
+      status TEXT NOT NULL,
+      actual_result TEXT NOT NULL,
+      execution_time_ms INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (test_run_id) REFERENCES test_runs(id) ON DELETE CASCADE,
+      FOREIGN KEY (test_case_id) REFERENCES test_cases(id) ON DELETE CASCADE,
+      FOREIGN KEY (tester_id) REFERENCES tester_accounts(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS bug_reports (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      affected_module TEXT NOT NULL,
+      severity TEXT NOT NULL,
+      priority TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'New',
+      steps_to_reproduce TEXT NOT NULL,
+      expected_result TEXT NOT NULL,
+      actual_result TEXT NOT NULL,
+      screenshot_url TEXT,
+      permitted_logs TEXT,
+      reporter_id TEXT,
+      reporter_email TEXT NOT NULL,
+      assigned_developer TEXT,
+      fix_version TEXT,
+      retest_notes TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (reporter_id) REFERENCES tester_accounts(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS system_health_events (
+      id TEXT PRIMARY KEY,
+      service_name TEXT NOT NULL,
+      status TEXT NOT NULL,
+      affected_component TEXT NOT NULL,
+      issue_description TEXT,
+      started_at TEXT NOT NULL,
+      last_successful_check TEXT NOT NULL,
+      responsible_team TEXT NOT NULL DEFAULT 'Platform Infrastructure',
+      is_resolved INTEGER NOT NULL DEFAULT 0,
+      resolved_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS usage_analytics (
+      id TEXT PRIMARY KEY,
+      metric_category TEXT NOT NULL,
+      metric_name TEXT NOT NULL,
+      metric_value REAL NOT NULL,
+      dimensions_json TEXT DEFAULT '{}',
+      recorded_at TEXT NOT NULL
+    );
   `);
 
   seedInitialDataIfEmpty();
   seedFamilyDataIfEmpty();
+  seedAdminAndTesterDataIfEmpty();
 }
 
 function seedFamilyDataIfEmpty() {
@@ -918,4 +1051,130 @@ function seedInitialDataIfEmpty() {
     INSERT INTO shared_topic_context (user_id, active_topic, subject, level, explanation_mode, last_conversation_id, last_note_id, updated_at)
     VALUES ('student-vishwak', 'Photosynthesis', 'Science', 'Grade 10', 'simple', 'conv-photosynthesis', 'note-photosynthesis', ?)
   `).run(iso(1));
+}
+
+function seedAdminAndTesterDataIfEmpty() {
+  const existingTester = db.prepare('SELECT id FROM tester_role_templates LIMIT 1').get() as { id: string } | undefined;
+  if (existingTester) return;
+
+  const now = new Date().toISOString();
+
+  // 1. Seed Role Templates
+  const insertRole = db.prepare(`
+    INSERT INTO tester_role_templates (id, name, description, default_modules_json, default_permissions_json, created_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+
+  insertRole.run(
+    'tester_overall',
+    'Overall Testing Agent',
+    'Full access to test all major modules: Home, Notes, Tutor, Library, Profile, Synthetic Parent Dashboard, Games, 3D Lab, Images, Voice',
+    JSON.stringify(['home', 'notes', 'tutor', 'library', 'profile', 'parent_qa', 'games', '3d_lab', 'image_studio', 'voice_teacher']),
+    JSON.stringify({ read: true, create: true, edit: true, delete: false, export: true, test_run: true, bug_report: true, view_reports: true }),
+    now
+  );
+
+  insertRole.run(
+    'tester_notes',
+    'AI Notes Tester',
+    'Specialized QA access to AI Notes, topic-to-notes generation, PDF processing, link processing, editing, saving, image relevance, PDF export, bug reporting',
+    JSON.stringify(['notes', 'library']),
+    JSON.stringify({ 'notes:read': true, 'notes:create': true, 'notes:edit': true, 'notes:export': true, 'notes:test_run': true, 'bug_report': true }),
+    now
+  );
+
+  insertRole.run(
+    'tester_tutor',
+    'AI Tutor Tester',
+    'Specialized QA access to AI Tutor, subject/topic classification, knowledge retrieval, explanation quality, diagrams, 3D visualization, voice explanations',
+    JSON.stringify(['tutor', '3d_lab', 'voice_teacher']),
+    JSON.stringify({ 'tutor:read': true, 'tutor:create': true, '3d:test_run': true, 'voice:test_run': true, 'bug_report': true }),
+    now
+  );
+
+  insertRole.run(
+    'tester_games',
+    'Game Tester',
+    'Specialized QA access to Educational Games, game dashboard, controls, questions, scoring, levels, difficulty progression, hints, results, game bug reports',
+    JSON.stringify(['games']),
+    JSON.stringify({ 'games:read': true, 'games:play': true, 'games:test_run': true, 'bug_report': true }),
+    now
+  );
+
+  // 2. Seed Standard Test Cases
+  const insertTC = db.prepare(`
+    INSERT INTO test_cases (id, module, title, description, expected_outcome, severity, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  insertTC.run('TC-TUTOR-01', 'tutor', 'Photosynthesis Detailed Lesson Generation', 'Verify Mode B tutor produces 14 structured pedagogical sections with real content', 'Detailed structured lesson returned with genuine definitions and formulas', 'critical', now);
+  insertTC.run('TC-TUTOR-02', 'tutor', 'Formula and Numerical Calculation Clarity', 'Verify quadratic equation explanation step-by-step calculation without truncation', 'Correct discriminant calculation and real quadratic root values', 'high', now);
+  insertTC.run('TC-NOTES-01', 'notes', 'AI Notes Generation from Topic Context', 'Verify Notes engine structures markdown summary, key takeaways, and flashcards correctly', 'Structured note document generated with clear headers and bullet points', 'high', now);
+  insertTC.run('TC-NOTES-02', 'notes', 'PDF Export Integrity', 'Verify PDF export produces valid, readable PDF document', 'Decodable PDF format with metadata', 'medium', now);
+  insertTC.run('TC-3D-01', '3d_lab', 'Human Heart 3D Scientific Fidelity', 'Verify 3D Lab renders multi-chamber cardiac anatomy instead of generic spheres', 'Accurate 4-chamber cardiac geometry with ventricles and aorta', 'critical', now);
+  insertTC.run('TC-VOICE-01', 'voice_teacher', 'Voice Curriculum Outline Generation', 'Verify Voice Teacher produces sequential teaching outline matching AI Tutor explanation', 'Lesson speech sequence with checkpoints and clear spoken narration', 'high', now);
+  insertTC.run('TC-GAME-01', 'games', 'Answer Battle Game State & Scoring', 'Verify scoring algorithm, correct streak multipliers, and battle stage progression', 'Score increments accurately; stage clears on threshold', 'medium', now);
+
+  // 3. Seed Initial Tester Accounts
+  const insertTester = db.prepare(`
+    INSERT INTO tester_accounts (id, user_id, email, full_name, role_template_id, status, is_email_verified, expires_at, created_by, invitation_token, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, 'active', 1, ?, 'superadmin-user', ?, ?, ?)
+  `);
+
+  const expireOneYear = new Date(Date.now() + 365 * 24 * 3600_000).toISOString();
+  insertTester.run('tester-overall-1', 'user-qa-overall', 'qa.overall@studyai.edu', 'Alex Rivera (Lead QA)', 'tester_overall', expireOneYear, 'token-overall', now, now);
+  insertTester.run('tester-notes-1', 'user-qa-notes', 'qa.notes@studyai.edu', 'Sarah Lin (Notes QA)', 'tester_notes', expireOneYear, 'token-notes', now, now);
+  insertTester.run('tester-tutor-1', 'user-qa-tutor', 'qa.tutor@studyai.edu', 'David Chen (AI Tutor QA)', 'tester_tutor', expireOneYear, 'token-tutor', now, now);
+  insertTester.run('tester-games-1', 'user-qa-games', 'qa.games@studyai.edu', 'Maya Patel (Game QA)', 'tester_games', expireOneYear, 'token-games', now, now);
+
+  // 4. Seed Initial Assignments
+  const insertAssign = db.prepare(`
+    INSERT INTO tester_assignments (id, tester_id, test_case_id, module, priority, status, deadline, assigned_by, notes, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, 'assigned', ?, 'superadmin-user', ?, ?, ?)
+  `);
+
+  const deadlineNextWeek = new Date(Date.now() + 7 * 24 * 3600_000).toISOString();
+  insertAssign.run('assign-1', 'tester-tutor-1', 'TC-TUTOR-01', 'tutor', 'critical', deadlineNextWeek, 'Verify complete 14-section pedagogical flow without question repetition', now, now);
+  insertAssign.run('assign-2', 'tester-notes-1', 'TC-NOTES-01', 'notes', 'high', deadlineNextWeek, 'Verify flashcard extraction from generated notes', now, now);
+  insertAssign.run('assign-3', 'tester-games-1', 'TC-GAME-01', 'games', 'medium', deadlineNextWeek, 'Check stage transition in Answer Battle mode', now, now);
+  insertAssign.run('assign-4', 'tester-overall-1', 'TC-3D-01', '3d_lab', 'critical', deadlineNextWeek, 'Verify cardiac procedural 3D model structures', now, now);
+
+  // 5. Seed System Health Events
+  const insertHealth = db.prepare(`
+    INSERT INTO system_health_events (id, service_name, status, affected_component, issue_description, started_at, last_successful_check, responsible_team, is_resolved)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+  `);
+
+  insertHealth.run('health-1', 'AI Tutor Ollama Engine', 'Healthy', 'qwen2.5:7b Local Inference Server', 'Inference latency avg 210ms, 0 errors', now, now, 'AI Infrastructure Team');
+  insertHealth.run('health-2', 'Knowledge Nexus Database', 'Healthy', 'PostgreSQL / SQLite Dual Store', 'Indexed queries responding in <15ms', now, now, 'Database Operations Team');
+  insertHealth.run('health-3', 'Three.js 3D Generation Pipeline', 'Healthy', 'WebGL / WebGPU Procedural Shaders', 'Scientific asset generator validated', now, now, 'Interactive 3D Team');
+  insertHealth.run('health-4', 'AI Voice Teacher Synthesizer', 'Healthy', 'Web Audio PCM / WAV Pipeline', 'Lesson checkpoint vocalization ready', now, now, 'Audio Core Team');
+
+  // 6. Seed Sample Bug Reports
+  const insertBug = db.prepare(`
+    INSERT INTO bug_reports (id, title, description, affected_module, severity, priority, status, steps_to_reproduce, expected_result, actual_result, screenshot_url, permitted_logs, reporter_id, reporter_email, assigned_developer, fix_version, retest_notes, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  insertBug.run(
+    'BUG-2026-001',
+    'Periodic Table Element 118 Missing Valence Shell Geometry',
+    '3D Model generation for Oganesson does not render the full outermost electron orbital.',
+    '3d_lab',
+    'medium',
+    'medium',
+    'In Progress',
+    '1. Open 3D Lab\n2. Select Chemistry\n3. Load Oganesson atom',
+    '7 complete energy shells rendered',
+    'Only 6 shells rendered before truncation',
+    '/screenshots/bug-oganesson.png',
+    'WebGL context log: maximum uniform buffer count reached',
+    'tester-overall-1',
+    'qa.overall@studyai.edu',
+    'dev.lead@studyai.edu',
+    'v1.4.2',
+    'Pending fix verification',
+    now,
+    now
+  );
 }
