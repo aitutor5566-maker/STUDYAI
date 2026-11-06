@@ -326,6 +326,9 @@ export const TutorPage: React.FC = () => {
   const [explanationLength, setExplanationLength] = useState<'concise' | 'balanced' | 'detailed'>('balanced');
   const [showAdaptiveModal, setShowAdaptiveModal] = useState<boolean>(false);
   const [showVoiceModal, setShowVoiceModal] = useState<boolean>(false);
+  const [voiceLessonTutorStructured, setVoiceLessonTutorStructured] = useState<any | null>(null);
+  const [voiceLessonTutorContent, setVoiceLessonTutorContent] = useState<string>('');
+  const [voiceLessonQuestion, setVoiceLessonQuestion] = useState<string>('');
   const [evaluations, setEvaluations] = useState<Record<string, { selectedOption: string; evaluated: boolean; isCorrect?: boolean; feedback?: string; score?: number; loading?: boolean }>>({});
   const [feedbacks, setFeedbacks] = useState<Record<string, string>>({});
 
@@ -1067,7 +1070,15 @@ export const TutorPage: React.FC = () => {
         {/* Prominent Gemini AI Teacher Voice Mode Button */}
         <button
           type="button"
-          onClick={() => setShowVoiceModal(true)}
+          onClick={() => {
+            const lastAssistantMsg = [...messages].reverse().find((m) => m.role === 'assistant');
+            if (lastAssistantMsg) {
+              setVoiceLessonTutorStructured(lastAssistantMsg.structured);
+              setVoiceLessonTutorContent(lastAssistantMsg.content);
+              setVoiceLessonQuestion(lastAssistantMsg.structured?.topic || activeTopic);
+            }
+            setShowVoiceModal(true);
+          }}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -1459,13 +1470,18 @@ export const TutorPage: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <button
                     type="button"
-                    onClick={() => handleSpeakExplanation(`${s?.introduction || msg.content} ${(s?.keySteps || []).join(' ')}`)}
+                    onClick={() => {
+                      setVoiceLessonTutorStructured(s);
+                      setVoiceLessonTutorContent(msg.content);
+                      setVoiceLessonQuestion(s?.topic || activeTopic);
+                      setShowVoiceModal(true);
+                    }}
                     className="btn-glass"
                     style={{ fontSize: '0.76rem', padding: '5px 12px' }}
-                    title="Listen to spoken explanation"
+                    title="Start AI Voice Teacher Lesson for this explanation"
                   >
-                    {isSpeaking ? <VolumeX size={14} color="#EA580C" /> : <Volume2 size={14} color="#FF6A00" />}
-                    <span>{isSpeaking ? 'Stop Audio' : 'Listen Aloud'}</span>
+                    <Volume2 size={14} color="#FF6A00" />
+                    <span>Voice Teacher</span>
                   </button>
 
                   <button
@@ -2778,11 +2794,19 @@ export const TutorPage: React.FC = () => {
       {/* Gemini AI Teacher Voice Mode Modal */}
       <VoiceTeacherModal
         isOpen={showVoiceModal}
-        onClose={() => setShowVoiceModal(false)}
-        topic={activeTopic || 'Photosynthesis'}
+        onClose={() => {
+          setShowVoiceModal(false);
+          setVoiceLessonTutorStructured(null);
+          setVoiceLessonTutorContent('');
+          setVoiceLessonQuestion('');
+        }}
+        topic={voiceLessonQuestion || activeTopic || 'Photosynthesis'}
         grade={grade}
         subject={subject}
         mode={mode}
+        studentQuestion={voiceLessonQuestion || activeTopic}
+        tutorStructured={voiceLessonTutorStructured}
+        tutorContent={voiceLessonTutorContent}
         apiFetch={apiFetch}
       />
     </div>

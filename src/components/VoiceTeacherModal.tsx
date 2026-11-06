@@ -6,18 +6,19 @@ import {
   Pause,
   Play,
   RotateCcw,
-  Square,
   Sparkles,
   Volume2,
-  VolumeX,
-  HelpCircle,
   Radio,
-  BookOpen,
-  MessageSquare,
   Globe,
   Gauge,
   ListOrdered,
-  Lightbulb
+  Lightbulb,
+  ChevronLeft,
+  ChevronRight,
+  BookOpen,
+  HelpCircle,
+  Layers,
+  FileText
 } from 'lucide-react';
 import { Interactive3DLab } from './Interactive3DLab';
 
@@ -28,6 +29,12 @@ interface SynchronizedSentence {
   action?: string;
 }
 
+interface SectionOutlineItem {
+  index: number;
+  id: string;
+  title: string;
+}
+
 interface VoiceSessionResponse {
   session_id: string;
   status: string;
@@ -35,13 +42,16 @@ interface VoiceSessionResponse {
   grade: number;
   subject: string;
   mode: string;
+  depth?: string;
   language?: string;
   speed?: number;
   current_step_index: number;
   total_steps: number;
   step_title: string;
+  section_id?: string;
   teacher_speech: string;
   sentences?: SynchronizedSentence[];
+  all_sections_outline?: SectionOutlineItem[];
   audio_url?: string;
   audio_available?: boolean;
   audio_duration_seconds?: number;
@@ -67,6 +77,10 @@ interface Props {
   grade: number;
   subject: string;
   mode: string;
+  studentQuestion?: string;
+  tutorStructured?: any;
+  tutorContent?: string;
+  initialDepth?: string;
   apiFetch: <T = any>(endpoint: string, options?: RequestInit) => Promise<T>;
 }
 
@@ -85,6 +99,10 @@ export const VoiceTeacherModal: React.FC<Props> = ({
   grade,
   subject,
   mode,
+  studentQuestion,
+  tutorStructured,
+  tutorContent,
+  initialDepth = 'standard',
   apiFetch
 }) => {
   const [session, setSession] = useState<VoiceSessionResponse | null>(null);
@@ -96,6 +114,7 @@ export const VoiceTeacherModal: React.FC<Props> = ({
   const [studentInput, setStudentInput] = useState<string>('');
   const [voiceName, setVoiceName] = useState<string>('Kore');
   const [language, setLanguage] = useState<string>('en');
+  const [depth, setDepth] = useState<string>(initialDepth);
   const [speed, setSpeed] = useState<number>(1.0);
   const [activeSentenceIdx, setActiveSentenceIdx] = useState<number>(0);
   const [activeHighlightTarget, setActiveHighlightTarget] = useState<string | null>(null);
@@ -107,19 +126,18 @@ export const VoiceTeacherModal: React.FC<Props> = ({
   const synthUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   useEffect(() => {
-    if (isOpen && !session) {
-      handleStartLesson();
+    if (isOpen) {
+      handleStartLesson(language, depth);
     }
     return () => {
       stopAudioPlayback();
       stopSpeechRecognition();
     };
-  }, [isOpen]);
+  }, [isOpen, topic]);
 
-  const handleStartLesson = async (overrideLang?: string) => {
+  const handleStartLesson = async (chosenLang: string = language, chosenDepth: string = depth) => {
     setLoading(true);
     setStatusNote('Connecting to AI Teacher Voice Engine...');
-    const chosenLang = overrideLang || language;
 
     try {
       try {
@@ -138,7 +156,11 @@ export const VoiceTeacherModal: React.FC<Props> = ({
           grade,
           subject,
           mode,
+          depth: chosenDepth,
           language: chosenLang,
+          student_question: studentQuestion,
+          tutor_structured: tutorStructured,
+          tutor_content: tutorContent,
           voice_name: voiceName,
           speed
         })
@@ -175,7 +197,6 @@ export const VoiceTeacherModal: React.FC<Props> = ({
     audio.onplay = () => {
       setIsPlayingAudio(true);
       if (sentences && sentences.length > 0) {
-        // Interval sentence highlight simulator for pre-rendered audio
         const durationPerSent = (audio.duration || 6) / sentences.length;
         let sIdx = 0;
         const intervalId = setInterval(() => {
@@ -200,7 +221,6 @@ export const VoiceTeacherModal: React.FC<Props> = ({
 
     audio.onerror = () => {
       setIsPlayingAudio(false);
-      // Seamlessly fall back to browser Web Speech API if remote audio tag failed
       playWebSpeechSynthesis(session?.teacher_speech || '', language, speed, sentences);
     };
 
@@ -235,7 +255,6 @@ export const VoiceTeacherModal: React.FC<Props> = ({
     };
 
     utterance.onboundary = (evt: any) => {
-      // Dynamic sentence highlight mapping
       if (sentences && sentences.length > 0 && evt.name === 'sentence') {
         const charIdx = evt.charIndex || 0;
         let accumulated = 0;
@@ -260,7 +279,7 @@ export const VoiceTeacherModal: React.FC<Props> = ({
 
     utterance.onerror = () => {
       setIsPlayingAudio(false);
-      setStatusNote('Voice completed. Written lesson and 3D visual remain active.');
+      setStatusNote('Voice completed. Written lesson and visual remain active.');
     };
 
     window.speechSynthesis.speak(utterance);
@@ -361,7 +380,59 @@ export const VoiceTeacherModal: React.FC<Props> = ({
     }
   };
 
-  // --- Teaching Controls ---
+  // --- Teaching Navigation Controls ---
+
+  const handleJumpToSection = async (sectionIdx: number) => {
+    if (!session) return;
+    stopAudioPlayback();
+    stopSpeechRecognition();
+    setLoading(true);
+
+    try {
+      const res = await apiFetch<any>('/api/v1/voice/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: session.session_id,
+          action: 'jump_section',
+          section_index: sectionIdx
+        })
+      });
+
+      setSession((prev) => (prev ? { ...prev, current_step_index: sectionIdx, step_title: res.step_title, teacher_speech: res.teacher_speech, sentences: res.sentences } : null));
+      setActiveSentenceIdx(0);
+      setTranscript((prev) => [...prev, { speaker: 'teacher', text: res.teacher_speech }]);
+
+      if (res.audio_url && res.audio_available) {
+        playSpokenAudio(res.audio_url, res.sentences);
+      } else {
+        playWebSpeechSynthesis(res.teacher_speech, language, speed, res.sentences);
+      }
+    } catch (err: any) {
+      setStatusNote(`Jump error: ${err?.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNextSection = () => {
+    if (!session) return;
+    if (session.current_step_index < session.total_steps - 1) {
+      handleJumpToSection(session.current_step_index + 1);
+    }
+  };
+
+  const handlePreviousSection = () => {
+    if (!session) return;
+    if (session.current_step_index > 0) {
+      handleJumpToSection(session.current_step_index - 1);
+    }
+  };
+
+  const handleDepthChange = (newDepth: string) => {
+    setDepth(newDepth);
+    handleStartLesson(language, newDepth);
+  };
 
   const handleTogglePause = async () => {
     if (!session) return;
@@ -416,8 +487,20 @@ export const VoiceTeacherModal: React.FC<Props> = ({
     sendStudentTurn('Make it simpler', 'explain_simpler');
   };
 
-  const handleExplainStepByStep = () => {
-    sendStudentTurn('Explain step by step', 'explain_step_by_step');
+  const handleExplainDetailed = () => {
+    sendStudentTurn('Explain in more detail', 'explain_detailed');
+  };
+
+  const handleExplainFormula = () => {
+    sendStudentTurn('Explain this formula', 'explain_formula');
+  };
+
+  const handleExplainDiagram = () => {
+    sendStudentTurn('Explain this diagram', 'explain_diagram');
+  };
+
+  const handleGiveExample = () => {
+    sendStudentTurn('Give another example', 'give_example');
   };
 
   const handleSpeedChange = async (newSpeed: number) => {
@@ -436,7 +519,7 @@ export const VoiceTeacherModal: React.FC<Props> = ({
 
   const handleLanguageChange = (newLang: string) => {
     setLanguage(newLang);
-    handleStartLesson(newLang);
+    handleStartLesson(newLang, depth);
   };
 
   const handleEndLesson = async () => {
@@ -474,7 +557,7 @@ export const VoiceTeacherModal: React.FC<Props> = ({
         className="glass-card"
         style={{
           width: '100%',
-          maxWidth: 1000,
+          maxWidth: 1060,
           maxHeight: '94vh',
           borderRadius: 24,
           background: 'rgba(255, 255, 255, 0.98)',
@@ -488,12 +571,14 @@ export const VoiceTeacherModal: React.FC<Props> = ({
         {/* Header Bar */}
         <div
           style={{
-            padding: '14px 24px',
+            padding: '12px 24px',
             borderBottom: '1.5px solid rgba(255, 106, 0, 0.15)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%)'
+            background: 'linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%)',
+            flexWrap: 'wrap',
+            gap: 10
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -514,29 +599,53 @@ export const VoiceTeacherModal: React.FC<Props> = ({
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#1E293B' }}>
-                  AI Teacher Synchronised Voice
+                  AI Voice Teacher
                 </span>
                 <span
                   style={{
                     padding: '2px 10px',
                     borderRadius: 999,
-                    background: '#EA580C',
+                    background: mode === 'exam_prep' ? '#DC2626' : '#EA580C',
                     color: '#FFFFFF',
                     fontSize: '0.72rem',
                     fontWeight: 800
                   }}
                 >
-                  Grade {grade} • {subject}
+                  {mode === 'exam_prep' ? 'Exam Prep Coaching' : `Grade ${grade} • ${subject}`}
                 </span>
               </div>
               <p style={{ margin: 0, fontSize: '0.78rem', color: '#64748B' }}>
-                Topic: <strong>{topic}</strong> • Sentence &amp; 3D Object Synchronized
+                Topic: <strong>{topic}</strong> • Classroom Pedagogical Delivery
               </p>
             </div>
           </div>
 
-          {/* Right Controls: Multilingual & Persona */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Right Controls: Depth, Multilingual & Speed */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            {/* Depth Selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Layers size={14} color="#64748B" />
+              <select
+                aria-label="Explanation Depth"
+                value={depth}
+                onChange={(e) => handleDepthChange(e.target.value)}
+                style={{
+                  padding: '5px 10px',
+                  borderRadius: 999,
+                  border: '1.5px solid #CBD5E1',
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  color: '#334155',
+                  background: '#FFFFFF'
+                }}
+              >
+                <option value="quick">Quick Explanation (4 steps)</option>
+                <option value="standard">Standard Explanation (7 steps)</option>
+                <option value="detailed">Detailed Explanation (10 steps)</option>
+                <option value="complete_teacher">Complete Teacher (All sections)</option>
+              </select>
+            </div>
+
             {/* Language Selector */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <Globe size={14} color="#64748B" />
@@ -566,7 +675,7 @@ export const VoiceTeacherModal: React.FC<Props> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <Gauge size={14} color="#64748B" />
               <select
-                aria-label="Select Explanation Speed"
+                aria-label="Select Speed"
                 value={speed}
                 onChange={(e) => handleSpeedChange(parseFloat(e.target.value))}
                 style={{
@@ -580,7 +689,7 @@ export const VoiceTeacherModal: React.FC<Props> = ({
                 }}
               >
                 <option value="0.75">0.75x</option>
-                <option value="1.0">1.0x (Normal)</option>
+                <option value="1.0">1.0x</option>
                 <option value="1.25">1.25x</option>
                 <option value="1.5">1.5x</option>
               </select>
@@ -603,8 +712,54 @@ export const VoiceTeacherModal: React.FC<Props> = ({
           </div>
         </div>
 
+        {/* Section Navigation Progress Stepper */}
+        {session?.all_sections_outline && session.all_sections_outline.length > 0 && (
+          <div
+            style={{
+              padding: '8px 24px',
+              background: '#F1F5F9',
+              borderBottom: '1px solid #E2E8F0',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              overflowX: 'auto',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>
+              Lesson Outline:
+            </span>
+            {session.all_sections_outline.map((sec) => {
+              const isActive = sec.index === session.current_step_index;
+              return (
+                <button
+                  key={sec.id}
+                  type="button"
+                  onClick={() => handleJumpToSection(sec.index)}
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: 999,
+                    border: isActive ? '1.5px solid #FF6A00' : '1px solid #CBD5E1',
+                    background: isActive ? '#FF6A00' : '#FFFFFF',
+                    color: isActive ? '#FFFFFF' : '#334155',
+                    fontSize: '0.72rem',
+                    fontWeight: isActive ? 800 : 600,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}
+                >
+                  <span>{sec.index + 1}.</span>
+                  <span>{sec.title}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* Modal Main Stage (Split View: Visual Sync + Spoken Subtitles) */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', flex: 1, minHeight: 420, overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', flex: 1, minHeight: 400, overflow: 'hidden' }}>
           {/* Left Column: Synchronized Visual Anchor */}
           <div
             style={{
@@ -618,7 +773,7 @@ export const VoiceTeacherModal: React.FC<Props> = ({
             }}
           >
             {session?.synced_visual?.type === '3d_model' || session?.synced_visual?.type === 'threejs_3d_model' ? (
-              <div style={{ width: '100%', height: '100%', minHeight: 340 }}>
+              <div style={{ width: '100%', height: '100%', minHeight: 320 }}>
                 <Interactive3DLab
                   modelKey={session.synced_visual.model_key || 'human-heart'}
                   title={session.synced_visual.caption || topic}
@@ -648,21 +803,21 @@ export const VoiceTeacherModal: React.FC<Props> = ({
                   <Volume2 size={38} color={isPlayingAudio ? '#FFFFFF' : '#64748B'} />
                 </div>
                 <h4 style={{ color: '#F8FAFC', margin: '0 0 4px', fontSize: '1.05rem' }}>
-                  {session?.step_title || 'Active Spoken Lesson'}
+                  {session?.step_title || 'Classroom Teacher Audio'}
                 </h4>
                 <p style={{ fontSize: '0.8rem', color: '#64748B', maxWidth: 320, margin: '0 auto' }}>
                   {activeHighlightTarget ? (
                     <span style={{ color: '#F97316', fontWeight: 800 }}>
-                      Active Component: {activeHighlightTarget.replace('_', ' ').toUpperCase()}
+                      Focused Component: {activeHighlightTarget.replace('_', ' ').toUpperCase()}
                     </span>
                   ) : (
-                    session?.synced_visual?.caption || `Synchronized ICSE Grade ${grade} curriculum explanation.`
+                    session?.synced_visual?.caption || `Authentic pedagogical delivery for Grade ${grade}.`
                   )}
                 </p>
               </div>
             )}
 
-            {/* Pulsing Audio Status Bar */}
+            {/* Stepper Status Bar */}
             <div
               style={{
                 position: 'absolute',
@@ -683,13 +838,47 @@ export const VoiceTeacherModal: React.FC<Props> = ({
                   {statusNote || 'Voice & Visual Engine Synchronized.'}
                 </span>
               </div>
-              <span style={{ fontSize: '0.7rem', color: '#94A3B8' }}>
-                Step {session ? session.current_step_index + 1 : 1} of {session?.total_steps || 5}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <button
+                  type="button"
+                  onClick={handlePreviousSection}
+                  disabled={!session || session.current_step_index === 0}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: session && session.current_step_index > 0 ? '#FFFFFF' : '#475569',
+                    cursor: session && session.current_step_index > 0 ? 'pointer' : 'default',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                  title="Previous Section"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span style={{ fontSize: '0.7rem', color: '#94A3B8' }}>
+                  Section {session ? session.current_step_index + 1 : 1} of {session?.total_steps || 1}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleNextSection}
+                  disabled={!session || session.current_step_index >= session.total_steps - 1}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: session && session.current_step_index < session.total_steps - 1 ? '#FFFFFF' : '#475569',
+                    cursor: session && session.current_step_index < session.total_steps - 1 ? 'pointer' : 'default',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                  title="Next Section"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Right Column: Live Conversation Transcript & Sentence-Synchronized Subtitles */}
+          {/* Right Column: Live Conversation Transcript & Sentence Subtitles */}
           <div
             style={{
               padding: 20,
@@ -699,7 +888,7 @@ export const VoiceTeacherModal: React.FC<Props> = ({
               overflowY: 'auto'
             }}
           >
-            {/* Active Sentence Focus Box */}
+            {/* Active Sentence Subtitle Focus Box */}
             {session?.sentences && session.sentences.length > 0 && (
               <div
                 style={{
@@ -751,7 +940,7 @@ export const VoiceTeacherModal: React.FC<Props> = ({
                       textTransform: 'uppercase'
                     }}
                   >
-                    {item.speaker === 'teacher' ? 'AI Teacher' : 'You'}
+                    {item.speaker === 'teacher' ? 'AI Voice Teacher' : 'You'}
                   </div>
                   {item.text}
                 </div>
@@ -768,7 +957,7 @@ export const VoiceTeacherModal: React.FC<Props> = ({
                     fontWeight: 700
                   }}
                 >
-                  AI Teacher is thinking...
+                  AI Teacher is preparing explanation...
                 </div>
               )}
             </div>
@@ -814,12 +1003,12 @@ export const VoiceTeacherModal: React.FC<Props> = ({
                 }}
               >
                 <Lightbulb size={12} color="#F59E0B" />
-                <span>Explain More Simply</span>
+                <span>Explain Simpler</span>
               </button>
 
               <button
                 type="button"
-                onClick={handleExplainStepByStep}
+                onClick={handleExplainDetailed}
                 style={{
                   padding: '4px 10px',
                   borderRadius: 999,
@@ -834,8 +1023,50 @@ export const VoiceTeacherModal: React.FC<Props> = ({
                   gap: 4
                 }}
               >
-                <ListOrdered size={12} color="#3B82F6" />
-                <span>Explain Step-by-Step</span>
+                <FileText size={12} color="#7C3AED" />
+                <span>More Detail</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExplainFormula}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: 999,
+                  border: '1px solid #CBD5E1',
+                  background: '#FFFFFF',
+                  color: '#475569',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4
+                }}
+              >
+                <BookOpen size={12} color="#2563EB" />
+                <span>Explain Formula</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleGiveExample}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: 999,
+                  border: '1px solid #CBD5E1',
+                  background: '#FFFFFF',
+                  color: '#475569',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4
+                }}
+              >
+                <Lightbulb size={12} color="#10B981" />
+                <span>Give Example</span>
               </button>
 
               <button
@@ -861,7 +1092,7 @@ export const VoiceTeacherModal: React.FC<Props> = ({
         {/* Footer Voice Controls */}
         <div
           style={{
-            padding: '14px 24px',
+            padding: '12px 24px',
             borderTop: '1.5px solid rgba(255, 106, 0, 0.15)',
             background: '#FFFFFF',
             display: 'flex',
@@ -881,7 +1112,7 @@ export const VoiceTeacherModal: React.FC<Props> = ({
             <input
               type="text"
               aria-label="Speak or type response"
-              placeholder={isListening ? 'Listening to your voice...' : 'Speak into mic or type your answer...'}
+              placeholder={isListening ? 'Listening to your voice...' : 'Speak or ask: "Explain formula", "Give example", "Explain simpler"...'}
               value={studentInput}
               onChange={(e) => setStudentInput(e.target.value)}
               style={{
@@ -919,13 +1150,37 @@ export const VoiceTeacherModal: React.FC<Props> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
               type="button"
+              onClick={handlePreviousSection}
+              disabled={!session || session.current_step_index === 0}
+              className="btn-glass"
+              style={{ padding: '8px 12px', fontSize: '0.78rem' }}
+              title="Previous section"
+            >
+              <ChevronLeft size={14} />
+              <span>Back</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleNextSection}
+              disabled={!session || session.current_step_index >= session.total_steps - 1}
+              className="btn-glass"
+              style={{ padding: '8px 12px', fontSize: '0.78rem' }}
+              title="Next section"
+            >
+              <span>Next</span>
+              <ChevronRight size={14} />
+            </button>
+
+            <button
+              type="button"
               onClick={handleReplayStep}
               className="btn-glass"
               style={{ padding: '8px 14px', fontSize: '0.78rem' }}
-              title="Replay current step explanation"
+              title="Replay current section"
             >
               <RotateCcw size={14} color="#EA580C" />
-              <span>Replay Step</span>
+              <span>Replay</span>
             </button>
 
             <button
@@ -953,7 +1208,7 @@ export const VoiceTeacherModal: React.FC<Props> = ({
                 cursor: 'pointer'
               }}
             >
-              End Lesson
+              End
             </button>
           </div>
         </div>

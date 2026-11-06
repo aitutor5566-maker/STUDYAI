@@ -14,6 +14,7 @@ from backend.app.studyai_knowledge_nexus.knowledge_hub.knowledge_library_repo im
 from backend.app.studyai_knowledge_nexus.core.subject_classifier import subject_classifier
 from backend.app.studyai_knowledge_nexus.core.grade_controller import grade_controller
 from backend.app.studyai_knowledge_nexus.core.adaptive_memory import adaptive_memory
+from backend.app.studyai_knowledge_nexus.voice.teacher_pedagogy_engine import teacher_pedagogy_engine
 
 logger = logging.getLogger("knowledge_nexus.voice_orchestrator")
 
@@ -65,7 +66,11 @@ class VoiceSession:
         grade: int,
         subject: str,
         mode: str = "normal",
+        depth: str = "standard",
         language: str = "en",
+        student_question: Optional[str] = None,
+        tutor_structured: Optional[Dict[str, Any]] = None,
+        tutor_content: Optional[str] = None,
         profile: Optional[Dict[str, Any]] = None,
         voice_name: str = "Kore",
         speed: float = 1.0,
@@ -76,7 +81,11 @@ class VoiceSession:
         self.grade = grade
         self.subject = subject
         self.mode = mode
+        self.depth = depth # 'quick', 'standard', 'detailed', 'complete_teacher'
         self.language = language.lower() # 'en', 'te', 'hi', 'ur', 'ml'
+        self.student_question = student_question
+        self.tutor_structured = tutor_structured or {}
+        self.tutor_content = tutor_content or ""
         self.profile = profile or {}
         self.voice_name = voice_name
         self.speed = speed
@@ -86,23 +95,25 @@ class VoiceSession:
         self.is_paused = False
         self.is_muted = False
         self.lesson_steps: List[Dict[str, Any]] = []
+        self.audio_cache: Dict[int, Dict[str, Any]] = {} # section_idx -> audio payload
         self.conversation_transcript: List[Dict[str, str]] = []
         self.active_visual: Optional[Dict[str, Any]] = None
 
 
 class VoiceLessonOrchestrator:
     """
-    Dedicated Synchronized Voice Lesson Orchestrator.
-    Connects:
-    - Shared Educational Knowledge Library for verified topic facts
-    - Sentence & Step level visual synchronization (highlighting matching text & 3D objects)
-    - Full teaching controls: Pause, Resume, Replay, Speed, Repeat Sentence, Explain Simpler, Step-by-Step
-    - Multilingual Support: English, Telugu, Hindi, Urdu, Malayalam
-    - Transparent Dual-Engine Audio: Gemini Native Audio / ElevenLabs + Browser Web Speech fallback
+    Advanced AI Voice Teaching Engine.
+    Behaves as an experienced, patient personal teacher:
+    - Direct connection to the AI Tutor's full structured lesson (definitions, terms, concepts, calculations, diagrams).
+    - 15-stage classroom teaching pedagogy sequence matching the AI Tutor's exact layout.
+    - Section-based chunked audio synthesis with client Web Speech / Cloud dual fallback.
+    - Interactive commands: 'explain again', 'explain simpler', 'explain in more detail', 'give example', 'explain formula', 'explain diagram', 'next step', 'go back'.
+    - Multilingual voice support: English, Telugu, Hindi, Urdu, Malayalam preserving scientific nomenclature.
     """
 
     def __init__(self):
         self.sessions: Dict[str, VoiceSession] = {}
+        self._cloud_audio_disabled_until: float = 0.0
 
     async def start_voice_lesson(
         self,
@@ -110,7 +121,11 @@ class VoiceLessonOrchestrator:
         grade: int = 10,
         subject: Optional[str] = None,
         mode: str = "normal",
+        depth: str = "standard",
         language: str = "en",
+        student_question: Optional[str] = None,
+        tutor_structured: Optional[Dict[str, Any]] = None,
+        tutor_content: Optional[str] = None,
         user_id: str = "student_voice_user",
         profile: Optional[Dict[str, Any]] = None,
         voice_name: str = "Kore",
@@ -118,7 +133,7 @@ class VoiceLessonOrchestrator:
     ) -> Dict[str, Any]:
         session_id = f"vsession-{uuid.uuid4().hex[:10]}"
 
-        # 1. Subject Classification
+        # 1. Subject Identification
         resolved_subject = subject
         if not resolved_subject or resolved_subject.lower() in ("all", "general", "science"):
             class_res = subject_classifier.classify(topic)
@@ -138,19 +153,27 @@ class VoiceLessonOrchestrator:
             grade=grade,
             subject=resolved_subject,
             mode=mode,
+            depth=depth,
             language=language,
+            student_question=student_question,
+            tutor_structured=tutor_structured,
+            tutor_content=tutor_content,
             profile=profile,
             voice_name=voice_name,
             speed=speed,
         )
 
-        # 3. Build Synchronized Lesson Steps
-        session.lesson_steps = self._build_synchronized_lesson_sequence(
+        # 3. Build Full Pedagogical Teacher Sequence grounded in AI Tutor + Knowledge Library
+        session.lesson_steps = teacher_pedagogy_engine.construct_teacher_curriculum(
             topic=topic,
-            grade=grade,
             subject=resolved_subject,
+            grade=grade,
+            mode=mode,
+            depth=depth,
             language=session.language,
-            knowledge=k_record
+            tutor_structured=tutor_structured,
+            tutor_content=tutor_content,
+            k_record=k_record
         )
 
         first_step = session.lesson_steps[0]
@@ -158,7 +181,7 @@ class VoiceLessonOrchestrator:
         session.current_step_index = 0
         session.current_sentence_index = 0
 
-        # 4. Generate Spoken Audio
+        # 4. Generate Section Audio for First Step
         spoken_text = first_step["teacher_speech"]
         audio_payload = await self.generate_audio_with_fallback(
             text=spoken_text,
@@ -166,6 +189,7 @@ class VoiceLessonOrchestrator:
             speed=speed,
             language=session.language
         )
+        session.audio_cache[0] = audio_payload
 
         session.conversation_transcript.append({
             "speaker": "teacher",
@@ -182,24 +206,46 @@ class VoiceLessonOrchestrator:
             "grade": grade,
             "subject": resolved_subject,
             "mode": mode,
+            "depth": session.depth,
             "language": session.language,
             "speed": session.speed,
             "current_step_index": 0,
+            "current_section_index": 0,
             "total_steps": len(session.lesson_steps),
+            "total_sections": len(session.lesson_steps),
             "step_title": first_step["title"],
+            "section_id": first_step.get("section_id", "sec_1"),
+            "current_section": {
+                "title": first_step["title"],
+                "type": first_step.get("type", "intro"),
+                "spoken_script": spoken_text,
+                "sentences": first_step.get("sentences", []),
+            },
             "teacher_speech": spoken_text,
             "sentences": first_step.get("sentences", []),
             "audio_url": audio_payload.get("audio_url"),
             "audio_available": audio_payload.get("audio_available", False),
-            "provider_used": audio_payload.get("provider", "Browser WebSpeechAPI"),
+            "provider_used": audio_payload.get("provider", "Browser WebSpeechAPI Engine"),
             "notice": audio_payload.get("notice"),
             "synced_visual": session.active_visual,
             "checkpoint_question": first_step.get("checkpoint_question"),
+            "all_sections_outline": [
+                {
+                    "index": i,
+                    "id": st.get("section_id", f"sec_{i+1}"),
+                    "title": st["title"],
+                    "type": st.get("type", "section"),
+                }
+                for i, st in enumerate(session.lesson_steps)
+            ],
             "suggested_actions": [
-                "I understand, continue",
+                "Continue to next step",
                 "Explain more simply",
-                "Repeat this sentence",
-                "Explain step-by-step"
+                "Explain in more detail",
+                "Give another example",
+                "Explain this formula",
+                "Explain this diagram",
+                "Repeat this sentence"
             ],
         }
 
@@ -207,7 +253,8 @@ class VoiceLessonOrchestrator:
         self,
         session_id: str,
         student_utterance: str,
-        action: Optional[str] = None
+        action: Optional[str] = None,
+        selected_option_index: Optional[int] = None
     ) -> Dict[str, Any]:
         session = self.sessions.get(session_id)
         if not session:
@@ -224,8 +271,9 @@ class VoiceLessonOrchestrator:
         teacher_reply_text = ""
         advance_step = False
         highlight_target_override = None
+        checkpoint_result = None
 
-        # Action: Repeat current sentence
+        # 1. Action: Repeat current sentence
         if action == "repeat_sentence" or any(p in clean_utterance for p in ["repeat sentence", "repeat that sentence", "say that again"]):
             sents = current_step.get("sentences", [])
             cur_idx = session.current_sentence_index
@@ -233,35 +281,88 @@ class VoiceLessonOrchestrator:
             teacher_reply_text = f"Repeating sentence: {target_sent}"
             highlight_target_override = sents[cur_idx].get("highlight_target_id") if cur_idx < len(sents) else None
 
-        # Action: Explain more simply
-        elif action == "explain_simpler" or any(p in clean_utterance for p in ["simpler", "simple", "easy", "confused", "don't understand"]):
-            analogy = current_step.get("simple_analogy", f"Let's think of {session.topic} with a simple everyday comparison.")
-            teacher_reply_text = f"Let's make it simpler: {analogy}"
+        # 2. Action: Explain more simply
+        elif action == "explain_simpler" or any(p in clean_utterance for p in ["simpler", "simple", "easy", "confused", "don't understand", "make it simple"]):
+            analogy = current_step.get("simple_analogy", f"Think of {session.topic} with an intuitive everyday analogy.")
+            teacher_reply_text = (
+                f"Let us make it simpler: {analogy} "
+                f"Notice that the underlying physical and biological rules remain constant, but thinking of it as a coordinated system makes it easy to visualize."
+            )
 
-        # Action: Explain step by step
-        elif action == "explain_step_by_step" or any(p in clean_utterance for p in ["step by step", "break it down"]):
+        # 3. Action: Explain in more detail
+        elif action == "explain_detailed" or any(p in clean_utterance for p in ["more detail", "deeper", "elaborate", "expand"]):
             facts = current_step.get("facts", [])
-            if facts:
-                teacher_reply_text = "Here is the exact step-by-step breakdown: " + " Then, ".join(facts[:3])
-            else:
-                teacher_reply_text = f"Step 1: Understand the core structure. Step 2: Follow how {session.topic} operates under natural laws."
+            facts_expanded = " ".join(facts) if facts else f"In advanced {session.subject}, {session.topic} involves strict molecular and thermodynamic equilibria."
+            teacher_reply_text = f"Here is the deeper explanation: {facts_expanded}"
 
-        # Action: Checkpoint Answer Evaluation
-        elif current_step.get("checkpoint_question") and current_step.get("expected_keywords"):
-            expected = current_step["expected_keywords"]
-            matched = any(kw.lower() in clean_utterance for kw in expected)
-            if matched:
-                teacher_reply_text = "Spot on! That is exactly correct. You understood the essential point."
-                advance_step = True
+        # 4. Action: Explain formula
+        elif action == "explain_formula" or any(p in clean_utterance for p in ["formula", "equation", "math", "numerical"]):
+            formula_step = next((st for st in session.lesson_steps if "formula" in st.get("section_id", "")), None)
+            if formula_step:
+                teacher_reply_text = formula_step["teacher_speech"]
+                highlight_target_override = "formula_card"
             else:
-                teacher_reply_text = f"Good attempt! The key factor to remember is {current_step.get('hint', expected[0])}."
-                advance_step = True
+                teacher_reply_text = f"In {session.topic}, governing equations relate the input forces, energy, or concentrations according to conservation laws."
 
-        # Default forward progression
+        # 5. Action: Explain diagram / 3D model
+        elif action == "explain_diagram" or any(p in clean_utterance for p in ["diagram", "3d model", "model", "visual", "figure"]):
+            diag_step = next((st for st in session.lesson_steps if "diagram" in st.get("section_id", "")), None)
+            if diag_step:
+                teacher_reply_text = diag_step["teacher_speech"]
+                highlight_target_override = "whole_model"
+            else:
+                teacher_reply_text = f"Looking at the visual for {session.topic}: Notice how each labelled anatomical and physical component connects directly to the system's function."
+
+        # 6. Action: Give another example
+        elif action == "give_example" or any(p in clean_utterance for p in ["example", "another example", "instance"]):
+            teacher_reply_text = (
+                f"Here is another real-world application: In industrial engineering and living systems, {session.topic} "
+                f"ensures optimal efficiency by preventing wasted energy and avoiding backflow."
+            )
+
+        # 7. Action: Go back / Previous step
+        elif action == "previous_step" or any(p in clean_utterance for p in ["go back", "previous", "earlier"]):
+            if session.current_step_index > 0:
+                session.current_step_index -= 1
+                session.current_sentence_index = 0
+                step = session.lesson_steps[session.current_step_index]
+                session.active_visual = step.get("visual")
+                teacher_reply_text = f"Returning to section: {step['title']}. {step['teacher_speech']}"
+            else:
+                teacher_reply_text = f"We are already at the beginning of the lesson: {current_step['title']}."
+
+        # 8. Action: Checkpoint Evaluation
+        elif action == "submit_answer" or selected_option_index is not None or (current_step.get("checkpoint_question") and (clean_utterance or current_step.get("expected_keywords"))):
+            cq = current_step.get("checkpoint_question") or {}
+            correct_idx = cq.get("correct_index", 0) if isinstance(cq, dict) else 0
+            if selected_option_index is not None:
+                is_correct = (selected_option_index == correct_idx)
+            else:
+                expected = current_step.get("expected_keywords", [])
+                is_correct = any(kw.lower() in clean_utterance for kw in expected) if expected else True
+
+            if is_correct:
+                teacher_reply_text = "Spot on! That is 100% correct. You have understood the essential concept."
+                checkpoint_result = {"is_correct": True, "score": 1.0, "feedback": teacher_reply_text}
+                adaptive_memory.record_interaction(
+                    user_id=session.user_id, topic=session.topic, subject=session.subject,
+                    grade=session.grade, question_answered=True, was_correct=True
+                )
+            else:
+                hint = current_step.get("hint") or (cq.get("options", [""])[correct_idx] if isinstance(cq, dict) and cq.get("options") else "the key formula/definition")
+                teacher_reply_text = f"Good attempt! The correct answer is: {hint}."
+                checkpoint_result = {"is_correct": False, "score": 0.0, "feedback": teacher_reply_text}
+                adaptive_memory.record_interaction(
+                    user_id=session.user_id, topic=session.topic, subject=session.subject,
+                    grade=session.grade, question_answered=True, was_correct=False
+                )
+
+        # 9. Default: Forward progression (Next step)
         else:
             advance_step = True
-            teacher_reply_text = "Excellent. Let's move to our next learning milestone."
+            teacher_reply_text = "Excellent. Let us move to the next section."
 
+        # Advance step if requested
         if advance_step and session.current_step_index < len(session.lesson_steps) - 1:
             session.current_step_index += 1
             session.current_sentence_index = 0
@@ -290,25 +391,39 @@ class VoiceLessonOrchestrator:
             "topic": session.topic,
             "grade": session.grade,
             "subject": session.subject,
+            "depth": session.depth,
             "language": session.language,
             "speed": session.speed,
             "current_step_index": session.current_step_index,
+            "current_section_index": session.current_step_index,
             "total_steps": len(session.lesson_steps),
+            "total_sections": len(session.lesson_steps),
+            "current_section": {
+                "title": active_step["title"],
+                "type": active_step.get("type", "section"),
+                "spoken_script": teacher_reply_text,
+                "sentences": active_step.get("sentences", []),
+            },
             "step_title": active_step["title"],
+            "section_id": active_step.get("section_id", f"sec_{session.current_step_index + 1}"),
             "teacher_speech": teacher_reply_text,
             "sentences": active_step.get("sentences", []),
             "audio_url": audio_payload.get("audio_url"),
             "audio_available": audio_payload.get("audio_available", False),
-            "provider_used": audio_payload.get("provider", "Browser WebSpeechAPI"),
+            "provider_used": audio_payload.get("provider", "Browser WebSpeechAPI Engine"),
             "synced_visual": session.active_visual,
             "highlight_target": highlight_target_override or (session.active_visual.get("target_id") if session.active_visual else None),
             "checkpoint_question": active_step.get("checkpoint_question"),
+            "checkpoint_result": checkpoint_result,
             "is_lesson_finished": session.current_step_index >= len(session.lesson_steps) - 1,
             "suggested_actions": [
-                "I understand, continue",
+                "Continue to next step",
                 "Explain more simply",
-                "Repeat this sentence",
-                "Explain step-by-step"
+                "Explain in more detail",
+                "Give another example",
+                "Explain this formula",
+                "Explain this diagram",
+                "Repeat this sentence"
             ],
         }
 
@@ -317,9 +432,10 @@ class VoiceLessonOrchestrator:
         session_id: str,
         action: str,
         speed: Optional[float] = None,
+        section_index: Optional[int] = None,
         sentence_index: Optional[int] = None
     ) -> Dict[str, Any]:
-        """Handles pause, resume, replay, speed change, and sentence index updates."""
+        """Handles pause, resume, replay, speed change, section jump, and sentence index updates."""
         session = self.sessions.get(session_id)
         if not session:
             raise ValueError(f"Session '{session_id}' not found")
@@ -334,6 +450,32 @@ class VoiceLessonOrchestrator:
         elif action_clean == "speed" and speed:
             session.speed = max(0.5, min(2.0, speed))
             return {"session_id": session_id, "status": "speed_updated", "speed": session.speed}
+        elif action_clean == "jump_section" and section_index is not None:
+            if 0 <= section_index < len(session.lesson_steps):
+                session.current_step_index = section_index
+                session.current_sentence_index = 0
+                step = session.lesson_steps[section_index]
+                session.active_visual = step.get("visual")
+                audio = await self.generate_audio_with_fallback(step["teacher_speech"], session.voice_name, session.speed, session.language)
+                return {
+                    "session_id": session_id,
+                    "status": "section_jumped",
+                    "current_step_index": section_index,
+                    "current_section_index": section_index,
+                    "total_sections": len(session.lesson_steps),
+                    "step_title": step["title"],
+                    "current_section": {
+                        "title": step["title"],
+                        "type": step.get("type", "section"),
+                        "spoken_script": step["teacher_speech"],
+                        "sentences": step.get("sentences", []),
+                    },
+                    "teacher_speech": step["teacher_speech"],
+                    "sentences": step.get("sentences", []),
+                    "audio_url": audio.get("audio_url"),
+                    "audio_available": audio.get("audio_available", False),
+                    "synced_visual": session.active_visual
+                }
         elif action_clean == "set_sentence" and sentence_index is not None:
             session.current_sentence_index = sentence_index
             return {"session_id": session_id, "status": "sentence_updated", "sentence_index": sentence_index}
@@ -368,14 +510,14 @@ class VoiceLessonOrchestrator:
         """
         Synthesizes audio with dual-engine support:
         1. Cloud Gemini Native Audio or ElevenLabs when credentials present.
-        2. Clean fallback to Browser WebSpeechAPI with zero failure crashes.
+        2. Clean fallback to Browser WebSpeechAPI Engine with zero failure crashes.
         """
         clean_text = self._sanitize_text_for_speech(text)
         gemini_key = os.getenv("GEMINI_API_KEY", "")
         eleven_key = os.getenv("ELEVENLABS_API_KEY", "")
 
-        # 1. Gemini Native Audio
-        if gemini_key:
+        # 1. Gemini Native Audio (with 60-second circuit breaker if network unreachable)
+        if gemini_key and time.time() > self._cloud_audio_disabled_until:
             try:
                 gemini_voice = {"Kore": "Kore", "Puck": "Puck", "Fenrir": "Fenrir", "Aoede": "Aoede"}.get(voice_name, "Kore")
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key={gemini_key}"
@@ -388,7 +530,7 @@ class VoiceLessonOrchestrator:
                         }
                     }
                 }
-                async with httpx.AsyncClient(timeout=15.0) as client:
+                async with httpx.AsyncClient(timeout=3.5) as client:
                     resp = await client.post(url, json=payload)
                     if resp.status_code == 200:
                         data = resp.json()
@@ -406,7 +548,8 @@ class VoiceLessonOrchestrator:
                                 "success": True,
                             }
             except Exception as e:
-                logger.warning(f"Gemini native audio call failed: {e}. Falling back.")
+                self._cloud_audio_disabled_until = time.time() + 60.0
+                logger.warning(f"Gemini native audio call failed: {e}. Circuit breaker engaged for 60s. Falling back to Web Speech.")
 
         # 2. ElevenLabs Multilingual
         if eleven_key:
@@ -442,123 +585,6 @@ class VoiceLessonOrchestrator:
             "notice": "Cloud audio credentials not configured; audio is seamlessly synthesized via client Web Speech API with full visual synchronization.",
             "success": True,
         }
-
-    def _build_synchronized_lesson_sequence(
-        self,
-        topic: str,
-        grade: int,
-        subject: str,
-        language: str,
-        knowledge: Optional[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        """Constructs 5 pedagogical steps with discrete sentence-by-sentence visual highlight mapping."""
-        k = knowledge or {}
-        topic_title = topic.strip().title()
-        is_heart = "heart" in topic.lower()
-
-        # Step 1: Hook & Introduction
-        step1_text = f"Welcome to our {subject} lesson! Today we are exploring {topic_title} for Grade {grade}."
-        if language == "te":
-            step1_text = f"మన {subject} పాఠ్యాంశానికి స్వాగతం! ఈరోజు మనం గ్రేడ్ {grade} కోసం {topic_title} గురించి వివరంగా తెలుసుకుందాం."
-        elif language == "hi":
-            step1_text = f"हमारे {subject} सत्र में आपका स्वागत है! आज हम कक्षा {grade} के लिए {topic_title} का अध्ययन करेंगे।"
-
-        step1_sents = [
-            {"sentence_index": 0, "text": step1_text, "highlight_target_id": "whole_model" if is_heart else None, "action": "focus"}
-        ]
-
-        # Step 2: Definition & Core Meaning
-        acad_def = k.get("definition_academic", f"{topic_title} is a core principle in {subject}.")
-        simp_def = k.get("definition_simplified", f"A fundamental mechanism of {topic_title}.")
-
-        step2_text = f"Let's look at the scientific definition: {acad_def} In simple words, {simp_def}"
-        if language == "te":
-            step2_text = f"పాఠ్యపుస్తక వివరణ: {acad_def} సులభంగా చెప్పాలంటే, {simp_def}"
-        elif language == "hi":
-            step2_text = f"पाठ्यपुस्तक परिभाषा: {acad_def} सरल शब्दों में, {simp_def}"
-
-        step2_sents = [
-            {"sentence_index": 0, "text": f"Scientific Definition: {acad_def}", "highlight_target_id": "sa_node" if is_heart else None, "action": "highlight"},
-            {"sentence_index": 1, "text": f"Simplified Concept: {simp_def}", "highlight_target_id": "septum" if is_heart else None, "action": "highlight"}
-        ]
-
-        # Step 3: Step-by-Step Circulation / Mechanism
-        if is_heart:
-            step3_sents = [
-                {"sentence_index": 0, "text": "First, deoxygenated blood enters the Right Atrium through the superior and inferior vena cava.", "highlight_target_id": "right_atrium", "action": "highlight"},
-                {"sentence_index": 1, "text": "It passes through the tricuspid valve into the Right Ventricle.", "highlight_target_id": "tricuspid_valve", "action": "highlight"},
-                {"sentence_index": 2, "text": "The Right Ventricle pumps blood through the pulmonary artery to the lungs.", "highlight_target_id": "pulmonary_artery", "action": "highlight"},
-                {"sentence_index": 3, "text": "Oxygenated blood returns to the Left Atrium and passes through the bicuspid valve into the Left Ventricle.", "highlight_target_id": "left_ventricle", "action": "highlight"},
-                {"sentence_index": 4, "text": "Finally, the Left Ventricle pumps oxygen-rich blood into the Aorta to nourish the entire body.", "highlight_target_id": "aorta", "action": "highlight"}
-            ]
-            step3_text = " ".join(s["text"] for s in step3_sents)
-        else:
-            facts = k.get("facts", [f"{topic_title} functions via discrete coordinated physical stages."])
-            step3_sents = [{"sentence_index": i, "text": f, "highlight_target_id": None, "action": "highlight"} for i, f in enumerate(facts[:4])]
-            step3_text = " ".join(facts[:4])
-
-        # Step 4: Checkpoint
-        step4_question = f"What is one primary function or condition governing {topic_title}?"
-        if is_heart:
-            step4_question = "Which chamber has the thickest muscular wall to pump blood to the entire body?"
-
-        step4_sents = [
-            {"sentence_index": 0, "text": f"Quick Checkpoint: {step4_question}", "highlight_target_id": "left_ventricle" if is_heart else None, "action": "pulse"}
-        ]
-
-        # Visual Attachment
-        visual_data = {
-            "type": "threejs_3d_model" if is_heart else "diagram",
-            "model_key": "human-heart" if is_heart else None,
-            "target_id": "right_atrium" if is_heart else None,
-            "caption": f"Interactive Visual Model for {topic_title}"
-        }
-
-        # Step 5: Recap
-        step5_text = f"Excellent work! You have mastered the core structure, stages, and examination essentials of {topic_title}."
-        step5_sents = [
-            {"sentence_index": 0, "text": step5_text, "highlight_target_id": None, "action": "recap"}
-        ]
-
-        return [
-            {
-                "title": "Welcome & Topic Hook",
-                "teacher_speech": step1_text,
-                "sentences": step1_sents,
-                "simple_analogy": simp_def,
-                "visual": visual_data
-            },
-            {
-                "title": "Academic Definition & Meaning",
-                "teacher_speech": step2_text,
-                "sentences": step2_sents,
-                "simple_analogy": simp_def,
-                "visual": visual_data
-            },
-            {
-                "title": "Step-by-Step Mechanism",
-                "teacher_speech": step3_text,
-                "sentences": step3_sents,
-                "facts": k.get("facts", []),
-                "simple_analogy": simp_def,
-                "visual": visual_data
-            },
-            {
-                "title": "Interactive Understanding Checkpoint",
-                "teacher_speech": f"Let us check your understanding: {step4_question}",
-                "sentences": step4_sents,
-                "checkpoint_question": step4_question,
-                "expected_keywords": ["left ventricle", "ventricle", "thick", "aorta"] if is_heart else ["force", "energy", "reaction", "water", "heat"],
-                "hint": "Think about the chamber that needs the most pressure to pump blood all the way to your head and toes.",
-                "visual": visual_data
-            },
-            {
-                "title": "Lesson Recap & Next Steps",
-                "teacher_speech": step5_text,
-                "sentences": step5_sents,
-                "visual": visual_data
-            }
-        ]
 
     def _sanitize_text_for_speech(self, text: str) -> str:
         t = re.sub(r"\[.*?\]\(.*?\)", "", text)
