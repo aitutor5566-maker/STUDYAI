@@ -97,6 +97,10 @@ export const NotesPage: React.FC = () => {
   const [generating, setGenerating] = useState<boolean>(false);
   const [pipelineStepIdx, setPipelineStepIdx] = useState<number>(0);
 
+  // Universal Topic Classifier Live Preview State
+  const [topicClassification, setTopicClassification] = useState<any | null>(null);
+  const [classifyingTopic, setClassifyingTopic] = useState<boolean>(false);
+
   // Source-Grounded Q&A State
   const [selectedSourceIds, setSelectedSourceIds] = useState<string[]>([]);
   const [qaQuestion, setQaQuestion] = useState<string>('');
@@ -136,6 +140,30 @@ export const NotesPage: React.FC = () => {
   useEffect(() => {
     fetchNotes();
   }, [selectedCategory, searchQuery, refreshTick]);
+
+  // Live Universal Topic Classifier with Disambiguation
+  useEffect(() => {
+    const trimmed = genTopic.trim();
+    if (!trimmed || trimmed.length < 2) {
+      setTopicClassification(null);
+      return;
+    }
+    const timer = window.setTimeout(async () => {
+      setClassifyingTopic(true);
+      try {
+        const res = await apiFetch(`/api/notes/classify?topic=${encodeURIComponent(trimmed)}`);
+        setTopicClassification(res);
+        if (res?.classification?.subject && res.classification.subject !== genSubject) {
+          setGenSubject(res.classification.subject);
+        }
+      } catch {
+        // Silently skip on error
+      } finally {
+        setClassifyingTopic(false);
+      }
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [genTopic]);
 
   const selectNoteForEditing = (note: any) => {
     setActiveNote(note);
@@ -609,6 +637,79 @@ export const NotesPage: React.FC = () => {
     }
   };
 
+  const handleSwitchDesignMode = async (mode: string) => {
+    if (!activeNote) return;
+    const nextStructured = { ...(editStructured || {}), designMode: mode };
+    setEditStructured(nextStructured);
+    setActiveNote((prev: any) => ({ ...prev, design_mode: mode, structured: nextStructured }));
+    try {
+      await apiFetch(`/api/notes/${activeNote.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          design_mode: mode,
+          structured: nextStructured
+        })
+      });
+      setSaveStatus('saved');
+    } catch {
+      setSaveStatus('error');
+    }
+  };
+
+  const getDesignModeStyle = (mode: string): React.CSSProperties => {
+    switch (mode) {
+      case 'handwritten':
+        return {
+          background: '#FFFDF9',
+          color: '#1E293B',
+          backgroundImage: 'repeating-linear-gradient(transparent, transparent 31px, #E2E8F0 31px, #E2E8F0 32px)',
+          borderLeft: '6px solid #EF4444',
+          borderRadius: 16,
+          borderTop: '1px solid #E2E8F0',
+          borderRight: '1px solid #E2E8F0',
+          borderBottom: '1px solid #E2E8F0',
+          boxShadow: '0 12px 32px rgba(17, 24, 39, 0.08)',
+          padding: '36px 40px',
+          fontFamily: "'Segoe Print', 'Comic Sans MS', cursive, sans-serif",
+          lineHeight: 1.8
+        };
+      case 'infographic':
+        return {
+          background: '#F0F9FF',
+          color: '#0F172A',
+          borderRadius: 16,
+          border: '2px solid #0284C7',
+          boxShadow: '0 16px 36px rgba(2, 132, 199, 0.12)',
+          padding: '36px 40px',
+          fontFamily: 'Inter, system-ui, sans-serif',
+          lineHeight: 1.7
+        };
+      case 'formula-sheet':
+        return {
+          background: '#F8FAFC',
+          color: '#0F172A',
+          borderRadius: 16,
+          border: '2px solid #6366F1',
+          boxShadow: '0 16px 36px rgba(99, 102, 241, 0.12)',
+          padding: '36px 40px',
+          fontFamily: "'JetBrains Mono', 'Fira Code', 'Menlo', monospace",
+          lineHeight: 1.7
+        };
+      case 'chapter-detailed':
+      default:
+        return {
+          background: '#FFFFFF',
+          color: '#111827',
+          borderRadius: 16,
+          border: '1px solid #D1D5DB',
+          boxShadow: '0 12px 32px rgba(17, 24, 39, 0.08)',
+          padding: '36px 40px',
+          fontFamily: "Georgia, 'Times New Roman', serif",
+          lineHeight: 1.72
+        };
+    }
+  };
+
   const scrollToNotebookAnchor = (elementId: string) => {
     const el = document.getElementById(elementId);
     if (el) {
@@ -619,6 +720,9 @@ export const NotesPage: React.FC = () => {
   const categories = ['All', 'Science', 'Maths', 'English', 'Social Studies', 'Computer Science'];
 
   const structured = editStructured || activeNote?.structured || {};
+  const currentDesignMode = editStructured?.designMode || activeNote?.design_mode || 'handwritten';
+  const finalRevisionPage = structured?.finalRevisionPage || activeNote?.finalRevisionPage;
+  const workedProblems: any[] = structured?.workedProblems || [];
   const sourceRecords: any[] = structured?.sourceRecords || [];
   const sections: any[] = structured?.sections || [];
   const images: any[] = structured?.images || [];
@@ -698,36 +802,141 @@ export const NotesPage: React.FC = () => {
           </div>
 
           <form onSubmit={handleGenerateNote} style={{ display: 'grid', gap: 14 }}>
+            {/* Topic-First Universal Input */}
+            <div>
+              <div style={{ position: 'relative' }}>
+                <input
+                  value={genTopic}
+                  onChange={(e) => setGenTopic(e.target.value)}
+                  placeholder="Enter any topic (e.g. Friction, Circular motion, Demand and supply, Macbeth, Journal entries, Photosynthesis)..."
+                  style={{
+                    width: '100%',
+                    padding: '13px 16px',
+                    borderRadius: 14,
+                    border: '2px solid #FF6A00',
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    background: '#FFFFFF',
+                    boxShadow: '0 4px 14px rgba(255, 106, 0, 0.12)',
+                    outline: 'none'
+                  }}
+                  aria-label="Universal Note Topic Input"
+                />
+                {classifyingTopic && (
+                  <span style={{ position: 'absolute', right: 14, top: 14, fontSize: '0.78rem', color: '#EA580C', fontWeight: 700 }}>
+                    Classifying topic...
+                  </span>
+                )}
+              </div>
+
+              {/* Live Universal Classification Preview Chips & Ambiguity Disambiguation */}
+              {topicClassification?.classification && (
+                <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 12, background: '#FFF7ED', border: '1px solid #FFEDD5', display: 'grid', gap: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.74rem', fontWeight: 800, textTransform: 'uppercase', color: '#9A3412' }}>
+                        Auto-Recognized:
+                      </span>
+                      <span style={{ padding: '2px 8px', borderRadius: 999, background: '#FFEDD5', color: '#C2410C', fontWeight: 800, fontSize: '0.78rem' }}>
+                        {topicClassification.classification.subject} ({topicClassification.classification.discipline})
+                      </span>
+                      <span style={{ padding: '2px 8px', borderRadius: 999, background: '#FFFFFF', border: '1px solid #FED7AA', color: '#374151', fontSize: '0.76rem', fontWeight: 600 }}>
+                        Chapter: {topicClassification.classification.chapter}
+                      </span>
+                      <span style={{ padding: '2px 8px', borderRadius: 999, background: '#EFF6FF', color: '#1E40AF', fontSize: '0.76rem', fontWeight: 600 }}>
+                        Medium: {topicClassification.classification.visualSpecification?.targetMedium}
+                      </span>
+                      <span style={{ padding: '2px 8px', borderRadius: 999, background: topicClassification.classification.requiresFormulas ? '#ECFDF5' : '#F3F4F6', color: topicClassification.classification.requiresFormulas ? '#047857' : '#4B5563', fontSize: '0.76rem', fontWeight: 700 }}>
+                        {topicClassification.classification.requiresFormulas ? '🧮 Formulas & Numericals Required' : '🛡️ Anti-Hallucination Active (Zero Fake Formulas)'}
+                      </span>
+                    </div>
+                    {topicClassification.studentProfile && (
+                      <span style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 600 }}>
+                        Auto-profile: {topicClassification.studentProfile.grade} • {topicClassification.studentProfile.board}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Ambiguity Disambiguation Options */}
+                  {topicClassification.classification.isAmbiguous && Array.isArray(topicClassification.classification.disambiguationOptions) && (
+                    <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid #FED7AA' }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#DC2626', marginBottom: 4 }}>
+                        ⚠️ Multi-Discipline Topic Detected — Click to clarify focus:
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {topicClassification.classification.disambiguationOptions.map((opt: any, oIdx: number) => (
+                          <button
+                            key={oIdx}
+                            type="button"
+                            onClick={() => {
+                              setGenTopic(`${opt.subject}: ${opt.label || opt.discipline || opt.topic}`);
+                              setGenSubject(opt.subject);
+                            }}
+                            style={{
+                              padding: '4px 10px',
+                              borderRadius: 999,
+                              border: '1px solid #EA580C',
+                              background: '#FFFFFF',
+                              color: '#EA580C',
+                              fontSize: '0.74rem',
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            + {opt.subject}: {opt.label || opt.discipline}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Optional Overrides (Auto-synced with classifier) */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
-              <input
-                value={genTopic}
-                onChange={(e) => setGenTopic(e.target.value)}
-                placeholder="Notebook Topic / Title (e.g., DNA Structure & Replication, Photosynthesis)..."
-                style={{ padding: '11px 14px', borderRadius: 14, border: '1px solid rgba(255,106,0,0.35)', fontSize: '0.92rem', background: '#FFFFFF' }}
-                aria-label="New Note Topic"
-              />
-              <select
-                value={genSubject}
-                onChange={(e) => setGenSubject(e.target.value)}
-                style={{ padding: '11px 14px', borderRadius: 14, border: '1px solid rgba(0,0,0,0.12)', fontWeight: 600, background: '#FFFFFF' }}
-                aria-label="Note Subject"
-              >
-                <option value="Science">Science (Biology / Physics / Chemistry)</option>
-                <option value="Maths">Mathematics</option>
-                <option value="Computer Science">Computer Science</option>
-                <option value="English">English</option>
-                <option value="Social Studies">Social Studies</option>
-              </select>
-              <select
-                value={genDepth}
-                onChange={(e) => setGenDepth(e.target.value as any)}
-                style={{ padding: '11px 14px', borderRadius: 14, border: '1px solid rgba(0,0,0,0.12)', fontWeight: 600, background: '#FFFFFF' }}
-                aria-label="Note Depth"
-              >
-                <option value="detailed">Complete Illustrated Digital Notebook</option>
-                <option value="exam-prep">Board & Competitive Exam Master Sheet</option>
-                <option value="concise">High-Yield Revision Notebook</option>
-              </select>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#6B7280', marginBottom: 4 }}>
+                  Subject (Auto-detected, click to override)
+                </label>
+                <select
+                  value={genSubject}
+                  onChange={(e) => setGenSubject(e.target.value)}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 12, border: '1px solid rgba(0,0,0,0.12)', fontWeight: 600, background: '#FFFFFF' }}
+                  aria-label="Note Subject"
+                >
+                  <option value="Physics">Physics</option>
+                  <option value="Chemistry">Chemistry</option>
+                  <option value="Biology">Biology</option>
+                  <option value="Mathematics">Mathematics</option>
+                  <option value="Science">General Science</option>
+                  <option value="History">History</option>
+                  <option value="Geography">Geography</option>
+                  <option value="Civics">Civics / Political Science</option>
+                  <option value="Economics">Economics</option>
+                  <option value="English">English / Literature</option>
+                  <option value="Computer Science">Computer Science / IT</option>
+                  <option value="Accountancy">Accountancy / Commerce</option>
+                  <option value="Business Studies">Business Studies</option>
+                  <option value="Environmental Science">Environmental Science</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#6B7280', marginBottom: 4 }}>
+                  Notebook Depth & Target
+                </label>
+                <select
+                  value={genDepth}
+                  onChange={(e) => setGenDepth(e.target.value as any)}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 12, border: '1px solid rgba(0,0,0,0.12)', fontWeight: 600, background: '#FFFFFF' }}
+                  aria-label="Note Depth"
+                >
+                  <option value="detailed">Complete Illustrated Digital Notebook (with Revision Sheet)</option>
+                  <option value="exam-prep">Board & Competitive Exam Master Sheet</option>
+                  <option value="concise">High-Yield Revision Notebook</option>
+                </select>
+              </div>
             </div>
 
             {/* YouTube & Web Link Inputs */}
@@ -1125,16 +1334,7 @@ export const NotesPage: React.FC = () => {
               {activeTab === 'notebook' && (
                 <div
                   id="white-page-notebook-sheet"
-                  style={{
-                    background: '#FFFFFF',
-                    color: '#111827',
-                    borderRadius: 16,
-                    border: '1px solid #D1D5DB',
-                    boxShadow: '0 12px 32px rgba(17, 24, 39, 0.08)',
-                    padding: '36px 40px',
-                    fontFamily: "Georgia, 'Times New Roman', serif",
-                    lineHeight: 1.72
-                  }}
+                  style={getDesignModeStyle(currentDesignMode)}
                 >
                   {/* White-Page Document Header & Editable Title */}
                   <header style={{ borderBottom: '2px solid #111827', paddingBottom: 18, marginBottom: 20 }}>
@@ -1197,6 +1397,41 @@ export const NotesPage: React.FC = () => {
                           <span>Print White Page</span>
                         </button>
                       </div>
+                    </div>
+
+                    {/* 4 Reference-Based Design Modes Switcher */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginTop: 10, marginBottom: 12 }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#4B5563', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Design Mode:
+                      </span>
+                      {[
+                        { id: 'handwritten', label: '📝 Classroom Handwritten', desc: 'Warm lined notebook with handwritten style' },
+                        { id: 'infographic', label: '🔬 Scientific Infographic', desc: 'Vibrant modern callouts and tech diagrams' },
+                        { id: 'formula-sheet', label: '📐 Formula Revision Sheet', desc: 'High-contrast monospace formulas and cards' },
+                        { id: 'chapter-detailed', label: '📚 Detailed Chapter Notes', desc: 'Textbook multi-section layout' }
+                      ].map((dm) => (
+                        <button
+                          key={dm.id}
+                          type="button"
+                          onClick={() => handleSwitchDesignMode(dm.id)}
+                          style={{
+                            padding: '4px 11px',
+                            borderRadius: 20,
+                            border: currentDesignMode === dm.id ? '2px solid #FF6A00' : '1px solid #D1D5DB',
+                            background: currentDesignMode === dm.id ? '#FFF3E8' : '#FFFFFF',
+                            color: currentDesignMode === dm.id ? '#EA580C' : '#374151',
+                            fontWeight: currentDesignMode === dm.id ? 800 : 600,
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4
+                          }}
+                          title={dm.desc}
+                        >
+                          {dm.label}
+                        </button>
+                      ))}
                     </div>
 
                     <input
@@ -1269,7 +1504,8 @@ export const NotesPage: React.FC = () => {
                         { id: 'nb-formula', label: '7. Formulas & Examples' },
                         { id: 'nb-exam', label: `8. Exam Q&A (${examQuestions.length})` },
                         ...(sourceComparison ? [{ id: 'nb-multisource', label: '9. Multi-Source Comparison' }] : []),
-                        { id: 'nb-sources', label: '10. Source Inventory & Citations' }
+                        { id: 'nb-sources', label: '10. Source Inventory & Citations' },
+                        ...(finalRevisionPage ? [{ id: 'nb-final-revision', label: '🏆 Final Comprehensive Revision Page' }] : [])
                       ].map((item) => (
                         <button
                           key={item.id}
@@ -1844,30 +2080,66 @@ export const NotesPage: React.FC = () => {
                   )}
 
                   {/* SECTION 7: FORMULAS, VARIABLES & WORKED NUMERICAL EXAMPLE */}
-                  {formula && (
+                  {(formula || (Array.isArray(workedProblems) && workedProblems.length > 0)) && (
                     <section id="nb-formula" style={{ marginBottom: 32 }}>
                       <h2 style={{ fontSize: '1.28rem', fontWeight: 800, color: '#111827', borderBottom: '1px solid #E5E7EB', paddingBottom: 6, marginBottom: 12 }}>
-                        7. Core Formula / Governing Equation & Worked Example
+                        7. Governing Equations & Step-by-Step Worked Problems
                       </h2>
-                      <div style={{ padding: 16, borderRadius: 8, border: '1px solid #D1D5DB', background: '#F9FAFB', fontFamily: 'Inter, system-ui, sans-serif' }}>
-                        <div style={{ fontSize: '1.08rem', fontWeight: 800, fontFamily: 'monospace', color: '#111827', marginBottom: 8 }}>
-                          {formula.equation || formula.expression || (typeof formula === 'string' ? formula : '')}
-                        </div>
-                        {Array.isArray(formula.variables) && formula.variables.length > 0 && (
-                          <ul style={{ margin: '0 0 10px 0', paddingLeft: 20, fontSize: '0.88rem', color: '#374151' }}>
-                            {formula.variables.map((v: any, idx: number) => (
-                              <li key={idx}>
-                                <strong>{v.symbol}:</strong> {v.meaning || v.label} {v.unit ? `(${v.unit})` : ''}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                        {formula.workedExample && (
-                          <div style={{ fontSize: '0.88rem', color: '#1F2937', borderTop: '1px solid #E5E7EB', paddingTop: 8 }}>
-                            <strong>Worked Example:</strong> {formula.workedExample}
+                      {formula && (
+                        <div style={{ padding: 16, borderRadius: 8, border: '1px solid #D1D5DB', background: '#F9FAFB', fontFamily: 'Inter, system-ui, sans-serif', marginBottom: 12 }}>
+                          <div style={{ fontSize: '1.08rem', fontWeight: 800, fontFamily: 'monospace', color: '#111827', marginBottom: 8 }}>
+                            {formula.equation || formula.expression || (typeof formula === 'string' ? formula : '')}
                           </div>
-                        )}
-                      </div>
+                          {Array.isArray(formula.variables) && formula.variables.length > 0 && (
+                            <ul style={{ margin: '0 0 10px 0', paddingLeft: 20, fontSize: '0.88rem', color: '#374151' }}>
+                              {formula.variables.map((v: any, idx: number) => (
+                                <li key={idx}>
+                                  <strong>{v.symbol}:</strong> {v.meaning || v.label} {v.unit ? `(${v.unit})` : ''}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                          {formula.workedExample && (
+                            <div style={{ fontSize: '0.88rem', color: '#1F2937', borderTop: '1px solid #E5E7EB', paddingTop: 8 }}>
+                              <strong>Worked Example:</strong> {formula.workedExample}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Worked Problems (Step-by-step with Units and Dimensional Check) */}
+                      {Array.isArray(workedProblems) && workedProblems.length > 0 && (
+                        <div style={{ display: 'grid', gap: 12, marginTop: 12 }}>
+                          <div style={{ fontSize: '0.82rem', fontWeight: 800, textTransform: 'uppercase', color: '#4B5563' }}>
+                            Worked Numerical Problems ({workedProblems.length})
+                          </div>
+                          {workedProblems.map((prob: any, pIdx: number) => (
+                            <div key={pIdx} style={{ padding: 14, borderRadius: 8, background: '#FFFFFF', border: '1px solid #D1D5DB', fontFamily: 'Inter, system-ui, sans-serif' }}>
+                              <div style={{ fontWeight: 800, color: '#111827', fontSize: '0.94rem', marginBottom: 6 }}>
+                                Problem {pIdx + 1}: {prob.problemStatement}
+                              </div>
+                              <div style={{ fontSize: '0.84rem', color: '#4B5563', marginBottom: 6 }}>
+                                <strong>Given:</strong> {prob.givenData} • <strong>Formula:</strong> <code style={{ background: '#F3F4F6', padding: '2px 6px', borderRadius: 4 }}>{prob.formulaUsed}</code>
+                              </div>
+                              {Array.isArray(prob.stepByStepSolution) && (
+                                <div style={{ margin: '6px 0', paddingLeft: 12, borderLeft: '3px solid #3B82F6', fontSize: '0.86rem', color: '#1F2937' }}>
+                                  {prob.stepByStepSolution.map((st: string, sIdx: number) => (
+                                    <div key={sIdx} style={{ marginBottom: 4 }}>{st}</div>
+                                  ))}
+                                </div>
+                              )}
+                              <div style={{ padding: '6px 10px', background: '#ECFDF5', color: '#065F46', borderRadius: 6, fontWeight: 700, fontSize: '0.86rem', marginTop: 6 }}>
+                                ✓ Final Answer: {prob.finalAnswer}
+                              </div>
+                              {prob.dimensionalCheck && (
+                                <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: 4 }}>
+                                  Dimensional / Verification Check: {prob.dimensionalCheck}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </section>
                   )}
 
@@ -1969,6 +2241,182 @@ export const NotesPage: React.FC = () => {
                       </div>
                     )}
                   </section>
+
+                  {/* =====================================================================
+                      SECTION 11: THE FINAL COMPREHENSIVE REVISION PAGE (MANDATORY FEATURE)
+                      ===================================================================== */}
+                  {finalRevisionPage && (
+                    <section
+                      id="nb-final-revision"
+                      style={{
+                        marginTop: 40,
+                        padding: '28px 32px',
+                        borderRadius: 16,
+                        background: currentDesignMode === 'handwritten' ? '#FEFCE8' : '#F0FDF4',
+                        border: '2.5px solid #16A34A',
+                        boxShadow: '0 12px 32px rgba(22, 163, 74, 0.12)',
+                        fontFamily: 'Inter, system-ui, sans-serif'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, borderBottom: '2px solid #16A34A', paddingBottom: 14, marginBottom: 18 }}>
+                        <div>
+                          <div style={{ display: 'inline-block', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#16A34A', color: '#FFFFFF', padding: '3px 9px', borderRadius: 6, letterSpacing: '0.5px', marginBottom: 6 }}>
+                            High-Yield Board & Exam Master Sheet
+                          </div>
+                          <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#14532D', margin: 0 }}>
+                            🏆 The Final Comprehensive Revision Page
+                          </h2>
+                        </div>
+                        <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#15803D', background: '#DCFCE7', padding: '4px 12px', borderRadius: 999 }}>
+                          {editSubject} • {activeNote.topic || editTitle}
+                        </span>
+                      </div>
+
+                      {/* Executive Summary */}
+                      {finalRevisionPage.executiveSummary && (
+                        <div style={{ padding: 14, background: '#FFFFFF', borderRadius: 10, border: '1px solid #BBF7D0', marginBottom: 18 }}>
+                          <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#14532D', textTransform: 'uppercase', marginBottom: 4 }}>
+                            Executive Concept Summary
+                          </div>
+                          <p style={{ margin: 0, fontSize: '0.94rem', color: '#1F2937', lineHeight: 1.65 }}>
+                            {finalRevisionPage.executiveSummary}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* 1. Quick Revision Concept Matrix Table */}
+                      {Array.isArray(finalRevisionPage.quickRevisionMatrix) && finalRevisionPage.quickRevisionMatrix.length > 0 && (
+                        <div style={{ marginBottom: 22 }}>
+                          <h3 style={{ fontSize: '1.08rem', fontWeight: 800, color: '#14532D', marginBottom: 10 }}>
+                            1. Quick Revision Concept Matrix
+                          </h3>
+                          <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', background: '#FFFFFF', borderRadius: 8, overflow: 'hidden', fontSize: '0.86rem' }}>
+                              <thead>
+                                <tr style={{ background: '#DCFCE7', color: '#14532D', textAlign: 'left' }}>
+                                  <th style={{ padding: '9px 12px', border: '1px solid #BBF7D0', fontWeight: 800 }}>Subtopic / Concept</th>
+                                  <th style={{ padding: '9px 12px', border: '1px solid #BBF7D0', fontWeight: 800 }}>Core Principle / Rule</th>
+                                  <th style={{ padding: '9px 12px', border: '1px solid #BBF7D0', fontWeight: 800 }}>Exam Significance & Traps</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {finalRevisionPage.quickRevisionMatrix.map((row: any, rIdx: number) => (
+                                  <tr key={rIdx} style={{ background: rIdx % 2 === 0 ? '#FFFFFF' : '#F9FAFB' }}>
+                                    <td style={{ padding: '9px 12px', border: '1px solid #BBF7D0', fontWeight: 700, color: '#111827' }}>
+                                      {row.concept}
+                                    </td>
+                                    <td style={{ padding: '9px 12px', border: '1px solid #BBF7D0', color: '#374151' }}>
+                                      {row.keyRuleOrPrinciple}
+                                    </td>
+                                    <td style={{ padding: '9px 12px', border: '1px solid #BBF7D0', color: '#15803D', fontWeight: 600 }}>
+                                      {row.examSignificance}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 2. Master Formulas, Key Dates & Governing Rules */}
+                      {Array.isArray(finalRevisionPage.keyFormulasOrDatesOrRules) && finalRevisionPage.keyFormulasOrDatesOrRules.length > 0 && (
+                        <div style={{ marginBottom: 22 }}>
+                          <h3 style={{ fontSize: '1.08rem', fontWeight: 800, color: '#14532D', marginBottom: 10 }}>
+                            2. Master Formulas, Key Dates & Governing Rules
+                          </h3>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 10 }}>
+                            {finalRevisionPage.keyFormulasOrDatesOrRules.map((item: any, fIdx: number) => (
+                              <div key={fIdx} style={{ padding: 12, background: '#FFFFFF', borderRadius: 8, border: '1px solid #BBF7D0' }}>
+                                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#15803D', textTransform: 'uppercase' }}>
+                                  {item.label}
+                                </div>
+                                <div style={{ fontSize: '0.98rem', fontWeight: 800, fontFamily: 'monospace', color: '#111827', margin: '4px 0' }}>
+                                  {item.formulaOrDetail}
+                                </div>
+                                <div style={{ fontSize: '0.78rem', color: '#6B7280' }}>
+                                  {item.unitsOrSignificance}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 3. High-Yield Must-Know Definitions */}
+                      {Array.isArray(finalRevisionPage.highYieldDefinitions) && finalRevisionPage.highYieldDefinitions.length > 0 && (
+                        <div style={{ marginBottom: 22 }}>
+                          <h3 style={{ fontSize: '1.08rem', fontWeight: 800, color: '#14532D', marginBottom: 10 }}>
+                            3. High-Yield Must-Know Definitions
+                          </h3>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 10 }}>
+                            {finalRevisionPage.highYieldDefinitions.map((d: any, dIdx: number) => (
+                              <div key={dIdx} style={{ padding: 11, background: '#FFFFFF', borderRadius: 8, border: '1px solid #E5E7EB' }}>
+                                <strong style={{ color: '#111827', fontSize: '0.88rem' }}>{d.term}: </strong>
+                                <span style={{ color: '#374151', fontSize: '0.86rem' }}>{d.conciseDefinition}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 4. Mnemonics & Exam Traps */}
+                      {((Array.isArray(finalRevisionPage.mnemonics) && finalRevisionPage.mnemonics.length > 0) || (Array.isArray(finalRevisionPage.misconceptions) && finalRevisionPage.misconceptions.length > 0)) && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12, marginBottom: 22 }}>
+                          {Array.isArray(finalRevisionPage.mnemonics) && finalRevisionPage.mnemonics.length > 0 && (
+                            <div style={{ padding: 14, background: '#EFF6FF', borderRadius: 8, border: '1px solid #BFDBFE' }}>
+                              <strong style={{ color: '#1E40AF', fontSize: '0.84rem', textTransform: 'uppercase' }}>
+                                💡 Memory Mnemonics:
+                              </strong>
+                              <ul style={{ margin: '6px 0 0 0', paddingLeft: 18, fontSize: '0.86rem', color: '#1E3A8A' }}>
+                                {finalRevisionPage.mnemonics.map((m: string, mIdx: number) => (
+                                  <li key={mIdx} style={{ marginBottom: 4 }}>{m}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {Array.isArray(finalRevisionPage.misconceptions) && finalRevisionPage.misconceptions.length > 0 && (
+                            <div style={{ padding: 14, background: '#FEF2F2', borderRadius: 8, border: '1px solid #FECACA' }}>
+                              <strong style={{ color: '#991B1B', fontSize: '0.84rem', textTransform: 'uppercase' }}>
+                                ⚠️ Common Exam Traps & Misconceptions:
+                              </strong>
+                              <ul style={{ margin: '6px 0 0 0', paddingLeft: 18, fontSize: '0.86rem', color: '#7F1D1D' }}>
+                                {finalRevisionPage.misconceptions.map((mis: string, misIdx: number) => (
+                                  <li key={misIdx} style={{ marginBottom: 4 }}>{mis}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* 5. Model Exam Questions with Complete Marking Keys */}
+                      {Array.isArray(finalRevisionPage.modelExamQuestions) && finalRevisionPage.modelExamQuestions.length > 0 && (
+                        <div>
+                          <h3 style={{ fontSize: '1.08rem', fontWeight: 800, color: '#14532D', marginBottom: 10 }}>
+                            5. Model Board Exam Questions with Marking Keys
+                          </h3>
+                          <div style={{ display: 'grid', gap: 10 }}>
+                            {finalRevisionPage.modelExamQuestions.map((q: any, qIdx: number) => (
+                              <div key={qIdx} style={{ padding: 14, background: '#FFFFFF', borderRadius: 8, border: '1px solid #BBF7D0' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                                  <span style={{ fontWeight: 800, color: '#111827', fontSize: '0.92rem' }}>
+                                    Q{qIdx + 1}. {q.question}
+                                  </span>
+                                  <span style={{ fontSize: '0.74rem', fontWeight: 800, background: '#DCFCE7', color: '#15803D', padding: '2px 8px', borderRadius: 999 }}>
+                                    {q.marks} Marks
+                                  </span>
+                                </div>
+                                <div style={{ fontSize: '0.86rem', color: '#374151', background: '#F9FAFB', padding: 10, borderRadius: 6, borderLeft: '3px solid #16A34A', marginTop: 6 }}>
+                                  <strong>Model Answer & Marking Key:</strong> {q.answerKey}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </section>
+                  )}
                 </div>
               )}
 

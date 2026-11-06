@@ -30,6 +30,13 @@ import {
   buildTopicEducationalVideoStoryboard
 } from './tutorRebuildEngine.ts';
 import {
+  classifyUniversalTopic
+} from './universalSubjectClassifier.ts';
+import {
+  generateUniversalEducationalNote,
+  buildComprehensiveRevisionPage
+} from './universalNotesEngine.ts';
+import {
   getVisualPlanForTopic,
   regenerateVisual
 } from './visualIntelligenceEngine.ts';
@@ -1016,8 +1023,15 @@ export function createAppServer() {
             { id: 'src-curriculum', title: `${r.title} Curriculum Source`, type: (r.source_type || 'TOPIC').toUpperCase(), coverage: '100%' }
           ];
         }
+
+        if (!parsedStructured.finalRevisionPage) {
+          const cls = classifyUniversalTopic(r.topic || r.title);
+          parsedStructured.finalRevisionPage = buildComprehensiveRevisionPage(cls, r.content_markdown || '');
+        }
+
         return {
           ...r,
+          designMode: r.design_mode || parsedStructured.designMode || 'handwritten',
           structured: parsedStructured,
           flashcards: JSON.parse(r.flashcards_json || '[]'),
           quiz: JSON.parse(r.quiz_json || '[]')
@@ -1042,6 +1056,26 @@ export function createAppServer() {
         }
         const notes = rows.map(enrichExistingNoteRow);
         sendJson(res, 200, notes);
+        return;
+      }
+
+      // Universal Topic Classification Preview (Part 1 & 2)
+      if (pathname === '/api/notes/classify' && req.method === 'GET') {
+        const topic = sanitizeText(parsedUrl.searchParams.get('topic') || 'Friction', 180);
+        const studentUser = db.prepare('SELECT grade, board FROM users WHERE id = ?').get(studentId) as any;
+        const studentProfile = db.prepare('SELECT current_grade, current_board FROM student_profiles WHERE id = ?').get(studentId) as any;
+        const recentTopics = (db.prepare('SELECT topic FROM learning_activity WHERE user_id = ? ORDER BY created_at DESC LIMIT 5').all(studentId) as any[]).map(a => a.topic);
+
+        const classification = classifyUniversalTopic(topic, {
+          grade: studentUser?.grade || studentProfile?.current_grade || 10,
+          board: studentUser?.board || studentProfile?.current_board || 'CBSE',
+          recentTopics
+        });
+
+        sendJson(res, 200, {
+          topic,
+          classification
+        });
         return;
       }
 
@@ -1292,62 +1326,60 @@ export function createAppServer() {
           return;
         }
 
+        // Automatic Student Profile & Curriculum Context Resolution (No prompt required!)
+        const studentUser = db.prepare('SELECT grade, board FROM users WHERE id = ?').get(studentId) as any;
+        const studentProfile = db.prepare('SELECT current_grade, current_board FROM student_profiles WHERE id = ?').get(studentId) as any;
+        const studentPref = db.prepare('SELECT explanation_depth FROM learning_preferences WHERE user_id = ?').get(studentId) as any;
+        const recentTopics = (db.prepare('SELECT topic FROM learning_activity WHERE user_id = ? ORDER BY created_at DESC LIMIT 6').all(studentId) as any[]).map(a => a.topic);
+
+        const studentContext = {
+          grade: typeof body.grade === 'number' ? body.grade : (body.level ? parseInt(String(body.level).replace(/\D/g, ''), 10) || null : null) || studentUser?.grade || (studentProfile?.current_grade ? parseInt(String(studentProfile.current_grade).replace(/\D/g, ''), 10) : 10),
+          board: sanitizeText(body.board || studentUser?.board || studentProfile?.current_board || 'CBSE', 40),
+          explanationDepth: (['concise', 'balanced', 'detailed', 'exam-prep'].includes(body.depth) ? body.depth : studentPref?.explanation_depth || 'detailed') as any,
+          recentTopics
+        };
+
+        // Automatic Universal Topic & Discipline Classification
+        const classification = classifyUniversalTopic(topic, studentContext);
+        const resolvedSubject = sanitizeText(body.subject && body.subject !== 'All' && body.subject !== 'auto' ? body.subject : classification.subject, 60);
+        const designMode = ['handwritten', 'infographic', 'formula_sheet', 'chapter_notes'].includes(body.designMode) ? body.designMode : classification.designModeDefault;
+
         let generated: any;
         try {
-          // Attempt unified Shared Knowledge Library note generation first
-          try {
-            const nexusRes = await fetch('http://127.0.0.1:8000/api/v1/nexus/notes/generate', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                topic,
-                subject: sanitizeText(body.subject || '', 60) || undefined,
-                grade: 10,
-                board: 'ICSE',
-                source_type: sanitizeText(body.sourceType || 'topic', 40),
-                source_content: sanitizeText(body.sourceText || '', 120000),
-                user_id: studentId,
-                depth: body.depth === 'concise' || body.depth === 'exam-prep' ? body.depth : 'detailed'
-              }),
-              signal: AbortSignal.timeout(4000)
-            });
-            if (nexusRes.ok) {
-              const data = (await nexusRes.json()) as any;
-              generated = {
-                title: data.title,
-                subject: data.subject,
-                topic: data.topic,
-                level: data.level,
-                depth: data.depth,
-                notebook: data.notebook,
-                content_markdown: data.content_markdown,
-                structured: data.structured,
-                flashcards: data.flashcards || [],
-                quiz: data.quiz || []
-              };
-            }
-          } catch (_nexusErr) {
-            // Fallback to local structured engine below
-          }
+          const hasUploadedSources = Boolean(body.sourceText || (Array.isArray(body.sources) && body.sources.length > 0) || body.youtubeUrl || body.webUrl || (Array.isArray(body.pdfPages) && body.pdfPages.length > 0));
 
-          if (!generated) {
+          if (!hasUploadedSources) {
+            generated = await generateUniversalEducationalNote({
+              topic,
+              subject: resolvedSubject,
+              context: studentContext,
+              designModeOverride: designMode,
+              depthOverride: studentContext.explanationDepth
+            });
+          } else {
             generated = await generateStructuredNote({
               topic,
-              subject: sanitizeText(body.subject || '', 60) || undefined,
-              level: sanitizeText(body.level || 'Grade 10', 40),
-              depth: body.depth === 'concise' || body.depth === 'exam-prep' ? body.depth : 'detailed',
+              subject: resolvedSubject,
+              level: sanitizeText(body.level || `Grade ${studentContext.grade} (${studentContext.board})`, 40),
+              depth: studentContext.explanationDepth === 'concise' || studentContext.explanationDepth === 'exam-prep' ? studentContext.explanationDepth : 'detailed',
               sourceText: sanitizeText(body.sourceText || '', 120000),
               sourceType: sanitizeText(body.sourceType || 'topic', 40),
-              notebook: sanitizeText(body.notebook || '', 60) || undefined,
+              notebook: sanitizeText(body.notebook || resolvedSubject, 60),
               sources: Array.isArray(body.sources) ? body.sources : undefined,
               youtubeUrl: body.youtubeUrl ? sanitizeText(body.youtubeUrl, 500) : undefined,
               webUrl: body.webUrl ? sanitizeText(body.webUrl, 500) : undefined,
               pdfPages: Array.isArray(body.pdfPages) ? body.pdfPages : undefined
             });
+
+            if (generated && generated.structured && !generated.structured.finalRevisionPage) {
+              generated.structured.finalRevisionPage = buildComprehensiveRevisionPage(classification, generated.content_markdown || '');
+              generated.structured.classification = classification;
+              generated.structured.designMode = designMode;
+            }
           }
         } catch (err: any) {
           sendJson(res, err?.statusCode || 422, {
-            error: err?.message || 'Source extraction failed.',
+            error: err?.message || 'Universal note generation failed.',
             status: 'failed',
             notebookCompleted: false,
             failedSources: err?.failedSources || []
@@ -1359,22 +1391,23 @@ export function createAppServer() {
         const now = new Date().toISOString();
 
         db.prepare(`
-          INSERT INTO notes (id, user_id, title, subject, topic, level, depth, notebook, content_markdown, structured_json, flashcards_json, quiz_json, source_type, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO notes (id, user_id, title, subject, topic, level, depth, notebook, content_markdown, structured_json, flashcards_json, quiz_json, source_type, design_mode, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
           id,
           studentId,
           generated.title || topic,
-          generated.subject || 'Science',
+          generated.subject || resolvedSubject,
           generated.topic || topic,
-          generated.level || 'Grade 10',
-          generated.depth || 'detailed',
-          generated.notebook || generated.subject || 'General',
+          generated.level || `Grade ${studentContext.grade} (${studentContext.board})`,
+          generated.depth || studentContext.explanationDepth,
+          generated.notebook || generated.subject || resolvedSubject,
           generated.content_markdown || '',
           JSON.stringify(generated.structured || {}),
           JSON.stringify(generated.flashcards || []),
           JSON.stringify(generated.quiz || []),
           sanitizeText(body.sourceType || 'topic', 40),
+          designMode,
           now,
           now
         );
@@ -1387,21 +1420,23 @@ export function createAppServer() {
           `res-${id}`,
           studentId,
           `${generated.title || topic} Notes`,
-          generated.subject || 'Science',
+          generated.subject || resolvedSubject,
           generated.topic || topic,
           generated.structured?.summary || generated.title || topic,
-          JSON.stringify({ noteId: id, markdown: generated.content_markdown || '' }),
+          JSON.stringify({ noteId: id, markdown: generated.content_markdown || '', designMode }),
           now
         );
 
         db.prepare(`
           INSERT INTO learning_activity (id, user_id, activity_type, title, subject, topic, duration_minutes, score_percent, resource_id, created_at)
           VALUES (?, ?, 'note', ?, ?, ?, 15, 95, ?, ?)
-        `).run(`act-${crypto.randomUUID().slice(0, 8)}`, studentId, `${generated.title} Notes`, generated.subject, generated.topic, id, now);
+        `).run(`act-${crypto.randomUUID().slice(0, 8)}`, studentId, `${generated.title || topic} Notes`, generated.subject || resolvedSubject, generated.topic || topic, id, now);
 
-        sendJson(res, 200, {
-          id,
+        sendJson(res, 201, {
           ...generated,
+          id,
+          classification,
+          designMode,
           created_at: now,
           updated_at: now
         });
@@ -1437,11 +1472,16 @@ export function createAppServer() {
           });
         }
 
+        const incomingMode = body.design_mode || body.designMode;
+        const designMode = incomingMode && ['handwritten', 'infographic', 'formula-sheet', 'formula_sheet', 'chapter-detailed', 'chapter_notes', 'detailed'].includes(incomingMode)
+          ? incomingMode
+          : (existing.design_mode || 'handwritten');
+
         db.prepare(`
           UPDATE notes
-          SET title = ?, subject = ?, notebook = ?, content_markdown = ?, structured_json = ?, flashcards_json = ?, quiz_json = ?, updated_at = ?
+          SET title = ?, subject = ?, notebook = ?, content_markdown = ?, structured_json = ?, flashcards_json = ?, quiz_json = ?, design_mode = ?, updated_at = ?
           WHERE id = ? AND user_id = ?
-        `).run(title, subject, notebook, markdown, nextStructured, flashcards, quiz, now, noteId, studentId);
+        `).run(title, subject, notebook, markdown, nextStructured, flashcards, quiz, designMode, now, noteId, studentId);
 
         const updated = db.prepare('SELECT * FROM notes WHERE id = ?').get(noteId) as any;
         sendJson(res, 200, enrichExistingNoteRow(updated));
@@ -1899,7 +1939,7 @@ export function createAppServer() {
           VALUES (?, ?, 'model3d', ?, ?, ?, 15, 94, ?, ?)
         `).run(`act-${crypto.randomUUID().slice(0, 8)}`, studentId, `3D Lab: ${topic}`, subject, topic, resId, now);
 
-        sendJson(res, 200, {
+        sendJson(res, 201, {
           resourceId: resId,
           topic,
           subject,

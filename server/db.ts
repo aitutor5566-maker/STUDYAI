@@ -493,6 +493,12 @@ export function initDatabase() {
     );
   `);
 
+  try {
+    db.prepare("ALTER TABLE notes ADD COLUMN design_mode TEXT DEFAULT 'handwritten'").run();
+  } catch {
+    // column already exists
+  }
+
   seedInitialDataIfEmpty();
   seedFamilyDataIfEmpty();
   seedAdminAndTesterDataIfEmpty();

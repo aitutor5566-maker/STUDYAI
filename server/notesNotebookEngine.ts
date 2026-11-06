@@ -1221,6 +1221,35 @@ export function exportNotebookDocument(note: any, format: 'html' | 'md' | 'doc' 
       : ''
   }
 
+  ${
+    s.finalRevisionPage
+      ? `<div style="page-break-before: always; margin-top: 36px; border-top: 3px double #0284C7; padding-top: 24px;">
+    <h2 style="color: #0369A1; font-size: 24px;">🌟 THE FINAL COMPREHENSIVE REVISION PAGE — ${note.title}</h2>
+    <div class="simple-box"><strong>Executive Revision Summary:</strong> ${s.finalRevisionPage.executiveSummary || ''}</div>
+
+    ${Array.isArray(s.finalRevisionPage.quickRevisionMatrix) && s.finalRevisionPage.quickRevisionMatrix.length > 0 ? `
+    <h3>Quick Revision Concept Matrix</h3>
+    <table>
+      <thead><tr><th>Core Concept</th><th>Governing Law / Principle</th><th>Exam Significance</th></tr></thead>
+      <tbody>
+        ${s.finalRevisionPage.quickRevisionMatrix.map((q: any) => `<tr><td><strong>${q.concept}</strong></td><td>${q.keyRuleOrPrinciple}</td><td>${q.examSignificance}</td></tr>`).join('')}
+      </tbody>
+    </table>` : ''}
+
+    ${Array.isArray(s.finalRevisionPage.keyFormulasOrDatesOrRules) && s.finalRevisionPage.keyFormulasOrDatesOrRules.length > 0 ? `
+    <h3>High-Yield Formulas, Dates &amp; Rules</h3>
+    <ul>
+      ${s.finalRevisionPage.keyFormulasOrDatesOrRules.map((k: any) => `<li><strong>${k.label}:</strong> <code>${k.formulaOrDetail}</code> <em>(${k.unitsOrSignificance})</em></li>`).join('')}
+    </ul>` : ''}
+
+    ${Array.isArray(s.finalRevisionPage.modelExamQuestions) && s.finalRevisionPage.modelExamQuestions.length > 0 ? `
+    <h3>Model Board Exam Questions &amp; Answer Guidelines</h3>
+    ${s.finalRevisionPage.modelExamQuestions.map((eq: any, idx: number) => `<div style="margin-bottom: 12px; background: #F8FAFC; padding: 10px; border-radius: 6px;"><strong>[${eq.marks} Marks] ${eq.question}</strong><br/><em>Answer Key:</em> ${eq.answerKey}</div>`).join('')}
+    ` : ''}
+  </div>`
+      : ''
+  }
+
   <h2>8. Sources, Citations &amp; Coverage Inventory</h2>
   <ul>
     ${refs
