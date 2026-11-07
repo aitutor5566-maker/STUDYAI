@@ -2,21 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
-  FileText,
-  Image as ImageIcon,
-  Video,
   Box,
-  Gamepad2,
   Rocket,
-  HelpCircle,
-  Volume2,
   Trash2,
   ExternalLink,
-  X
+  X,
+  Sparkles
 } from 'lucide-react';
 import { TopBrandBar } from '../components/GlassNav';
 import { FuturisticIcon, FuturisticIconName } from '../components/FuturisticIcons';
 import { useLearning } from '../context/LearningContext';
+import { LanguageLearningSection } from '../components/LanguageLearningSection';
+import { EducationalGamesSection } from '../components/EducationalGamesSection';
 
 export const LibraryPage: React.FC = () => {
   const navigate = useNavigate();
@@ -115,11 +112,11 @@ export const LibraryPage: React.FC = () => {
   ];
 
   const getVisualGradient = (type: string) => {
-    if (type === 'model3d') return 'linear-gradient(135deg, #1E1B4B 0%, #312E81 100%)';
-    if (type === 'video') return 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%)';
-    if (type === 'note') return 'linear-gradient(135deg, #064E3B 0%, #047857 100%)';
-    if (type === 'image') return 'linear-gradient(135deg, #7C2D12 0%, #EA580C 100%)';
-    return 'linear-gradient(135deg, #374151 0%, #1F2937 100%)';
+    if (type === 'model3d') return 'linear-gradient(135deg, #FF6A00 0%, #E85D00 100%)';
+    if (type === 'video') return 'linear-gradient(135deg, #FF7A1A 0%, #EA580C 100%)';
+    if (type === 'note') return 'linear-gradient(135deg, #FF8533 0%, #FF6A00 100%)';
+    if (type === 'image') return 'linear-gradient(135deg, #FF6A00 0%, #C2410C 100%)';
+    return 'linear-gradient(135deg, #FF7A1A 0%, #E85D00 100%)';
   };
 
   return (
@@ -127,20 +124,40 @@ export const LibraryPage: React.FC = () => {
       <TopBrandBar showBack />
 
       {/* Title */}
-      <section style={{ marginBottom: 18 }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#202124' }}>Library</h1>
-        <p style={{ fontSize: '0.88rem', color: '#6B7280' }}>All your saved learning materials in one place</p>
+      <section style={{ marginBottom: 20 }}>
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '4px 12px',
+            borderRadius: 999,
+            background: '#FFF3E8',
+            border: '1px solid rgba(255, 106, 0, 0.24)',
+            color: '#E85D00',
+            fontSize: '0.72rem',
+            fontWeight: 800,
+            marginBottom: 8
+          }}
+        >
+          <Sparkles size={13} color="#FF6A00" />
+          <span>UNIFIED KNOWLEDGE &amp; STUDIO REPOSITORY</span>
+        </div>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#202124', letterSpacing: '-0.02em' }}>Library</h1>
+        <p style={{ fontSize: '0.92rem', color: '#6B7280', marginTop: 2 }}>
+          All your saved learning materials, multilingual speaking labs, examinations, and interactive games in one place.
+        </p>
       </section>
 
       {/* Search & Filter Pills */}
-      <section style={{ marginBottom: 20 }}>
-        <div className="glass-input-wrap" style={{ marginBottom: 12 }}>
-          <Search size={18} color="#FF6A00" />
+      <section style={{ marginBottom: 22 }}>
+        <div className="glass-input-wrap" style={{ marginBottom: 14 }}>
+          <Search size={19} color="#FF6A00" />
           <input
             className="glass-input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search library..."
+            placeholder="Search library resources, notes, 3D models, quizzes..."
             aria-label="Search saved library resources"
           />
         </div>
@@ -165,15 +182,19 @@ export const LibraryPage: React.FC = () => {
         </div>
       </section>
 
+      {/* MANDATORY PROMINENT SECTION: SPEAKING SKILLS & LANGUAGE LEARNING */}
+      <LanguageLearningSection />
+
       {/* PROMINENT MANDATORY FEATURE: WEEKLY EXAMINATIONS & MOCK TESTS */}
       <section
+        className="glass-card"
         style={{
           marginBottom: 24,
-          padding: 20,
-          borderRadius: 22,
-          background: 'linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%)',
-          border: '2px solid rgba(255, 106, 0, 0.35)',
-          boxShadow: '0 8px 24px rgba(255, 106, 0, 0.08)',
+          padding: 24,
+          borderRadius: 24,
+          background: 'linear-gradient(135deg, #FFFFFF 0%, #FFF8F2 55%, #FFF3E8 100%)',
+          border: '1.5px solid rgba(255, 106, 0, 0.3)',
+          boxShadow: '0 14px 36px -8px rgba(255, 106, 0, 0.12)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -184,41 +205,42 @@ export const LibraryPage: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div
             style={{
-              width: 52,
-              height: 52,
-              borderRadius: 16,
-              background: 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)',
+              width: 56,
+              height: 56,
+              borderRadius: 18,
+              background: 'linear-gradient(135deg, #FF7A1A 0%, #FF6A00 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#FFFFFF',
-              boxShadow: '0 4px 14px rgba(255, 106, 0, 0.35)'
+              boxShadow: '0 8px 20px rgba(255, 106, 0, 0.32)'
             }}
           >
-            <FuturisticIcon name="quiz" size={32} />
+            <FuturisticIcon name="quiz" size={34} />
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
               <span
                 style={{
-                  padding: '2px 8px',
-                  borderRadius: 6,
+                  padding: '3px 10px',
+                  borderRadius: 999,
                   background: '#FF6A00',
                   color: '#FFFFFF',
-                  fontSize: '0.72rem',
-                  fontWeight: 800
+                  fontSize: '0.7rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.04em'
                 }}
               >
-                MANDATORY FEATURE
+                EXAMINATION CENTER
               </span>
-              <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 700 }}>
+              <span style={{ fontSize: '0.76rem', color: '#E85D00', fontWeight: 700 }}>
                 A. Weekly Mock Exams • B. Topic-Based 40-Mark Tests
               </span>
             </div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#1F2937', margin: '0 0 4px 0' }}>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#202124', margin: '0 0 4px 0' }}>
               WEEKLY EXAMINATIONS &amp; MOCK TESTS
             </h2>
-            <p style={{ fontSize: '0.85rem', color: '#4B5563', margin: 0 }}>
+            <p style={{ fontSize: '0.86rem', color: '#6B7280', margin: 0 }}>
               Attempt official scheduled weekly mock exams or generate customized 40-mark practice tests across 3 configurations.
             </p>
           </div>
@@ -228,19 +250,22 @@ export const LibraryPage: React.FC = () => {
           type="button"
           onClick={() => openExamModal(activeTopic, 'Science')}
           className="btn-orange"
-          style={{ padding: '12px 24px', fontSize: '0.92rem', fontWeight: 800 }}
+          style={{ padding: '12px 24px', fontSize: '0.92rem' }}
         >
-          Open Examination Center ➔
+          Open Examination Center →
         </button>
       </section>
 
-      {/* 6 Category Count Cards (matching reference UI grid) */}
+      {/* EDUCATIONAL GAMES LIBRARY — 7 CORE GAMES MODULE */}
+      <EducationalGamesSection />
+
+      {/* Category Count Cards */}
       <section
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-          gap: 12,
-          marginBottom: 24
+          gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))',
+          gap: 14,
+          marginBottom: 26
         }}
       >
         {categoryCards.map((c) => {
@@ -257,11 +282,12 @@ export const LibraryPage: React.FC = () => {
               }}
               className="glass-card glass-card-interactive"
               style={{
-                padding: '14px 16px',
+                padding: '16px 18px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 12,
-                border: isSelected ? '2px solid #FF6A00' : undefined
+                background: isSelected ? '#FFF3E8' : '#FFFFFF',
+                border: isSelected ? '2px solid #FF6A00' : '1.5px solid rgba(255, 106, 0, 0.16)'
               }}
             >
               <div style={{ flexShrink: 0 }}>
@@ -269,7 +295,7 @@ export const LibraryPage: React.FC = () => {
               </div>
               <div>
                 <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#202124' }}>{c.label}</div>
-                <div style={{ fontSize: '0.76rem', color: '#6B7280', fontWeight: 600 }}>{c.count} items</div>
+                <div style={{ fontSize: '0.76rem', color: isSelected ? '#E85D00' : '#6B7280', fontWeight: 700 }}>{c.count} items</div>
               </div>
             </div>
           );
@@ -277,13 +303,13 @@ export const LibraryPage: React.FC = () => {
       </section>
 
       {/* Recently Added Persisted Resources */}
-      <section style={{ marginBottom: 26 }}>
+      <section style={{ marginBottom: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <h2 style={{ fontSize: '1.12rem', fontWeight: 800, color: '#202124' }}>
+          <h2 style={{ fontSize: '1.16rem', fontWeight: 800, color: '#202124' }}>
             Recently Added ({items.length})
           </h2>
           {typeFilter !== 'all' && (
-            <button type="button" onClick={() => setTypeFilter('all')} style={{ border: 'none', background: 'transparent', color: '#FF6A00', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>
+            <button type="button" onClick={() => setTypeFilter('all')} style={{ border: 'none', background: 'transparent', color: '#FF6A00', fontWeight: 800, fontSize: '0.84rem', cursor: 'pointer' }}>
               Show All →
             </button>
           )}
@@ -291,20 +317,20 @@ export const LibraryPage: React.FC = () => {
 
         {loading ? (
           <div className="glass-card" style={{ padding: 28, textAlign: 'center', color: '#6B7280' }}>
-            Loading saved resources from SQLite...
+            Loading saved resources...
           </div>
         ) : items.length === 0 ? (
           <div className="glass-card" style={{ padding: 28, textAlign: 'center', color: '#6B7280' }}>
             No saved resources found for this filter. Save notes, 3D models, diagrams, or videos to view them here!
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 18 }}>
             {items.map((item) => (
               <div
                 key={item.id}
                 onClick={() => handleOpenResource(item)}
                 className="glass-card glass-card-interactive"
-                style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+                style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: '#FFFFFF' }}
               >
                 <div>
                   {/* Visual Preview Banner */}
@@ -321,7 +347,7 @@ export const LibraryPage: React.FC = () => {
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ padding: '3px 10px', borderRadius: 999, background: 'rgba(255,255,255,0.2)', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                      <span style={{ padding: '4px 10px', borderRadius: 999, background: 'rgba(255,255,255,0.24)', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase' }}>
                         {item.resource_type}
                       </span>
                       <button
@@ -333,8 +359,8 @@ export const LibraryPage: React.FC = () => {
                           height: 28,
                           borderRadius: '50%',
                           border: 'none',
-                          background: 'rgba(0,0,0,0.35)',
-                          color: '#FCA5A5',
+                          background: 'rgba(255,255,255,0.22)',
+                          color: '#FFFFFF',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -344,22 +370,22 @@ export const LibraryPage: React.FC = () => {
                         <Trash2 size={13} />
                       </button>
                     </div>
-                    <div style={{ fontWeight: 800, fontSize: '0.96rem', color: '#F8FAFC' }}>{item.title}</div>
+                    <div style={{ fontWeight: 800, fontSize: '0.96rem', color: '#FFFFFF' }}>{item.title}</div>
                   </div>
 
-                  <div style={{ padding: 14 }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#FF6A00', marginBottom: 4 }}>
+                  <div style={{ padding: 16 }}>
+                    <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#FF6A00', marginBottom: 6 }}>
                       {item.subject} • {item.topic}
                     </div>
-                    <p style={{ fontSize: '0.8rem', color: '#6B7280', lineHeight: 1.45 }}>
+                    <p style={{ fontSize: '0.82rem', color: '#6B7280', lineHeight: 1.5 }}>
                       {item.summary}
                     </p>
                   </div>
                 </div>
 
-                <div style={{ padding: '0 14px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.72rem', color: '#9CA3AF', fontWeight: 600 }}>Saved in Library</span>
-                  <span style={{ fontSize: '0.78rem', color: '#FF6A00', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ padding: '0 16px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 600 }}>Saved in Library</span>
+                  <span style={{ fontSize: '0.8rem', color: '#FF6A00', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 4 }}>
                     Open <ExternalLink size={13} />
                   </span>
                 </div>
@@ -369,25 +395,25 @@ export const LibraryPage: React.FC = () => {
         )}
       </section>
 
-      {/* Persisted Resource Inspector Modal (opens exact saved content without regenerating!) */}
+      {/* Persisted Resource Inspector Modal */}
       {inspectedResource && (
         <div className="glass-modal-overlay" role="dialog" aria-modal="true" aria-label="Saved Resource Viewer">
           <div className="glass-modal-content" style={{ maxWidth: 680 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <div>
-                <span style={{ padding: '3px 10px', borderRadius: 999, background: '#FFF3E8', color: '#E85D00', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                <span style={{ padding: '4px 12px', borderRadius: 999, background: '#FFF3E8', color: '#E85D00', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase' }}>
                   Saved {inspectedResource.resource_type} • {inspectedResource.subject}
                 </span>
-                <h3 style={{ fontSize: '1.22rem', fontWeight: 800, marginTop: 6 }}>{inspectedResource.title}</h3>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#202124', marginTop: 6 }}>{inspectedResource.title}</h3>
               </div>
               <button type="button" onClick={() => setInspectedResource(null)} className="btn-glass" style={{ padding: '6px 10px' }}>
                 <X size={16} />
               </button>
             </div>
 
-            <div style={{ padding: 16, borderRadius: 16, background: '#FFFDFB', border: '1px solid rgba(255,106,0,0.22)', marginBottom: 16 }}>
-              <div style={{ fontWeight: 700, fontSize: '0.88rem', marginBottom: 8 }}>Persisted Summary:</div>
-              <p style={{ fontSize: '0.88rem', color: '#374151', lineHeight: 1.55, marginBottom: 12 }}>{inspectedResource.summary}</p>
+            <div style={{ padding: 18, borderRadius: 18, background: '#FFFBF7', border: '1.5px solid rgba(255,106,0,0.22)', marginBottom: 18 }}>
+              <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#202124', marginBottom: 8 }}>Persisted Summary:</div>
+              <p style={{ fontSize: '0.88rem', color: '#6B7280', lineHeight: 1.55, marginBottom: 12 }}>{inspectedResource.summary}</p>
 
               {inspectedResource.media_url && inspectedResource.resource_type === 'image' && (
                 <img
@@ -398,7 +424,7 @@ export const LibraryPage: React.FC = () => {
               )}
 
               {inspectedResource.content?.markdown && (
-                <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: '0.84rem', background: '#FFFFFF', padding: 12, borderRadius: 12, border: '1px solid rgba(0,0,0,0.06)' }}>
+                <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: '0.84rem', background: '#FFFFFF', padding: 14, borderRadius: 14, border: '1px solid rgba(255,106,0,0.16)', color: '#202124' }}>
                   {inspectedResource.content.markdown}
                 </pre>
               )}
@@ -406,8 +432,8 @@ export const LibraryPage: React.FC = () => {
               {inspectedResource.content?.scenes && (
                 <div style={{ display: 'grid', gap: 8 }}>
                   {inspectedResource.content.scenes.map((sc: any, idx: number) => (
-                    <div key={idx} style={{ padding: 10, borderRadius: 10, background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.06)', fontSize: '0.82rem' }}>
-                      <strong>Scene {idx + 1} — {sc.title}:</strong> {sc.narration}
+                    <div key={idx} style={{ padding: 10, borderRadius: 12, background: '#FFFFFF', border: '1px solid rgba(255,106,0,0.16)', fontSize: '0.82rem', color: '#202124' }}>
+                      <strong style={{ color: '#FF6A00' }}>Scene {idx + 1} — {sc.title}:</strong> {sc.narration}
                     </div>
                   ))}
                 </div>
@@ -424,28 +450,28 @@ export const LibraryPage: React.FC = () => {
       )}
 
       {/* Space Battle & 3D Lab Feature Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
-        <section className="hero-glass-banner" style={{ padding: 22, border: '1.5px solid rgba(56, 189, 248, 0.45)', background: 'linear-gradient(135deg, rgba(8, 18, 44, 0.08) 0%, rgba(56, 189, 248, 0.08) 100%)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 18 }}>
+        <section className="hero-glass-banner" style={{ padding: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <div
                 style={{
-                  width: 52,
-                  height: 52,
+                  width: 54,
+                  height: 54,
                   borderRadius: 16,
-                  background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                  background: 'linear-gradient(135deg, #FF7A1A 0%, #FF6A00 100%)',
                   color: '#FFFFFF',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 8px 20px rgba(56, 189, 248, 0.35)'
+                  boxShadow: '0 8px 20px rgba(255, 106, 0, 0.3)'
                 }}
               >
                 <Rocket size={26} />
               </div>
               <div>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#202124' }}>STUDYAI Space Battle</h3>
-                <p style={{ fontSize: '0.86rem', color: '#6B7280' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#202124' }}>STUDYAI Space Battle</h3>
+                <p style={{ fontSize: '0.86rem', color: '#6B7280', marginTop: 2 }}>
                   Vertical 3D arcade space shooter — shoot enemy fleets carrying correct answers &amp; dodge attacks
                 </p>
               </div>
@@ -454,20 +480,19 @@ export const LibraryPage: React.FC = () => {
               type="button"
               onClick={() => openGamesHub(activeTopic || 'Human Body', 'Biology', 'space_shooter')}
               className="btn-orange"
-              style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', boxShadow: '0 6px 18px rgba(3, 105, 161, 0.35)' }}
             >
               <span>Play Space Battle 🚀</span>
             </button>
           </div>
         </section>
 
-        <section className="hero-glass-banner" style={{ padding: 22 }}>
+        <section className="hero-glass-banner" style={{ padding: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <div
                 style={{
-                  width: 52,
-                  height: 52,
+                  width: 54,
+                  height: 54,
                   borderRadius: 16,
                   background: 'linear-gradient(135deg, #FF8533 0%, #FF6A00 100%)',
                   color: '#FFFFFF',
@@ -480,14 +505,14 @@ export const LibraryPage: React.FC = () => {
                 <Box size={26} />
               </div>
               <div>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#202124' }}>3D Lab</h3>
-                <p style={{ fontSize: '0.86rem', color: '#6B7280' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#202124' }}>3D Lab</h3>
+                <p style={{ fontSize: '0.86rem', color: '#6B7280', marginTop: 2 }}>
                   Explore interactive 3D models — Human Heart, Solar System, DNA Helix &amp; Chloroplasts
                 </p>
               </div>
             </div>
             <button type="button" onClick={() => open3DLab('Human Heart & Cardiac Cycle', 'human_heart')} className="btn-orange">
-              <span>Explore</span>
+              <span>Explore 3D Lab →</span>
             </button>
           </div>
         </section>

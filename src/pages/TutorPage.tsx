@@ -1025,7 +1025,7 @@ export const TutorPage: React.FC = () => {
               borderRadius: 999,
               border: 'none',
               background: teachingMode === 'exam'
-                ? 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)'
+                ? 'linear-gradient(135deg, #FF6A00 0%, #E85D00 100%)'
                 : 'transparent',
               color: teachingMode === 'exam' ? '#FFFFFF' : '#6B7280',
               fontWeight: 800,
@@ -1034,7 +1034,7 @@ export const TutorPage: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: 8,
-              boxShadow: teachingMode === 'exam' ? '0 4px 12px rgba(2,132,199,0.35)' : 'none',
+              boxShadow: teachingMode === 'exam' ? '0 6px 16px rgba(255,106,0,0.32)' : 'none',
               transition: 'all 0.2s ease'
             }}
           >
@@ -1054,16 +1054,16 @@ export const TutorPage: React.FC = () => {
             padding: '9px 18px',
             borderRadius: 999,
             background: '#FFFFFF',
-            border: '1.5px solid rgba(124, 58, 237, 0.35)',
-            color: '#6D28D9',
+            border: '1.5px solid rgba(255, 106, 0, 0.35)',
+            color: '#E85D00',
             fontWeight: 800,
             fontSize: '0.84rem',
             cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(124, 58, 237, 0.1)',
+            boxShadow: '0 4px 12px rgba(255, 106, 0, 0.1)',
             transition: 'all 0.2s ease'
           }}
         >
-          <Sliders size={16} color="#7C3AED" />
+          <Sliders size={16} color="#FF6A00" />
           <span>Learning Profile</span>
         </button>
 
@@ -1505,11 +1505,11 @@ export const TutorPage: React.FC = () => {
                     style={{
                       fontSize: '0.73rem',
                       fontWeight: 700,
-                      color: teachingMode === 'normal' ? '#EA580C' : '#0284C7',
-                      background: teachingMode === 'normal' ? '#FFF7ED' : '#F0F9FF',
+                      color: '#E85D00',
+                      background: '#FFF3E8',
                       padding: '4px 10px',
                       borderRadius: 999,
-                      border: `1px solid ${teachingMode === 'normal' ? 'rgba(255,106,0,0.25)' : 'rgba(2,132,199,0.25)'}`
+                      border: '1px solid rgba(255,106,0,0.28)'
                     }}
                   >
                     {teachingMode === 'normal' ? '🌱 Normal Learning Mode' : '🎯 Exam Prep Mode'}
@@ -1526,13 +1526,11 @@ export const TutorPage: React.FC = () => {
                   padding: '9px 15px',
                   borderRadius: 14,
                   marginBottom: 16,
-                  background: teachingMode === 'normal'
-                    ? 'linear-gradient(90deg, #FFF7ED 0%, #FFEDD5 100%)'
-                    : 'linear-gradient(90deg, #F0F9FF 0%, #E0F2FE 100%)',
-                  border: `1.5px solid ${teachingMode === 'normal' ? '#FDBA74' : '#7DD3FC'}`
+                  background: 'linear-gradient(90deg, #FFF3E8 0%, #FFE4CC 100%)',
+                  border: '1.5px solid rgba(255, 106, 0, 0.3)'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem', fontWeight: 800, color: teachingMode === 'normal' ? '#C2410C' : '#0369A1' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem', fontWeight: 800, color: '#E85D00' }}>
                   <span>{teachingMode === 'normal' ? '🌱' : '⚡'}</span>
                   <span>
                     {teachingMode === 'normal'
@@ -1544,7 +1542,7 @@ export const TutorPage: React.FC = () => {
                   type="button"
                   onClick={() => setTeachingMode(teachingMode === 'normal' ? 'exam' : 'normal')}
                   className="btn-glass"
-                  style={{ fontSize: '0.74rem', padding: '4px 12px', background: '#FFFFFF', color: teachingMode === 'normal' ? '#EA580C' : '#0284C7', fontWeight: 800 }}
+                  style={{ fontSize: '0.74rem', padding: '4px 12px', background: '#FFFFFF', color: '#E85D00', fontWeight: 800 }}
                 >
                   Switch to {teachingMode === 'normal' ? 'Exam Prep ⚡' : 'Normal Mode 🌱'}
                 </button>

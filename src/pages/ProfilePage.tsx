@@ -318,9 +318,9 @@ export const ProfilePage: React.FC = () => {
         style={{
           padding: 22,
           marginBottom: 20,
-          background: 'linear-gradient(135deg, #FAF5FF 0%, #FFFFFF 100%)',
-          border: '1.5px solid rgba(124, 58, 237, 0.25)',
-          boxShadow: '0 4px 16px rgba(124, 58, 237, 0.06)'
+          background: 'linear-gradient(135deg, #FFF3E8 0%, #FFFFFF 100%)',
+          border: '1.5px solid rgba(255, 106, 0, 0.25)',
+          boxShadow: '0 8px 24px rgba(255, 106, 0, 0.08)'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
@@ -330,18 +330,18 @@ export const ProfilePage: React.FC = () => {
                 width: 44,
                 height: 44,
                 borderRadius: 14,
-                background: 'linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)',
+                background: 'linear-gradient(135deg, #FF6A00 0%, #E85D00 100%)',
                 color: '#FFFFFF',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(124, 58, 237, 0.25)'
+                boxShadow: '0 6px 16px rgba(255, 106, 0, 0.25)'
               }}
             >
               <Brain size={22} />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.08rem', fontWeight: 800, color: '#1F2937', margin: 0 }}>
+              <h2 style={{ fontSize: '1.08rem', fontWeight: 800, color: '#202124', margin: 0 }}>
                 Personalised Adaptive Learning Profile
               </h2>
               <p style={{ fontSize: '0.82rem', color: '#6B7280', margin: '2px 0 0' }}>
@@ -355,7 +355,7 @@ export const ProfilePage: React.FC = () => {
             style={{
               padding: '9px 18px',
               borderRadius: 999,
-              background: 'linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)',
+              background: 'linear-gradient(135deg, #FF6A00 0%, #E85D00 100%)',
               color: '#FFFFFF',
               border: 'none',
               fontWeight: 800,
@@ -364,7 +364,7 @@ export const ProfilePage: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: 8,
-              boxShadow: '0 4px 12px rgba(124, 58, 237, 0.25)'
+              boxShadow: '0 6px 16px rgba(255, 106, 0, 0.25)'
             }}
           >
             <Sliders size={16} />
@@ -374,7 +374,7 @@ export const ProfilePage: React.FC = () => {
 
         {/* Profile Highlights Pills */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
-          <span style={{ fontSize: '0.78rem', padding: '5px 12px', borderRadius: 999, background: '#EDE9FE', color: '#6D28D9', fontWeight: 700 }}>
+          <span style={{ fontSize: '0.78rem', padding: '5px 12px', borderRadius: 999, background: '#FFF3E8', color: '#E85D00', border: '1px solid rgba(255,106,0,0.25)', fontWeight: 700 }}>
             ⚡ Style: {adaptiveProfile?.explanation_style ? String(adaptiveProfile.explanation_style).toUpperCase() : 'BALANCED'}
           </span>
           <span style={{ fontSize: '0.78rem', padding: '5px 12px', borderRadius: 999, background: adaptiveProfile?.reading_difficulty ? '#FEE2E2' : '#DCFCE7', color: adaptiveProfile?.reading_difficulty ? '#B91C1C' : '#15803D', fontWeight: 700 }}>
@@ -384,7 +384,7 @@ export const ProfilePage: React.FC = () => {
             ✍️ Spelling Support: {adaptiveProfile?.spelling_difficulty ? 'Gentle guidance' : 'Standard'}
           </span>
           {Array.isArray(adaptiveProfile?.difficult_subjects) && adaptiveProfile.difficult_subjects.length > 0 && (
-            <span style={{ fontSize: '0.78rem', padding: '5px 12px', borderRadius: 999, background: '#EFF6FF', color: '#1D4ED8', fontWeight: 700 }}>
+            <span style={{ fontSize: '0.78rem', padding: '5px 12px', borderRadius: 999, background: '#FFF3E8', color: '#FF6A00', fontWeight: 700 }}>
               🎯 Focused Subjects: {adaptiveProfile.difficult_subjects.join(', ')}
             </span>
           )}
@@ -485,24 +485,24 @@ export const ProfilePage: React.FC = () => {
               padding: 20,
               textDecoration: 'none',
               display: 'block',
-              background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(255, 107, 0, 0.08) 100%)',
-              border: '1px solid rgba(124, 58, 237, 0.25)'
+              background: 'linear-gradient(135deg, #FFFFFF 0%, #FFF3E8 100%)',
+              border: '1.5px solid rgba(255, 106, 0, 0.25)'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <div style={{ width: 46, height: 46, borderRadius: 14, background: '#7C3AED', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 14px rgba(124,58,237,0.3)' }}>
+                <div style={{ width: 46, height: 46, borderRadius: 14, background: 'linear-gradient(135deg, #FF6A00 0%, #E85D00 100%)', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 16px rgba(255,106,0,0.25)' }}>
                   <Shield size={22} />
                 </div>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#202124', margin: 0 }}>Super Admin Console</h3>
-                    <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#7C3AED', backgroundColor: 'rgba(124,58,237,0.12)', padding: '2px 6px', borderRadius: 4 }}>MFA REQUIRED</span>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#E85D00', backgroundColor: '#FFF3E8', border: '1px solid rgba(255,106,0,0.25)', padding: '2px 6px', borderRadius: 4 }}>MFA REQUIRED</span>
                   </div>
                   <p style={{ fontSize: '0.82rem', color: '#6B7280', margin: '4px 0 0 0' }}>Platform governance, AI costs, and security audit logs</p>
                 </div>
               </div>
-              <ChevronRight size={20} color="#7C3AED" />
+              <ChevronRight size={20} color="#FF6A00" />
             </div>
           </a>
         </div>

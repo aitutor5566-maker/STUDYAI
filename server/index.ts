@@ -50,6 +50,29 @@ import {
   createStudentInvitation as createSupabaseStudentInvitation,
   acceptStudentInvitation as acceptSupabaseStudentInvitation
 } from './supabase.ts';
+import {
+  SUPPORTED_LANGUAGES,
+  getLanguageMeta,
+  generateCurriculumForLanguage,
+  evaluateStudentPronunciation,
+  evaluatePlacementTest
+} from './languageLearningEngine.ts';
+import {
+  PICTURE_VOCABULARY_CATEGORIES,
+  getPictureVocabularyForLanguage,
+  LANGUAGE_SCRIPT_DECKS,
+  generateInteractiveLanguageGamesSuite,
+  generateListeningActivitiesForLanguage,
+  AI_CONVERSATION_SCENARIOS
+} from './animatedLanguageEcosystem.ts';
+import {
+  EDUCATIONAL_GAMES_CATALOG,
+  generateGameQuestions,
+  validateStudentAnswer,
+  inferSubjectFromTopic as inferGameSubject,
+  type GameSlug,
+  type GameDifficulty
+} from './educationalGamesEngine.ts';
 
 initDatabase();
 
@@ -2019,6 +2042,868 @@ export function createAppServer() {
         return;
       }
 
+      // ==============================================================================
+      // 10B. AI SPEAKING SKILLS & MULTILINGUAL LANGUAGE LEARNING LIBRARY ENDPOINTS
+      // ==============================================================================
+
+      const formatEnrolment = (e: any) => {
+        if (!e) return null;
+        const targetMeta = getLanguageMeta(e.language_code);
+        const supportMeta = getLanguageMeta(e.support_language_code || 'te');
+        return {
+          ...e,
+          target_language_code: e.language_code,
+          languageCode: e.language_code,
+          target_language_name: targetMeta.name,
+          target_native_name: targetMeta.nativeName,
+          support_language_code: e.support_language_code,
+          supportLanguageCode: e.support_language_code,
+          support_language_name: supportMeta.name,
+          current_stage: e.current_stage,
+          currentStage: e.current_stage,
+          current_lesson: e.current_lesson_number,
+          currentLessonNumber: e.current_lesson_number,
+          progress_percent: e.progress_percentage,
+          progressPercentage: e.progress_percentage,
+          is_active: e.is_primary_active,
+          isPrimaryActive: e.is_primary_active,
+          vocabulary_score: Math.min(100, (e.vocabulary_words_learned || 0) * 10),
+          grammar_score: Math.min(100, (e.grammar_concepts_learned || 0) * 15),
+          speaking_score: e.average_speaking_accuracy || 0,
+          listening_score: Math.min(100, (e.listening_exercises_completed || 0) * 20),
+          reading_score: Math.min(100, (e.reading_exercises_completed || 0) * 20),
+          writing_score: Math.min(100, (e.writing_exercises_completed || 0) * 20),
+          streak_days: 5
+        };
+      };
+
+      // 1. Get List of Supported Languages
+      if (pathname === '/api/languages' && req.method === 'GET') {
+        const rows = db.prepare('SELECT * FROM supported_languages WHERE is_active = 1 ORDER BY code ASC').all() as any[];
+        const languages = rows.length > 0 ? rows : SUPPORTED_LANGUAGES;
+        sendJson(res, 200, {
+          languages,
+          count: languages.length,
+          extensible: true
+        });
+        return;
+      }
+
+      // 2. Get Student's Language Enrolments & Independent Progress
+      if (pathname === '/api/languages/enrolments' && req.method === 'GET') {
+        const enrolments = db.prepare(`
+          SELECT * FROM student_language_enrolments
+          WHERE user_id = ?
+          ORDER BY is_primary_active DESC, updated_at DESC
+        `).all(studentId) as any[];
+
+        const formattedEnrolments = enrolments.map(formatEnrolment);
+        const active = formattedEnrolments.find((e) => e.is_active === 1) || formattedEnrolments[0] || null;
+        const completedCourses = formattedEnrolments.filter((e) => e.is_course_completed === 1);
+        const totalWords = enrolments.reduce((sum, e) => sum + (e.vocabulary_words_learned || 0), 0);
+        const totalSpeaking = enrolments.reduce((sum, e) => sum + (e.speaking_exercises_completed || 0), 0);
+
+        sendJson(res, 200, {
+          enrolments: formattedEnrolments,
+          activeEnrolment: active,
+          completedCourses,
+          stats: {
+            enrolledCount: enrolments.length,
+            completedCoursesCount: completedCourses.length,
+            totalWordsLearned: totalWords,
+            totalSpeakingExercises: totalSpeaking
+          }
+        });
+        return;
+      }
+
+      // 3. Enrol in a Language (or update support language / starting stage)
+      if (pathname === '/api/languages/enrol' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const langCode = sanitizeText(body.languageCode || body.target_language_code || body.targetLanguageCode || 'en', 10).toLowerCase();
+        const supportLang = sanitizeText(body.supportLanguageCode || body.support_language_code || 'te', 10).toLowerCase();
+        const startingStage = Math.max(1, Math.min(8, Number(body.startingStage || body.starting_stage) || 1));
+        const now = new Date().toISOString();
+
+        // Check if language is supported
+        const meta = getLanguageMeta(langCode);
+
+        // Deactivate previous active primary language so this becomes active
+        db.prepare('UPDATE student_language_enrolments SET is_primary_active = 0 WHERE user_id = ?').run(studentId);
+
+        // Check if existing enrolment
+        const existing = db.prepare('SELECT * FROM student_language_enrolments WHERE user_id = ? AND language_code = ?').get(studentId, langCode) as any;
+
+        let enrolmentId = existing?.id;
+        if (existing) {
+          db.prepare(`
+            UPDATE student_language_enrolments
+            SET support_language_code = ?, is_primary_active = 1, updated_at = ?
+            WHERE id = ?
+          `).run(supportLang, now, existing.id);
+        } else {
+          enrolmentId = `enrol-${crypto.randomUUID().slice(0, 8)}`;
+          db.prepare(`
+            INSERT INTO student_language_enrolments (
+              id, user_id, language_code, support_language_code, is_primary_active,
+              current_stage, current_lesson_number, skill_level, completed_lessons_count, total_lessons_count,
+              progress_percentage, vocabulary_words_learned, grammar_concepts_learned,
+              speaking_exercises_completed, listening_exercises_completed, reading_exercises_completed, writing_exercises_completed,
+              average_speaking_accuracy, is_course_completed, last_studied_at, created_at, updated_at
+            ) VALUES (
+              ?, ?, ?, ?, 1,
+              ?, 1, ?, 0, 24,
+              ?, 0, 0,
+              0, 0, 0, 0,
+              0, 0, ?, ?, ?
+            )
+          `).run(
+            enrolmentId, studentId, langCode, supportLang,
+            startingStage, `Stage ${startingStage} Learner`,
+            Math.round(((startingStage - 1) * 3 / 24) * 100),
+            now, now, now
+          );
+
+          // Award welcome achievement
+          db.prepare(`
+            INSERT OR IGNORE INTO student_language_achievements (
+              id, user_id, language_code, achievement_key, title, description, icon_name, badge_color, earned_at
+            ) VALUES (?, ?, ?, 'first_enroll', ?, ?, 'award', '#FF6A00', ?)
+          `).run(
+            `ach-${crypto.randomUUID().slice(0, 8)}`,
+            studentId, langCode,
+            `Enrolled in ${meta.name}!`,
+            `Began the exciting journey to learn ${meta.name} (${meta.nativeName}) with ${supportLang.toUpperCase()} support.`,
+            now
+          );
+        }
+
+        const updated = db.prepare('SELECT * FROM student_language_enrolments WHERE id = ?').get(enrolmentId) as any;
+        sendJson(res, 201, {
+          enrolment: formatEnrolment(updated),
+          languageMeta: meta
+        });
+        return;
+      }
+
+      // 4. Switch Primary Active Language
+      if (pathname === '/api/languages/active' && req.method === 'PUT') {
+        const body = await readJsonBody(req);
+        const langCode = sanitizeText(body.languageCode || body.target_language_code || 'en', 10).toLowerCase();
+
+        db.prepare('UPDATE student_language_enrolments SET is_primary_active = 0 WHERE user_id = ?').run(studentId);
+        db.prepare('UPDATE student_language_enrolments SET is_primary_active = 1, updated_at = ? WHERE user_id = ? AND language_code = ?').run(new Date().toISOString(), studentId, langCode);
+
+        const updated = db.prepare('SELECT * FROM student_language_enrolments WHERE user_id = ? AND language_code = ?').get(studentId, langCode) as any;
+        sendJson(res, 200, { activeEnrolment: formatEnrolment(updated), languageCode: langCode });
+        return;
+      }
+
+      // 5. Language Personal Dashboard Data
+      if (pathname.startsWith('/api/languages/') && pathname.endsWith('/dashboard') && req.method === 'GET') {
+        const parts = pathname.split('/');
+        const langCode = parts[3]?.toLowerCase() || 'en';
+        const meta = getLanguageMeta(langCode);
+
+        let enrolment = db.prepare('SELECT * FROM student_language_enrolments WHERE user_id = ? AND language_code = ?').get(studentId, langCode) as any;
+        if (!enrolment) {
+          const newId = `enrol-${crypto.randomUUID().slice(0, 8)}`;
+          const now = new Date().toISOString();
+          db.prepare(`
+            INSERT INTO student_language_enrolments (
+              id, user_id, language_code, support_language_code, is_primary_active,
+              current_stage, current_lesson_number, skill_level, completed_lessons_count, total_lessons_count,
+              progress_percentage, vocabulary_words_learned, grammar_concepts_learned,
+              speaking_exercises_completed, listening_exercises_completed, reading_exercises_completed, writing_exercises_completed,
+              average_speaking_accuracy, is_course_completed, last_studied_at, created_at, updated_at
+            ) VALUES (?, ?, ?, 'te', 1, 1, 1, 'Beginner (Stage 1)', 0, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, ?, ?, ?)
+          `).run(newId, studentId, langCode, now, now, now);
+          enrolment = db.prepare('SELECT * FROM student_language_enrolments WHERE id = ?').get(newId) as any;
+        }
+
+        const achievements = db.prepare('SELECT * FROM student_language_achievements WHERE user_id = ? AND language_code = ? ORDER BY earned_at DESC').all(studentId, langCode) as any[];
+        const recentSpeaking = db.prepare('SELECT * FROM student_speaking_evaluations WHERE user_id = ? AND language_code = ? ORDER BY created_at DESC LIMIT 5').all(studentId, langCode) as any[];
+
+        const curriculum = generateCurriculumForLanguage(langCode);
+        const currentStageData = curriculum.find((s) => s.stageNumber === (enrolment.current_stage || 1)) || curriculum[0];
+        const nextRecommendedLesson = currentStageData?.lessons[0] || {
+          lessonNumber: 1,
+          title: `Lesson ${enrolment.current_stage}.1: Next Step`,
+          description: 'Continue your progressive language learning journey.'
+        };
+
+        sendJson(res, 200, {
+          language: meta,
+          enrolment: formatEnrolment(enrolment),
+          achievements,
+          recentSpeaking,
+          currentStage: currentStageData,
+          nextLesson: nextRecommendedLesson,
+          skillBreakdown: {
+            vocabulary: Math.min(100, (enrolment.vocabulary_words_learned || 0) * 10),
+            grammar: Math.min(100, (enrolment.grammar_concepts_learned || 0) * 15),
+            speaking: enrolment.average_speaking_accuracy || 0,
+            listening: Math.min(100, (enrolment.listening_exercises_completed || 0) * 20),
+            reading: Math.min(100, (enrolment.reading_exercises_completed || 0) * 20),
+            writing: Math.min(100, (enrolment.writing_exercises_completed || 0) * 20)
+          }
+        });
+        return;
+      }
+
+      // 6. Language Complete 8-Stage Pathway & Course Curriculum
+      if (pathname.startsWith('/api/languages/') && pathname.endsWith('/course') && req.method === 'GET') {
+        const parts = pathname.split('/');
+        const langCode = parts[3]?.toLowerCase() || 'en';
+        const meta = getLanguageMeta(langCode);
+        const curriculum = generateCurriculumForLanguage(langCode);
+
+        const enrolment = db.prepare('SELECT * FROM student_language_enrolments WHERE user_id = ? AND language_code = ?').get(studentId, langCode) as any;
+        const currentStage = enrolment?.current_stage || 1;
+
+        // Map unlocked / completed status
+        const stages = curriculum.map((st) => ({
+          ...st,
+          stage_number: st.stageNumber,
+          stageNumber: st.stageNumber,
+          isCompleted: (enrolment?.is_course_completed === 1) || (st.stageNumber < currentStage),
+          isCurrent: st.stageNumber === currentStage,
+          isUnlocked: (enrolment?.is_course_completed === 1) || (st.stageNumber <= currentStage),
+          lessons: st.lessons.map((l) => ({
+            ...l,
+            lesson_number: l.lessonNumber,
+            lessonNumber: l.lessonNumber
+          }))
+        }));
+
+        sendJson(res, 200, {
+          language: meta,
+          enrolment: formatEnrolment(enrolment),
+          totalStages: 8,
+          stages
+        });
+        return;
+      }
+
+      // 7. Get Lesson Content with Support Language Explanations
+      if (pathname.startsWith('/api/languages/') && pathname.includes('/lesson/') && req.method === 'GET') {
+        const parts = pathname.split('/');
+        const langCode = parts[3]?.toLowerCase() || 'en';
+        const stageNum = parseInt(parts[5], 10) || 1;
+        const lessonNum = parseInt(parts[6], 10) || 1;
+
+        const meta = getLanguageMeta(langCode);
+        const curriculum = generateCurriculumForLanguage(langCode);
+        const stage = curriculum.find((s) => s.stageNumber === stageNum) || curriculum[0];
+        const rawLesson = stage.lessons.find((l) => l.lessonNumber === lessonNum) || stage.lessons[0];
+
+        const enrolment = db.prepare('SELECT support_language_code FROM student_language_enrolments WHERE user_id = ? AND language_code = ?').get(studentId, langCode) as any;
+        const supportLang = enrolment?.support_language_code || 'te';
+
+        const vocabulary = (rawLesson.vocabulary || []).map((v: any) => ({
+          term: v.term,
+          nativeScript: v.nativeScript,
+          romanization: v.romanization,
+          meaning: v.translations?.[supportLang]?.meaning || v.translations?.['te']?.meaning || v.translations?.['en']?.meaning || v.term,
+          example_sentence: v.targetSentence,
+          sentence_meaning: v.translations?.[supportLang]?.sentenceTranslation || v.translations?.['te']?.sentenceTranslation || v.translations?.['en']?.sentenceTranslation || ''
+        }));
+
+        const grammar_rules = (rawLesson.grammar || []).map((g: any) => ({
+          rule_name: g.title,
+          explanation: g.explanationsBySupportLang?.[supportLang] || g.explanationsBySupportLang?.['te'] || g.ruleSummary,
+          pattern: g.structureFormula,
+          examples: (g.examples || []).map((ex: any) => ({
+            target: ex.target,
+            romanized: ex.romanization,
+            meaning: ex.translations?.[supportLang] || ex.translations?.['te'] || ex.translations?.['en'] || ''
+          }))
+        }));
+
+        sendJson(res, 200, {
+          language: meta,
+          stage: {
+            stage_number: stageNum,
+            stageNumber: stageNum,
+            title: stage.title,
+            objective: stage.subtitle || stage.focus
+          },
+          stageNumber: stageNum,
+          stageTitle: stage.title,
+          supportLanguageCode: supportLang,
+          lesson: {
+            lesson_number: lessonNum,
+            lessonNumber: lessonNum,
+            title: rawLesson.title,
+            objective: rawLesson.description,
+            vocabulary,
+            grammar_rules,
+            conversation_prompts: rawLesson.speakingExercises || [],
+            cultural_context: stage.focus
+          }
+        });
+        return;
+      }
+
+      // 8. Complete a Lesson & Advance Progress
+      if (pathname === '/api/languages/lesson/complete' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const langCode = sanitizeText(body.languageCode || body.target_language_code || 'en', 10).toLowerCase();
+        const stageNumber = Math.max(1, Math.min(8, Number(body.stageNumber || body.stage_number) || 1));
+        const lessonNumber = Math.max(1, Math.min(3, Number(body.lessonNumber || body.lesson_number) || 1));
+        const scorePercentage = Math.max(0, Math.min(100, Number(body.scorePercentage || body.score_percentage) || 90));
+        const speakingScore = typeof body.speakingScore === 'number' ? body.speakingScore : 88;
+        const listeningScore = typeof body.listeningScore === 'number' ? body.listeningScore : 92;
+        const now = new Date().toISOString();
+
+        // 1. Record lesson progress
+        const progressId = `prog-${crypto.randomUUID().slice(0, 8)}`;
+        const lessonId = `lesson-${langCode}-${stageNumber}-${lessonNumber}`;
+
+        db.prepare(`
+          INSERT INTO student_lesson_progress (
+            id, user_id, lesson_id, language_code, status, score_percentage, attempts_count,
+            speaking_score, listening_score, completed_at, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, 'completed', ?, 1, ?, ?, ?, ?, ?)
+          ON CONFLICT(user_id, lesson_id) DO UPDATE SET
+            status = 'completed',
+            score_percentage = MAX(score_percentage, excluded.score_percentage),
+            attempts_count = attempts_count + 1,
+            speaking_score = excluded.speaking_score,
+            listening_score = excluded.listening_score,
+            completed_at = excluded.completed_at,
+            updated_at = excluded.updated_at
+        `).run(progressId, studentId, langCode, lessonId, scorePercentage, speakingScore, listeningScore, now, now, now);
+
+        // 2. Fetch current enrolment
+        const enrolment = db.prepare('SELECT * FROM student_language_enrolments WHERE user_id = ? AND language_code = ?').get(studentId, langCode) as any;
+        const currentCompleted = (enrolment?.completed_lessons_count || 0) + 1;
+        const totalLessons = 24;
+        const newPct = Math.min(100, Math.round((currentCompleted / totalLessons) * 100));
+
+        // Advance to next stage/lesson
+        let nextStage = stageNumber;
+        let nextLesson = lessonNumber + 1;
+        if (nextLesson > 3) {
+          nextLesson = 1;
+          nextStage = Math.min(8, stageNumber + 1);
+        }
+
+        const isCompleted = currentCompleted >= totalLessons || nextStage > 8;
+
+        db.prepare(`
+          UPDATE student_language_enrolments
+          SET completed_lessons_count = ?,
+              progress_percentage = ?,
+              current_stage = ?,
+              current_lesson_number = ?,
+              vocabulary_words_learned = vocabulary_words_learned + 3,
+              grammar_concepts_learned = grammar_concepts_learned + 1,
+              speaking_exercises_completed = speaking_exercises_completed + 2,
+              listening_exercises_completed = listening_exercises_completed + 2,
+              reading_exercises_completed = reading_exercises_completed + 1,
+              writing_exercises_completed = writing_exercises_completed + 1,
+              is_course_completed = ?,
+              completed_at = CASE WHEN ? = 1 THEN ? ELSE completed_at END,
+              last_studied_at = ?,
+              updated_at = ?
+          WHERE user_id = ? AND language_code = ?
+        `).run(
+          currentCompleted, newPct, nextStage, nextLesson,
+          isCompleted ? 1 : 0, isCompleted ? 1 : 0, now,
+          now, now, studentId, langCode
+        );
+
+        // 3. Award achievements
+        const earnedAchievements: string[] = [];
+        if (currentCompleted === 1) {
+          db.prepare(`
+            INSERT OR IGNORE INTO student_language_achievements (
+              id, user_id, language_code, achievement_key, title, description, icon_name, badge_color, earned_at
+            ) VALUES (?, ?, ?, 'first_lesson', 'First Words Mastered!', 'Completed your very first lesson with stellar accuracy.', 'sparkles', '#10B981', ?)
+          `).run(`ach-${crypto.randomUUID().slice(0, 8)}`, studentId, langCode, now);
+          earnedAchievements.push('First Words Mastered!');
+        }
+
+        if (isCompleted) {
+          db.prepare(`
+            INSERT OR IGNORE INTO student_language_achievements (
+              id, user_id, language_code, achievement_key, title, description, icon_name, badge_color, earned_at
+            ) VALUES (?, ?, ?, 'course_complete', 'Course Master Certificate Earned!', 'Graduated 100% of the complete curriculum pathway!', 'trophy', '#F59E0B', ?)
+          `).run(`ach-${crypto.randomUUID().slice(0, 8)}`, studentId, langCode, now);
+          earnedAchievements.push('Course Master Certificate Earned!');
+        }
+
+        const updatedEnrolment = db.prepare('SELECT * FROM student_language_enrolments WHERE user_id = ? AND language_code = ?').get(studentId, langCode) as any;
+        sendJson(res, 200, {
+          success: true,
+          enrolment: formatEnrolment(updatedEnrolment),
+          is_course_completed: isCompleted ? 1 : 0,
+          isCourseCompleted: isCompleted,
+          progress_percent: newPct,
+          progress_percentage: newPct,
+          earnedAchievements
+        });
+        return;
+      }
+
+      // 9. Speaking Skills Evaluation Engine (Pronunciation Assessment)
+      if (pathname === '/api/languages/speaking/evaluate' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const langCode = sanitizeText(body.languageCode || body.target_language_code || 'en', 10).toLowerCase();
+        const supportLang = sanitizeText(body.supportLanguageCode || body.support_language_code || 'te', 10).toLowerCase();
+        const targetPhrase = sanitizeText(body.targetPhrase || body.expected_phrase || 'Hello', 300);
+        const recognizedUtterance = sanitizeText(body.recognizedUtterance || body.spoken_phrase || '', 300);
+        const exerciseType = sanitizeText(body.exerciseType || 'listen_repeat', 40);
+
+        const evaluation = evaluateStudentPronunciation({
+          targetPhrase,
+          recognizedUtterance,
+          targetLanguage: langCode,
+          supportLanguage: supportLang
+        });
+
+        // Record speaking attempt
+        const evalId = `spk-${crypto.randomUUID().slice(0, 8)}`;
+        const now = new Date().toISOString();
+        db.prepare(`
+          INSERT INTO student_speaking_evaluations (
+            id, user_id, language_code, exercise_type, target_text, recognized_text,
+            accuracy_score, phonetic_feedback, support_language_explanation, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          evalId, studentId, langCode, exerciseType, targetPhrase, recognizedUtterance,
+          evaluation.accuracyScore, evaluation.detailedFeedback, evaluation.supportLanguageExplanation, now
+        );
+
+        // Update average accuracy in enrolment
+        db.prepare(`
+          UPDATE student_language_enrolments
+          SET speaking_exercises_completed = speaking_exercises_completed + 1,
+              average_speaking_accuracy = ROUND((average_speaking_accuracy * 0.7) + (? * 0.3)),
+              updated_at = ?
+          WHERE user_id = ? AND language_code = ?
+        `).run(evaluation.accuracyScore, now, studentId, langCode);
+
+        if (evaluation.accuracyScore >= 90) {
+          db.prepare(`
+            INSERT OR IGNORE INTO student_language_achievements (
+              id, user_id, language_code, achievement_key, title, description, icon_name, badge_color, earned_at
+            ) VALUES (?, ?, ?, 'speaking_pro', 'Native Articulation Star!', 'Scored 90%+ in speaking pronunciation challenge.', 'mic', '#EC4899', ?)
+          `).run(`ach-${crypto.randomUUID().slice(0, 8)}`, studentId, langCode, now);
+        }
+
+        const languagePhoneticNotes =
+          langCode === 'ja'
+            ? 'Japanese Mora Cadence: Keep each syllable equal in length and watch long vowels (e.g., Okaasan).'
+            : langCode === 'te' || langCode === 'hi'
+            ? 'Indic Phonetics: Distinguish clearly between short/long vowels (hrasva/deergha) and aspirated consonants.'
+            : langCode === 'fr'
+            ? 'French Phonetics: Maintain smooth liaison between words and gentle nasal vowel resonance.'
+            : langCode === 'de'
+            ? 'German Phonetics: Enunciate rounded umlaut vowels (ä, ö, ü) and crisp word-final consonants.'
+            : 'Global Articulation: Focus on clear vowel nuclei and natural word stress without worrying about regional accents.';
+
+        const wordRecognitionScore = evaluation.similarityRatio;
+        const pronunciationQualityScore = evaluation.accuracyScore;
+        const sentenceAccuracyScore = Math.round(
+          (evaluation.matchedWordsCount / Math.max(1, evaluation.totalWordsCount)) * 100
+        );
+
+        sendJson(res, 200, {
+          evaluation,
+          accuracy_score: evaluation.accuracyScore,
+          accuracyScore: evaluation.accuracyScore,
+          word_recognition_score: wordRecognitionScore,
+          pronunciation_quality_score: pronunciationQualityScore,
+          sentence_accuracy_score: sentenceAccuracyScore,
+          language_phonetic_notes: languagePhoneticNotes,
+          assessment_capability_disclosure:
+            'Assessed via Speech-to-Text Transcript Alignment & Phonetic Cadence Matching (regional accents are welcomed and never penalized).',
+          feedback: evaluation.detailedFeedback,
+          support_explanation: evaluation.supportLanguageExplanation,
+          phonetic_breakdown: {
+            is_exact_match: evaluation.isExactMatch,
+            isExactMatch: evaluation.isExactMatch,
+            similarity_ratio: evaluation.similarityRatio,
+            similarityRatio: evaluation.similarityRatio,
+            word_recognition_score: wordRecognitionScore,
+            pronunciation_quality_score: pronunciationQualityScore,
+            sentence_accuracy_score: sentenceAccuracyScore
+          },
+          evalId,
+          targetPhrase,
+          recognizedUtterance
+        });
+        return;
+      }
+
+      // 10. AI Conversation Partner Dialogue Turn & Scenarios
+      if (pathname === '/api/languages/conversation/scenarios' && req.method === 'GET') {
+        sendJson(res, 200, {
+          scenarios: AI_CONVERSATION_SCENARIOS,
+          count: AI_CONVERSATION_SCENARIOS.length
+        });
+        return;
+      }
+
+      if (pathname === '/api/languages/conversation/turn' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const langCode = sanitizeText(body.languageCode || body.target_language_code || 'en', 10).toLowerCase();
+        const supportLang = sanitizeText(body.supportLanguageCode || body.support_language_code || 'te', 10).toLowerCase();
+        const studentUtterance = sanitizeText(body.studentUtterance || body.student_message || 'Hello', 400);
+        const scenarioId = sanitizeText(body.scenarioId || body.context || 'self_intro', 80);
+
+        let partnerReply = 'Wonderful response! Could you tell me a full sentence about what you enjoy studying or eating?';
+        let supportTranslation = 'చాలా మంచి సమాధానం! మీకు ఇష్టమైన చదువు లేదా ఆహారం గురించి పూర్తి వాక్యంలో చెబుతారా?';
+        let grammarTip = 'Great sentence structure! Try adding an adjective or time word next.';
+        let suggestedVocab = ['Water (Mizu / నీరు)', 'Book (Hon / పుస్తకం)', 'Thank you (Arigatou / ధన్యవాదాలు)'];
+
+        if (langCode === 'ja') {
+          if (scenarioId.includes('ordering') || studentUtterance.includes('水') || studentUtterance.includes('お茶')) {
+            partnerReply = 'かしこまりました！新鮮な水と温かいお茶をお持ちしますね。他に何かご注文はありますか？';
+            supportTranslation = supportLang === 'te'
+              ? 'తప్పకుండా! స్వచ్ఛమైన నీరు మరియు వేడి గ్రీన్ టీ తీసుకువస్తాను. ఇంకా ఏమైనా ఆర్డర్ చేస్తారా?'
+              : 'Certainly! I will bring fresh water and warm green tea. Would you like to order anything else?';
+            grammarTip = 'Using 「〜をお願いします (... o onegaishimasu)」 is polite and natural when ordering in Japanese!';
+            suggestedVocab = ['りんご (Ringo - Apple)', 'ご飯 (Gohan - Rice)', 'お会計をお願いします (Bill, please)'];
+          } else {
+            partnerReply = '素晴らしいですね！あなたの日本語はとても自然です。今日はどんな言葉を練習したいですか？';
+            supportTranslation = supportLang === 'te'
+              ? 'అద్భుతం! మీ జపనీస్ చాలా సహజంగా ఉంది. ఈరోజు మీరు ఏ పదాలను ప్రాక్టీస్ చేయాలనుకుంటున్నారు?'
+              : supportLang === 'hi'
+              ? 'बहुत बढ़िया! आपकी जापानी बहुत सहज है। आज आप किन शब्दों का अभ्यास करना चाहेंगे?'
+              : 'Wonderful! Your Japanese sounds very natural. Which words would you like to practice today?';
+            grammarTip = 'Notice how particles like は (wa) mark the topic and を (o) marks the object.';
+            suggestedVocab = ['水 (Mizu - Water)', '電車 (Densha - Train)', '本 (Hon - Book)'];
+          }
+        } else if (langCode === 'fr') {
+          partnerReply = 'Très bien dit ! Votre prononciation française progresse vite. Que voulez-vous commander ou visiter ensuite ?';
+          supportTranslation = supportLang === 'te'
+            ? 'చాలా బాగా చెప్పారు! మీ ఫ్రెంచ్ ఉచ్చారణ వేగంగా మెరుగుపడుతోంది. తదుపరి మీరు ఏమి ఆర్డర్ చేయాలనుకుంటున్నారు?'
+            : 'Very well said! Your French pronunciation is progressing quickly. What would you like to order or visit next?';
+          grammarTip = 'Use "Je voudrais..." (I would like...) for polite requests in French.';
+          suggestedVocab = ["De l'eau (Water)", 'Une pomme (An apple)', 'Un livre (A book)'];
+        } else if (langCode === 'de') {
+          partnerReply = 'Ausgezeichnet! Dein Satzbau ist sehr klar. Möchtest du noch etwas bestellen oder fragen?';
+          supportTranslation = supportLang === 'te'
+            ? 'అద్భుతం! మీ వాక్య నిర్మాణం చాలా స్పష్టంగా ఉంది. మీరు ఇంకా ఏమైనా అడగాలనుకుంటున్నారా?'
+            : 'Excellent! Your sentence structure is very clear. Would you like to order or ask anything else?';
+          grammarTip = 'Keep the conjugated verb in second position in main German clauses.';
+          suggestedVocab = ['Das Wasser (Water)', 'Der Apfel (Apple)', 'Der Zug (Train)'];
+        } else if (langCode === 'te') {
+          partnerReply = 'చాలా చక్కగా చెప్పారు! మీ తెలుగు వాక్య నిర్మాణం చాలా సహజంగా ఉంది. ఇంకా ఏ అంశం గురించి మాట్లాడుకుందాం?';
+          supportTranslation = 'Very nicely said! Your Telugu sentence formation is very natural. What else shall we talk about?';
+          grammarTip = 'తెలుగులో వాక్యం సాధారణంగా కర్త - కర్మ - క్రియ (Subject - Object - Verb) క్రమంలో ఉంటుంది.';
+          suggestedVocab = ['నీరు (Neeru - Water)', 'పుస్తకం (Pusthakam - Book)', 'ధన్యవాదాలు (Thank you)'];
+        } else if (langCode === 'hi') {
+          partnerReply = 'बहुत बढ़िया! आपने बहुत स्पष्ट और सुंदर वाक्य बनाया है। आगे आप किस विषय पर बातचीत करना चाहेंगे?';
+          supportTranslation = 'Very good! You formed a very clear and beautiful sentence. What would you like to talk about next?';
+          grammarTip = 'हिन्दी में आदर दिखाने के लिए "आप" और "जी" का प्रयोग बहुत अच्छा लगता है।';
+          suggestedVocab = ['पानी (Paani - Water)', 'किताब (Kitaab - Book)', 'धन्यवाद (Dhanyavaad - Thank you)'];
+        }
+
+        sendJson(res, 200, {
+          ai_reply: partnerReply,
+          partnerReply,
+          support_translation: supportTranslation,
+          supportTranslation,
+          pronunciation_feedback: grammarTip,
+          grammarTip,
+          suggested_vocabulary: suggestedVocab,
+          confidenceScore: 96
+        });
+        return;
+      }
+
+      // 11. Optional Placement Test Diagnostic
+      if (pathname === '/api/languages/placement-test' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const langCode = sanitizeText(body.languageCode || body.target_language_code || 'en', 10).toLowerCase();
+        const supportLang = sanitizeText(body.supportLanguageCode || body.support_language_code || 'te', 10).toLowerCase();
+        const answers = Array.isArray(body.answers) ? body.answers : Object.values(body.answers || {});
+
+        const result = evaluatePlacementTest(answers);
+
+        // Optionally apply starting stage to enrolment
+        if (body.applyToEnrolment) {
+          db.prepare(`
+            UPDATE student_language_enrolments
+            SET current_stage = ?,
+                skill_level = ?,
+                progress_percentage = ?,
+                updated_at = ?
+            WHERE user_id = ? AND language_code = ?
+          `).run(
+            result.recommendedStage, result.recommendedLevel,
+            Math.round(((result.recommendedStage - 1) * 3 / 24) * 100),
+            new Date().toISOString(), studentId, langCode
+          );
+        }
+
+        sendJson(res, 200, {
+          languageCode: langCode,
+          recommended_stage: result.recommendedStage,
+          recommendedStage: result.recommendedStage,
+          reason: result.diagnosticSummary || result.recommendedLevel,
+          diagnostic: result
+        });
+        return;
+      }
+
+      // 12A. Picture-Based Vocabulary Studio Endpoint
+      if (pathname.startsWith('/api/languages/') && pathname.endsWith('/picture-vocabulary') && req.method === 'GET') {
+        const parts = pathname.split('/');
+        const langCode = parts[3]?.toLowerCase() || 'ja';
+        const supportLang = (parsedUrl.searchParams.get('support') || 'te').toLowerCase();
+        const category = parsedUrl.searchParams.get('category') || 'all';
+
+        const items = getPictureVocabularyForLanguage(langCode, supportLang, category);
+        const savedWords = db.prepare(`
+          SELECT * FROM student_saved_vocabulary
+          WHERE user_id = ? AND language_code = ?
+          ORDER BY updated_at DESC
+        `).all(studentId, langCode) as any[];
+
+        sendJson(res, 200, {
+          language: getLanguageMeta(langCode),
+          supportLanguageCode: supportLang,
+          categories: PICTURE_VOCABULARY_CATEGORIES,
+          items,
+          savedWords,
+          totalItems: items.length
+        });
+        return;
+      }
+
+      // 12B. Save Picture Vocabulary Word to Student's Collection
+      if (pathname === '/api/languages/vocabulary/save' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const langCode = sanitizeText(body.language_code || body.languageCode || 'ja', 10).toLowerCase();
+        const supportLang = sanitizeText(body.support_language_code || body.supportLanguageCode || 'te', 10).toLowerCase();
+        const wordId = sanitizeText(body.word_id || body.wordId || 'vocab-water', 60);
+        const category = sanitizeText(body.category || 'water_drinks', 40);
+        const englishWord = sanitizeText(body.english_word || body.englishWord || 'Water', 100);
+        const targetWord = sanitizeText(body.target_word || body.targetWord || '水', 120);
+        const romanization = sanitizeText(body.romanization || 'Mizu', 120);
+        const supportMeaning = sanitizeText(body.support_meaning || body.supportMeaning || 'నీరు', 200);
+        const pronunciationScore = typeof body.pronunciation_score === 'number' ? body.pronunciation_score : 95;
+        const now = new Date().toISOString();
+
+        const id = `svoc-${crypto.randomUUID().slice(0, 8)}`;
+        db.prepare(`
+          INSERT INTO student_saved_vocabulary (
+            id, user_id, language_code, support_language_code, word_id, category,
+            english_word, target_word, romanization, support_meaning,
+            mastery_level, practice_count, last_pronunciation_score, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, ?, ?, ?)
+          ON CONFLICT(user_id, language_code, word_id) DO UPDATE SET
+            practice_count = practice_count + 1,
+            mastery_level = MIN(5, mastery_level + 1),
+            last_pronunciation_score = excluded.last_pronunciation_score,
+            updated_at = excluded.updated_at
+        `).run(
+          id, studentId, langCode, supportLang, wordId, category,
+          englishWord, targetWord, romanization, supportMeaning,
+          pronunciationScore, now, now
+        );
+
+        db.prepare(`
+          UPDATE student_language_enrolments
+          SET vocabulary_words_learned = vocabulary_words_learned + 1,
+              updated_at = ?
+          WHERE user_id = ? AND language_code = ?
+        `).run(now, studentId, langCode);
+
+        const savedWords = db.prepare(`
+          SELECT * FROM student_saved_vocabulary
+          WHERE user_id = ? AND language_code = ?
+          ORDER BY updated_at DESC
+        `).all(studentId, langCode) as any[];
+
+        sendJson(res, 200, {
+          success: true,
+          savedWordId: wordId,
+          savedWordsCount: savedWords.length,
+          savedWords
+        });
+        return;
+      }
+
+      // 12C. Language-Specific Script & Phonetic Mastery Deck
+      if (pathname.startsWith('/api/languages/') && pathname.endsWith('/scripts') && req.method === 'GET') {
+        const parts = pathname.split('/');
+        const langCode = parts[3]?.toLowerCase() || 'ja';
+        const meta = getLanguageMeta(langCode);
+        const decks = LANGUAGE_SCRIPT_DECKS[langCode] || LANGUAGE_SCRIPT_DECKS['en'];
+
+        sendJson(res, 200, {
+          language: meta,
+          scriptName: meta.scriptName,
+          decks
+        });
+        return;
+      }
+
+      // 12D. Listening & Understanding Studio Endpoint
+      if (pathname.startsWith('/api/languages/') && pathname.endsWith('/listening') && req.method === 'GET') {
+        const parts = pathname.split('/');
+        const langCode = parts[3]?.toLowerCase() || 'ja';
+        const supportLang = (parsedUrl.searchParams.get('support') || 'te').toLowerCase();
+        const activities = generateListeningActivitiesForLanguage(langCode, supportLang);
+
+        sendJson(res, 200, {
+          language: getLanguageMeta(langCode),
+          supportLanguageCode: supportLang,
+          activities
+        });
+        return;
+      }
+
+      if (pathname === '/api/languages/listening/submit' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const langCode = sanitizeText(body.language_code || body.languageCode || 'ja', 10).toLowerCase();
+        const activityType = sanitizeText(body.activity_type || 'word_picture', 40);
+        const questionId = sanitizeText(body.question_id || 'q1', 80);
+        const isCorrect = Boolean(body.is_correct ?? true);
+        const scoreEarned = isCorrect ? 15 : 0;
+        const now = new Date().toISOString();
+
+        db.prepare(`
+          INSERT INTO student_listening_logs (
+            id, user_id, language_code, activity_type, question_id, is_correct, score_earned, playback_speed, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          `lstn-${crypto.randomUUID().slice(0, 8)}`,
+          studentId, langCode, activityType, questionId, isCorrect ? 1 : 0, scoreEarned, Number(body.playback_speed) || 1.0, now
+        );
+
+        if (isCorrect) {
+          db.prepare(`
+            UPDATE student_language_enrolments
+            SET listening_exercises_completed = listening_exercises_completed + 1,
+                updated_at = ?
+            WHERE user_id = ? AND language_code = ?
+          `).run(now, studentId, langCode);
+        }
+
+        sendJson(res, 200, {
+          success: true,
+          isCorrect,
+          scoreEarned
+        });
+        return;
+      }
+
+      // 12E. Interactive Language Games Suite (All 7 Games A to G)
+      if (pathname.startsWith('/api/languages/') && pathname.endsWith('/games') && req.method === 'GET') {
+        const parts = pathname.split('/');
+        const langCode = parts[3]?.toLowerCase() || 'en';
+        const supportLang = (parsedUrl.searchParams.get('support') || 'te').toLowerCase();
+        const meta = getLanguageMeta(langCode);
+
+        const fullSuite = generateInteractiveLanguageGamesSuite(langCode, supportLang);
+
+        const wordMatch = fullSuite.wordMatching.map((w) => ({
+          word: `${w.word} (${w.romanization})`,
+          meaning: w.meaning,
+          illustrationSvgDataUrl: w.illustrationSvgDataUrl
+        }));
+
+        const sentenceScramble = {
+          meaning: fullSuite.sentenceBuilder[0]?.meaning || 'నేను విద్యార్థిని (I am a student)',
+          correct_sentence: fullSuite.sentenceBuilder[0]?.correctSentence || (langCode === 'ja' ? 'わたし は がくせい です' : 'I am a student'),
+          scrambled_tokens: fullSuite.sentenceBuilder[0]?.scrambled_tokens || (langCode === 'ja' ? ['です', 'わたし', 'がくせい', 'は'] : ['student', 'I', 'a', 'am'])
+        };
+
+        const spellingQuiz = fullSuite.missingLetters.map((m) => ({
+          prompt: `Complete the word for "${m.englishWord}":`,
+          word: m.maskedDisplay,
+          missing: m.missingChar,
+          options: m.letterChoices
+        }));
+
+        sendJson(res, 200, {
+          language: meta,
+          games: {
+            ...fullSuite,
+            wordMatch,
+            sentenceScramble,
+            spellingQuiz
+          },
+          wordMatch,
+          sentenceScramble,
+          spellingQuiz
+        });
+        return;
+      }
+
+      if (pathname === '/api/languages/games/submit' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const langCode = sanitizeText(body.language_code || body.languageCode || 'ja', 10).toLowerCase();
+        const gameCode = sanitizeText(body.game_code || body.gameCode || 'picture_to_word', 50);
+        const difficulty = sanitizeText(body.difficulty || 'medium', 20);
+        const score = Math.max(0, Number(body.score) || 20);
+        const accuracyPercent = Math.max(0, Math.min(100, Number(body.accuracy_percent) || 100));
+        const itemsCompleted = Math.max(1, Number(body.items_completed) || 1);
+        const now = new Date().toISOString();
+
+        db.prepare(`
+          INSERT INTO student_language_game_logs (
+            id, user_id, language_code, game_code, difficulty, score, accuracy_percent, items_completed, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          `lgm-${crypto.randomUUID().slice(0, 8)}`,
+          studentId, langCode, gameCode, difficulty, score, accuracyPercent, itemsCompleted, now
+        );
+
+        sendJson(res, 200, {
+          success: true,
+          gameCode,
+          score,
+          accuracyPercent
+        });
+        return;
+      }
+
+      // 13. Language Course Completion Certificate
+      if (pathname.startsWith('/api/languages/') && pathname.endsWith('/certificate') && req.method === 'GET') {
+        const parts = pathname.split('/');
+        const langCode = parts[3]?.toLowerCase() || 'en';
+        const meta = getLanguageMeta(langCode);
+
+        const studentProfile = db.prepare('SELECT display_name FROM student_profiles WHERE id = ?').get(studentId) as any;
+        const studentUser = db.prepare('SELECT name FROM users WHERE id = ?').get(studentId) as any;
+        const studentName = studentProfile?.display_name || studentUser?.name || 'Vishwak Sai';
+
+        const enrolment = db.prepare('SELECT * FROM student_language_enrolments WHERE user_id = ? AND language_code = ?').get(studentId, langCode) as any;
+
+        const certificate = {
+          certificateId: `CERT-${langCode.toUpperCase()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+          target_language_code: langCode,
+          languageCode: langCode,
+          studentName,
+          student_name: studentName,
+          languageName: meta.name,
+          target_language_name: meta.name,
+          support_language_name: getLanguageMeta(enrolment?.support_language_code || 'te').name,
+          nativeLanguageName: meta.nativeName,
+          completionDate: enrolment?.completed_at || new Date().toISOString(),
+          is_completed: enrolment?.is_course_completed === 1 || enrolment?.progress_percentage >= 100,
+          isCourseCompleted: enrolment?.is_course_completed === 1 || enrolment?.progress_percentage >= 100,
+          totalStagesCompleted: 8,
+          totalLessonsMastered: 24,
+          lessons_completed: enrolment?.completed_lessons_count || 24,
+          wordsLearned: enrolment?.vocabulary_words_learned || 72,
+          averageSpeakingScore: enrolment?.average_speaking_accuracy || 94,
+          accreditationBadge: 'STUDYAI Global Polyglot Accreditation Seal',
+          canStartNextLanguage: true
+        };
+
+        sendJson(res, 200, { certificate });
+        return;
+      }
+
       // 11. Quizzes & Common Question Service (Section 15 & Section 18)
       if (pathname === '/api/quizzes/generate' && req.method === 'POST') {
         const body = await readJsonBody(req);
@@ -2227,6 +3112,331 @@ export function createAppServer() {
           accuracy,
           stage_reached: stageReached,
           mistakes
+        });
+        return;
+      }
+
+      // ==============================================================================
+      // 12B. EDUCATIONAL GAMES LIBRARY (7 GAMES MODULE) ENDPOINTS
+      // ==============================================================================
+
+      // 1. Get Educational Games Catalog (7 Games)
+      if (pathname === '/api/educational-games/catalog' && req.method === 'GET') {
+        const rows = db.prepare('SELECT * FROM educational_games_catalog WHERE is_active = 1 ORDER BY id ASC').all() as any[];
+        const games = rows.length > 0
+          ? rows.map((r) => ({
+              ...r,
+              badgeColor: r.badge_color,
+              compatibleSubjects: JSON.parse(r.compatible_subjects_json || '[]'),
+              supportedDifficulties: JSON.parse(r.supported_difficulties_json || '[]'),
+              instructions: JSON.parse(r.instructions_json || '[]')
+            }))
+          : EDUCATIONAL_GAMES_CATALOG;
+
+        sendJson(res, 200, {
+          games,
+          count: games.length,
+          module: 'Educational Games Library'
+        });
+        return;
+      }
+
+      // 2. Start Game Session (Generate Question Batch)
+      if (pathname === '/api/educational-games/session/start' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const gameSlug = (body.game_slug || body.gameSlug || 'missing_letters') as GameSlug;
+        const topic = sanitizeText(body.topic || 'Photosynthesis', 180);
+        const subject = sanitizeText(body.subject || inferGameSubject(topic), 60);
+        const difficulty = (['easy', 'medium', 'hard'].includes(body.difficulty) ? body.difficulty : 'medium') as GameDifficulty;
+        const count = Math.max(3, Math.min(Number(body.count) || 5, 8));
+
+        // Generate verified questions using the shared engine
+        const questions = generateGameQuestions({
+          gameSlug,
+          topic,
+          subject,
+          difficulty,
+          count
+        });
+
+        const sessionId = `egame-${crypto.randomUUID().slice(0, 8)}`;
+        const now = new Date().toISOString();
+
+        db.prepare(`
+          INSERT INTO educational_game_sessions (
+            id, user_id, game_slug, subject, topic, difficulty,
+            total_questions, correct_count, incorrect_count, hints_used,
+            score, accuracy_percentage, duration_seconds, status,
+            weak_concepts_json, mastered_concepts_json, session_data_json,
+            completed_at, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, 0, 0, 'in_progress', '[]', '[]', ?, NULL, ?, ?)
+        `).run(
+          sessionId,
+          studentId,
+          gameSlug,
+          subject,
+          topic,
+          difficulty,
+          questions.length,
+          JSON.stringify({ questionIds: questions.map((q) => q.id) }),
+          now,
+          now
+        );
+
+        sendJson(res, 201, {
+          sessionId,
+          session_id: sessionId,
+          gameSlug,
+          game_slug: gameSlug,
+          topic,
+          subject,
+          difficulty,
+          totalQuestions: questions.length,
+          total_questions: questions.length,
+          questions
+        });
+        return;
+      }
+
+      // 3. Submit Single Question Answer
+      if (pathname === '/api/educational-games/session/submit-answer' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const sessionId = sanitizeText(body.session_id || body.sessionId || '', 80);
+        const questionIndex = Number(body.question_index ?? body.questionIndex ?? 0);
+        const question = body.question;
+        const studentAnswer = body.student_answer !== undefined ? body.student_answer : body.studentAnswer;
+        const hintsUsed = Math.max(0, Number(body.hints_used || body.hintsUsed) || 0);
+
+        if (!question || !sessionId) {
+          sendJson(res, 400, { error: 'Session ID and question payload are required.' });
+          return;
+        }
+
+        const gameSlug = question.gameSlug as GameSlug;
+        const outcome = validateStudentAnswer({
+          gameSlug,
+          question,
+          studentAnswer,
+          hintsUsed
+        });
+
+        const logId = `qlog-${crypto.randomUUID().slice(0, 8)}`;
+        const now = new Date().toISOString();
+
+        // Log this attempt
+        db.prepare(`
+          INSERT INTO educational_game_question_logs (
+            id, session_id, user_id, question_index, question_payload_json,
+            student_answer_json, correct_answer_json, is_correct, score_earned,
+            hints_used, concept_tested, explanation, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          logId,
+          sessionId,
+          studentId,
+          questionIndex,
+          JSON.stringify(question || null),
+          JSON.stringify(studentAnswer !== undefined ? studentAnswer : null),
+          JSON.stringify(outcome.correctAnswerText !== undefined ? outcome.correctAnswerText : null),
+          outcome.isCorrect ? 1 : 0,
+          outcome.scoreEarned,
+          hintsUsed,
+          question.conceptTested || '',
+          outcome.explanation,
+          now
+        );
+
+        // Update running session
+        if (outcome.isCorrect) {
+          db.prepare(`
+            UPDATE educational_game_sessions
+            SET correct_count = correct_count + 1,
+                score = score + ?,
+                hints_used = hints_used + ?,
+                updated_at = ?
+            WHERE id = ? AND user_id = ?
+          `).run(outcome.scoreEarned, hintsUsed, now, sessionId, studentId);
+        } else {
+          db.prepare(`
+            UPDATE educational_game_sessions
+            SET incorrect_count = incorrect_count + 1,
+                hints_used = hints_used + ?,
+                updated_at = ?
+            WHERE id = ? AND user_id = ?
+          `).run(hintsUsed, now, sessionId, studentId);
+        }
+
+        sendJson(res, 200, {
+          isCorrect: outcome.isCorrect,
+          is_correct: outcome.isCorrect,
+          scoreEarned: outcome.scoreEarned,
+          score_earned: outcome.scoreEarned,
+          feedback: outcome.feedback,
+          explanation: outcome.explanation,
+          correctAnswerText: outcome.correctAnswerText,
+          correct_answer_text: outcome.correctAnswerText,
+          weakConceptIfWrong: outcome.weakConceptIfWrong,
+          weak_concept_if_wrong: outcome.weakConceptIfWrong
+        });
+        return;
+      }
+
+      // 4. Complete Session & Return Comprehensive Results Screen Data
+      if (pathname === '/api/educational-games/session/complete' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const sessionId = sanitizeText(body.session_id || body.sessionId || '', 80);
+        const durationSeconds = Math.max(5, Number(body.duration_seconds || body.durationSeconds) || 60);
+        const now = new Date().toISOString();
+
+        const session = db.prepare('SELECT * FROM educational_game_sessions WHERE id = ? AND user_id = ?').get(sessionId, studentId) as any;
+        if (!session) {
+          sendJson(res, 404, { error: 'Game session not found.' });
+          return;
+        }
+
+        const total = Math.max(1, session.total_questions || (session.correct_count + session.incorrect_count) || 1);
+        const accuracy = Math.min(100, Math.round((session.correct_count / total) * 100));
+
+        // Retrieve question logs to extract mastered and weak concepts
+        const logs = db.prepare('SELECT * FROM educational_game_question_logs WHERE session_id = ? ORDER BY question_index ASC').all(sessionId) as any[];
+        const weakConcepts = Array.from(new Set(logs.filter((l) => l.is_correct === 0 && l.concept_tested).map((l) => l.concept_tested)));
+        const masteredConcepts = Array.from(new Set(logs.filter((l) => l.is_correct === 1 && l.concept_tested).map((l) => l.concept_tested)));
+
+        db.prepare(`
+          UPDATE educational_game_sessions
+          SET accuracy_percentage = ?,
+              duration_seconds = ?,
+              status = 'completed',
+              weak_concepts_json = ?,
+              mastered_concepts_json = ?,
+              completed_at = ?,
+              updated_at = ?
+          WHERE id = ? AND user_id = ?
+        `).run(
+          accuracy,
+          durationSeconds,
+          JSON.stringify(weakConcepts),
+          JSON.stringify(masteredConcepts),
+          now,
+          now,
+          sessionId,
+          studentId
+        );
+
+        // Update overall student stats for this game
+        db.prepare(`
+          INSERT INTO student_educational_game_stats (
+            id, user_id, game_slug, total_sessions_completed, total_questions_answered,
+            total_correct_answers, highest_score, average_accuracy, favorite_topic, last_played_at, created_at, updated_at
+          ) VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(user_id, game_slug) DO UPDATE SET
+            total_sessions_completed = total_sessions_completed + 1,
+            total_questions_answered = total_questions_answered + excluded.total_questions_answered,
+            total_correct_answers = total_correct_answers + excluded.total_correct_answers,
+            highest_score = MAX(highest_score, excluded.highest_score),
+            average_accuracy = ROUND((average_accuracy * 0.7) + (excluded.average_accuracy * 0.3)),
+            favorite_topic = excluded.favorite_topic,
+            last_played_at = excluded.last_played_at,
+            updated_at = excluded.updated_at
+        `).run(
+          `stat-${crypto.randomUUID().slice(0, 8)}`,
+          studentId,
+          session.game_slug,
+          total,
+          session.correct_count,
+          session.score,
+          accuracy,
+          session.topic,
+          now,
+          now,
+          now
+        );
+
+        // Save entry into Library Resources so student can review past games
+        const gameMeta = EDUCATIONAL_GAMES_CATALOG.find((g) => g.slug === session.game_slug);
+        const gameName = gameMeta ? gameMeta.name : session.game_slug;
+
+        db.prepare(`
+          INSERT INTO library_resources (id, user_id, resource_type, title, subject, topic, summary, content_json, media_url, status, created_at)
+          VALUES (?, ?, 'game', ?, ?, ?, ?, ?, NULL, 'ready', ?)
+        `).run(
+          `res-${sessionId}`,
+          studentId,
+          `${gameName}: ${session.topic}`,
+          session.subject,
+          session.topic,
+          `Score: ${session.score} pts • Accuracy: ${accuracy}% • ${session.correct_count}/${total} correct`,
+          JSON.stringify({ sessionId, gameSlug: session.game_slug, score: session.score, accuracy, weakConcepts }),
+          now
+        );
+
+        // Record learning activity
+        db.prepare(`
+          INSERT INTO learning_activity (id, user_id, activity_type, title, subject, topic, duration_minutes, score_percent, resource_id, created_at)
+          VALUES (?, ?, 'game', ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          `act-${crypto.randomUUID().slice(0, 8)}`,
+          studentId,
+          `${gameName}: ${session.topic}`,
+          session.subject,
+          session.topic,
+          Math.max(3, Math.ceil(durationSeconds / 60)),
+          accuracy,
+          sessionId,
+          now
+        );
+
+        sendJson(res, 200, {
+          sessionId,
+          gameSlug: session.game_slug,
+          topic: session.topic,
+          subject: session.subject,
+          difficulty: session.difficulty,
+          score: session.score,
+          accuracyPercentage: accuracy,
+          accuracy_percentage: accuracy,
+          correctCount: session.correct_count,
+          correct_count: session.correct_count,
+          totalQuestions: total,
+          total_questions: total,
+          durationSeconds,
+          weakConcepts,
+          weak_concepts: weakConcepts,
+          masteredConcepts,
+          mastered_concepts: masteredConcepts,
+          revisionRecommendation: weakConcepts.length > 0
+            ? `Review ${weakConcepts.join(', ')} with your AI Tutor to strengthen conceptual understanding.`
+            : 'Outstanding performance! You mastered all tested concepts in this session.',
+          revision_recommendation: weakConcepts.length > 0
+            ? `Review ${weakConcepts.join(', ')} with your AI Tutor to strengthen conceptual understanding.`
+            : 'Outstanding performance! You mastered all tested concepts in this session.',
+          tutorUrl: `/tutor?topic=${encodeURIComponent(session.topic)}`
+        });
+        return;
+      }
+
+      // 5. Get Student Games History & Topic Analytics
+      if (pathname === '/api/educational-games/history' && req.method === 'GET') {
+        const sessions = db.prepare(`
+          SELECT * FROM educational_game_sessions
+          WHERE user_id = ?
+          ORDER BY created_at DESC
+          LIMIT 25
+        `).all(studentId) as any[];
+
+        const stats = db.prepare(`
+          SELECT * FROM student_educational_game_stats
+          WHERE user_id = ?
+        `).all(studentId) as any[];
+
+        sendJson(res, 200, {
+          sessions: sessions.map((s) => ({
+            ...s,
+            weak_concepts: JSON.parse(s.weak_concepts_json || '[]'),
+            mastered_concepts: JSON.parse(s.mastered_concepts_json || '[]')
+          })),
+          stats,
+          totalSessionsCompleted: sessions.filter((s) => s.status === 'completed').length
         });
         return;
       }

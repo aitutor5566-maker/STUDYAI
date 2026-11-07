@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#064E3B"/>
+      <stop offset="50%" stop-color="#065F46"/>
+      <stop offset="100%" stop-color="#022C22"/>
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#F0FDF4"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1000" height="600" fill="url(#bgGrad)" rx="24"/>
+
+  <!-- Decorative circles -->
+  <circle cx="900" cy="80" r="140" fill="#10B981" opacity="0.1"/>
+  <circle cx="100" cy="500" r="160" fill="#34D399" opacity="0.08"/>
+
+  <!-- Header -->
+  <text x="50" y="55" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="26" font-weight="900" fill="#FFFFFF">
+    STUDYAI — Multilingual Language Learning &amp; AI Speaking Engine
+  </text>
+  <text x="50" y="82" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="600" fill="#A7F3D0">
+    Proprietary Target-vs-Support Language Separation • 8 Progressive Fluency Stages • Honest Phonetic Assessment
+  </text>
+
+  <!-- Column 1: Target vs Support Language Decoupling -->
+  <g transform="translate(50, 110)">
+    <rect width="280" height="440" rx="16" fill="url(#cardGrad)" filter="url(#shadow)"/>
+    <rect width="280" height="46" rx="16" fill="#047857"/>
+    <text x="20" y="30" font-family="sans-serif" font-size="15" font-weight="800" fill="#FFFFFF">1. Language Decoupling Matrix</text>
+    
+    <text x="20" y="75" font-family="sans-serif" font-size="12" font-weight="700" fill="#065F46">TARGET LANGUAGE (Any of 7):</text>
+    <g transform="translate(20, 88)">
+      <rect width="240" height="34" rx="8" fill="#ECFDF5" stroke="#10B981"/>
+      <text x="12" y="22" font-family="sans-serif" font-size="13" font-weight="700" fill="#064E3B">🇯🇵 Japanese (Kanji, Kana)</text>
+    </g>
+    <g transform="translate(20, 130)">
+      <rect width="240" height="34" rx="8" fill="#F0FDF4" stroke="#A7F3D0"/>
+      <text x="12" y="22" font-family="sans-serif" font-size="12" font-weight="600" fill="#374151">🇬🇧 English • 🇫🇷 French • 🇩🇪 German</text>
+    </g>
+    <g transform="translate(20, 172)">
+      <rect width="240" height="34" rx="8" fill="#F0FDF4" stroke="#A7F3D0"/>
+      <text x="12" y="22" font-family="sans-serif" font-size="12" font-weight="600" fill="#374151">💃 Spanish • 🏛️ Telugu • 🦚 Hindi</text>
+    </g>
+
+    <text x="20" y="235" font-family="sans-serif" font-size="12" font-weight="700" fill="#065F46">EXPLANATION TONGUE (Support):</text>
+    <g transform="translate(20, 248)">
+      <rect width="240" height="44" rx="8" fill="#FEF3C7" stroke="#F59E0B"/>
+      <text x="12" y="20" font-family="sans-serif" font-size="12" font-weight="800" fill="#92400E">🏛️ Telugu Support (మీ మాతృభాష)</text>
+      <text x="12" y="36" font-family="sans-serif" font-size="11" font-weight="600" fill="#B45309">みず → నీరు / మంచి నీళ్ళు</text>
+    </g>
+
+    <text x="20" y="325" font-family="sans-serif" font-size="12" font-weight="700" fill="#065F46">MULTIPLE ENROLMENTS:</text>
+    <text x="20" y="348" font-family="sans-serif" font-size="12" font-weight="500" fill="#4B5563" width="240">
+      • Japanese Course: 100% Preserved<br/>
+      • French Course: Active (In Progress)<br/>
+      • Zero deletion upon switching<br/>
+      • Official Polyglot Certificates
+    </text>
+
+    <g transform="translate(20, 395)">
+      <rect width="240" height="32" rx="8" fill="url(#goldGrad)"/>
+      <text x="45" y="21" font-family="sans-serif" font-size="12" font-weight="800" fill="#FFFFFF">🏆 Verified Course Certificate</text>
+    </g>
+  </g>
+
+  <!-- Column 2: 8 Progressive Fluency Stages -->
+  <g transform="translate(360, 110)">
+    <rect width="280" height="440" rx="16" fill="url(#cardGrad)" filter="url(#shadow)"/>
+    <rect width="280" height="46" rx="16" fill="#059669"/>
+    <text x="20" y="30" font-family="sans-serif" font-size="15" font-weight="800" fill="#FFFFFF">2. 8-Stage Fluency Pathway</text>
+
+    <!-- Stage items -->
+    <g transform="translate(20, 65)">
+      <rect width="240" height="36" rx="6" fill="#D1FAE5"/>
+      <text x="10" y="22" font-family="sans-serif" font-size="11" font-weight="800" fill="#065F46">Stage 1: Alphabet &amp; Phonetics</text>
+    </g>
+    <g transform="translate(20, 108)">
+      <rect width="240" height="36" rx="6" fill="#ECFDF5"/>
+      <text x="10" y="22" font-family="sans-serif" font-size="11" font-weight="800" fill="#065F46">Stage 2: Core Vocabulary (72 words)</text>
+    </g>
+    <g transform="translate(20, 151)">
+      <rect width="240" height="36" rx="6" fill="#ECFDF5"/>
+      <text x="10" y="22" font-family="sans-serif" font-size="11" font-weight="800" fill="#065F46">Stage 3: Sentence Formation &amp; Syntax</text>
+    </g>
+    <g transform="translate(20, 194)">
+      <rect width="240" height="36" rx="6" fill="#ECFDF5"/>
+      <text x="10" y="22" font-family="sans-serif" font-size="11" font-weight="800" fill="#065F46">Stage 4: Grammar &amp; Conjugations</text>
+    </g>
+    <g transform="translate(20, 237)">
+      <rect width="240" height="36" rx="6" fill="#ECFDF5"/>
+      <text x="10" y="22" font-family="sans-serif" font-size="11" font-weight="800" fill="#065F46">Stage 5: Listening &amp; Shadowing</text>
+    </g>
+    <g transform="translate(20, 280)">
+      <rect width="240" height="36" rx="6" fill="#ECFDF5"/>
+      <text x="10" y="22" font-family="sans-serif" font-size="11" font-weight="800" fill="#065F46">Stage 6: Reading &amp; Writing (Kanji)</text>
+    </g>
+    <g transform="translate(20, 323)">
+      <rect width="240" height="36" rx="6" fill="#ECFDF5"/>
+      <text x="10" y="22" font-family="sans-serif" font-size="11" font-weight="800" fill="#065F46">Stage 7: Real-World Communication</text>
+    </g>
+    <g transform="translate(20, 366)">
+      <rect width="240" height="36" rx="6" fill="#FEF3C7" stroke="#F59E0B"/>
+      <text x="10" y="22" font-family="sans-serif" font-size="11" font-weight="800" fill="#92400E">Stage 8: Advanced Conversational Fluency</text>
+    </g>
+    <text x="20" y="422" font-family="sans-serif" font-size="11" font-weight="700" fill="#059669">Total: 24 Structured Interactive Lessons</text>
+  </g>
+
+  <!-- Column 3: Speaking Lab & Phonetics Engine -->
+  <g transform="translate(670, 110)">
+    <rect width="280" height="440" rx="16" fill="url(#cardGrad)" filter="url(#shadow)"/>
+    <rect width="280" height="46" rx="16" fill="#1E1B4B"/>
+    <text x="20" y="30" font-family="sans-serif" font-size="15" font-weight="800" fill="#FFFFFF">3. AI Speaking Lab &amp; Partner</text>
+
+    <text x="20" y="75" font-family="sans-serif" font-size="12" font-weight="700" fill="#312E81">HONEST PHONETIC EVALUATION:</text>
+    <g transform="translate(20, 88)">
+      <rect width="240" height="65" rx="8" fill="#F5F3FF" stroke="#8B5CF6"/>
+      <text x="10" y="18" font-family="sans-serif" font-size="11" font-weight="800" fill="#4C1D95">Speech: "こんにちは" (Konnichiwa)</text>
+      <text x="10" y="36" font-family="sans-serif" font-size="12" font-weight="900" fill="#10B981">Score: 100% • Exact Match</text>
+      <text x="10" y="52" font-family="sans-serif" font-size="10" font-weight="600" fill="#6D28D9">Feedback: "Superb articulation and cadence"</text>
+    </g>
+
+    <g transform="translate(20, 162)">
+      <rect width="240" height="65" rx="8" fill="#FFF1F2" stroke="#FDA4AF"/>
+      <text x="10" y="18" font-family="sans-serif" font-size="11" font-weight="800" fill="#9F1239">Partial Speech: "ありがと"</text>
+      <text x="10" y="36" font-family="sans-serif" font-size="12" font-weight="900" fill="#E11D48">Score: 68% • Missing Syllables</text>
+      <text x="10" y="52" font-family="sans-serif" font-size="10" font-weight="600" fill="#BE123C">Telugu Tip: చివరి "ఉ" శబ్దాన్ని స్పష్టంగా పలకండి.</text>
+    </g>
+
+    <text x="20" y="255" font-family="sans-serif" font-size="12" font-weight="700" fill="#312E81">AI CONVERSATION PARTNER:</text>
+    <g transform="translate(20, 268)">
+      <rect width="240" height="70" rx="8" fill="#EFF6FF" stroke="#60A5FA"/>
+      <text x="10" y="20" font-family="sans-serif" font-size="11" font-weight="800" fill="#1E3A8A">AI: こんにちは！お元気ですか？</text>
+      <text x="10" y="38" font-family="sans-serif" font-size="10" font-weight="600" fill="#1D4ED8">Translation: హలో! మీరు ఎలా ఉన్నారు?</text>
+      <text x="10" y="56" font-family="sans-serif" font-size="10" font-weight="700" fill="#047857">Tip: Uses polite honorific 'O' prefix</text>
+    </g>
+
+    <text x="20" y="365" font-family="sans-serif" font-size="12" font-weight="700" fill="#312E81">INTERACTIVE GAMES:</text>
+    <text x="20" y="385" font-family="sans-serif" font-size="11" font-weight="600" fill="#374151">
+      • Word-to-Meaning Match<br/>
+      • Sentence Scramble Syntax Builder<br/>
+      • Missing Syllable Orthography Quiz
+    </text>
+  </g>
+</svg>

@@ -86,9 +86,33 @@ pytest backend/tests -v
 
 ---
 
-## 5. Flutter Multi-App Execution
+## 5. Web Development Stack Execution (Vite + Node Server)
 
-To run any of the discrete client experiences:
+To run the interactive React & TypeScript application with Node backend:
+
+```bash
+# Install dependencies
+npm install
+
+# Start synchronized dev servers (Vite on :5173, Node Backend on :3001)
+npm run dev
+```
+
+### Active Application & Portal URLs
+
+| Application / Portal | Local Development URL | Default Test Account | Role |
+| :--- | :--- | :--- | :--- |
+| **Main App (Dashboard)** | `http://localhost:5173/` | `vishwak@studyai.edu` | Student |
+| **AI Speaking & Languages** | `http://localhost:5173/languages` | `vishwak@studyai.edu` | Student |
+| **Library Hub** | `http://localhost:5173/library` | `vishwak@studyai.edu` | Student |
+| **School Admin Portal** | `http://localhost:5173/admin` | `admin@studyai.edu` | Admin |
+| **Super Admin Console** | `http://localhost:5173/superadmin` | `superadmin@studyai.edu` | Super Admin |
+| **Parent Portal** | `http://localhost:5173/profile` (Passcode: `2468`) | `parent@studyai.edu` | Parent |
+| **Backend REST API** | `http://localhost:3001/api` | System API Tokens | Internal |
+
+---
+
+## 6. Multi-App Flutter Execution (Cross-Platform)
 
 ### Student App
 ```bash

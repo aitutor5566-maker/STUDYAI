@@ -18,6 +18,7 @@ export function hashSecret(secret: string): string {
 export function initDatabase() {
   db.exec(`
     PRAGMA journal_mode = WAL;
+    PRAGMA busy_timeout = 5000;
     PRAGMA foreign_keys = ON;
 
     CREATE TABLE IF NOT EXISTS users (
@@ -491,6 +492,221 @@ export function initDatabase() {
       dimensions_json TEXT DEFAULT '{}',
       recorded_at TEXT NOT NULL
     );
+
+    -- ==============================================================================
+    -- AI SPEAKING SKILLS & MULTILINGUAL LANGUAGE LEARNING LIBRARY TABLES
+    -- ==============================================================================
+    CREATE TABLE IF NOT EXISTS supported_languages (
+      code TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      native_name TEXT NOT NULL,
+      script_name TEXT NOT NULL,
+      flag_emoji TEXT NOT NULL,
+      description TEXT NOT NULL,
+      speech_recognition_code TEXT NOT NULL,
+      speech_synthesis_voice TEXT NOT NULL,
+      stages_count INTEGER NOT NULL DEFAULT 8,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS language_courses (
+      id TEXT PRIMARY KEY,
+      language_code TEXT NOT NULL,
+      title TEXT NOT NULL,
+      level TEXT NOT NULL DEFAULT 'Beginner to Advanced',
+      total_stages INTEGER NOT NULL DEFAULT 8,
+      total_lessons INTEGER NOT NULL DEFAULT 24,
+      estimated_hours INTEGER NOT NULL DEFAULT 30,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS student_language_enrolments (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      language_code TEXT NOT NULL,
+      support_language_code TEXT NOT NULL DEFAULT 'en',
+      is_primary_active INTEGER NOT NULL DEFAULT 0,
+      current_stage INTEGER NOT NULL DEFAULT 1,
+      current_lesson_number INTEGER NOT NULL DEFAULT 1,
+      skill_level TEXT NOT NULL DEFAULT 'Beginner (Stage 1)',
+      completed_lessons_count INTEGER NOT NULL DEFAULT 0,
+      total_lessons_count INTEGER NOT NULL DEFAULT 24,
+      progress_percentage INTEGER NOT NULL DEFAULT 0,
+      vocabulary_words_learned INTEGER NOT NULL DEFAULT 0,
+      grammar_concepts_learned INTEGER NOT NULL DEFAULT 0,
+      speaking_exercises_completed INTEGER NOT NULL DEFAULT 0,
+      listening_exercises_completed INTEGER NOT NULL DEFAULT 0,
+      reading_exercises_completed INTEGER NOT NULL DEFAULT 0,
+      writing_exercises_completed INTEGER NOT NULL DEFAULT 0,
+      average_speaking_accuracy INTEGER NOT NULL DEFAULT 0,
+      is_course_completed INTEGER NOT NULL DEFAULT 0,
+      completed_at TEXT,
+      last_studied_at TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(user_id, language_code)
+    );
+
+    CREATE TABLE IF NOT EXISTS student_lesson_progress (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      lesson_id TEXT NOT NULL,
+      language_code TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'in_progress',
+      score_percentage INTEGER NOT NULL DEFAULT 0,
+      attempts_count INTEGER NOT NULL DEFAULT 1,
+      speaking_score INTEGER,
+      listening_score INTEGER,
+      mistakes_json TEXT NOT NULL DEFAULT '[]',
+      completed_at TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(user_id, lesson_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS student_speaking_evaluations (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      language_code TEXT NOT NULL,
+      exercise_type TEXT NOT NULL,
+      target_text TEXT NOT NULL,
+      recognized_text TEXT NOT NULL,
+      accuracy_score INTEGER NOT NULL,
+      phonetic_feedback TEXT,
+      support_language_explanation TEXT,
+      audio_duration_seconds REAL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS student_language_achievements (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      language_code TEXT NOT NULL,
+      achievement_key TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      icon_name TEXT NOT NULL DEFAULT 'award',
+      badge_color TEXT NOT NULL DEFAULT '#FF6A00',
+      earned_at TEXT NOT NULL,
+      UNIQUE(user_id, language_code, achievement_key)
+    );
+
+    CREATE TABLE IF NOT EXISTS student_saved_vocabulary (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      language_code TEXT NOT NULL,
+      support_language_code TEXT NOT NULL DEFAULT 'te',
+      word_id TEXT NOT NULL,
+      category TEXT NOT NULL,
+      english_word TEXT NOT NULL,
+      target_word TEXT NOT NULL,
+      romanization TEXT,
+      support_meaning TEXT NOT NULL,
+      mastery_level INTEGER NOT NULL DEFAULT 1,
+      practice_count INTEGER NOT NULL DEFAULT 1,
+      last_pronunciation_score INTEGER,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(user_id, language_code, word_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS student_listening_logs (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      language_code TEXT NOT NULL,
+      activity_type TEXT NOT NULL,
+      question_id TEXT NOT NULL,
+      is_correct INTEGER NOT NULL DEFAULT 0,
+      score_earned INTEGER NOT NULL DEFAULT 0,
+      playback_speed REAL NOT NULL DEFAULT 1.0,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS student_language_game_logs (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      language_code TEXT NOT NULL,
+      game_code TEXT NOT NULL,
+      difficulty TEXT NOT NULL DEFAULT 'medium',
+      score INTEGER NOT NULL DEFAULT 0,
+      accuracy_percent INTEGER NOT NULL DEFAULT 0,
+      items_completed INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL
+    );
+
+    -- ==============================================================================
+    -- EDUCATIONAL GAMES LIBRARY (7 GAMES MODULE) TABLES
+    -- ==============================================================================
+    CREATE TABLE IF NOT EXISTS educational_games_catalog (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      slug TEXT UNIQUE NOT NULL,
+      description TEXT NOT NULL,
+      category TEXT NOT NULL,
+      icon TEXT NOT NULL,
+      badge_color TEXT NOT NULL,
+      compatible_subjects_json TEXT NOT NULL,
+      supported_difficulties_json TEXT NOT NULL,
+      instructions_json TEXT NOT NULL,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS educational_game_sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      game_slug TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      difficulty TEXT NOT NULL,
+      total_questions INTEGER NOT NULL DEFAULT 5,
+      correct_count INTEGER NOT NULL DEFAULT 0,
+      incorrect_count INTEGER NOT NULL DEFAULT 0,
+      hints_used INTEGER NOT NULL DEFAULT 0,
+      score INTEGER NOT NULL DEFAULT 0,
+      accuracy_percentage INTEGER NOT NULL DEFAULT 0,
+      duration_seconds INTEGER NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'in_progress',
+      weak_concepts_json TEXT NOT NULL DEFAULT '[]',
+      mastered_concepts_json TEXT NOT NULL DEFAULT '[]',
+      session_data_json TEXT NOT NULL DEFAULT '{}',
+      completed_at TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS educational_game_question_logs (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      question_index INTEGER NOT NULL,
+      question_payload_json TEXT NOT NULL,
+      student_answer_json TEXT NOT NULL,
+      correct_answer_json TEXT NOT NULL,
+      is_correct INTEGER NOT NULL,
+      score_earned INTEGER NOT NULL DEFAULT 0,
+      hints_used INTEGER NOT NULL DEFAULT 0,
+      concept_tested TEXT,
+      explanation TEXT,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS student_educational_game_stats (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      game_slug TEXT NOT NULL,
+      total_sessions_completed INTEGER NOT NULL DEFAULT 0,
+      total_questions_answered INTEGER NOT NULL DEFAULT 0,
+      total_correct_answers INTEGER NOT NULL DEFAULT 0,
+      highest_score INTEGER NOT NULL DEFAULT 0,
+      average_accuracy INTEGER NOT NULL DEFAULT 0,
+      favorite_topic TEXT,
+      last_played_at TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(user_id, game_slug)
+    );
   `);
 
   try {
@@ -502,6 +718,11 @@ export function initDatabase() {
   seedInitialDataIfEmpty();
   seedFamilyDataIfEmpty();
   seedAdminAndTesterDataIfEmpty();
+  seedLanguageDataIfEmpty();
+  seedEducationalGamesIfEmpty();
+  try {
+    db.prepare("UPDATE supported_languages SET script_name = 'ひらがな, カタカナ & 漢字 (Hiragana, Katakana & Kanji)' WHERE code = 'ja'").run();
+  } catch {}
 }
 
 function seedFamilyDataIfEmpty() {
@@ -1183,4 +1404,235 @@ function seedAdminAndTesterDataIfEmpty() {
     now,
     now
   );
+}
+
+function seedLanguageDataIfEmpty() {
+  const now = new Date().toISOString();
+
+  // Always ensure default student 'student-vishwak' has initial language enrolments so dashboard is never blank
+  const vishwakEnrolCount = db.prepare('SELECT COUNT(*) as c FROM student_language_enrolments WHERE user_id = ?').get('student-vishwak') as { c: number };
+  if (!vishwakEnrolCount || vishwakEnrolCount.c === 0) {
+    db.prepare(`
+      INSERT OR IGNORE INTO student_language_enrolments (
+        id, user_id, language_code, support_language_code, is_primary_active,
+        current_stage, current_lesson_number, skill_level, completed_lessons_count, total_lessons_count,
+        progress_percentage, vocabulary_words_learned, grammar_concepts_learned,
+        speaking_exercises_completed, listening_exercises_completed, reading_exercises_completed, writing_exercises_completed,
+        average_speaking_accuracy, is_course_completed, last_studied_at, created_at, updated_at
+      ) VALUES (
+        'enrol-vishwak-ja', 'student-vishwak', 'ja', 'te', 1,
+        2, 1, 'Stage 2 Explorer', 3, 24,
+        16, 18, 4,
+        6, 5, 4, 3,
+        91, 0, ?, ?, ?
+      )
+    `).run(now, now, now);
+
+    db.prepare(`
+      INSERT OR IGNORE INTO student_language_enrolments (
+        id, user_id, language_code, support_language_code, is_primary_active,
+        current_stage, current_lesson_number, skill_level, completed_lessons_count, total_lessons_count,
+        progress_percentage, vocabulary_words_learned, grammar_concepts_learned,
+        speaking_exercises_completed, listening_exercises_completed, reading_exercises_completed, writing_exercises_completed,
+        average_speaking_accuracy, is_course_completed, last_studied_at, created_at, updated_at
+      ) VALUES (
+        'enrol-vishwak-en', 'student-vishwak', 'en', 'te', 0,
+        3, 2, 'Stage 3 Communicator', 7, 24,
+        30, 32, 8,
+        12, 10, 8, 6,
+        94, 0, ?, ?, ?
+      )
+    `).run(now, now, now);
+  }
+
+  const existingLang = db.prepare('SELECT code FROM supported_languages LIMIT 1').get() as { code: string } | undefined;
+  if (existingLang) return;
+
+  const insertLang = db.prepare(`
+    INSERT INTO supported_languages (code, name, native_name, script_name, flag_emoji, description, speech_recognition_code, speech_synthesis_voice, stages_count, is_active, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+  `);
+
+  insertLang.run('en', 'English', 'English', 'Latin Alphabet (A-Z)', '🇬🇧', 'Master global communication, academic fluency, phonetics, and confident conversational expression.', 'en-US', 'Google US English', 8, now);
+  insertLang.run('te', 'Telugu', 'తెలుగు', 'తెలుగు లిపి (Telugu Script)', '🏛️', 'Learn the sweet Italian of the East — Achulu, Hallulu, Guninthalu, vibrant vocabulary, and classical conversation.', 'te-IN', 'Google తెలుగు', 8, now);
+  insertLang.run('hi', 'Hindi', 'हिन्दी', 'देवनागरी (Devanagari)', '🦚', 'Explore the national language of India — Varnamala, Matras, rich cultural idioms, and expressive speaking.', 'hi-IN', 'Google हिन्दी', 8, now);
+  insertLang.run('ja', 'Japanese', '日本語', 'ひらがな, カタカナ & 漢字 (Hiragana, Katakana & Kanji)', '🌸', 'Progressively learn Hiragana, Katakana, core Kanji, politeness levels (Keigo), and Japanese conversational etiquette.', 'ja-JP', 'Google 日本語', 8, now);
+  insertLang.run('fr', 'French', 'Français', 'Alphabet Français avec Accents', '🗼', 'Learn the language of diplomacy and culture — nasal sounds, liaison, gender agreements, and Parisian dialogue.', 'fr-FR', 'Google Français', 8, now);
+  insertLang.run('de', 'German', 'Deutsch', 'Lateinisches Alphabet mit Umlauten', '🏰', 'Engineered precision — Genders (der, die, das), 4 grammatical cases, compound words, and fluent spoken German.', 'de-DE', 'Google Deutsch', 8, now);
+  insertLang.run('es', 'Spanish', 'Español', 'Alfabeto Español con Ñ', '💃', 'Vibrant global tongue — rolled R (erre), Ser vs. Estar, subjunctive moods, and lively everyday conversations.', 'es-ES', 'Google Español', 8, now);
+
+  // Seed sample initial language courses
+  const insertCourse = db.prepare(`
+    INSERT INTO language_courses (id, language_code, title, level, total_stages, total_lessons, estimated_hours, created_at)
+    VALUES (?, ?, ?, 'Beginner to Advanced', 8, 24, 30, ?)
+  `);
+
+  insertCourse.run('course-en', 'en', 'Complete English Mastery Course', now);
+  insertCourse.run('course-te', 'te', 'Complete Telugu Fluency Course', now);
+  insertCourse.run('course-hi', 'hi', 'Complete Hindi Fluency Course', now);
+  insertCourse.run('course-ja', 'ja', 'Complete Japanese (Hiragana to N3) Course', now);
+  insertCourse.run('course-fr', 'fr', 'Complete French Fluency Course', now);
+  insertCourse.run('course-de', 'de', 'Complete German (A1 to B2) Course', now);
+  insertCourse.run('course-es', 'es', 'Complete Spanish Fluency Course', now);
+
+  // Seed sample enrolment for default student 'vishwak-1'
+  db.prepare(`
+    INSERT OR IGNORE INTO student_language_enrolments (
+      id, user_id, language_code, support_language_code, is_primary_active,
+      current_stage, current_lesson_number, skill_level, completed_lessons_count, total_lessons_count,
+      progress_percentage, vocabulary_words_learned, grammar_concepts_learned,
+      speaking_exercises_completed, listening_exercises_completed, reading_exercises_completed, writing_exercises_completed,
+      average_speaking_accuracy, is_course_completed, last_studied_at, created_at, updated_at
+    ) VALUES (
+      'enrol-default-en', 'vishwak-1', 'en', 'te', 1,
+      1, 1, 'Beginner (Stage 1)', 0, 24,
+      0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, ?, ?, ?
+    )
+  `).run(now, now, now);
+}
+
+function seedEducationalGamesIfEmpty() {
+  const existing = db.prepare('SELECT id FROM educational_games_catalog LIMIT 1').get() as { id: string } | undefined;
+  if (existing) return;
+
+  const now = new Date().toISOString();
+  const insertGame = db.prepare(`
+    INSERT INTO educational_games_catalog (
+      id, name, slug, description, category, icon, badge_color,
+      compatible_subjects_json, supported_difficulties_json, instructions_json, is_active, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+  `);
+
+  const games = [
+    {
+      id: 'game-1',
+      name: 'Missing Letters',
+      slug: 'missing_letters',
+      description: 'Master scientific and academic spelling by filling in missing letter positions with contextual hints.',
+      category: 'vocabulary',
+      icon: '🔤',
+      badge_color: '#10B981',
+      compatible_subjects: ['Biology', 'Physics', 'Chemistry', 'Mathematics', 'English', 'History', 'Geography', 'Languages'],
+      supported_difficulties: ['easy', 'medium', 'hard'],
+      instructions: [
+        'Observe the academic term with blank spaces represented by underscores.',
+        'Type or select the correct letters to complete the full term.',
+        'Request hints if you get stuck, and view the complete definition upon submission.'
+      ]
+    },
+    {
+      id: 'game-2',
+      name: 'Missing Words',
+      slug: 'missing_words',
+      description: 'Complete academic statements and law definitions with the correct concept word.',
+      category: 'concept',
+      icon: '🧩',
+      badge_color: '#3B82F6',
+      compatible_subjects: ['Science', 'Physics', 'Chemistry', 'Biology', 'History', 'Civics', 'Economics', 'English'],
+      supported_difficulties: ['easy', 'medium', 'hard'],
+      instructions: [
+        'Read the sentence containing an underlined blank space carefully.',
+        'Select the correct word from the choices or type in the exact terminology.',
+        'Read the educational explanation to reinforce why this term is correct.'
+      ]
+    },
+    {
+      id: 'game-3',
+      name: 'Match the Pairs',
+      slug: 'match_pairs',
+      description: 'Connect related terms with their definitions, formulas with principles, or questions with answers.',
+      category: 'recall',
+      icon: '🔗',
+      badge_color: '#8B5CF6',
+      compatible_subjects: ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'Languages'],
+      supported_difficulties: ['easy', 'medium', 'hard'],
+      instructions: [
+        'Click on a card from Group A (left side) to select it.',
+        'Click on the corresponding matching card from Group B (right side).',
+        'Match all pairs with minimum mistakes to achieve the highest score.'
+      ]
+    },
+    {
+      id: 'game-4',
+      name: 'MCQ Challenge',
+      slug: 'mcq_challenge',
+      description: 'Engage with curriculum-grounded multiple-choice questions with real-time concept feedback.',
+      category: 'concept',
+      icon: '🎯',
+      badge_color: '#EC4899',
+      compatible_subjects: ['All Academic Subjects', 'Mathematics', 'Science', 'Social Studies', 'English', 'Computer Science'],
+      supported_difficulties: ['easy', 'medium', 'hard'],
+      instructions: [
+        'Review the academic question and examine the four options provided.',
+        'Select the single best answer before the round ends.',
+        'Review the concept breakdown to learn both why the correct answer is valid and why distractors are invalid.'
+      ]
+    },
+    {
+      id: 'game-5',
+      name: 'Word Scramble',
+      slug: 'word_scramble',
+      description: 'Unscramble mixed letter tiles to discover core scientific terms and vocabulary.',
+      category: 'vocabulary',
+      icon: '🔀',
+      badge_color: '#F59E0B',
+      compatible_subjects: ['Biology', 'Chemistry', 'Physics', 'Geography', 'English', 'History', 'Languages'],
+      supported_difficulties: ['easy', 'medium', 'hard'],
+      instructions: [
+        'Look at the scrambled letter tiles representing a key topic word.',
+        'Click or drag letters into the answer tray in the correct order.',
+        'Use the definition hint to guide your spelling if needed.'
+      ]
+    },
+    {
+      id: 'game-6',
+      name: 'True or False',
+      slug: 'true_false',
+      description: 'Evaluate factual and conceptual statements to debunk common academic misconceptions.',
+      category: 'logic',
+      icon: '⚖️',
+      badge_color: '#06B6D4',
+      compatible_subjects: ['Science', 'History', 'Geography', 'Mathematics', 'Civics', 'Economics'],
+      supported_difficulties: ['easy', 'medium', 'hard'],
+      instructions: [
+        'Carefully evaluate the provided academic statement.',
+        'Choose True if the principle is completely valid, or False if it contains a conceptual flaw.',
+        'Read the detailed fact explanation after submission.'
+      ]
+    },
+    {
+      id: 'game-7',
+      name: 'Find the Mistake',
+      slug: 'find_mistake',
+      description: 'Spot intentional errors in scientific equations, historical dates, or grammar rules and correct them.',
+      category: 'critical_thinking',
+      icon: '🔍',
+      badge_color: '#EF4444',
+      compatible_subjects: ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'History', 'English'],
+      supported_difficulties: ['easy', 'medium', 'hard'],
+      instructions: [
+        'Read the formula, sentence, or statement which contains one intentional mistake.',
+        'Tap on the flawed token or segment to isolate the error.',
+        'Select or type the correct replacement to restore academic accuracy.'
+      ]
+    }
+  ];
+
+  for (const g of games) {
+    insertGame.run(
+      g.id,
+      g.name,
+      g.slug,
+      g.description,
+      g.category,
+      g.icon,
+      g.badge_color,
+      JSON.stringify(g.compatible_subjects),
+      JSON.stringify(g.supported_difficulties),
+      JSON.stringify(g.instructions),
+      now
+    );
+  }
 }

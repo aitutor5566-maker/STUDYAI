@@ -1166,7 +1166,7 @@ export const NotesPage: React.FC = () => {
                 }}
                 className="quick-tile"
               >
-                <GraduationCap size={18} color="#7C3AED" />
+                <GraduationCap size={18} color="#FF6A00" />
                 <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>Study Guide & Quiz</span>
               </button>
               <button
@@ -1174,7 +1174,7 @@ export const NotesPage: React.FC = () => {
                 onClick={() => setActiveTab('flashcards')}
                 className="quick-tile"
               >
-                <Layers size={18} color="#D97706" />
+                <Layers size={18} color="#FF6A00" />
                 <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>Flashcards ({activeNote?.flashcards?.length || 0})</span>
               </button>
               <button
@@ -1190,7 +1190,7 @@ export const NotesPage: React.FC = () => {
                 }
                 className="quick-tile"
               >
-                <Volume2 size={18} color="#0284C7" />
+                <Volume2 size={18} color="#FF6A00" />
                 <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>Audio Overview</span>
               </button>
               <button
@@ -1198,7 +1198,7 @@ export const NotesPage: React.FC = () => {
                 onClick={() => handleExportFormat('html')}
                 className="quick-tile"
               >
-                <Printer size={18} color="#16A34A" />
+                <Printer size={18} color="#FF6A00" />
                 <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>Export White-Page HTML/PDF</span>
               </button>
               <button
@@ -1206,7 +1206,7 @@ export const NotesPage: React.FC = () => {
                 onClick={() => handleExportFormat('doc')}
                 className="quick-tile"
               >
-                <Download size={18} color="#EA580C" />
+                <Download size={18} color="#FF6A00" />
                 <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>Export Word (.doc)</span>
               </button>
             </div>

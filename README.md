@@ -504,24 +504,86 @@ flowchart TD
 
 ---
 
+### 7.8 AI Speaking Skills & Multilingual Language Learning Library
+
+<div align="center">
+
+![AI Speaking Skills & Multilingual Library](docs/assets/ai_speaking_multilingual_library.svg)
+
+</div>
+
+- **Target vs. Support Language Decoupling**: Students can choose any target natural language (English, Telugu, Hindi, Japanese, French, German, Spanish) taught using explanations in their native tongue (e.g. Japanese explained with Telugu definitions, romanization, and grammar).
+- **8 Progressive Fluency Stages**:
+  - *Stage 1*: Foundations, Alphabet & Scripts (including Hiragana & Katakana for Japanese).
+  - *Stage 2*: Core Vocabulary (72 high-frequency terms & objects).
+  - *Stage 3*: Sentence Formation & Demonstratives.
+  - *Stage 4*: Grammar in Action & Verb Conjugations.
+  - *Stage 5*: Listening, Shadowing & Cadence.
+  - *Stage 6*: Reading & Writing (Core Jouyou Kanji).
+  - *Stage 7*: Real-World Situational Communication (Travel, dining, shopping).
+  - *Stage 8*: Advanced Conversational Fluency & Spontaneous AI Dialogue.
+- **Honest Phonetic Voice Evaluation Engine**: Speech synthesis and recognition via Web Speech API with strict Levenshtein-phonetic scoring. Rejects false praise and delivers targeted syllable corrections in the student's support language.
+- **Multi-Course Preservation**: Completing a course issues an official accredited certificate. Students can enroll in subsequent languages while 100% of previous courses and progress are preserved.
+
+---
+
 ## 8. Administrative Portals
 
-### 8.1 Admin Portal (`admin.studyai.com`)
-- **Primary Users**: School Principals, Department Heads, Teachers, and Tutors.
-- **Key Modules**:
-  - Student & Class Enrollment Management.
-  - Syllabus, Subject & Topic Customization.
-  - Question Bank & 40-Mark Exam Authoring.
-  - Class-wide Learning Analytics & At-Risk Student Identification.
-  - Role-Based Permissions (`role = 'admin'` or `'teacher'`).
+<div align="center">
 
-### 8.2 Super Admin Portal (`superadmin.studyai.com`)
-- **Primary Users**: Platform Operations Engineers & System Architects.
-- **Key Modules**:
-  - Multi-Tenant School Instance Provisioning.
-  - AI Provider Health & Billing Monitoring (Ollama, Gemini, OpenAI, Groq).
-  - System Security, Audit Logs & IP Whitelisting.
-  - Global Feature Flags & Emergency Kill-Switches.
+![Admin & Super Admin Architecture](docs/assets/admin_superadmin_architecture.svg)
+
+</div>
+
+### 8.1 Access URLs & Portals
+
+| Portal | Local Development URL | Production FQDN | Target Audience | Default Test Email |
+| :--- | :--- | :--- | :--- | :--- |
+| **Main Application** | `http://localhost:5173/` | `https://studyai.com` | Students & Learners | `vishwak@studyai.edu` |
+| **Language Studio** | `http://localhost:5173/languages` | `https://studyai.com/languages` | Language Learners | `vishwak@studyai.edu` |
+| **School Admin Portal** | `http://localhost:5173/admin` | `https://admin.studyai.com` | Teachers, Principals | `admin@studyai.edu` |
+| **Super Admin Console** | `http://localhost:5173/superadmin` | `https://superadmin.studyai.com` | Platform DevOps & Ops | `superadmin@studyai.edu` |
+| **Backend API Gateway** | `http://localhost:3001` | `https://api.studyai.com` | All Services | Service Tokens |
+
+### 8.2 Test Accounts & Credentials
+
+- **Super Administrator**:
+  - **Email**: `superadmin@studyai.edu` or `superadmin@studyai.com`
+  - **Password**: Any password (or session auth token)
+  - **Role**: `superadmin`
+  - **Permissions**: Global platform governance, AI provider health, token analytics, tenant provisioning, feature flags, tester account management.
+  - **URL**: `http://localhost:5173/superadmin`
+
+- **School Academic Administrator**:
+  - **Email**: `admin@studyai.edu` or `admin@studyai.com`
+  - **Password**: Any password
+  - **Role**: `admin`
+  - **Permissions**: School enrollment, analytics, 40-mark test authoring, QA bug inspection.
+  - **URL**: `http://localhost:5173/admin`
+
+- **QA Testing Accounts (Pre-Seeded)**:
+  - Lead QA: `qa.overall@studyai.edu`
+  - Notes QA: `qa.notes@studyai.edu`
+  - Tutor QA: `qa.tutor@studyai.edu`
+  - Games QA: `qa.games@studyai.edu`
+
+- **Parent / Family Portal Access**:
+  - **Passcode**: `2468`
+  - **URL**: Navigate to `/profile` and select the **Parent / Guardian** tab.
+
+### 8.3 School Admin Portal Features
+- Student & Class Enrollment Management.
+- Syllabus, Subject & Topic Customization.
+- Question Bank & 40-Mark Exam Authoring.
+- Class-wide Learning Analytics & At-Risk Student Identification.
+- Role-Based Permissions (`role = 'admin'` or `'teacher'`).
+
+### 8.4 Super Admin Portal Features
+- Multi-Tenant School Instance Provisioning.
+- AI Provider Health & Billing Monitoring (Ollama, Gemini, OpenAI, Groq).
+- System Security, Audit Logs & IP Whitelisting.
+- Global Feature Flags & Emergency Kill-Switches.
+- QA Tester lifecycle management (invite, approve, suspend, revoke).
 
 ---
 

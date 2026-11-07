@@ -10,7 +10,7 @@
     "dev:client": "vite",
     "build": "vite build",
     "start": "NODE_ENV=production node --experimental-strip-types server/index.ts",
-    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test": "node --experimental-strip-types --test --test-concurrency=1 tests/*.test.ts",
     "test:fastapi": "PYTHONPATH=. venv/bin/pytest tests/test_fastapi_tutor.py",
     "test:frontend": "vitest run"
   },

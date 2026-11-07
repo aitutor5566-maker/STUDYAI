@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600">
+  <defs>
+    <linearGradient id="adminBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="50%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="purpleCard" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FAF5FF"/>
+      <stop offset="100%" stop-color="#F3E8FF"/>
+    </linearGradient>
+    <linearGradient id="blueCard" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F0F9FF"/>
+      <stop offset="100%" stop-color="#E0F2FE"/>
+    </linearGradient>
+    <linearGradient id="amberCard" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFBEB"/>
+      <stop offset="100%" stop-color="#FEF3C7"/>
+    </linearGradient>
+    <filter id="boxShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1000" height="600" fill="url(#adminBg)" rx="24"/>
+  <circle cx="850" cy="100" r="150" fill="#7C3AED" opacity="0.1"/>
+  <circle cx="150" cy="500" r="180" fill="#0284C7" opacity="0.08"/>
+
+  <!-- Title -->
+  <text x="50" y="55" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="26" font-weight="900" fill="#FFFFFF">
+    STUDYAI — Enterprise Admin, Super Admin &amp; QA Management
+  </text>
+  <text x="50" y="82" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="600" fill="#94A3B8">
+    Multi-Portal Role Segregation • Cryptographic JWT Authentication • System Telemetry &amp; QA Matrix
+  </text>
+
+  <!-- Column 1: Super Admin Console -->
+  <g transform="translate(50, 110)">
+    <rect width="280" height="440" rx="16" fill="url(#purpleCard)" filter="url(#boxShadow)"/>
+    <rect width="280" height="46" rx="16" fill="#7C3AED"/>
+    <text x="20" y="30" font-family="sans-serif" font-size="15" font-weight="800" fill="#FFFFFF">1. Super Admin Console</text>
+
+    <text x="20" y="75" font-family="sans-serif" font-size="11" font-weight="800" fill="#6B21A8">ROUTE &amp; ENDPOINT:</text>
+    <g transform="translate(20, 85)">
+      <rect width="240" height="30" rx="6" fill="#EDE9FE"/>
+      <text x="10" y="20" font-family="monospace" font-size="11" font-weight="700" fill="#5B21B6">/superadmin (Port 5173)</text>
+    </g>
+
+    <text x="20" y="140" font-family="sans-serif" font-size="11" font-weight="800" fill="#6B21A8">DEFAULT TEST CREDENTIALS:</text>
+    <g transform="translate(20, 150)">
+      <rect width="240" height="46" rx="6" fill="#FFFFFF" stroke="#C4B5FD"/>
+      <text x="10" y="18" font-family="sans-serif" font-size="11" font-weight="700" fill="#1E293B">Email: superadmin@studyai.edu</text>
+      <text x="10" y="36" font-family="sans-serif" font-size="10" font-weight="600" fill="#64748B">Role: superadmin (Master Access)</text>
+    </g>
+
+    <text x="20" y="222" font-family="sans-serif" font-size="11" font-weight="800" fill="#6B21A8">CORE CAPABILITIES:</text>
+    <text x="20" y="242" font-family="sans-serif" font-size="11" font-weight="600" fill="#334155" line-height="1.5">
+      • Multi-Tenant School Provisioning<br/>
+      • AI Provider Health (Ollama, Gemini, Grok)<br/>
+      • Real-Time Spend &amp; Token Telemetry<br/>
+      • Global Feature Flags &amp; Kill Switches<br/>
+      • QA Tester Provisioning &amp; Suspension<br/>
+      • Immutable System Audit Logging
+    </text>
+
+    <g transform="translate(20, 385)">
+      <rect width="240" height="36" rx="8" fill="#7C3AED"/>
+      <text x="28" y="23" font-family="sans-serif" font-size="12" font-weight="800" fill="#FFFFFF">Protected URL: /superadmin</text>
+    </g>
+  </g>
+
+  <!-- Column 2: School / Educator Admin Portal -->
+  <g transform="translate(360, 110)">
+    <rect width="280" height="440" rx="16" fill="url(#blueCard)" filter="url(#boxShadow)"/>
+    <rect width="280" height="46" rx="16" fill="#0284C7"/>
+    <text x="20" y="30" font-family="sans-serif" font-size="15" font-weight="800" fill="#FFFFFF">2. School Admin Portal</text>
+
+    <text x="20" y="75" font-family="sans-serif" font-size="11" font-weight="800" fill="#075985">ROUTE &amp; ENDPOINT:</text>
+    <g transform="translate(20, 85)">
+      <rect width="240" height="30" rx="6" fill="#E0F2FE"/>
+      <text x="10" y="20" font-family="monospace" font-size="11" font-weight="700" fill="#0369A1">/admin (Port 5173)</text>
+    </g>
+
+    <text x="20" y="140" font-family="sans-serif" font-size="11" font-weight="800" fill="#075985">DEFAULT TEST CREDENTIALS:</text>
+    <g transform="translate(20, 150)">
+      <rect width="240" height="46" rx="6" fill="#FFFFFF" stroke="#7DD3FC"/>
+      <text x="10" y="18" font-family="sans-serif" font-size="11" font-weight="700" fill="#1E293B">Email: admin@studyai.edu</text>
+      <text x="10" y="36" font-family="sans-serif" font-size="10" font-weight="600" fill="#64748B">Role: admin (School Head / Teacher)</text>
+    </g>
+
+    <text x="20" y="222" font-family="sans-serif" font-size="11" font-weight="800" fill="#075985">CORE CAPABILITIES:</text>
+    <text x="20" y="242" font-family="sans-serif" font-size="11" font-weight="600" fill="#334155">
+      • Class-Wide Learning Analytics<br/>
+      • At-Risk Student Diagnostic Alerts<br/>
+      • 40-Mark Mock Exam Authoring<br/>
+      • Bug Tracking &amp; Resolution Workflows<br/>
+      • Teacher Assignment Rosters<br/>
+      • Student Engagement Heatmaps
+    </text>
+
+    <g transform="translate(20, 385)">
+      <rect width="240" height="36" rx="8" fill="#0284C7"/>
+      <text x="45" y="23" font-family="sans-serif" font-size="12" font-weight="800" fill="#FFFFFF">Protected URL: /admin</text>
+    </g>
+  </g>
+
+  <!-- Column 3: QA Tester Accounts & Parent Guard -->
+  <g transform="translate(670, 110)">
+    <rect width="280" height="440" rx="16" fill="url(#amberCard)" filter="url(#boxShadow)"/>
+    <rect width="280" height="46" rx="16" fill="#D97706"/>
+    <text x="20" y="30" font-family="sans-serif" font-size="15" font-weight="800" fill="#FFFFFF">3. QA Testers &amp; Family</text>
+
+    <text x="20" y="75" font-family="sans-serif" font-size="11" font-weight="800" fill="#B45309">SEEDED QA TESTER ACCOUNTS:</text>
+    <g transform="translate(20, 85)">
+      <rect width="240" height="110" rx="8" fill="#FFFFFF" stroke="#FDE68A"/>
+      <text x="10" y="20" font-family="sans-serif" font-size="10" font-weight="700" fill="#92400E">• qa.overall@studyai.edu (Lead QA)</text>
+      <text x="10" y="42" font-family="sans-serif" font-size="10" font-weight="700" fill="#92400E">• qa.notes@studyai.edu (Notes QA)</text>
+      <text x="10" y="64" font-family="sans-serif" font-size="10" font-weight="700" fill="#92400E">• qa.tutor@studyai.edu (AI Tutor QA)</text>
+      <text x="10" y="86" font-family="sans-serif" font-size="10" font-weight="700" fill="#92400E">• qa.games@studyai.edu (Games QA)</text>
+      <text x="10" y="102" font-family="sans-serif" font-size="9" font-weight="600" fill="#B45309">Pass: Any password (or session token)</text>
+    </g>
+
+    <text x="20" y="222" font-family="sans-serif" font-size="11" font-weight="800" fill="#B45309">PARENT DASHBOARD GUARD:</text>
+    <g transform="translate(20, 235)">
+      <rect width="240" height="52" rx="8" fill="#FEF3C7" stroke="#F59E0B"/>
+      <text x="10" y="20" font-family="sans-serif" font-size="11" font-weight="800" fill="#78350F">Parent Security Passcode: 2468</text>
+      <text x="10" y="38" font-family="sans-serif" font-size="10" font-weight="600" fill="#92400E">Access via: /profile (Parent Tab)</text>
+    </g>
+
+    <text x="20" y="315" font-family="sans-serif" font-size="11" font-weight="800" fill="#B45309">APP &amp; STUDENT URLS:</text>
+    <text x="20" y="335" font-family="sans-serif" font-size="10" font-weight="600" fill="#451A03">
+      • App Base: http://localhost:5173/<br/>
+      • Languages Lab: http://localhost:5173/languages<br/>
+      • Library Hub: http://localhost:5173/library<br/>
+      • Notes Studio: http://localhost:5173/notes<br/>
+      • Backend API: http://localhost:3001
+    </text>
+  </g>
+</svg>
