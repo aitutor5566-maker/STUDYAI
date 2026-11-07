@@ -398,6 +398,31 @@ export function initDatabase() {
       UNIQUE(tester_account_id, permission_key)
     );
 
+    CREATE TABLE IF NOT EXISTS cached_educational_images (
+      id TEXT PRIMARY KEY,
+      query TEXT NOT NULL,
+      concept_key TEXT NOT NULL,
+      title TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      original_source_url TEXT NOT NULL,
+      direct_image_url TEXT NOT NULL,
+      creator TEXT,
+      original_website TEXT,
+      license_type TEXT NOT NULL,
+      license_url TEXT,
+      attribution_requirements TEXT,
+      width INTEGER NOT NULL DEFAULT 800,
+      height INTEGER NOT NULL DEFAULT 600,
+      description TEXT,
+      retrieval_date TEXT NOT NULL,
+      accuracy_status TEXT NOT NULL DEFAULT 'verified',
+      curriculum_subject TEXT,
+      curriculum_grade TEXT,
+      fallback_stage INTEGER NOT NULL DEFAULT 1,
+      metadata_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS test_cases (
       id TEXT PRIMARY KEY,
       module TEXT NOT NULL,

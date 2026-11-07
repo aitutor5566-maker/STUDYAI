@@ -4,7 +4,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import {
   RotateCcw, ZoomIn, ZoomOut, Play, Pause, Bookmark, Box, ShieldCheck, X,
   Sparkles, Camera, Layers, Scissors, Move, Activity, FileText, CheckCircle2,
-  HelpCircle, MessageSquare, Compass, Award, RefreshCw, Send, ChevronRight
+  HelpCircle, MessageSquare, Compass, Award, RefreshCw, Send, ChevronRight,
+  Volume2, VolumeX, Search, ChevronLeft
 } from 'lucide-react';
 import { useLearning } from '../context/LearningContext';
 import {
@@ -18,6 +19,34 @@ import {
 
 export type { ModelPartInfo, Custom3DPrimitive, ModelSpec };
 export { VERIFIED_MODEL_SPECS };
+
+// Anatomical Systems (Screenshot 2 bottom bar)
+export const ANATOMICAL_SYSTEMS = [
+  { id: 'Skeletal', label: 'Skeletal', icon: '🦴', modelKey: 'human_torso_anatomy' },
+  { id: 'Connective', label: 'Connective T.', icon: '🕸️', modelKey: 'human_torso_anatomy' },
+  { id: 'Muscular', label: 'Muscular', icon: '💪', modelKey: 'human_torso_anatomy' },
+  { id: 'Arterial', label: 'Arterial', icon: '🩸', modelKey: 'human_heart' },
+  { id: 'Venous', label: 'Venous', icon: '🔵', modelKey: 'human_heart' },
+  { id: 'Lymphatic', label: 'Lymphatic', icon: '🛡️', modelKey: 'human_torso_anatomy' },
+  { id: 'Nervous', label: 'Nervous', icon: '🧠', modelKey: 'human_ear' },
+  { id: 'Respiratory', label: 'Respiratory', icon: '🫁', modelKey: 'human_lungs' },
+  { id: 'Digestive', label: 'Digestive', icon: '🍎', modelKey: 'human_torso_anatomy' },
+  { id: 'Endocrine', label: 'Endocrine', icon: '⚡', modelKey: 'human_torso_anatomy' },
+  { id: 'Urogenital', label: 'Urogenital', icon: '💧', modelKey: 'human_torso_anatomy' },
+  { id: 'Integumentary', label: 'Integumentary', icon: '🔬', modelKey: 'human_torso_anatomy' }
+];
+
+// Assemblr EDU Related Models (Screenshot 4 bottom tray)
+export const ASSEMBLR_RELATED_MODELS = [
+  { id: 'human_heart', title: 'Human Heart', subtitle: '4 Chambers & Valves', emoji: '❤️', bg: '#fee2e2' },
+  { id: 'human_lungs', title: 'Human Lungs', subtitle: 'Lobes & Trachea', emoji: '🫁', bg: '#fce7f3' },
+  { id: 'electric_circuit', title: 'Circuit Lab', subtitle: 'Battery & Bulb', emoji: '⚡', bg: '#ffedd5' },
+  { id: 'human_torso_anatomy', title: 'Transparent Torso', subtitle: 'Anatomy Console', emoji: '🧬', bg: '#f3e8ff' },
+  { id: 'human_ear', title: 'Human Ear', subtitle: 'Tympanic & Cochlea', emoji: '👂', bg: '#fef3c7' },
+  { id: 'electric_motor', title: 'Electric Motor', subtitle: 'Magnetic Field', emoji: '⚙️', bg: '#e0e7ff' },
+  { id: 'solar_system', title: 'Solar System', subtitle: 'Keplerian Orbits', emoji: '🪐', bg: '#dcfce7' },
+  { id: 'dna_helix', title: 'DNA Double Helix', subtitle: 'Watson-Crick Model', emoji: '🧬', bg: '#e0f2fe' }
+];
 
 export type ViewingMode = 'full' | 'callouts' | 'cutaway' | 'exploded' | 'mechanism' | 'textbook2d';
 
@@ -84,6 +113,13 @@ export const Interactive3DViewer: React.FC<Interactive3DViewerProps> = ({
   const [activeQuizPartId, setActiveQuizPartId] = useState<string | null>(null);
   const [gameScore, setGameScore] = useState<number>(0);
   const [gameTimer, setGameTimer] = useState<number>(0);
+  const [objectsSearchQuery, setObjectsSearchQuery] = useState<string>('');
+
+  // Active Anatomical System (Screenshot 2)
+  const [selectedAnatomySystem, setSelectedAnatomySystem] = useState<string>('Respiratory');
+
+  // Audio Voice Narration (Screenshot 3)
+  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
 
   // Projected 2D screen positions for leader line callout pins
   const [projectedPins, setProjectedPins] = useState<Array<{ id: string; label: string; x: number; y: number; visible: boolean }>>([]);
@@ -404,6 +440,25 @@ export const Interactive3DViewer: React.FC<Interactive3DViewerProps> = ({
     }
   };
 
+  // Speech Narration of Selected Component (Screenshot 3 Voice Waveform)
+  const handleSpeakPart = (label: string, text: string) => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      if (isSpeaking) {
+        window.speechSynthesis.cancel();
+        setIsSpeaking(false);
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(`${label}. ${text}`);
+      utterance.rate = 0.92;
+      utterance.pitch = 1.0;
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
   // Match the Labels Game handlers (Screenshot 5)
   const handleSelectQuizLabel = (partId: string) => {
     if (!activeQuizPartId) {
@@ -666,6 +721,24 @@ export const Interactive3DViewer: React.FC<Interactive3DViewerProps> = ({
         {/* Floating 3D-to-2D Callout Leader Line Pins (Screenshot 2 & 4) */}
         {(activeMode === 'callouts' || activeMode === 'full') && !gameModeActive && (
           <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+            <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+              {projectedPins.map((pin) => {
+                if (!pin.visible) return null;
+                const isSelected = selectedPartId === pin.id;
+                return (
+                  <g key={`leader-${pin.id}`}>
+                    <circle
+                      cx={pin.x}
+                      cy={pin.y}
+                      r={isSelected ? 4 : 2.5}
+                      fill={isSelected ? '#FF6A00' : '#FFFFFF'}
+                      stroke={isSelected ? '#FFFFFF' : '#475569'}
+                      strokeWidth="1.5"
+                    />
+                  </g>
+                );
+              })}
+            </svg>
             {projectedPins.map((pin) => {
               if (!pin.visible) return null;
               const isSelected = selectedPartId === pin.id;
@@ -675,8 +748,8 @@ export const Interactive3DViewer: React.FC<Interactive3DViewerProps> = ({
                   style={{
                     position: 'absolute',
                     left: pin.x,
-                    top: pin.y,
-                    transform: 'translate(-50%, -50%)',
+                    top: pin.y - 12,
+                    transform: 'translate(-50%, -100%)',
                     pointerEvents: 'auto',
                     cursor: 'pointer'
                   }}
@@ -685,12 +758,12 @@ export const Interactive3DViewer: React.FC<Interactive3DViewerProps> = ({
                   <div
                     style={{
                       padding: '3px 8px',
-                      borderRadius: 999,
-                      background: isSelected ? '#FF6A00' : 'rgba(255,255,255,0.92)',
+                      borderRadius: 8,
+                      background: isSelected ? '#FF6A00' : 'rgba(255,255,255,0.94)',
                       color: isSelected ? '#FFFFFF' : '#202124',
                       fontSize: '0.68rem',
                       fontWeight: 700,
-                      border: isSelected ? '1.5px solid #FFFFFF' : '1px solid rgba(0,0,0,0.15)',
+                      border: isSelected ? '1.5px solid #FFFFFF' : '1px solid rgba(0,0,0,0.14)',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
                       whiteSpace: 'nowrap',
                       display: 'flex',
@@ -723,88 +796,172 @@ export const Interactive3DViewer: React.FC<Interactive3DViewerProps> = ({
               left: 0,
               width: '100%',
               height: '100%',
-              background: 'rgba(0,0,0,0.3)',
+              background: 'rgba(0,0,0,0.25)',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              padding: 16,
+              padding: 12,
               pointerEvents: 'none'
             }}
           >
-            {/* Top Game Bar */}
+            {/* Top Game Bar with "< Match the labels >" (Screenshot 5) */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                background: 'rgba(255,255,255,0.95)',
-                padding: '8px 16px',
+                background: 'rgba(255,255,255,0.96)',
+                padding: '6px 14px',
                 borderRadius: 999,
                 boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                 pointerEvents: 'auto'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#FF6A00' }}>
-                  🎯 Match the Labels Quiz
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#FF6A00' }}>
+                  {spec.title.split(':')[0]}
                 </span>
-                <span style={{ fontSize: '0.78rem', color: '#6B7280' }}>
-                  Time: {Math.floor(gameTimer / 60)}:{(gameTimer % 60).toString().padStart(2, '0')}
+                <span style={{ fontSize: '0.72rem', color: '#6B7280' }}>
+                  Score: <strong style={{ color: '#16A34A' }}>{gameScore} pts</strong>
                 </span>
               </div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#202124' }}>
-                Score: <span style={{ color: '#16A34A' }}>{gameScore} pts</span> ({Object.keys(matchedPartIds).length}/{spec.parts.length} matched)
+
+              {/* Center Match Header */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  background: '#FFF3E8',
+                  padding: '3px 12px',
+                  borderRadius: 999,
+                  border: '1px solid rgba(255,106,0,0.3)'
+                }}
+              >
+                <ChevronLeft size={14} color="#FF6A00" />
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#FF6A00' }}>
+                  Match the labels
+                </span>
+                <ChevronRight size={14} color="#FF6A00" />
+              </div>
+
+              <div style={{ fontSize: '0.75rem', color: '#4B5563', fontWeight: 700 }}>
+                ⏱️ {Math.floor(gameTimer / 60).toString().padStart(2, '0')}:{(gameTimer % 60).toString().padStart(2, '0')}
               </div>
             </div>
 
-            {/* Target Slots overlaid on 3D Model */}
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-              {projectedPins.map((pin) => {
-                if (!pin.visible) return null;
-                const isMatched = matchedPartIds[pin.id];
-                const isTarget = activeQuizPartId === pin.id;
-                return (
-                  <button
-                    key={pin.id}
-                    type="button"
-                    onClick={() => handleSelectQuizLabel(pin.id)}
-                    style={{
-                      position: 'absolute',
-                      left: pin.x,
-                      top: pin.y,
-                      transform: 'translate(-50%, -50%)',
-                      pointerEvents: 'auto',
-                      padding: '4px 10px',
-                      borderRadius: 999,
-                      background: isMatched ? '#16A34A' : isTarget ? '#FF6A00' : 'rgba(255,255,255,0.92)',
-                      color: isMatched || isTarget ? '#FFFFFF' : '#202124',
-                      fontSize: '0.72rem',
-                      fontWeight: 700,
-                      border: isTarget ? '2px solid #FFFFFF' : '1px solid rgba(0,0,0,0.15)',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {isMatched ? `✓ ${pin.label}` : isTarget ? 'Click matching button below!' : '❓ Drop / Click Pin'}
-                  </button>
-                );
-              })}
+            {/* Middle Container with Left "Objects" Drawer + 3D Target Slots */}
+            <div style={{ position: 'relative', flex: 1, display: 'flex', pointerEvents: 'none', margin: '8px 0' }}>
+              {/* Left "Objects" list sidebar (Screenshot 5) */}
+              <div
+                style={{
+                  width: 140,
+                  background: 'rgba(255,255,255,0.95)',
+                  borderRadius: 12,
+                  padding: 8,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 4,
+                  pointerEvents: 'auto',
+                  maxHeight: '100%',
+                  overflowY: 'auto',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.12)'
+                }}
+              >
+                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#202124' }}>
+                  Objects:
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={objectsSearchQuery}
+                  onChange={(e) => setObjectsSearchQuery(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '3px 6px',
+                    fontSize: '0.68rem',
+                    borderRadius: 6,
+                    border: '1px solid #E5E7EB',
+                    outline: 'none',
+                    marginBottom: 2
+                  }}
+                />
+                {spec.parts
+                  .filter((p) => !objectsSearchQuery || p.label.toLowerCase().includes(objectsSearchQuery.toLowerCase()))
+                  .map((p) => (
+                    <div
+                      key={p.id}
+                      onClick={() => handleSelectQuizLabel(p.id)}
+                      style={{
+                        fontSize: '0.68rem',
+                        padding: '3px 6px',
+                        borderRadius: 6,
+                        background: matchedPartIds[p.id] ? '#DCFCE7' : activeQuizPartId === p.id ? '#FFF3E8' : '#F3F4F6',
+                        color: matchedPartIds[p.id] ? '#166534' : activeQuizPartId === p.id ? '#FF6A00' : '#374151',
+                        border: activeQuizPartId === p.id ? '1px solid #FF6A00' : 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                      }}
+                    >
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {p.label}
+                      </span>
+                      {matchedPartIds[p.id] && <span style={{ fontWeight: 800 }}>✓</span>}
+                    </div>
+                  ))}
+              </div>
+
+              {/* Target Slots overlaid on 3D Model */}
+              <div style={{ position: 'absolute', top: 0, left: 148, right: 0, bottom: 0, pointerEvents: 'none' }}>
+                {projectedPins.map((pin) => {
+                  if (!pin.visible) return null;
+                  const isMatched = matchedPartIds[pin.id];
+                  const isTarget = activeQuizPartId === pin.id;
+                  return (
+                    <button
+                      key={pin.id}
+                      type="button"
+                      onClick={() => handleSelectQuizLabel(pin.id)}
+                      style={{
+                        position: 'absolute',
+                        left: pin.x - 148,
+                        top: pin.y,
+                        transform: 'translate(-50%, -50%)',
+                        pointerEvents: 'auto',
+                        padding: '3px 8px',
+                        borderRadius: 999,
+                        background: isMatched ? '#16A34A' : isTarget ? '#FF6A00' : 'rgba(255,255,255,0.94)',
+                        color: isMatched || isTarget ? '#FFFFFF' : '#202124',
+                        fontSize: '0.68rem',
+                        fontWeight: 700,
+                        border: isTarget ? '2px solid #FFFFFF' : '1px solid rgba(0,0,0,0.15)',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {isMatched ? `✓ ${pin.label}` : isTarget ? 'Click match below!' : '❓ Pin Slot'}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Bottom Term Bank (Screenshot 5 style buttons) */}
+            {/* Bottom Term Bank (Screenshot 5 style dark cards) */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 8,
+                gap: 6,
                 flexWrap: 'wrap',
-                background: 'rgba(255,255,255,0.95)',
-                padding: '10px 14px',
-                borderRadius: 14,
+                background: 'rgba(255,255,255,0.96)',
+                padding: '8px 12px',
+                borderRadius: 12,
                 boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
                 pointerEvents: 'auto',
-                maxWidth: 680,
+                maxWidth: 720,
                 margin: '0 auto'
               }}
             >
@@ -819,13 +976,15 @@ export const Interactive3DViewer: React.FC<Interactive3DViewerProps> = ({
                     style={{
                       padding: '5px 12px',
                       borderRadius: 6,
-                      background: isMatched ? '#E5E7EB' : activeQuizPartId === p.id ? '#FF6A00' : '#1E293B',
-                      color: isMatched ? '#9CA3AF' : '#FFFFFF',
-                      fontSize: '0.72rem',
-                      fontWeight: 700,
+                      background: isMatched ? '#E2E8F0' : activeQuizPartId === p.id ? '#FF6A00' : '#0F172A',
+                      color: isMatched ? '#94A3B8' : '#FFFFFF',
+                      fontSize: '0.7rem',
+                      fontWeight: 800,
+                      letterSpacing: '0.03em',
                       border: 'none',
                       cursor: isMatched ? 'default' : 'pointer',
-                      textDecoration: isMatched ? 'line-through' : 'none'
+                      textDecoration: isMatched ? 'line-through' : 'none',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
                     }}
                   >
                     {p.label.toUpperCase()}
@@ -990,6 +1149,55 @@ export const Interactive3DViewer: React.FC<Interactive3DViewerProps> = ({
         </div>
       </div>
 
+      {/* Screenshot 2: Anatomical Systems Selector Bar */}
+      {(spec.subject.toLowerCase().includes('bio') || spec.id.includes('lung') || spec.id.includes('heart') || spec.id.includes('torso') || spec.id.includes('ear')) && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            overflowX: 'auto',
+            padding: '6px 4px 10px 4px',
+            marginBottom: 12
+          }}
+        >
+          {ANATOMICAL_SYSTEMS.map((sys) => {
+            const isSelected = selectedAnatomySystem === sys.id;
+            return (
+              <button
+                key={sys.id}
+                type="button"
+                onClick={() => {
+                  setSelectedAnatomySystem(sys.id);
+                  if (sys.modelKey && VERIFIED_MODEL_SPECS[sys.modelKey]) {
+                    setSelectedModelKey(sys.modelKey);
+                  }
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  padding: '5px 12px',
+                  borderRadius: 999,
+                  fontSize: '0.72rem',
+                  fontWeight: isSelected ? 800 : 600,
+                  background: isSelected ? '#FF6A00' : 'rgba(255,255,255,0.85)',
+                  color: isSelected ? '#FFFFFF' : '#4B5563',
+                  border: isSelected ? '1px solid #FF6A00' : '1px solid #E5E7EB',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  boxShadow: isSelected ? '0 2px 8px rgba(255,106,0,0.25)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <span>{sys.icon}</span>
+                <span>{sys.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* 4. Component Inspector & Interactive Detail Card */}
       <div
         style={{
@@ -1024,9 +1232,34 @@ export const Interactive3DViewer: React.FC<Interactive3DViewerProps> = ({
                 {activePart.label}
               </h4>
             </div>
-            <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: 999, background: '#FFF3E8', color: '#FF6A00', fontWeight: 700 }}>
-              Selected Part
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {/* Voice Waveform Button (Screenshot 3) */}
+              <button
+                type="button"
+                onClick={() => handleSpeakPart(activePart.label, activePart.role)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  padding: '3px 10px',
+                  borderRadius: 999,
+                  background: isSpeaking ? '#FF6A00' : '#FFF3E8',
+                  color: isSpeaking ? '#FFFFFF' : '#FF6A00',
+                  border: '1px solid rgba(255,106,0,0.3)',
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Listen to voice explanation"
+              >
+                {isSpeaking ? <VolumeX size={12} /> : <Volume2 size={12} />}
+                <span>{isSpeaking ? 'Mute' : 'Voice Explainer'}</span>
+              </button>
+              <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: 999, background: '#FFF3E8', color: '#FF6A00', fontWeight: 700 }}>
+                Selected Part
+              </span>
+            </div>
           </div>
 
           <p style={{ fontSize: '0.84rem', color: '#4B5563', lineHeight: 1.5, marginBottom: 10 }}>
@@ -1212,6 +1445,62 @@ export const Interactive3DViewer: React.FC<Interactive3DViewerProps> = ({
           </div>
         </div>
       )}
+
+      {/* Screenshot 4: Assemblr EDU Related 3D Models Carousel */}
+      <div
+        style={{
+          marginTop: 14,
+          padding: '12px 14px',
+          background: 'rgba(255, 255, 255, 0.95)',
+          borderRadius: 14,
+          border: '1px solid rgba(255, 106, 0, 0.18)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#202124' }}>
+              Assemblr EDU 3D Diagram Topics
+            </span>
+            <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: 999, background: '#FFF3E8', color: '#FF6A00', fontWeight: 700 }}>
+              Curriculum Verified
+            </span>
+          </div>
+          <span style={{ fontSize: '0.7rem', color: '#6B7280' }}>
+            Click any model to investigate in 360°
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+          {ASSEMBLR_RELATED_MODELS.map((item) => {
+            const isCurrent = selectedModelKey === item.id;
+            return (
+              <div
+                key={item.id}
+                onClick={() => setSelectedModelKey(item.id)}
+                style={{
+                  minWidth: 130,
+                  padding: '8px 10px',
+                  borderRadius: 10,
+                  background: isCurrent ? '#FFF3E8' : item.bg,
+                  border: isCurrent ? '2px solid #FF6A00' : '1px solid rgba(0,0,0,0.06)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  flexShrink: 0
+                }}
+              >
+                <div style={{ fontSize: '1.25rem', marginBottom: 2 }}>{item.emoji}</div>
+                <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#202124', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {item.title}
+                </div>
+                <div style={{ fontSize: '0.66rem', color: '#6B7280', whiteSpace: 'nowrap' }}>
+                  {item.subtitle}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 };

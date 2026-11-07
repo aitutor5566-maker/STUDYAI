@@ -52,6 +52,10 @@ import {
 } from './supabase.ts';
 import { studyAiEngine } from './studyAiAutonomousEngine.ts';
 import {
+  educationalImageResearchEngine,
+  decomposeTopicIntoSectionVisuals
+} from './educationalImageResearchEngine.ts';
+import {
   SUPPORTED_LANGUAGES,
   getLanguageMeta,
   generateCurriculumForLanguage,
@@ -1077,6 +1081,48 @@ export function createAppServer() {
           quiz: JSON.parse(r.quiz_json || '[]')
         };
       };
+
+      // ==============================================================================
+      // EDUCATIONAL IMAGE RESEARCH & RETRIEVAL ENGINE API
+      // ==============================================================================
+      if (pathname === '/api/images/research' && req.method === 'GET') {
+        const topic = parsedUrl.searchParams.get('topic') || 'Human Heart';
+        const sectionTitle = parsedUrl.searchParams.get('sectionTitle') || topic;
+        const concept = parsedUrl.searchParams.get('concept') || topic;
+        const domain = (parsedUrl.searchParams.get('domain') || 'biology') as any;
+        const visualType = (parsedUrl.searchParams.get('visualType') || 'labelled_diagram') as any;
+
+        const asset = await educationalImageResearchEngine.researchAndRetrieveEducationalVisual({
+          sectionTitle,
+          conceptName: concept,
+          visualType,
+          searchQuery: concept,
+          pedagogicalPurpose: `Visual grounding for ${sectionTitle}`,
+          domain
+        });
+
+        sendJson(res, 200, { success: true, asset });
+        return;
+      }
+
+      if (pathname === '/api/images/decompose' && req.method === 'GET') {
+        const topic = parsedUrl.searchParams.get('topic') || 'Human Heart';
+        const sectionsParam = parsedUrl.searchParams.get('sections');
+        const sections = sectionsParam ? sectionsParam.split(',') : [];
+        const decomposed = decomposeTopicIntoSectionVisuals(topic, sections);
+        sendJson(res, 200, { success: true, topic, visualRequirements: decomposed });
+        return;
+      }
+
+      if (pathname === '/api/images/cached' && req.method === 'GET') {
+        const q = (parsedUrl.searchParams.get('q') || '').trim().toLowerCase();
+        let rows = db.prepare('SELECT * FROM cached_educational_images ORDER BY created_at DESC LIMIT 50').all() as any[];
+        if (q) {
+          rows = rows.filter((r) => r.query.toLowerCase().includes(q) || r.title.toLowerCase().includes(q));
+        }
+        sendJson(res, 200, { success: true, images: rows });
+        return;
+      }
 
       if (pathname === '/api/notes' && req.method === 'GET') {
         const subjectFilter = parsedUrl.searchParams.get('subject');
