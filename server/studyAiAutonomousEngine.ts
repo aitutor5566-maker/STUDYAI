@@ -27,14 +27,23 @@ export interface ManifestAsset {
   recommendedCamera: [number, number, number];
 }
 
+export interface Tier2VisualRoutingHeader {
+  mode: 'NORMAL' | 'EXAM';
+  visual_intent: '3D_MODEL' | 'REALISTIC_IMAGE' | 'NONE';
+  model_entity: string | null;
+  image_prompt: string | null;
+  has_voice_script: boolean;
+}
+
 export interface PedagogicalLesson {
   gradeLevel: number;
   studentAge: number;
   subject: string;
   topic: string;
+  json_header: Tier2VisualRoutingHeader;
   coreConcept: string; // The "What"
   visualAnchor: {
-    type: '3d_model_viewer' | 'photorealistic_image';
+    type: '3d_model_viewer' | 'photorealistic_image' | 'none';
     htmlBlock: string;
     modelViewerSrc?: string;
     promptUsed?: string;
@@ -53,6 +62,7 @@ export interface PedagogicalLesson {
   ];
   sourceOfTruth: 'local_verified_textbook' | 'live_llm_fallback';
   curriculumCitation: string;
+  token1OutputBlock: string;
 }
 
 // -------------------------------------------------------------------------
@@ -413,12 +423,37 @@ export class StudyAiAutonomousEngine {
     // 3. Visual Generation Pipeline (Module 4)
     let domain: 'biology' | 'physics_chemistry' | 'earth_geography' = 'biology';
     const lowerTopic = topic.toLowerCase();
-    if (lowerTopic.includes('circuit') || lowerTopic.includes('electricity') || lowerTopic.includes('atom') || lowerTopic.includes('chemical') || lowerTopic.includes('pendulum')) {
+    if (
+      lowerTopic.includes('circuit') ||
+      lowerTopic.includes('electricity') ||
+      lowerTopic.includes('atom') ||
+      lowerTopic.includes('chemical') ||
+      lowerTopic.includes('reaction') ||
+      lowerTopic.includes('combustion') ||
+      lowerTopic.includes('oxidation') ||
+      lowerTopic.includes('physics') ||
+      lowerTopic.includes('chemistry') ||
+      lowerTopic.includes('pendulum')
+    ) {
       domain = 'physics_chemistry';
     } else if (lowerTopic.includes('volcano') || lowerTopic.includes('plate') || lowerTopic.includes('cycle') || lowerTopic.includes('earth') || lowerTopic.includes('solar')) {
       domain = 'earth_geography';
     }
     const photoSpec = assemblePhotorealisticPrompt(topic, domain);
+
+    const visualIntent: '3D_MODEL' | 'REALISTIC_IMAGE' | 'NONE' = matched3D
+      ? '3D_MODEL'
+      : 'REALISTIC_IMAGE';
+
+    const json_header: Tier2VisualRoutingHeader = {
+      mode: 'NORMAL',
+      visual_intent: visualIntent,
+      model_entity: matched3D ? matched3D.assetKey : null,
+      image_prompt: visualIntent === 'REALISTIC_IMAGE' ? photoSpec.prompt : null,
+      has_voice_script: true
+    };
+
+    const token1OutputBlock = `${JSON.stringify(json_header, null, 2)}\n\n`;
 
     // If local chunk was found, build deterministically from verified syllabus
     if (localChunk) {
@@ -462,6 +497,8 @@ export class StudyAiAutonomousEngine {
         studentAge: age,
         subject: localChunk.subject,
         topic,
+        json_header,
+        token1OutputBlock,
         coreConcept,
         visualAnchor,
         mechanisticBreakdown: breakdown,
@@ -520,6 +557,8 @@ export class StudyAiAutonomousEngine {
       studentAge: age,
       subject,
       topic,
+      json_header,
+      token1OutputBlock,
       coreConcept,
       visualAnchor,
       mechanisticBreakdown: breakdown,

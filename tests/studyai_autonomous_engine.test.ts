@@ -205,4 +205,28 @@ test('Module 5 Backend Endpoint: POST /api/engine/lesson delivers verified pedag
   assert.ok(l.realWorldAnalogy);
   assert.ok(l.studyNotesTable);
   assert.equal(l.activeRecallCheck.length, 2);
+  assert.ok(l.json_header);
+  assert.equal(l.json_header.mode, 'NORMAL');
+  assert.equal(l.json_header.visual_intent, '3D_MODEL');
+  assert.equal(l.json_header.model_entity, 'human_heart');
+  assert.equal(l.json_header.has_voice_script, true);
+});
+
+test('Tier 2 Directive: Token-1 JSON Header Schema Specification', async () => {
+  const engine = new StudyAiAutonomousEngine();
+
+  // Test 3D_MODEL intent
+  const heartLesson = await engine.generateLesson('Human Heart', 10, 'Science');
+  assert.equal(heartLesson.json_header.visual_intent, '3D_MODEL');
+  assert.equal(heartLesson.json_header.model_entity, 'human_heart');
+  assert.equal(heartLesson.json_header.image_prompt, null);
+  assert.equal(heartLesson.json_header.has_voice_script, true);
+  assert.ok(heartLesson.token1OutputBlock.startsWith('{\n  "mode": "NORMAL"'));
+
+  // Test REALISTIC_IMAGE intent
+  const chemLesson = await engine.generateLesson('Combustion of Magnesium Ribbon in Air', 10, 'Science');
+  assert.equal(chemLesson.json_header.visual_intent, 'REALISTIC_IMAGE');
+  assert.equal(chemLesson.json_header.model_entity, null);
+  assert.ok(chemLesson.json_header.image_prompt?.includes('Sony A7R V'));
+  assert.equal(chemLesson.json_header.has_voice_script, true);
 });
