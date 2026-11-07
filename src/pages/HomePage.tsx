@@ -101,10 +101,10 @@ export const HomePage: React.FC = () => {
       onClick: () => openGamesHub(heroTopicInput || activeTopic)
     },
     {
-      label: '3D Lab',
-      subtitle: 'WebGL Models',
+      label: '3D Studio',
+      subtitle: 'Universal 3D Engine',
       iconName: 'lab3d',
-      onClick: () => open3DLab(heroTopicInput || activeTopic)
+      onClick: () => navigate('/diagrams3d')
     },
     {
       label: 'Video',
@@ -245,9 +245,9 @@ export const HomePage: React.FC = () => {
               <button type="button" onClick={() => handleStartJourney()} className="btn-orange" style={{ padding: '12px 28px', fontSize: '0.95rem' }}>
                 <span>Explore with AI Tutor</span>
               </button>
-              <button type="button" onClick={() => open3DLab(heroTopicInput || activeTopic)} className="btn-glass">
+              <button type="button" onClick={() => navigate('/diagrams3d')} className="btn-glass">
                 <Box size={16} color="#FF6A00" />
-                <span>Launch 3D Lab</span>
+                <span>Launch 3D Studio</span>
               </button>
               <button
                 type="button"

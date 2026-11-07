@@ -707,6 +707,53 @@ export function initDatabase() {
       updated_at TEXT NOT NULL,
       UNIQUE(user_id, game_slug)
     );
+
+    CREATE TABLE IF NOT EXISTS diagrams_3d (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      description TEXT NOT NULL,
+      education_level TEXT NOT NULL,
+      model_key TEXT NOT NULL,
+      thumbnail_url TEXT,
+      accuracy_status TEXT NOT NULL DEFAULT 'verified',
+      available_modes_json TEXT NOT NULL,
+      animation_data_json TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS diagram_components_3d (
+      id TEXT PRIMARY KEY,
+      diagram_id TEXT NOT NULL,
+      component_name TEXT NOT NULL,
+      component_description TEXT NOT NULL,
+      component_function TEXT NOT NULL,
+      position_data_json TEXT NOT NULL,
+      label_data_json TEXT NOT NULL,
+      educational_notes TEXT,
+      color TEXT NOT NULL,
+      FOREIGN KEY(diagram_id) REFERENCES diagrams_3d(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS student_diagram_progress (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      diagram_id TEXT NOT NULL,
+      completion_status TEXT NOT NULL DEFAULT 'in_progress',
+      quiz_score INTEGER NOT NULL DEFAULT 0,
+      explored_components_json TEXT NOT NULL DEFAULT '[]',
+      last_accessed TEXT NOT NULL,
+      UNIQUE(user_id, diagram_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS saved_diagrams_3d (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      diagram_id TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      UNIQUE(user_id, diagram_id)
+    );
   `);
 
   try {
@@ -720,6 +767,7 @@ export function initDatabase() {
   seedAdminAndTesterDataIfEmpty();
   seedLanguageDataIfEmpty();
   seedEducationalGamesIfEmpty();
+  seed3DDiagramsIfEmpty();
   try {
     db.prepare("UPDATE supported_languages SET script_name = 'ひらがな, カタカナ & 漢字 (Hiragana, Katakana & Kanji)' WHERE code = 'ja'").run();
   } catch {}
@@ -1636,3 +1684,261 @@ function seedEducationalGamesIfEmpty() {
     );
   }
 }
+
+function seed3DDiagramsIfEmpty() {
+  const existing = db.prepare('SELECT id FROM diagrams_3d LIMIT 1').get() as { id: string } | undefined;
+  if (existing) return;
+
+  const now = new Date().toISOString();
+  const insertDiagram = db.prepare(`
+    INSERT INTO diagrams_3d (id, title, subject, topic, description, education_level, model_key, thumbnail_url, accuracy_status, available_modes_json, animation_data_json, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const insertComponent = db.prepare(`
+    INSERT INTO diagram_components_3d (id, diagram_id, component_name, component_description, component_function, position_data_json, label_data_json, educational_notes, color)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const initialDiagrams = [
+    {
+      id: 'diag-heart',
+      title: 'Human Heart: Four Chambers, Valves & Circulation',
+      subject: 'Biology',
+      topic: 'Human Heart Anatomy & Cardiac Cycle',
+      description: 'Explore the 4 chambers, tricuspid and mitral valves, aorta arch, and directional deoxygenated (blue) vs oxygenated (red) circulation in interactive 3D.',
+      education_level: 'Middle & High School (CBSE / ICSE / State)',
+      model_key: 'human_heart',
+      thumbnail_url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%23FFF3E8"/><path d="M150 40 C110 0 50 40 50 100 C50 150 150 190 150 190 C150 190 250 150 250 100 C250 40 190 0 150 40 Z" fill="%23DC2626"/><text x="150" y="110" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Human Heart 3D</text></svg>',
+      accuracy_status: 'verified',
+      available_modes: ['3d_full', 'labelled', 'cross_section', 'exploded', 'mechanism', 'textbook_2d'],
+      animation_data: { type: 'cardiac_pumping', speed: 1.0, durationSec: 0.8 },
+      components: [
+        { name: 'Right Atrium', desc: 'Upper right receiving chamber', func: 'Receives deoxygenated blood from the upper and lower body via Superior and Inferior Vena Cava.', color: '#2563EB', pos: [-0.95, 0.82, 0.12] },
+        { name: 'Right Ventricle', desc: 'Lower right pumping chamber', func: 'Pumps deoxygenated blood through the pulmonary semilunar valve to the lungs for oxygenation.', color: '#1D4ED8', pos: [-0.7, -0.55, 0.22] },
+        { name: 'Left Atrium', desc: 'Upper left receiving chamber', func: 'Receives oxygen-rich blood returning from the lungs via 4 pulmonary veins.', color: '#E11D48', pos: [0.82, 0.82, -0.25] },
+        { name: 'Left Ventricle', desc: 'Thickest muscular apex chamber', func: 'Contracts powerfully to eject oxygenated blood at systemic high pressure into the Aorta.', color: '#BE123C', pos: [0.68, -0.65, 0.05] },
+        { name: 'Tricuspid Valve', desc: 'Atrioventricular 3-cusp valve', func: 'Prevents backflow from RV into RA during ventricular systole.', color: '#F59E0B', pos: [-0.75, 0.12, 0.22] },
+        { name: 'Bicuspid / Mitral Valve', desc: 'Dual-cusp atrioventricular valve', func: 'Prevents backflow from LV into LA under high systemic pressure.', color: '#F59E0B', pos: [0.75, 0.12, -0.05] },
+        { name: 'Aorta & Arch Branches', desc: 'Primary systemic distribution artery', func: 'Distributes oxygenated blood to head, arms, and whole systemic circulation.', color: '#DC2626', pos: [0.25, 1.45, 0] },
+        { name: 'Interventricular Septum', desc: 'Muscular dividing wall', func: 'Completely separates left and right chambers, preventing mixing of blood.', color: '#64748B', pos: [0.05, -0.6, 0.08] }
+      ]
+    },
+    {
+      id: 'diag-lungs',
+      title: 'Human Lungs & Respiratory Bronchial Tree',
+      subject: 'Biology',
+      topic: 'Human Respiratory System & Gas Exchange',
+      description: 'Inspect the right lung (3 lobes) and left lung (2 lobes with cardiac notch), segmented trachea with cartilaginous rings, primary bronchi, and rhythmic inhalation/exhalation breathing animation.',
+      education_level: 'Middle & High School',
+      model_key: 'human_lungs',
+      thumbnail_url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%23EFF6FF"/><ellipse cx="110" cy="110" rx="40" ry="60" fill="%23FB7185"/><ellipse cx="190" cy="110" rx="36" ry="56" fill="%23FB7185"/><rect x="144" y="30" width="12" height="60" fill="%23E2E8F0"/><text x="150" y="115" font-size="14" font-weight="bold" fill="%231E293B" text-anchor="middle">Lungs 3D</text></svg>',
+      accuracy_status: 'verified',
+      available_modes: ['3d_full', 'labelled', 'cross_section', 'exploded', 'mechanism', 'textbook_2d'],
+      animation_data: { type: 'breathing_cycle', speed: 1.0, durationSec: 3.5 },
+      components: [
+        { name: 'Trachea & Cartilaginous Rings', desc: 'Windpipe airway conduit', func: 'Maintains open airway passage during thoracic pressure changes with flexible C-shaped cartilage rings.', color: '#F1F5F9', pos: [0, 1.35, 0] },
+        { name: 'Superior Lobe of Right Lung', desc: 'Upper right pulmonary lobe', func: 'Facilitates gas exchange in the apex of the right thoracic cavity.', color: '#F43F5E', pos: [-0.95, 0.65, 0.1] },
+        { name: 'Middle Lobe of Right Lung', desc: 'Anterior wedge-shaped lobe', func: 'Separated by horizontal fissure from superior lobe and oblique fissure from inferior lobe.', color: '#E11D48', pos: [-1.05, -0.05, 0.2] },
+        { name: 'Inferior Lobe of Right Lung', desc: 'Base resting on diaphragm', func: 'Largest volume lobe expanding significantly during diaphragmatic contraction.', color: '#BE123C', pos: [-0.95, -0.75, -0.1] },
+        { name: 'Superior Lobe of Left Lung', desc: 'Upper left lung lobe with cardiac notch', func: 'Accommodates space for the heart while performing pulmonary gas exchange.', color: '#F43F5E', pos: [0.95, 0.55, 0.05] },
+        { name: 'Inferior Lobe of Left Lung', desc: 'Lower left lung lobe', func: 'Posterior and inferior pulmonary sector separated by oblique fissure.', color: '#BE123C', pos: [0.95, -0.7, -0.1] },
+        { name: 'Primary Bronchi Bifurcation', desc: 'Left and right bronchial branches', func: 'Splits incoming air into right and left lungs at the carina.', color: '#E2E8F0', pos: [0, 0.55, -0.15] }
+      ]
+    },
+    {
+      id: 'diag-circuit',
+      title: 'Physics Electric Circuit: Battery, Switch & Light Bulb',
+      subject: 'Physics',
+      topic: 'Current Electricity & Closed Circuits',
+      description: 'Hands-on interactive 3D physics breadboard with blue battery cell, open/close knife switch, incandescent light bulb in socket, copper wires with clips, and animated flowing electron dots.',
+      education_level: 'Elementary, Middle & High School',
+      model_key: 'electric_circuit',
+      thumbnail_url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%23F3F4F6"/><rect x="40" y="60" width="220" height="80" rx="8" fill="%234B5563"/><circle cx="80" cy="100" r="18" fill="%23FDE047"/><rect x="210" y="85" width="30" height="30" rx="4" fill="%233B82F6"/><text x="150" y="105" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Electric Circuit 3D</text></svg>',
+      accuracy_status: 'verified',
+      available_modes: ['3d_full', 'labelled', 'exploded', 'mechanism', 'textbook_2d'],
+      animation_data: { type: 'electron_flow', speed: 1.0, durationSec: 2.0 },
+      components: [
+        { name: 'DC Battery Cell (1.5V)', desc: 'Electrochemical power source', func: 'Generates potential difference (voltage) driving charge carriers through the conductor.', color: '#0284C7', pos: [1.8, 0.35, 0] },
+        { name: 'Knife Switch Pivot & Blade', desc: 'Circuit control mechanism', func: 'Toggles between open circuit (zero current) and closed circuit (continuous electron flow).', color: '#64748B', pos: [0, 0.25, 0.95] },
+        { name: 'Incandescent Light Bulb & Socket', desc: 'Resistive electrical load', func: 'Tungsten filament heats to incandescence, transforming electrical potential energy into bright light and heat.', color: '#FACC15', pos: [-1.8, 0.55, 0] },
+        { name: 'Insulated Copper Conductors', desc: 'Connecting wire loops', func: 'Provides low-resistance metallic pathway for drifting electron particles.', color: '#EA580C', pos: [0, 0.05, 0] },
+        { name: 'Alligator Terminal Clips', desc: 'Mechanical electrical connectors', func: 'Clamps conductors securely to component terminals to complete closed electrical loop.', color: '#94A3B8', pos: [1.3, 0.12, 0.8] }
+      ]
+    },
+    {
+      id: 'diag-torso',
+      title: 'Transparent Human Torso & Internal Organs',
+      subject: 'Biology',
+      topic: 'Human Anatomy & Organ Systems',
+      description: 'Transparent acrylic body shell showcasing skull and brain, beating heart, lungs, liver, stomach, coiled intestines, and muscular arm mounted on a scientific diagnostic base.',
+      education_level: 'Middle & High School',
+      model_key: 'human_torso_anatomy',
+      thumbnail_url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%23FAF5FF"/><ellipse cx="150" cy="100" rx="45" ry="70" fill="none" stroke="%23A855F7" stroke-width="4"/><circle cx="150" cy="40" r="18" fill="%23E2E8F0"/><text x="150" y="110" font-size="14" font-weight="bold" fill="%237E22CE" text-anchor="middle">Torso Anatomy 3D</text></svg>',
+      accuracy_status: 'verified',
+      available_modes: ['3d_full', 'labelled', 'cross_section', 'exploded', 'mechanism', 'textbook_2d'],
+      animation_data: { type: 'organ_pulse', speed: 1.0, durationSec: 1.2 },
+      components: [
+        { name: 'Cranial Skull & Brain', desc: 'Central nervous system control', func: 'Encloses cerebral cortex responsible for sensory perception, thought, and motor commands.', color: '#E2E8F0', pos: [0, 1.85, 0] },
+        { name: 'Bilateral Pulmonary Lungs', desc: 'Respiratory exchange organs', func: 'Oxygenates venous blood and unloads carbon dioxide through alveolar capillaries.', color: '#F472B6', pos: [-0.45, 0.85, 0.15] },
+        { name: 'Pumping Cardiac Heart', desc: 'Central muscular pump', func: 'Nestled between the lungs; continuously circulates blood throughout systemic and pulmonary circuits.', color: '#DC2626', pos: [0.08, 0.75, 0.35] },
+        { name: 'Hepatic Liver', desc: 'Largest internal metabolic gland', func: 'Secretes digestive bile, detoxifies metabolic wastes, and stores glycogen.', color: '#78350F', pos: [-0.45, 0.15, 0.2] },
+        { name: 'Gastric Stomach', desc: 'Acidic digestive reservoir', func: 'Churns food with hydrochloric acid and pepsin enzymes to begin protein breakdown.', color: '#FDA4AF', pos: [0.42, 0.22, 0.15] },
+        { name: 'Intestinal Tract (Small & Large)', desc: 'Nutrient absorption and water recovery', func: 'Absorbs digested amino acids, glucose, and fatty acids through villi, forming solid waste in colon.', color: '#FBBF24', pos: [0, -0.45, 0.25] },
+        { name: 'Muscular Arm & Shoulder', desc: 'Skeletal muscle system', func: 'Striated deltoid, biceps, and forearm muscles generating voluntary movement via tendon attachments.', color: '#EF4444', pos: [-1.35, 0.45, 0] }
+      ]
+    },
+    {
+      id: 'diag-ear',
+      title: 'Human Ear Cross-Section: Outer, Middle & Inner Ear',
+      subject: 'Biology',
+      topic: 'Auditory System & Sound Transduction',
+      description: 'Interactive anatomical cross-section showing pinna cartilage, ear canal, tympanic membrane (eardrum), auditory ossicles (malleus, incus, stapes), spiral cochlea, 3 semicircular canals, and auditory nerves.',
+      education_level: 'Middle & High School',
+      model_key: 'human_ear',
+      thumbnail_url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%23FFFBEB"/><path d="M70 40 C40 80 40 140 80 170" stroke="%23D97706" stroke-width="8" fill="none"/><circle cx="170" cy="100" r="22" fill="%230284C7"/><text x="170" y="105" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Ear 3D</text></svg>',
+      accuracy_status: 'verified',
+      available_modes: ['3d_full', 'labelled', 'cross_section', 'exploded', 'mechanism', 'textbook_2d'],
+      animation_data: { type: 'sound_wave_vibration', speed: 1.0, durationSec: 1.5 },
+      components: [
+        { name: 'Auricle / Pinna Cartilage', desc: 'External ear funnel', func: 'Collects and focuses acoustic sound waves into the external auditory canal.', color: '#FDBA74', pos: [-1.45, 0.15, 0] },
+        { name: 'External Auditory Canal', desc: 'Ear canal passageway', func: 'Channels acoustic vibrations towards the tympanic membrane while producing protective cerumen (earwax).', color: '#94A3B8', pos: [-0.65, 0.1, 0.1] },
+        { name: 'Tympanic Membrane (Eardrum)', desc: 'Vibrating acoustic diaphragm', func: 'Transduces airborne compression waves into mechanical vibrations of the middle ear ossicles.', color: '#67E8F9', pos: [-0.05, 0.12, 0.15] },
+        { name: 'Auditory Ossicles (Malleus, Incus, Stapes)', desc: 'Smallest bones in human body', func: 'Amplifies mechanical sound pressure 20-fold from the large eardrum to the tiny oval window.', color: '#FACC15', pos: [0.35, 0.35, 0.12] },
+        { name: 'Semicircular Canals (3 Balance Loops)', desc: 'Vestibular equilibrium organ', func: 'Detects rotational angular acceleration along 3 orthogonal spatial planes using fluid endolymph movement.', color: '#38BDF8', pos: [0.75, 0.75, -0.15] },
+        { name: 'Spiral Cochlea', desc: 'Organ of hearing', func: 'Fluid-filled snail chamber where hair cells in the Organ of Corti translate vibrations into electrical impulses.', color: '#2563EB', pos: [0.85, -0.15, 0.1] },
+        { name: 'Vestibulocochlear Auditory Nerve (CN VIII)', desc: 'Sensory transmission nerve', func: 'Transmits sound frequencies and vestibular balance signals directly to the auditory cortex in temporal lobe.', color: '#F59E0B', pos: [1.45, 0.15, -0.2] }
+      ]
+    },
+    {
+      id: 'diag-solar',
+      title: 'Solar System & Planetary Orbital Mechanics',
+      subject: 'Physics',
+      topic: 'Astronomy & Gravitational Dynamics',
+      description: 'Central fusion Sun with corona, revolving Mercury, Venus, Earth, Mars, Jupiter, and Saturn with realistic ring system on accurate elliptical Keplerian tracks.',
+      education_level: 'Elementary, Middle & High School',
+      model_key: 'solar_system',
+      thumbnail_url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%230F172A"/><circle cx="150" cy="100" r="32" fill="%23F59E0B"/><ellipse cx="150" cy="100" rx="90" ry="35" fill="none" stroke="%2338BDF8" stroke-dasharray="4"/><circle cx="240" cy="100" r="10" fill="%2338BDF8"/><text x="150" y="105" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Solar System 3D</text></svg>',
+      accuracy_status: 'verified',
+      available_modes: ['3d_full', 'labelled', 'mechanism', 'textbook_2d'],
+      animation_data: { type: 'orbital_revolution', speed: 1.0, durationSec: 10.0 },
+      components: [
+        { name: 'The Sun (G-Type Main Sequence Star)', desc: 'Central gravitational anchor', func: 'Holds 99.86% of solar system mass; powers life through core hydrogen-to-helium nuclear fusion.', color: '#FACC15', pos: [0, 0, 0] },
+        { name: 'Earth & Orbit (1.0 AU)', desc: 'Hydrosphere terrestrial planet', func: 'Only known planet supporting life with nitrogen-oxygen atmosphere and protective magnetic field.', color: '#38BDF8', pos: [2.2, 0, 0] },
+        { name: 'Mars & Orbit (1.52 AU)', desc: 'The Red Planet', func: 'Terrestrial planet with thin CO₂ atmosphere, polar ice caps, and dormant Olympus Mons volcano.', color: '#EA580C', pos: [3.1, 0, 0] },
+        { name: 'Jupiter (5.2 AU)', desc: 'Largest gas giant', func: 'Massive gas giant acting as gravitational shield, surrounded by 95+ moons including Europa and Ganymede.', color: '#D97706', pos: [4.4, 0, 0] },
+        { name: 'Saturn & Extensive Ring System', desc: 'Ringed gas giant', func: 'Encircled by thousands of ringlets composed of billions of water-ice and rocky fragments.', color: '#FDE047', pos: [5.8, 0, 0] }
+      ]
+    },
+    {
+      id: 'diag-water-cycle',
+      title: 'Water Cycle: Evaporation, Condensation & Precipitation',
+      subject: 'Geography',
+      topic: 'Hydrological Cycle & Earth Systems',
+      description: '3D geomorphological landscape with ocean reservoir, mountain ranges, solar energy evaporation particles, cloud condensation, rain precipitation, and runoff streams.',
+      education_level: 'Middle School',
+      model_key: 'water_cycle',
+      thumbnail_url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%23ECFDF5"/><path d="M0 150 Q100 120 200 160 L300 140 L300 200 L0 200 Z" fill="%230284C7"/><ellipse cx="180" cy="50" rx="35" ry="16" fill="%23E2E8F0"/><text x="150" y="110" font-size="14" font-weight="bold" fill="%230F172A" text-anchor="middle">Water Cycle 3D</text></svg>',
+      accuracy_status: 'verified',
+      available_modes: ['3d_full', 'labelled', 'mechanism', 'textbook_2d'],
+      animation_data: { type: 'hydrological_flow', speed: 1.0, durationSec: 4.0 },
+      components: [
+        { name: 'Ocean Reservoir & Solar Heating', desc: 'Primary water source (97% of Earth water)', func: 'Solar thermal radiation heats surface liquid, causing phase change into invisible water vapor.', color: '#0284C7', pos: [-1.4, -0.65, 0.4] },
+        { name: 'Evaporative Vapor Plume', desc: 'Rising water vapor column', func: 'Warm, low-density moist air rises into the cooler troposphere.', color: '#67E8F9', pos: [-0.9, 0.35, 0.2] },
+        { name: 'Condensation Cloud Formation', desc: 'Dew point phase change', func: 'Vapor cools to dew point, condensing around microscopic aerosol nuclei into visible cloud droplets.', color: '#F8FAFC', pos: [0.1, 1.25, -0.2] },
+        { name: 'Precipitation Raindrops', desc: 'Falling water particles', func: 'Droplets coalesce until gravitational pull overcomes cloud updrafts, falling as rain or snow.', color: '#38BDF8', pos: [0.85, 0.65, -0.3] },
+        { name: 'Surface Runoff & Mountain Streams', desc: 'Watershed return flow', func: 'Gravity pulls liquid water down mountain valleys, replenishing aquifers, rivers, and the ocean.', color: '#0369A1', pos: [1.1, -0.35, -0.1] }
+      ]
+    },
+    {
+      id: 'diag-motor',
+      title: 'Electric Motor: Magnetic Field & Armature Rotation',
+      subject: 'Engineering & Technology',
+      topic: 'Electromagnetism & DC Motors',
+      description: 'Stator permanent magnetic poles (North red, South blue), rotating copper wire armature coil on axle, split-ring commutator, carbon brushes, and magnetic flux lines demonstrating Fleming’s Left-Hand Rule.',
+      education_level: 'High School',
+      model_key: 'electric_motor',
+      thumbnail_url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%23FFF7ED"/><rect x="40" y="70" width="40" height="60" fill="%23DC2626"/><rect x="220" y="70" width="40" height="60" fill="%232563EB"/><rect x="110" y="80" width="80" height="40" fill="none" stroke="%23EA580C" stroke-width="6"/><text x="150" y="105" font-size="14" font-weight="bold" fill="%231E293B" text-anchor="middle">Electric Motor 3D</text></svg>',
+      accuracy_status: 'verified',
+      available_modes: ['3d_full', 'labelled', 'exploded', 'mechanism', 'textbook_2d'],
+      animation_data: { type: 'armature_rotation', speed: 1.0, durationSec: 1.0 },
+      components: [
+        { name: 'Permanent Stator Magnets (N-S Poles)', desc: 'Stationary magnetic field source', func: 'Establishes a uniform horizontal magnetic field across the armature gap.', color: '#DC2626', pos: [-1.8, 0, 0] },
+        { name: 'Armature Coil (Conducting Copper Loop)', desc: 'Rotating current carrier', func: 'Experiences equal and opposite Lorentz forces (F = BIL) on parallel sides, generating torque.', color: '#F59E0B', pos: [0, 0, 0] },
+        { name: 'Split-Ring Commutator', desc: 'Directional current inverter', func: 'Reverses current direction through the coil every half-rotation (180°) to maintain continuous one-way rotation.', color: '#FBBF24', pos: [0, 0, 1.2] },
+        { name: 'Carbon Contact Brushes', desc: 'Spring-loaded current collectors', func: 'Maintains sliding electrical contact between the external DC power supply and spinning commutator rings.', color: '#334155', pos: [0.35, 0, 1.2] },
+        { name: 'Axle Shaft', desc: 'Mechanical rotational output', func: 'Transmits mechanical rotational kinetic energy to drive wheels, fans, or gears.', color: '#94A3B8', pos: [0, 0, -1.2] }
+      ]
+    },
+    {
+      id: 'diag-volcano',
+      title: 'Composite Volcano: Magma Chamber & Conduit Eruption',
+      subject: 'Geography',
+      topic: 'Plate Tectonics & Volcanism',
+      description: 'Cutaway stratovolcano cone revealing subsurface molten magma chamber, vertical central conduit, parasitic side vents, summit crater, and stratified layers of hardened lava and ash.',
+      education_level: 'Middle & High School',
+      model_key: 'volcano',
+      thumbnail_url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%23FEF2F2"/><polygon points="150,30 240,170 60,170" fill="%2378350F"/><circle cx="150" cy="180" r="26" fill="%23DC2626"/><text x="150" y="110" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Volcano 3D</text></svg>',
+      accuracy_status: 'verified',
+      available_modes: ['3d_full', 'labelled', 'cross_section', 'exploded', 'mechanism', 'textbook_2d'],
+      animation_data: { type: 'magma_eruption', speed: 1.0, durationSec: 2.0 },
+      components: [
+        { name: 'Subsurface Magma Chamber', desc: 'Pressurized molten rock reservoir', func: 'Stores superheated liquid rock and expanding dissolved volcanic gases below the crust.', color: '#DC2626', pos: [0, -1.2, 0] },
+        { name: 'Central Conduit / Main Pipe', desc: 'Vertical ascent pipe', func: 'Vertical vent through which rising magma ascends toward the Earth surface under tectonic pressure.', color: '#EA580C', pos: [0, -0.1, 0] },
+        { name: 'Summit Crater & Vent', desc: 'Volcanic opening bowl', func: 'Circular bowl-shaped summit depression where explosive lava fountains, ash clouds, and pyroclasts erupt.', color: '#292524', pos: [0, 1.1, 0] },
+        { name: 'Stratified Volcanic Cone Layers', desc: 'Alternating rock strata', func: 'Built up over millennia by alternating layers of hardened viscous lava and pyroclastic ash fall.', color: '#78350F', pos: [0.8, 0.1, 0] }
+      ]
+    },
+    {
+      id: 'diag-dna',
+      title: 'DNA Double Helix & Complementary Base Pairs',
+      subject: 'Biology',
+      topic: 'Molecular Genetics & DNA Structure',
+      description: 'Antiparallel sugar-phosphate helical backbones coiling around a central axis, joined by complementary Adenine-Thymine (2 hydrogen bonds) and Guanine-Cytosine (3 hydrogen bonds) base pairs.',
+      education_level: 'Middle & High School',
+      model_key: 'dna_helix',
+      thumbnail_url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200"><rect width="300" height="200" fill="%23F0FDF4"/><path d="M100 20 Q150 100 100 180" stroke="%2316A34A" stroke-width="6" fill="none"/><path d="M200 20 Q150 100 200 180" stroke="%232563EB" stroke-width="6" fill="none"/><line x1="120" y1="60" x2="180" y2="60" stroke="%23F59E0B" stroke-width="4"/><text x="150" y="105" font-size="14" font-weight="bold" fill="%231E293B" text-anchor="middle">DNA Helix 3D</text></svg>',
+      accuracy_status: 'verified',
+      available_modes: ['3d_full', 'labelled', 'exploded', 'mechanism', 'textbook_2d'],
+      animation_data: { type: 'helical_rotation', speed: 1.0, durationSec: 6.0 },
+      components: [
+        { name: 'Sugar-Phosphate Antiparallel Backbone', desc: 'Deoxyribose and phosphate rails', func: 'Structural outer rails linked by phosphodiester bonds running in opposite 5’ to 3’ directions.', color: '#FF6A00', pos: [-0.95, 0, 0] },
+        { name: 'Adenine = Thymine Base Pair', desc: 'Purine-pyrimidine pair (2 H-bonds)', func: 'Complementary base pair joined by 2 hydrogen bonds according to Chargaff’s rules.', color: '#22C55E', pos: [0, 0.45, 0] },
+        { name: 'Guanine ≡ Cytosine Base Pair', desc: 'Purine-pyrimidine pair (3 H-bonds)', func: 'Complementary base pair joined by 3 hydrogen bonds conferring high thermodynamic stability.', color: '#3B82F6', pos: [0, -0.45, 0] }
+      ]
+    }
+  ];
+
+  for (const d of initialDiagrams) {
+    insertDiagram.run(
+      d.id,
+      d.title,
+      d.subject,
+      d.topic,
+      d.description,
+      d.education_level,
+      d.model_key,
+      d.thumbnail_url,
+      d.accuracy_status,
+      JSON.stringify(d.available_modes),
+      JSON.stringify(d.animation_data),
+      now
+    );
+
+    for (let i = 0; i < d.components.length; i++) {
+      const c = d.components[i];
+      insertComponent.run(
+        `comp-${d.id}-${i + 1}`,
+        d.id,
+        c.name,
+        c.desc,
+        c.func,
+        JSON.stringify(c.pos),
+        JSON.stringify({ label: c.name, pinPosition: c.pos }),
+        `Curriculum educational note for ${c.name}.`,
+        c.color
+      );
+    }
+  }
+}
+

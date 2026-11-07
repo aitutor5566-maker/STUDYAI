@@ -2414,6 +2414,317 @@ export function createAppServer() {
         return;
       }
 
+      // =========================================================================
+      // UNIVERSAL 3D INTERACTIVE DIAGRAM ENGINE API
+      // =========================================================================
+
+      // 9.A. Diagram Catalog (/api/diagrams-3d)
+      if (pathname === '/api/diagrams-3d' && req.method === 'GET') {
+        const subjectFilter = parsedUrl.searchParams.get('subject');
+        const q = (parsedUrl.searchParams.get('q') || '').trim().toLowerCase();
+
+        let query = 'SELECT * FROM diagrams_3d WHERE 1=1';
+        const params: any[] = [];
+        if (subjectFilter && subjectFilter !== 'All') {
+          query += ' AND subject = ?';
+          params.push(subjectFilter);
+        }
+        if (q) {
+          query += ' AND (LOWER(title) LIKE ? OR LOWER(topic) LIKE ? OR LOWER(description) LIKE ?)';
+          params.push(`%${q}%`, `%${q}%`, `%${q}%`);
+        }
+        query += ' ORDER BY created_at ASC';
+
+        const rows = db.prepare(query).all(...params) as any[];
+        const enriched = rows.map((r) => {
+          const comps = db.prepare('SELECT id, component_name, color FROM diagram_components_3d WHERE diagram_id = ?').all(r.id) as any[];
+          const saved = db.prepare('SELECT id FROM saved_diagrams_3d WHERE user_id = ? AND diagram_id = ?').get(studentId, r.id);
+          const prog = db.prepare('SELECT completion_status, quiz_score, explored_components_json FROM student_diagram_progress WHERE user_id = ? AND diagram_id = ?').get(studentId, r.id) as any;
+          return {
+            ...r,
+            available_modes: JSON.parse(r.available_modes_json || '["3d_full", "labelled", "mechanism"]'),
+            animation_data: JSON.parse(r.animation_data_json || '{}'),
+            componentsCount: comps.length,
+            componentsSummary: comps.slice(0, 4).map((c: any) => c.component_name),
+            isSaved: Boolean(saved),
+            progress: prog ? {
+              completionStatus: prog.completion_status,
+              quizScore: prog.quiz_score,
+              exploredCount: JSON.parse(prog.explored_components_json || '[]').length
+            } : null
+          };
+        });
+
+        sendJson(res, 200, { diagrams: enriched, total: enriched.length });
+        return;
+      }
+
+      // 9.B. Specific Diagram Model Specification & Interaction (/api/diagrams-3d/:id)
+      if (pathname.startsWith('/api/diagrams-3d/') && req.method === 'GET' && !pathname.includes('/quiz') && !pathname.includes('/saved')) {
+        const diagramId = pathname.split('/')[3];
+        const diagram = db.prepare('SELECT * FROM diagrams_3d WHERE id = ? OR model_key = ?').get(diagramId, diagramId) as any;
+        if (!diagram) {
+          sendJson(res, 404, { error: `3D Diagram "${diagramId}" not found in universal catalog.` });
+          return;
+        }
+
+        const components = db.prepare('SELECT * FROM diagram_components_3d WHERE diagram_id = ?').all(diagram.id) as any[];
+        const saved = db.prepare('SELECT id FROM saved_diagrams_3d WHERE user_id = ? AND diagram_id = ?').get(studentId, diagram.id);
+        const progress = db.prepare('SELECT * FROM student_diagram_progress WHERE user_id = ? AND diagram_id = ?').get(studentId, diagram.id) as any;
+        const related = db.prepare('SELECT id, title, subject, model_key, thumbnail_url FROM diagrams_3d WHERE subject = ? AND id != ? LIMIT 4').all(diagram.subject, diagram.id);
+
+        sendJson(res, 200, {
+          diagram: {
+            ...diagram,
+            available_modes: JSON.parse(diagram.available_modes_json || '["3d_full", "labelled", "mechanism"]'),
+            animation_data: JSON.parse(diagram.animation_data_json || '{}'),
+            components: components.map((c: any) => ({
+              id: c.id,
+              name: c.component_name,
+              description: c.component_description,
+              function: c.component_function,
+              position: JSON.parse(c.position_data_json || '[0,0,0]'),
+              labelData: JSON.parse(c.label_data_json || '{}'),
+              notes: c.educational_notes,
+              color: c.color
+            })),
+            isSaved: Boolean(saved),
+            progress: progress ? {
+              completionStatus: progress.completion_status,
+              quizScore: progress.quiz_score,
+              exploredComponents: JSON.parse(progress.explored_components_json || '[]')
+            } : null,
+            relatedDiagrams: related
+          }
+        });
+        return;
+      }
+
+      // 9.C. Record Diagram Exploration Progress (/api/diagrams-3d/progress)
+      if (pathname === '/api/diagrams-3d/progress' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const diagramId = sanitizeText(body.diagramId || '', 100);
+        if (!diagramId) {
+          sendJson(res, 400, { error: 'Diagram ID is required.' });
+          return;
+        }
+
+        const now = new Date().toISOString();
+        const existing = db.prepare('SELECT * FROM student_diagram_progress WHERE user_id = ? AND diagram_id = ?').get(studentId, diagramId) as any;
+        let explored: string[] = existing ? JSON.parse(existing.explored_components_json || '[]') : [];
+
+        if (body.exploredComponent && !explored.includes(body.exploredComponent)) {
+          explored.push(body.exploredComponent);
+        }
+
+        const score = typeof body.quizScore === 'number' ? body.quizScore : (existing?.quiz_score || 0);
+        const status = body.completionStatus || (explored.length >= 4 ? 'completed' : 'in_progress');
+
+        if (existing) {
+          db.prepare(`
+            UPDATE student_diagram_progress
+            SET completion_status = ?, quiz_score = ?, explored_components_json = ?, last_accessed = ?
+            WHERE user_id = ? AND diagram_id = ?
+          `).run(status, score, JSON.stringify(explored), now, studentId, diagramId);
+        } else {
+          db.prepare(`
+            INSERT INTO student_diagram_progress (id, user_id, diagram_id, completion_status, quiz_score, explored_components_json, last_accessed)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `).run(`prog-${crypto.randomUUID().slice(0, 8)}`, studentId, diagramId, status, score, JSON.stringify(explored), now);
+        }
+
+        sendJson(res, 200, { success: true, exploredCount: explored.length, status, score });
+        return;
+      }
+
+      // 9.D. Saved / Bookmarked Diagrams (/api/diagrams-3d/saved)
+      if (pathname === '/api/diagrams-3d/saved' && req.method === 'GET') {
+        const rows = db.prepare(`
+          SELECT d.*, s.created_at as saved_at
+          FROM saved_diagrams_3d s
+          JOIN diagrams_3d d ON s.diagram_id = d.id
+          WHERE s.user_id = ?
+          ORDER BY s.created_at DESC
+        `).all(studentId) as any[];
+
+        sendJson(res, 200, {
+          saved: rows.map((r) => ({
+            ...r,
+            available_modes: JSON.parse(r.available_modes_json || '[]')
+          }))
+        });
+        return;
+      }
+
+      if (pathname === '/api/diagrams-3d/save' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const diagramId = sanitizeText(body.diagramId || '', 100);
+        if (!diagramId) {
+          sendJson(res, 400, { error: 'diagramId is required.' });
+          return;
+        }
+        const now = new Date().toISOString();
+        try {
+          db.prepare(`
+            INSERT INTO saved_diagrams_3d (id, user_id, diagram_id, created_at)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(user_id, diagram_id) DO NOTHING
+          `).run(`save-${crypto.randomUUID().slice(0, 8)}`, studentId, diagramId, now);
+          sendJson(res, 201, { success: true, saved: true });
+        } catch {
+          sendJson(res, 200, { success: true, saved: true });
+        }
+        return;
+      }
+
+      if (pathname.startsWith('/api/diagrams-3d/save/') && req.method === 'DELETE') {
+        const diagramId = pathname.split('/')[4];
+        db.prepare('DELETE FROM saved_diagrams_3d WHERE user_id = ? AND diagram_id = ?').run(studentId, diagramId);
+        sendJson(res, 200, { success: true, saved: false });
+        return;
+      }
+
+      // 9.E. Context-Aware 3D AI Tutor Q&A (/api/diagrams-3d/ask)
+      if (pathname === '/api/diagrams-3d/ask' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const diagramId = sanitizeText(body.diagramId || '', 100);
+        const componentName = sanitizeText(body.componentName || '', 120);
+        const question = sanitizeText(body.question || '', 500);
+
+        if (!question) {
+          sendJson(res, 400, { error: 'Please enter a question for the 3D model.' });
+          return;
+        }
+
+        const diagram = db.prepare('SELECT * FROM diagrams_3d WHERE id = ? OR model_key = ?').get(diagramId, diagramId) as any;
+        const topicName = diagram?.topic || diagram?.title || 'Scientific 3D Model';
+        const subject = diagram?.subject || 'Science';
+
+        let directFact = '';
+        let academicExplanation = '';
+
+        if (componentName) {
+          const comp = db.prepare('SELECT * FROM diagram_components_3d WHERE diagram_id = ? AND component_name = ?').get(diagram?.id, componentName) as any;
+          directFact = comp?.component_function || `${componentName} serves as a critical functional component of ${topicName}.`;
+          academicExplanation = `In ${subject} examinations, observe how ${componentName} interacts with surrounding structures. ${comp?.educational_notes || 'Always note orientation, pressure gradients, and anatomical connections.'}`;
+        } else {
+          directFact = diagram?.description || `${topicName} demonstrates fundamental spatial and physical principles.`;
+          academicExplanation = `When studying ${topicName} in 3D, rotate through 360 degrees to observe bilateral symmetry, connection ports, and circulation/flow dynamics.`;
+        }
+
+        sendJson(res, 200, {
+          question,
+          diagramTitle: topicName,
+          selectedComponent: componentName || null,
+          directAnswer: directFact,
+          detailedExplanation: academicExplanation,
+          examTip: `Exam Tip: When asked about ${componentName || topicName}, always draw the labeled cross-section showing directional flow or vector pathways.`
+        });
+        return;
+      }
+
+      // 9.F. Interactive Diagram Quiz Engine (/api/diagrams-3d/quiz/:id)
+      if (pathname.startsWith('/api/diagrams-3d/quiz/') && req.method === 'GET') {
+        const diagramId = pathname.split('/')[4];
+        const diagram = db.prepare('SELECT * FROM diagrams_3d WHERE id = ? OR model_key = ?').get(diagramId, diagramId) as any;
+        if (!diagram) {
+          sendJson(res, 404, { error: 'Diagram not found for quiz generation.' });
+          return;
+        }
+
+        const components = db.prepare('SELECT * FROM diagram_components_3d WHERE diagram_id = ?').all(diagram.id) as any[];
+
+        // 1. Match the Labels Quiz (Like Reference Image 5)
+        const matchTheLabels = components.slice(0, 6).map((c: any) => ({
+          componentId: c.id,
+          name: c.component_name,
+          hint: c.component_description,
+          correctPinIndex: components.indexOf(c)
+        }));
+
+        // 2. 3D Component Picking Question (Click directly on 3D Model!)
+        const targetComp = components[0] || { component_name: 'Primary Structure', component_function: 'Core functional role' };
+        const pickingChallenge = {
+          prompt: `Select the "${targetComp.component_name}" directly on the 3D model canvas.`,
+          targetComponentName: targetComp.component_name,
+          targetFunction: targetComp.component_function,
+          explanation: `Correct! ${targetComp.component_name}: ${targetComp.component_function}`
+        };
+
+        // 3. Conceptual Multiple Choice Questions
+        const mcqQuestions = components.slice(0, 3).map((c: any, idx: number) => {
+          const distractors = components.filter((x: any) => x.id !== c.id).slice(0, 3).map((x: any) => x.component_function);
+          const options = [c.component_function, ...distractors].sort(() => 0.5 - Math.random());
+          return {
+            id: `q-${idx + 1}`,
+            question: `What is the primary function of the "${c.component_name}" in ${diagram.title}?`,
+            options,
+            correctIndex: options.indexOf(c.component_function),
+            explanation: `Correct! ${c.component_name}: ${c.component_function}`
+          };
+        });
+
+        const quizPayload = {
+          diagramId: diagram.id,
+          diagramTitle: diagram.title,
+          matchTheLabels,
+          pickingChallenge,
+          mcqQuestions,
+          questions: mcqQuestions.map((q: any) => ({
+            id: q.id,
+            prompt: q.question,
+            options: q.options,
+            correctIndex: q.correctIndex,
+            explanation: q.explanation
+          }))
+        };
+
+        sendJson(res, 200, {
+          quiz: quizPayload,
+          ...quizPayload
+        });
+        return;
+      }
+
+      // 9.G. AI 3D Diagram Generator (/api/diagrams-3d/generate)
+      if (pathname === '/api/diagrams-3d/generate' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const prompt = sanitizeText(body.prompt || body.topic || 'Human Heart', 200);
+        const cleanLower = prompt.toLowerCase();
+
+        // 1. Look for matching pre-verified catalog model
+        let matched = db.prepare('SELECT * FROM diagrams_3d WHERE LOWER(title) LIKE ? OR LOWER(topic) LIKE ? LIMIT 1').get(`%${cleanLower}%`, `%${cleanLower}%`) as any;
+
+        if (matched) {
+          const comps = db.prepare('SELECT * FROM diagram_components_3d WHERE diagram_id = ?').all(matched.id) as any[];
+          sendJson(res, 200, {
+            matched: true,
+            diagram: {
+              ...matched,
+              available_modes: JSON.parse(matched.available_modes_json || '[]'),
+              components: comps.map((c: any) => ({
+                id: c.id,
+                name: c.component_name,
+                description: c.component_description,
+                function: c.component_function,
+                position: JSON.parse(c.position_data_json || '[0,0,0]'),
+                color: c.color
+              }))
+            }
+          });
+          return;
+        }
+
+        // 2. Synthesize AI 3D Model Spec for uncataloged topics
+        const spec = await generate3DModelSpec(prompt);
+        sendJson(res, 201, {
+          matched: false,
+          generated: true,
+          spec
+        });
+        return;
+      }
+
       // 10. Library & Learning Materials Hub (Section 14)
       if (pathname === '/api/library' && req.method === 'GET') {
         const typeFilter = parsedUrl.searchParams.get('type');
