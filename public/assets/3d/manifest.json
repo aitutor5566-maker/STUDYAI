@@ -1,0 +1,174 @@
+{
+  "version": "1.0.0",
+  "engine": "STUDYAI Curated 3D Asset Registry",
+  "assets": {
+    "human_heart": {
+      "name": "Human Heart",
+      "subject": "Biology",
+      "modelUrl": "/assets/3d/human_heart.glb",
+      "threeKey": "human_heart",
+      "keywords": ["heart", "cardiac", "circulation", "ventricle", "atrium", "aorta", "pulse", "blood flow", "transportation", "circulatory system"],
+      "recommendedCamera": [0, 0.4, 6.0]
+    },
+    "human_brain": {
+      "name": "Human Brain",
+      "subject": "Biology",
+      "modelUrl": "/assets/3d/human_brain.glb",
+      "threeKey": "human_brain",
+      "keywords": ["brain", "cerebrum", "cerebellum", "neuron", "synapse", "nervous system"],
+      "recommendedCamera": [0, 1.2, 5.5]
+    },
+    "human_eye": {
+      "name": "Human Eye Anatomy",
+      "subject": "Biology",
+      "modelUrl": "/assets/3d/human_eye.glb",
+      "threeKey": "human_eye",
+      "keywords": ["eye", "cornea", "retina", "lens", "pupil", "vision", "optic nerve"],
+      "recommendedCamera": [0, 0, 5.0]
+    },
+    "human_ear": {
+      "name": "Human Ear Cross-Section",
+      "subject": "Biology",
+      "modelUrl": "/assets/3d/human_ear.glb",
+      "threeKey": "human_ear",
+      "keywords": ["ear", "eardrum", "tympanic", "cochlea", "ossicle", "auditory", "hearing", "sound"],
+      "recommendedCamera": [0, 0.1, 5.8]
+    },
+    "human_lungs": {
+      "name": "Human Lungs & Respiratory System",
+      "subject": "Biology",
+      "modelUrl": "/assets/3d/human_lungs.glb",
+      "threeKey": "human_lungs",
+      "keywords": ["lungs", "respiratory", "trachea", "bronchi", "alveoli", "breathing", "oxygen"],
+      "recommendedCamera": [0, 0.2, 5.5]
+    },
+    "human_torso_anatomy": {
+      "name": "Transparent Torso Multi-Organ Model",
+      "subject": "Biology",
+      "modelUrl": "/assets/3d/human_torso_anatomy.glb",
+      "threeKey": "human_torso_anatomy",
+      "keywords": ["torso", "organs", "digestive", "liver", "stomach", "skeleton", "anatomy"],
+      "recommendedCamera": [0, 0, 6.2]
+    },
+    "plant_cell": {
+      "name": "Plant Cell & Chloroplast",
+      "subject": "Biology",
+      "modelUrl": "/assets/3d/plant_cell.glb",
+      "threeKey": "chloroplast_molecule",
+      "keywords": ["plant cell", "cell wall", "chloroplast", "vacuole", "photosynthesis", "chlorophyll"],
+      "recommendedCamera": [0, 0, 5.5]
+    },
+    "animal_cell": {
+      "name": "Animal Cell Organelles",
+      "subject": "Biology",
+      "modelUrl": "/assets/3d/animal_cell.glb",
+      "threeKey": "animal_cell",
+      "keywords": ["animal cell", "mitochondria", "nucleus", "ribosome", "cytoplasm"],
+      "recommendedCamera": [0, 0, 5.5]
+    },
+    "dna_helix": {
+      "name": "DNA Double Helix",
+      "subject": "Biology",
+      "modelUrl": "/assets/3d/dna_helix.glb",
+      "threeKey": "dna_helix",
+      "keywords": ["dna", "helix", "chromosome", "gene", "nucleotide", "adenine", "thymine", "genetics"],
+      "recommendedCamera": [0, 0, 6.0]
+    },
+    "atom_bohr": {
+      "name": "Rutherford-Bohr Quantized Atom",
+      "subject": "Physics & Chemistry",
+      "modelUrl": "/assets/3d/atom_bohr.glb",
+      "threeKey": "atom_bohr",
+      "keywords": ["atom", "electron", "proton", "neutron", "nucleus", "bohr", "orbit", "shells"],
+      "recommendedCamera": [0, 0, 5.8]
+    },
+    "electric_motor": {
+      "name": "DC Electric Motor",
+      "subject": "Physics & Chemistry",
+      "modelUrl": "/assets/3d/electric_motor.glb",
+      "threeKey": "electric_motor",
+      "keywords": ["motor", "armature", "coil", "commutator", "brushes", "stator", "lorentz force", "torque"],
+      "recommendedCamera": [0, 1.2, 4.8]
+    },
+    "electric_circuit": {
+      "name": "Physics Electric Circuit",
+      "subject": "Physics & Chemistry",
+      "modelUrl": "/assets/3d/electric_circuit.glb",
+      "threeKey": "electric_circuit",
+      "keywords": ["circuit", "battery", "bulb", "switch", "electrons", "current", "voltage", "ohms law"],
+      "recommendedCamera": [0, 3.8, 6.2]
+    },
+    "magnetic_field_lines": {
+      "name": "Bar Magnet & Magnetic Field Lines",
+      "subject": "Physics & Chemistry",
+      "modelUrl": "/assets/3d/magnetic_field_lines.glb",
+      "threeKey": "magnetic_field_lines",
+      "keywords": ["magnet", "magnetic field", "north pole", "south pole", "flux lines", "ferromagnetism"],
+      "recommendedCamera": [0, 1.0, 5.0]
+    },
+    "water_molecule": {
+      "name": "Water Molecule (H2O Bent VSEPR)",
+      "subject": "Physics & Chemistry",
+      "modelUrl": "/assets/3d/water_molecule.glb",
+      "threeKey": "chemical_bonding",
+      "keywords": ["water molecule", "h2o", "covalent bond", "hydrogen bond", "dipole", "polar", "vsepr"],
+      "recommendedCamera": [0, 0, 5.0]
+    },
+    "simple_pendulum": {
+      "name": "Simple Harmonic Pendulum",
+      "subject": "Physics & Chemistry",
+      "modelUrl": "/assets/3d/simple_pendulum.glb",
+      "threeKey": "simple_pendulum",
+      "keywords": ["pendulum", "oscillation", "periodic motion", "harmonic", "time period", "gravity"],
+      "recommendedCamera": [0, 0, 5.5]
+    },
+    "convex_concave_lenses": {
+      "name": "Convex and Concave Optical Lenses",
+      "subject": "Physics & Chemistry",
+      "modelUrl": "/assets/3d/convex_concave_lenses.glb",
+      "threeKey": "convex_concave_lenses",
+      "keywords": ["lens", "convex", "concave", "refraction", "focal point", "light ray", "optics"],
+      "recommendedCamera": [0, 0, 5.0]
+    },
+    "solar_system": {
+      "name": "Solar System & Keplerian Orbits",
+      "subject": "Earth & Space Sciences",
+      "modelUrl": "/assets/3d/solar_system.glb",
+      "threeKey": "solar_system",
+      "keywords": ["solar system", "planet", "sun", "earth", "mars", "jupiter", "saturn", "orbit", "kepler"],
+      "recommendedCamera": [0, 4.0, 8.0]
+    },
+    "earth_layers": {
+      "name": "Earth Interior Layers & Core",
+      "subject": "Earth & Space Sciences",
+      "modelUrl": "/assets/3d/earth_layers.glb",
+      "threeKey": "earth_layers",
+      "keywords": ["earth layers", "crust", "mantle", "outer core", "inner core", "lithosphere"],
+      "recommendedCamera": [0, 0, 5.5]
+    },
+    "tectonic_plates": {
+      "name": "Plate Tectonics & Continental Drift",
+      "subject": "Earth & Space Sciences",
+      "modelUrl": "/assets/3d/tectonic_plates.glb",
+      "threeKey": "tectonic_plates",
+      "keywords": ["tectonic plates", "fault line", "earthquake", "subduction", "convergent", "divergent"],
+      "recommendedCamera": [0, 1.0, 5.5]
+    },
+    "volcano": {
+      "name": "Composite Volcano Cross-Section",
+      "subject": "Earth & Space Sciences",
+      "modelUrl": "/assets/3d/volcano.glb",
+      "threeKey": "volcano",
+      "keywords": ["volcano", "magma", "lava", "crater", "conduit", "eruption", "ash"],
+      "recommendedCamera": [0, 0.5, 6.0]
+    },
+    "water_cycle": {
+      "name": "Hydrological Water Cycle",
+      "subject": "Earth & Space Sciences",
+      "modelUrl": "/assets/3d/water_cycle.glb",
+      "threeKey": "water_cycle",
+      "keywords": ["water cycle", "evaporation", "condensation", "precipitation", "transpiration", "hydrology"],
+      "recommendedCamera": [0, 1.5, 6.0]
+    }
+  }
+}

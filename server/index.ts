@@ -50,6 +50,7 @@ import {
   createStudentInvitation as createSupabaseStudentInvitation,
   acceptStudentInvitation as acceptSupabaseStudentInvitation
 } from './supabase.ts';
+import { studyAiEngine } from './studyAiAutonomousEngine.ts';
 import {
   SUPPORTED_LANGUAGES,
   getLanguageMeta,
@@ -2721,6 +2722,22 @@ export function createAppServer() {
           matched: false,
           generated: true,
           spec
+        });
+        return;
+      }
+
+      // 9.H. STUDYAI Deterministic Pedagogical Lesson Engine (/api/engine/lesson)
+      if (pathname === '/api/engine/lesson' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const topic = sanitizeText(body.topic || 'Human Heart', 200);
+        const gradeLevel = Math.min(10, Math.max(1, parseInt(body.gradeLevel || body.grade || '10', 10)));
+        const subject = sanitizeText(body.subject || 'Science', 80);
+        const studentAge = body.studentAge ? parseInt(body.studentAge, 10) : undefined;
+
+        const lesson = await studyAiEngine.generateLesson(topic, gradeLevel, subject, studentAge);
+        sendJson(res, 200, {
+          success: true,
+          lesson
         });
         return;
       }
