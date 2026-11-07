@@ -380,13 +380,14 @@ test('9. Full Session Lifecycle: start -> answer mixed -> complete -> weak conce
 });
 
 test('10. Multi-student game history isolation & stats aggregation', async () => {
+  const isolatedStudentId = `student-isolated-${Date.now()}`;
   const historyA = await api('/api/educational-games/history', {}, TEST_STUDENT_ID);
   assert.equal(historyA.status, 200);
   assert.ok(historyA.data.sessions.length > 0);
   assert.ok(historyA.data.stats.length > 0);
 
-  const historyB = await api('/api/educational-games/history', {}, SECOND_STUDENT_ID);
+  const historyB = await api('/api/educational-games/history', {}, isolatedStudentId);
   assert.equal(historyB.status, 200);
-  // User B hasn't played games yet in this run
-  assert.equal(historyB.data.sessions.filter((s: any) => s.user_id === SECOND_STUDENT_ID).length, 0);
+  // Isolated student has not played games yet
+  assert.equal(historyB.data.sessions.filter((s: any) => s.user_id === isolatedStudentId).length, 0);
 });

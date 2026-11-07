@@ -1056,6 +1056,16 @@ export async function generateUniversalEducationalNote(params: {
     summary: finalRevision.executiveSummary,
     classification,
     subtopics: classification.subtopics,
+    sections: (classification.subtopics && classification.subtopics.length > 0 ? classification.subtopics : ['Introduction & Principles', 'Mechanism Analysis', 'Applications & Exam Preparation']).map((st, idx) => ({
+      id: `sec-${idx + 1}`,
+      sectionNumber: idx + 1,
+      heading: `${idx + 1}. ${st}`,
+      title: st,
+      body: `${st}: Fundamental concepts, working mechanism, and key exam principles for ${cleanTopic}.`,
+      plainExplanation: `In everyday terms, ${st} describes how this concept functions clearly and systematically.`,
+      keyPoints: [`Core definition of ${st}`, `Important rule or law`, `Common exam significance`],
+      citations: [`[${cleanTopic} Knowledge Unit, Sec ${idx + 1}]`]
+    })),
     definitions: finalRevision.highYieldDefinitions,
     formulas: finalRevision.keyFormulasOrDatesOrRules,
     formula: classification.requiresFormulas && finalRevision.keyFormulasOrDatesOrRules.length > 0 ? {

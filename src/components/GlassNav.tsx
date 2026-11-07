@@ -47,9 +47,10 @@ export const GlassNav: React.FC = () => {
 
 export const TopBrandBar: React.FC<{
   showBack?: boolean;
+  onBack?: () => void;
   subtitle?: string;
   streakDays?: number;
-}> = ({ showBack = false, streakDays = 7 }) => {
+}> = ({ showBack = false, onBack, streakDays = 7 }) => {
   const navigate = useNavigate();
   const { studentId, setStudentId, studentProfiles, activeTopic } = useLearning();
 
@@ -74,7 +75,7 @@ export const TopBrandBar: React.FC<{
         {showBack && (
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={onBack ? onBack : () => navigate(-1)}
             aria-label="Go Back"
             style={{
               width: 38,
@@ -111,7 +112,7 @@ export const TopBrandBar: React.FC<{
               boxShadow: '0 4px 12px rgba(255, 106, 0, 0.12)'
             }}
           >
-            <FuturisticIcon name="tutor" size={34} />
+            <FuturisticIcon name="logo" size={34} />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
