@@ -356,6 +356,107 @@ export const VERIFIED_SCIENTIFIC_ASSETS: Record<string, EducationalImageMetadata
       examTip: 'Exam Tip: Kepler’s Third Law of Planetary Motion states that T² is proportional to a³, meaning outer planets take exponentially longer to complete one orbit around the Sun.'
     },
     caption: 'Official NASA documentary photographic compilation of the Sun and the eight planets.'
+  },
+
+  // 8. Atomic Structure (Bohr Model)
+  atomic_structure_bohr: {
+    id: 'ver-atom-01',
+    query: 'Atomic Structure Bohr Model Electron Energy Shells',
+    conceptKey: 'atomic_structure_bohr',
+    title: 'Bohr Model of the Atom: Nucleus, Electron Energy Shells (K, L, M), and Quantized Orbits',
+    provider: 'verified_scientific',
+    originalSourceUrl: 'https://commons.wikimedia.org/wiki/File:Bohr_atom_model.svg',
+    directImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Bohr-atom-PAR.svg/800px-Bohr-atom-PAR.svg.png',
+    creator: 'JabberWok / Wikimedia Commons',
+    originalWebsite: 'Wikimedia Commons',
+    licenseType: 'CC-BY-SA',
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/',
+    attributionRequirements: 'Creative Commons Attribution-Share Alike 3.0 Unported via Wikimedia Commons',
+    width: 800,
+    height: 600,
+    description: 'Quantum planetary atomic model diagram showing central positive nucleus (protons and neutrons) surrounded by concentric circular electron shells (K n=1, L n=2, M n=3) and photon energy absorption/emission transitions.',
+    retrievalDate: new Date().toISOString(),
+    accuracyStatus: 'verified',
+    fallbackStage: 3,
+    educationalContext: {
+      topic: 'Atomic Structure',
+      subtopic: 'Bohr Postulates & Electronic Configuration',
+      visualType: 'labelled_diagram',
+      pedagogicalPurpose: 'Illustrates quantized electron orbits, maximum shell capacity (2n²), and discrete photon energy absorption and emission.'
+    },
+    labels: [
+      { text: 'Dense Nucleus (Protons + Neutrons)', x: 50, y: 50, role: 'Positive core holding almost all atomic mass' },
+      { text: 'K-Shell (n = 1, Max 2 e⁻)', x: 50, y: 35, role: 'Innermost lowest energy ground state shell' },
+      { text: 'L-Shell (n = 2, Max 8 e⁻)', x: 50, y: 22, role: 'Second energy level with octet capacity' },
+      { text: 'M-Shell (n = 3, Max 18 e⁻)', x: 50, y: 10, role: 'Outer valence energy shell' },
+      { text: 'Photon Transition ΔE = h·ν', x: 75, y: 25, role: 'Energy emitted or absorbed during quantum jumps' }
+    ],
+    walkthrough: {
+      whatIsShown: 'Bohr atomic model depicting circular quantized electron shells around a massive central nucleus.',
+      whatItRepresents: 'Bohr atomic model depicting circular quantized electron shells around a massive central nucleus.',
+      keyComponents: [
+        { name: 'Nucleus', role: 'Contains positively charged protons and neutral neutrons bound by strong nuclear force.' },
+        { name: 'Quantized Shells (n=1, 2, 3)', role: 'Stationary orbits where electrons travel without radiating electromagnetic energy.' },
+        { name: 'Quantum Jumps', role: 'Electrons absorb photons to jump outward, and emit photons of exact energy ΔE = h·ν when falling back.' }
+      ],
+      importantComponents: [
+        { name: 'Nucleus', role: 'Contains positively charged protons and neutral neutrons bound by strong nuclear force.' },
+        { name: 'Quantized Shells (n=1, 2, 3)', role: 'Stationary orbits where electrons travel without radiating electromagnetic energy.' },
+        { name: 'Quantum Jumps', role: 'Electrons absorb photons to jump outward, and emit photons of exact energy ΔE = h·ν when falling back.' }
+      ],
+      examTip: 'High-Yield Formula: Maximum electrons in principal quantum shell n is given by 2n² (K shell n=1: 2, L shell n=2: 8, M shell n=3: 18).'
+    },
+    caption: 'Verified scientific diagram of the Bohr atomic model showing quantized electron energy levels and quantum transitions.'
+  },
+
+  // 9. Linear Equations (Algebra & Cartesian Graph)
+  linear_equations_graph: {
+    id: 'ver-lineq-01',
+    query: 'Linear Equations Cartesian Coordinate Graph Slope and Intercept',
+    conceptKey: 'linear_equations_graph',
+    title: 'Graph of a Linear Equation: Cartesian Plane, Slope (m = Δy/Δx), and Y-Intercept (y = mx + c)',
+    provider: 'verified_scientific',
+    originalSourceUrl: 'https://commons.wikimedia.org/wiki/File:Linear_Function_Graph.svg',
+    directImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Linear_Function_Graph.svg/800px-Linear_Function_Graph.svg.png',
+    creator: 'Wikimedia Commons',
+    originalWebsite: 'Wikimedia Commons',
+    licenseType: 'CC-BY-SA',
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/',
+    attributionRequirements: 'Creative Commons Attribution-Share Alike 3.0 Unported',
+    width: 800,
+    height: 560,
+    description: 'Cartesian coordinate plane illustrating the straight-line graph of a linear equation y = mx + c, detailing the y-intercept (0, c), x-intercept, and the rise-over-run slope gradient m = (y2 - y1) / (x2 - x1).',
+    retrievalDate: new Date().toISOString(),
+    accuracyStatus: 'verified',
+    fallbackStage: 3,
+    educationalContext: {
+      topic: 'Linear Equations',
+      subtopic: 'Slope-Intercept Form & Graphical Solution',
+      visualType: 'graph',
+      pedagogicalPurpose: 'Provides visual geometric proof that all degree-one equations map to straight lines on a Cartesian coordinate grid.'
+    },
+    labels: [
+      { text: 'X-Axis (Abscissa)', x: 80, y: 50, role: 'Horizontal independent domain variable' },
+      { text: 'Y-Axis (Ordinate)', x: 50, y: 15, role: 'Vertical dependent range variable' },
+      { text: 'Y-Intercept (0, c)', x: 50, y: 40, role: 'Point where line intersects the vertical y-axis' },
+      { text: 'Slope Triangle (Δy / Δx)', x: 68, y: 30, role: 'Constant rate of change and gradient' }
+    ],
+    walkthrough: {
+      whatIsShown: 'Straight-line graph of y = mx + c plotted on a two-dimensional Cartesian coordinate system.',
+      whatItRepresents: 'Straight-line graph of y = mx + c plotted on a two-dimensional Cartesian coordinate system.',
+      keyComponents: [
+        { name: 'Slope (m)', role: 'Determines the direction and tilt (positive rises, negative falls, zero is horizontal).' },
+        { name: 'Y-Intercept (c)', role: 'Value of y when x = 0; establishes the starting reference baseline.' },
+        { name: 'Collinear Points', role: 'Every point (x, y) along the line represents an exact algebraic solution to the equation.' }
+      ],
+      importantComponents: [
+        { name: 'Slope (m)', role: 'Determines the direction and tilt (positive rises, negative falls, zero is horizontal).' },
+        { name: 'Y-Intercept (c)', role: 'Value of y when x = 0; establishes the starting reference baseline.' },
+        { name: 'Collinear Points', role: 'Every point (x, y) along the line represents an exact algebraic solution to the equation.' }
+      ],
+      examTip: 'Exam Traps: Two linear equations have a unique solution if their lines intersect (m1 ≠ m2), no solution if parallel (m1 = m2, c1 ≠ c2), and infinite solutions if coincident.'
+    },
+    caption: 'Verified mathematical graph of a linear equation showing slope and intercept in the Cartesian plane.'
   }
 };
 
@@ -506,6 +607,64 @@ export function decomposeTopicIntoSectionVisuals(topic: string, sectionTitles: s
     ];
   }
 
+  if (lowerTopic.includes('atom') || lowerTopic.includes('bohr')) {
+    return [
+      {
+        sectionTitle: 'Subatomic Particles & Nuclear Core',
+        conceptName: 'Protons, Neutrons, and Electron Cloud',
+        visualType: 'labelled_diagram',
+        searchQuery: 'Atomic Structure Subatomic Particles Nucleus Electrons',
+        pedagogicalPurpose: 'Identifies the central positive nucleus and surrounding orbital space.',
+        domain: 'chemistry'
+      },
+      {
+        sectionTitle: 'Bohr Planetary Shell Model',
+        conceptName: 'Quantized Orbits (K, L, M Shells)',
+        visualType: 'labelled_diagram',
+        searchQuery: 'Atomic Structure Bohr Model Electron Energy Shells',
+        pedagogicalPurpose: 'Illustrates stationary quantized energy levels and 2n² electron capacity.',
+        domain: 'chemistry'
+      },
+      {
+        sectionTitle: 'Quantum Energy Transitions',
+        conceptName: 'Photon Absorption and Emission',
+        visualType: 'process_diagram',
+        searchQuery: 'Atomic emission spectrum electron energy jump photon absorption',
+        pedagogicalPurpose: 'Explains Planck-Einstein energy relationship ΔE = h·ν during electron transitions.',
+        domain: 'chemistry'
+      }
+    ];
+  }
+
+  if (lowerTopic.includes('equation') || lowerTopic.includes('linear')) {
+    return [
+      {
+        sectionTitle: 'Standard Algebraic Form',
+        conceptName: 'Linear Equation in One and Two Variables',
+        visualType: 'process_diagram',
+        searchQuery: 'Linear equations balancing algebraic substitution steps',
+        pedagogicalPurpose: 'Demonstrates step-by-step equality preservation and algebraic isolation of x.',
+        domain: 'mathematics'
+      },
+      {
+        sectionTitle: 'Cartesian Coordinate Graph',
+        conceptName: 'Straight-Line Geometry (y = mx + c)',
+        visualType: 'graph',
+        searchQuery: 'Linear Equations Cartesian Coordinate Graph Slope and Intercept',
+        pedagogicalPurpose: 'Demonstrates constant gradient slope m = Δy/Δx and vertical intercept c on axes.',
+        domain: 'mathematics'
+      },
+      {
+        sectionTitle: 'System of Equations & Intersection',
+        conceptName: 'Simultaneous Solution and Consistency',
+        visualType: 'graph',
+        searchQuery: 'Simultaneous linear equations intersecting lines unique solution Cartesian',
+        pedagogicalPurpose: 'Visualizes intersecting lines (unique solution), parallel lines (no solution), and coincident lines.',
+        domain: 'mathematics'
+      }
+    ];
+  }
+
   // Generic decomposition based on passed section titles
   const defaultSections = sectionTitles.length > 0 ? sectionTitles : ['Fundamental Principles', 'Structural Mechanism', 'Applications & Significance'];
   return defaultSections.map((sec, idx) => ({
@@ -649,16 +808,33 @@ export class EducationalImageResearchEngine {
   // Provider 3: Verified Scientific Library Matcher
   public searchVerifiedScientificLibrary(query: string): EducationalImageMetadata | null {
     const q = query.toLowerCase();
+    const genericStopwords = new Set(['structure', 'diagram', 'concept', 'science', 'overview', 'model', 'notes', 'lesson']);
+    const qTokens = q.split(/[\s,._-]+/).filter((t) => t.length > 3 && !genericStopwords.has(t));
+
+    let bestMatch: EducationalImageMetadata | null = null;
+    let bestScore = 0;
+
     for (const [key, asset] of Object.entries(VERIFIED_SCIENTIFIC_ASSETS)) {
-      if (
-        q.includes(asset.educationalContext.topic.toLowerCase()) ||
-        q.includes(key.toLowerCase()) ||
-        asset.query.toLowerCase().split(' ').some((word) => word.length > 4 && q.includes(word))
-      ) {
-        return asset;
+      const topicLower = asset.educationalContext.topic.toLowerCase();
+      const keyNormalized = key.toLowerCase().replace(/_/g, ' ');
+      const assetQueryTokens = asset.query.toLowerCase().split(/[\s,._-]+/).filter((t) => t.length > 3 && !genericStopwords.has(t));
+
+      let score = 0;
+      if (q.includes(topicLower)) score += 10;
+      if (q.includes(keyNormalized)) score += 8;
+
+      for (const token of qTokens) {
+        if (topicLower.includes(token)) score += 4;
+        if (assetQueryTokens.includes(token)) score += 2;
+      }
+
+      if (score > bestScore && score >= 4) {
+        bestScore = score;
+        bestMatch = asset;
       }
     }
-    return null;
+
+    return bestMatch;
   }
 
   // Discovery Links Generator (Google CC & Pinterest Official Discovery)
@@ -784,25 +960,25 @@ export class EducationalImageResearchEngine {
       }
     } catch {}
 
-    // Stage 1: Approved Educational Library (Wikimedia Commons API)
+    // Stage 1: Curated Verified Scientific & Educational Asset Registry (Direct Curriculum Match)
+    const verifiedMatch = this.searchVerifiedScientificLibrary(query);
+    if (verifiedMatch) {
+      this.cacheImage(verifiedMatch, req.domain);
+      return verifiedMatch;
+    }
+
+    // Stage 2: Approved Educational Library (Wikimedia Commons API Search)
     const wikiMatch = await this.searchWikimediaCommons(query, req.visualType);
     if (wikiMatch) {
       this.cacheImage(wikiMatch, req.domain);
       return wikiMatch;
     }
 
-    // Stage 2: Permitted CC Image Sources (Openverse API)
+    // Stage 3: Permitted CC Image Sources (Openverse API)
     const openverseMatch = await this.searchOpenverse(query, req.visualType);
     if (openverseMatch) {
       this.cacheImage(openverseMatch, req.domain);
       return openverseMatch;
-    }
-
-    // Stage 3: Curated Verified Scientific & Educational Asset Registry
-    const verifiedMatch = this.searchVerifiedScientificLibrary(query);
-    if (verifiedMatch) {
-      this.cacheImage(verifiedMatch, req.domain);
-      return verifiedMatch;
     }
 
     // Stage 4: Licensed Google Custom Search Candidate Evaluation (Discovery links embedded)
@@ -892,3 +1068,19 @@ export class EducationalImageResearchEngine {
 }
 
 export const educationalImageResearchEngine = new EducationalImageResearchEngine();
+
+export async function researchAndRetrieveEducationalVisual(topic: string, grade: number = 10, subject?: string): Promise<EducationalImageMetadata> {
+  const reqs = decomposeTopicIntoSectionVisuals(topic);
+  const req: SectionVisualRequirement = reqs[0] || {
+    sectionIndex: 0,
+    sectionTitle: topic,
+    topic,
+    subtopic: topic,
+    pedagogicalPurpose: `Explain core principles and structure of ${topic}`,
+    preferredVisualType: 'labelled_diagram',
+    requiredElements: [topic],
+    scientificConcept: topic,
+    searchQueries: [topic, `${topic} diagram`, `${topic} science`]
+  };
+  return educationalImageResearchEngine.researchAndRetrieveEducationalVisual(req);
+}

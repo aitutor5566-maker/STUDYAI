@@ -344,7 +344,7 @@ export const LibraryPage: React.FC = () => {
         </div>
         <h1 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#202124', letterSpacing: '-0.02em' }}>Visual Learning Library</h1>
         <p style={{ fontSize: '0.92rem', color: '#6B7280', marginTop: 2 }}>
-          Explore your saved AI notebooks, scientific diagrams, interactive 3D models, educational games, and multilingual speaking courses with live visual previews.
+          Explore your saved AI notebooks, verified scientific diagrams, audio lessons, educational games, and multilingual speaking courses with live visual previews.
         </p>
       </section>
 
@@ -856,17 +856,17 @@ export const LibraryPage: React.FC = () => {
                   boxShadow: '0 8px 20px rgba(255,106,0,0.28)'
                 }}
               >
-                <Box size={24} />
+                <Volume2 size={24} />
               </div>
               <div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#202124' }}>Interactive 3D Lab</h3>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#202124' }}>Voice Teacher &amp; Audio Lessons</h3>
                 <p style={{ fontSize: '0.84rem', color: '#6B7280', marginTop: 2 }}>
-                  Inspect 360° WebGL models — Human Heart, Newton's Laws, DNA Helix &amp; Chloroplasts
+                  Listen to teacher explanations, diagram verbalizations, and interactive conversational lessons
                 </p>
               </div>
             </div>
-            <button type="button" onClick={() => open3DLab('Human Heart & Cardiac Cycle', 'human_heart')} className="btn-orange">
-              <span>Explore 3D Lab →</span>
+            <button type="button" onClick={() => navigate('/tutor?voice=true')} className="btn-orange">
+              <span>Start Voice Lesson →</span>
             </button>
           </div>
         </section>

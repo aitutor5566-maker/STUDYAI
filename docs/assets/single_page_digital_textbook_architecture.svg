@@ -1,0 +1,237 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" width="1200" height="700">
+  <defs>
+    <linearGradient id="bookBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDFBF7"/>
+      <stop offset="50%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="#F1F5F9"/>
+    </linearGradient>
+    <linearGradient id="cardGradWhite" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#FCFCFD"/>
+    </linearGradient>
+    <linearGradient id="brandOrange" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6A00"/>
+      <stop offset="100%" stop-color="#E85D00"/>
+    </linearGradient>
+    <filter id="cardShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#0F172A" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="700" fill="url(#bookBg)" rx="28"/>
+
+  <!-- Top Title Banner -->
+  <g transform="translate(60, 40)">
+    <rect width="1080" height="76" rx="20" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" filter="url(#cardShadow)"/>
+    <text x="32" y="38" font-family="-apple-system, BlinkMacSystemFont, 'Georgia', serif" font-size="22" font-weight="900" fill="#0F172A">
+      📜 STUDYAI — Complete Single-Page Digital Notes &amp; Universal Teaching Workflow
+    </text>
+    <text x="32" y="60" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600" fill="#64748B">
+      Zero 5-Step Gating • Continuous Page Flow • 10 Unified Sections (A–J) • Subtopic Dedicated Diagrams &amp; 10-Point Math/Physics Solver
+    </text>
+    <g transform="translate(860, 22)">
+      <rect width="190" height="34" rx="17" fill="url(#brandOrange)"/>
+      <text x="95" y="22" font-family="sans-serif" font-size="11" font-weight="800" fill="#FFFFFF" text-anchor="middle">
+        100% CONTINUOUS SCROLL ✓
+      </text>
+    </g>
+  </g>
+
+  <!-- Section 1: Sticky Table of Contents Jump Bar (Width: 1080) -->
+  <g transform="translate(60, 134)">
+    <rect width="1080" height="52" rx="14" fill="#FFFFFF" stroke="#CBD5E1" filter="url(#cardShadow)"/>
+    <text x="24" y="31" font-family="sans-serif" font-size="11" font-weight="800" fill="#334155">📑 QUICK TOC JUMP:</text>
+    
+    <g transform="translate(150, 10)">
+      <rect width="84" height="32" rx="6" fill="#FFF7ED" stroke="#FDBA74"/>
+      <text x="42" y="20" font-family="sans-serif" font-size="10" font-weight="700" fill="#C2410C" text-anchor="middle">A. Definitions</text>
+    </g>
+    <g transform="translate(242, 10)">
+      <rect width="84" height="32" rx="6" fill="#F0FDF4" stroke="#86EFAC"/>
+      <text x="42" y="20" font-family="sans-serif" font-size="10" font-weight="700" fill="#15803D" text-anchor="middle">B. Key Points</text>
+    </g>
+    <g transform="translate(334, 10)">
+      <rect width="84" height="32" rx="6" fill="#EFF6FF" stroke="#93C5FD"/>
+      <text x="42" y="20" font-family="sans-serif" font-size="10" font-weight="700" fill="#1D4ED8" text-anchor="middle">C. Terms</text>
+    </g>
+    <g transform="translate(426, 10)">
+      <rect width="90" height="32" rx="6" fill="#FEF3C7" stroke="#FDE047"/>
+      <text x="45" y="20" font-family="sans-serif" font-size="10" font-weight="700" fill="#A16207" text-anchor="middle">D. Subtopics</text>
+    </g>
+    <g transform="translate(524, 10)">
+      <rect width="92" height="32" rx="6" fill="#FCE7F3" stroke="#F9A8D4"/>
+      <text x="46" y="20" font-family="sans-serif" font-size="10" font-weight="700" fill="#BE185D" text-anchor="middle">E. Comparisons</text>
+    </g>
+    <g transform="translate(624, 10)">
+      <rect width="92" height="32" rx="6" fill="#CCFBF1" stroke="#5EEAD4"/>
+      <text x="46" y="20" font-family="sans-serif" font-size="10" font-weight="700" fill="#0F766E" text-anchor="middle">F. Mechanisms</text>
+    </g>
+    <g transform="translate(724, 10)">
+      <rect width="84" height="32" rx="6" fill="#DBEAFE" stroke="#93C5FD"/>
+      <text x="42" y="20" font-family="sans-serif" font-size="10" font-weight="700" fill="#1E40AF" text-anchor="middle">G. Formulas</text>
+    </g>
+    <g transform="translate(816, 10)">
+      <rect width="90" height="32" rx="6" fill="#FFFBEB" stroke="#FDE68A"/>
+      <text x="45" y="20" font-family="sans-serif" font-size="10" font-weight="700" fill="#92400E" text-anchor="middle">H. 10-Pt Solver</text>
+    </g>
+    <g transform="translate(914, 10)">
+      <rect width="82" height="32" rx="6" fill="#F1F5F9" stroke="#CBD5E1"/>
+      <text x="41" y="20" font-family="sans-serif" font-size="10" font-weight="700" fill="#334155" text-anchor="middle">I. Exam Prep</text>
+    </g>
+    <g transform="translate(1004, 10)">
+      <rect width="66" height="32" rx="6" fill="#DCFCE7" stroke="#4ADE80"/>
+      <text x="33" y="20" font-family="sans-serif" font-size="10" font-weight="800" fill="#166534" text-anchor="middle">J. Recap</text>
+    </g>
+  </g>
+
+  <!-- 3-Column Visual Layout Showing the Continuous Page Flow -->
+  <!-- Left Column: Sections A, B, C & E (Width: 345) -->
+  <g transform="translate(60, 204)">
+    <rect width="345" height="456" rx="20" fill="url(#cardGradWhite)" stroke="#E2E8F0" filter="url(#cardShadow)"/>
+    
+    <g transform="translate(20, 20)">
+      <rect width="305" height="100" rx="12" fill="#FFF7ED" stroke="#FED7AA"/>
+      <text x="14" y="22" font-family="sans-serif" font-size="11" font-weight="800" fill="#C2410C">SECTION A: DEFINITIONS</text>
+      <text x="14" y="42" font-family="Georgia, serif" font-size="12" font-weight="700" fill="#1F2937">
+        "Academic &amp; Everyday Meanings"
+      </text>
+      <text x="14" y="62" font-family="sans-serif" font-size="10" fill="#6B7280">
+        • Textbook Definition: Formal curriculum wording
+      </text>
+      <text x="14" y="80" font-family="sans-serif" font-size="10" fill="#6B7280">
+        • Everyday Metaphor: Concrete anchor explanation
+      </text>
+    </g>
+
+    <g transform="translate(20, 134)">
+      <rect width="305" height="90" rx="12" fill="#F0FDF4" stroke="#BBF7D0"/>
+      <text x="14" y="22" font-family="sans-serif" font-size="11" font-weight="800" fill="#15803D">SECTION B: KEY POINTS &amp; FACTS</text>
+      <text x="14" y="42" font-family="sans-serif" font-size="10" fill="#374151">• Governing thermodynamic &amp; physical principles</text>
+      <text x="14" y="60" font-family="sans-serif" font-size="10" fill="#374151">• Synergistic functional components in equilibrium</text>
+      <text x="14" y="78" font-family="sans-serif" font-size="10" fill="#374151">• Verified lab experimental characteristics</text>
+    </g>
+
+    <g transform="translate(20, 238)">
+      <rect width="305" height="90" rx="12" fill="#EFF6FF" stroke="#BFDBFE"/>
+      <text x="14" y="22" font-family="sans-serif" font-size="11" font-weight="800" fill="#1D4ED8">SECTION C: TERMINOLOGY MATRIX</text>
+      <text x="14" y="42" font-family="monospace" font-size="10" font-weight="700" fill="#1E40AF">ATP = Adenosine Triphosphate</text>
+      <text x="14" y="60" font-family="monospace" font-size="10" font-weight="700" fill="#1E40AF">FBD = Free Body Diagram</text>
+      <text x="14" y="78" font-family="sans-serif" font-size="10" fill="#475569">Explains technical definition, role &amp; usage</text>
+    </g>
+
+    <g transform="translate(20, 342)">
+      <rect width="305" height="94" rx="12" fill="#FCE7F3" stroke="#FBCFE8"/>
+      <text x="14" y="22" font-family="sans-serif" font-size="11" font-weight="800" fill="#BE185D">SECTION E: COMPARISON TABLES</text>
+      <text x="14" y="42" font-family="sans-serif" font-size="10" font-weight="600" fill="#831843">Light Reaction vs Dark Reaction (Calvin)</text>
+      <text x="14" y="60" font-family="sans-serif" font-size="9" fill="#9D174D">• Aspect 1: Thylakoid membrane vs Stroma matrix</text>
+      <text x="14" y="76" font-family="sans-serif" font-size="9" fill="#9D174D">• Aspect 2: Photolysis of water vs CO2 fixation</text>
+    </g>
+  </g>
+
+  <!-- Middle Column: Section D (Dedicated Subtopic Diagrams + 8-Point Analysis) (Width: 380) -->
+  <g transform="translate(425, 204)">
+    <rect width="380" height="456" rx="20" fill="url(#cardGradWhite)" stroke="#FF6A00" stroke-width="1.8" filter="url(#cardShadow)"/>
+    
+    <text x="20" y="32" font-family="sans-serif" font-size="12" font-weight="900" fill="#FF6A00">
+      SECTION D: DEDICATED SUBTOPIC DIAGRAMS
+    </text>
+    <text x="20" y="48" font-family="sans-serif" font-size="10" fill="#64748B">
+      Every subtopic is placed directly beside its own verified visual diagram:
+    </text>
+
+    <!-- Embedded Sample Diagram Box -->
+    <g transform="translate(20, 58)">
+      <rect width="340" height="154" rx="12" fill="#F8FAFC" stroke="#E2E8F0"/>
+      <!-- Sample Scientific Schematic Graphic -->
+      <circle cx="100" cy="77" r="42" fill="#DCFCE7" stroke="#16A34A" stroke-width="2"/>
+      <path d="M 100 45 L 100 109 M 68 77 L 132 77" stroke="#15803D" stroke-width="1.5"/>
+      <text x="100" y="82" font-family="sans-serif" font-size="10" font-weight="800" fill="#14532D" text-anchor="middle">Chloroplast</text>
+      
+      <!-- Directional Arrows -->
+      <path d="M 155 77 L 225 77" stroke="#FF6A00" stroke-width="2.5" marker-end="url(#arrow)"/>
+      <text x="190" y="70" font-family="sans-serif" font-size="9" font-weight="800" fill="#EA580C" text-anchor="middle">Light Energy</text>
+
+      <rect x="235" y="45" width="85" height="64" rx="8" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.5"/>
+      <text x="277" y="74" font-family="sans-serif" font-size="10" font-weight="800" fill="#92400E" text-anchor="middle">Glucose + O₂</text>
+      <text x="277" y="90" font-family="sans-serif" font-size="8" fill="#B45309" text-anchor="middle">(Chemical Fuel)</text>
+
+      <text x="170" y="142" font-family="sans-serif" font-size="9" font-weight="700" fill="#64748B" text-anchor="middle">
+        Fig D.1: Internal Thylakoid Stacking &amp; Photochemical Transduction
+      </text>
+    </g>
+
+    <!-- 8-Point Scientific Breakdown Box -->
+    <g transform="translate(20, 224)">
+      <rect width="340" height="212" rx="12" fill="#F8FAFC" stroke="#CBD5E1"/>
+      <text x="14" y="20" font-family="sans-serif" font-size="11" font-weight="800" fill="#0F172A">
+        8-Point Scientific Diagram Breakdown:
+      </text>
+      <text x="14" y="38" font-family="sans-serif" font-size="9.5" fill="#334155">1. <tspan font-weight="700">What it Shows:</tspan> Thylakoid membrane ultrastructure</text>
+      <text x="14" y="56" font-family="sans-serif" font-size="9.5" fill="#334155">2. <tspan font-weight="700">Labelled Parts:</tspan> Grana stacks, Stroma, Lumen</text>
+      <text x="14" y="74" font-family="sans-serif" font-size="9.5" fill="#334155">3. <tspan font-weight="700">Part Functions:</tspan> Chlorophyll captures photons</text>
+      <text x="14" y="92" font-family="sans-serif" font-size="9.5" fill="#334155">4. <tspan font-weight="700">Interconnections:</tspan> Electron transport pumps H+ protons</text>
+      <text x="14" y="110" font-family="sans-serif" font-size="9.5" fill="#334155">5. <tspan font-weight="700">Directional Flow:</tspan> Water → Photosystem II → ATP Synthase</text>
+      <text x="14" y="128" font-family="sans-serif" font-size="9.5" fill="#334155">6. <tspan font-weight="700">Step Interpretation:</tspan> Chemiosmosis drives photophosphorylation</text>
+      <text x="14" y="146" font-family="sans-serif" font-size="9.5" fill="#334155">7. <tspan font-weight="700">Learning Outcome:</tspan> Solar conversion to chemical potential</text>
+      <g transform="translate(10, 162)">
+        <rect width="320" height="38" rx="6" fill="#ECFDF5" stroke="#10B981"/>
+        <text x="10" y="18" font-family="sans-serif" font-size="9" font-weight="800" fill="#065F46">8. Exam Memory Hook:</text>
+        <text x="10" y="30" font-family="sans-serif" font-size="9" font-weight="600" fill="#047857">"Oxygen released comes from H₂O, not CO₂!"</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Right Column: Sections G, H, I & J (Math/Physics Solver & Revision) (Width: 315) -->
+  <g transform="translate(825, 204)">
+    <rect width="315" height="456" rx="20" fill="url(#cardGradWhite)" stroke="#E2E8F0" filter="url(#cardShadow)"/>
+    
+    <!-- Section H: 10-Point Solver -->
+    <g transform="translate(18, 18)">
+      <rect width="279" height="150" rx="12" fill="#FFFBEB" stroke="#FDE68A"/>
+      <text x="12" y="20" font-family="sans-serif" font-size="11" font-weight="800" fill="#92400E">
+        SECTION H: 10-POINT PROBLEM SOLVER
+      </text>
+      <text x="12" y="38" font-family="sans-serif" font-size="9" font-weight="700" fill="#B45309">
+        Rigorous Physics &amp; Mathematics Template:
+      </text>
+      <text x="12" y="54" font-family="sans-serif" font-size="8.5" fill="#78350F">1. Classify problem type &amp; governing law</text>
+      <text x="12" y="68" font-family="sans-serif" font-size="8.5" fill="#78350F">2. Convert given data to SI metric units</text>
+      <text x="12" y="82" font-family="sans-serif" font-size="8.5" fill="#78350F">3. State algebraic formula &amp; rearrange</text>
+      <text x="12" y="96" font-family="sans-serif" font-size="8.5" fill="#78350F">4. Step-by-step arithmetic substitutions</text>
+      <text x="12" y="110" font-family="sans-serif" font-size="8.5" fill="#78350F">5. Final boxed answer with SI units</text>
+      <text x="12" y="124" font-family="sans-serif" font-size="8.5" fill="#78350F">6. Dimensional sanity check &amp; common traps</text>
+      <text x="12" y="138" font-family="sans-serif" font-size="8.5" font-weight="700" fill="#047857">✓ Multiple representative solved types + practice</text>
+    </g>
+
+    <!-- Section I: Exam-Oriented Prep -->
+    <g transform="translate(18, 180)">
+      <rect width="279" height="124" rx="12" fill="#F8FAFC" stroke="#CBD5E1"/>
+      <text x="12" y="20" font-family="sans-serif" font-size="11" font-weight="800" fill="#1E293B">
+        SECTION I: EXAM PREPARATION
+      </text>
+      <text x="12" y="38" font-family="sans-serif" font-size="9" fill="#475569">• MCQs with distractors &amp; explanations</text>
+      <text x="12" y="54" font-family="sans-serif" font-size="9" fill="#475569">• 1-Mark official textbook definitions</text>
+      <text x="12" y="70" font-family="sans-serif" font-size="9" fill="#475569">• 3-Mark sequential process questions</text>
+      <text x="12" y="86" font-family="sans-serif" font-size="9" fill="#475569">• 5-Mark long answers with derivations</text>
+      <text x="12" y="104" font-family="sans-serif" font-size="9" font-weight="700" fill="#0284C7">
+        🎯 Board Marking Scheme Advice Included
+      </text>
+    </g>
+
+    <!-- Section J: Final Revision Master Sheet -->
+    <g transform="translate(18, 316)">
+      <rect width="279" height="120" rx="12" fill="#F0FDF4" stroke="#86EFAC"/>
+      <text x="12" y="20" font-family="sans-serif" font-size="11" font-weight="900" fill="#14532D">
+        SECTION J: FINAL REVISION SHEET
+      </text>
+      <text x="12" y="38" font-family="sans-serif" font-size="9" fill="#166534">🏆 Master Revision Cram Matrix</text>
+      <text x="12" y="54" font-family="sans-serif" font-size="9" fill="#166534">⚠️ High-Yield Board Examination Traps</text>
+      <text x="12" y="70" font-family="sans-serif" font-size="9" fill="#166534">💡 Common Misconceptions Busted</text>
+      <text x="12" y="86" font-family="sans-serif" font-size="9" fill="#166534">✅ Rapid Self-Test Retention Checklist</text>
+      <text x="12" y="104" font-family="sans-serif" font-size="9" font-weight="700" fill="#15803D">
+        Everything on ONE continuous page!
+      </text>
+    </g>
+  </g>
+</svg>

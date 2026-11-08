@@ -8,11 +8,14 @@ class ParallaxForestPainter extends CustomPainter {
   final KatanaWarriorState warriorState;
   final KatanaEnemyState enemyState;
   final double warriorActionProgress; // 0.0 to 1.0 for slash or hit
+  final int targetedEnemyIndex; // 0, 1, 2, 3
+  final Set<int> defeatedEnemies; // indices of defeated enemies
   final List<FireflyParticle> fireflies;
   final List<SlashParticle> slashParticles;
   final bool isBoss;
   final double enemyHpRatio; // 0.0 to 1.0
   final double playerHpRatio;
+  final List<String> optionLetters; // ['A', 'B', 'C', 'D']
 
   ParallaxForestPainter({
     required this.animationTime,
@@ -20,11 +23,14 @@ class ParallaxForestPainter extends CustomPainter {
     required this.warriorState,
     required this.enemyState,
     required this.warriorActionProgress,
+    this.targetedEnemyIndex = 0,
+    this.defeatedEnemies = const {},
     required this.fireflies,
     required this.slashParticles,
     required this.isBoss,
     required this.enemyHpRatio,
     required this.playerHpRatio,
+    this.optionLetters = const ['A', 'B', 'C', 'D'],
   });
 
   @override
@@ -43,9 +49,9 @@ class ParallaxForestPainter extends CustomPainter {
     canvas.drawRect(Rect.fromLTWH(0, 0, w, h), skyPaint);
 
     // 2. Full Glowing Moon
-    final moonX = w * 0.78 - (cameraX * 0.04) % (w * 0.4);
-    final moonY = h * 0.22;
-    final moonRadius = math.min(w, h) * 0.11;
+    final moonX = w * 0.82 - (cameraX * 0.04) % (w * 0.4);
+    final moonY = h * 0.20;
+    final moonRadius = math.min(w, h) * 0.10;
 
     // Outer Moon Aura
     final moonAuraPaint = Paint()
@@ -79,44 +85,30 @@ class ParallaxForestPainter extends CustomPainter {
     canvas.drawPath(mountainPath, mountainPaint);
 
     // 4. Layer 3: Distant Bamboo Stalks (Parallax 0.35)
-    final distantBambooOffset = (cameraX * 0.35) % 120;
-    final distantBambooPaint = Paint()
+    final distOffset = (cameraX * 0.35) % 120;
+    final distBambooPaint = Paint()
       ..color = const Color(0xFF0D3B43).withOpacity(0.65)
       ..strokeWidth = 14
       ..strokeCap = StrokeCap.round;
 
-    for (double bx = -100 - distantBambooOffset; bx <= w + 100; bx += 70) {
+    for (double bx = -100 - distOffset; bx <= w + 100; bx += 70) {
       final sway = math.sin(animationTime * 1.2 + bx * 0.05) * 6;
-      canvas.drawLine(Offset(bx, groundY), Offset(bx + sway, groundY - 240), distantBambooPaint);
+      canvas.drawLine(Offset(bx, groundY), Offset(bx + sway, groundY - 240), distBambooPaint);
     }
 
     // 5. Layer 4: Near Bamboo Stalks (Parallax 0.65)
-    final nearBambooOffset = (cameraX * 0.65) % 160;
+    final nearOffset = (cameraX * 0.65) % 160;
     final nearBambooPaint = Paint()
       ..color = const Color(0xFF0E565F)
       ..strokeWidth = 22
       ..strokeCap = StrokeCap.round;
 
-    final bambooJointPaint = Paint()
-      ..color = const Color(0xFF147D8A)
-      ..strokeWidth = 26
-      ..strokeCap = StrokeCap.square;
-
-    for (double bx = -120 - nearBambooOffset; bx <= w + 120; bx += 130) {
+    for (double bx = -120 - nearOffset; bx <= w + 120; bx += 130) {
       final sway = math.sin(animationTime * 1.5 + bx * 0.08) * 10;
-      final start = Offset(bx, groundY);
-      final end = Offset(bx + sway, groundY - 320);
-      canvas.drawLine(start, end, nearBambooPaint);
-
-      // Bamboo rings / joints
-      for (double t = 0.2; t <= 0.9; t += 0.25) {
-        final jx = bx + sway * t;
-        final jy = groundY - 320 * t;
-        canvas.drawLine(Offset(jx - 4, jy), Offset(jx + 4, jy), bambooJointPaint);
-      }
+      canvas.drawLine(Offset(bx, groundY), Offset(bx + sway, groundY - 320), nearBambooPaint);
     }
 
-    // 6. Ground Gameplay Plane: Stone Bridge & Path
+    // 6. Ground Plane (Stone bridge / battlefield floor)
     final groundPaint = Paint()
       ..shader = const LinearGradient(
         begin: Alignment.topCenter,
@@ -125,26 +117,19 @@ class ParallaxForestPainter extends CustomPainter {
       ).createShader(Rect.fromLTWH(0, groundY, w, h - groundY));
     canvas.drawRect(Rect.fromLTWH(0, groundY, w, h - groundY), groundPaint);
 
-    // Glowing Bridge Edge Line (Rich Orange StudyAi accent)
+    // Glowing Orange Ground Edge Line
     final edgePaint = Paint()
       ..color = const Color(0xFFFF6A00).withOpacity(0.7)
       ..strokeWidth = 3;
     canvas.drawLine(Offset(0, groundY), Offset(w, groundY), edgePaint);
 
-    // Stone path planks
-    final plankPaint = Paint()
-      ..color = const Color(0xFF2C3E50).withOpacity(0.4)
-      ..strokeWidth = 2;
-    for (double px = -(cameraX % 40); px <= w; px += 40) {
-      canvas.drawLine(Offset(px, groundY), Offset(px - 15, h), plankPaint);
-    }
-
-    // Stone Lantern with Flame
-    _drawStoneLantern(canvas, w * 0.18 - (cameraX * 0.8) % (w * 1.2), groundY, animationTime);
-    _drawStoneLantern(canvas, w * 0.82 - (cameraX * 0.8) % (w * 1.2), groundY, animationTime);
-
     // 7. Firefly Particles
     for (final f in fireflies) {
+      f.x += f.speedX;
+      f.y += f.speedY;
+      if (f.x < -20) f.x = w + 20;
+      if (f.x > w + 20) f.x = -20;
+
       final pulse = 0.5 + 0.5 * math.sin(animationTime * 2.5 + f.phase);
       final fireflyPaint = Paint()
         ..color = const Color(0xFF38BDF8).withOpacity(f.opacity * pulse)
@@ -152,17 +137,46 @@ class ParallaxForestPainter extends CustomPainter {
       canvas.drawCircle(Offset(f.x, f.y), f.radius, fireflyPaint);
     }
 
-    // 8. Draw Samurai Warrior (Left side)
-    final warriorX = w * 0.28;
-    final warriorY = groundY;
-    _drawWarrior(canvas, warriorX, warriorY, warriorState, warriorActionProgress, animationTime);
+    // 8. Calculate 4 Enemy Positions (Across right half of battlefield)
+    final enemyPositions = [
+      w * 0.52, // Enemy 0 (Option A)
+      w * 0.66, // Enemy 1 (Option B)
+      w * 0.79, // Enemy 2 (Option C)
+      w * 0.91, // Enemy 3 (Option D)
+    ];
 
-    // 9. Draw Shadow Enemy / Boss (Right side)
-    final enemyX = w * 0.72;
-    final enemyY = groundY;
-    _drawEnemy(canvas, enemyX, enemyY, enemyState, warriorActionProgress, animationTime, isBoss);
+    // 9. Draw 4 Separate Shadow Warrior Enemies with Option Billboard Badges
+    for (int i = 0; i < enemyPositions.length; i++) {
+      if (defeatedEnemies.contains(i)) continue;
 
-    // 10. Slash & Impact Particles
+      final ex = enemyPositions[i];
+      final isTargeted = warriorState == KatanaWarriorState.slashing && targetedEnemyIndex == i;
+
+      _drawEnemy(
+        canvas,
+        ex,
+        groundY,
+        isTargeted ? enemyState : KatanaEnemyState.idle,
+        warriorActionProgress,
+        animationTime + i * 0.8,
+        isBoss,
+        optionLetters.length > i ? optionLetters[i] : String.fromCharCode(65 + i),
+      );
+    }
+
+    // 10. Draw Main Samurai Warrior (Dashes to targeted enemy during slash)
+    double warriorBaseX = w * 0.22;
+    double warriorX = warriorBaseX;
+
+    if (warriorState == KatanaWarriorState.slashing && targetedEnemyIndex >= 0 && targetedEnemyIndex < enemyPositions.length) {
+      // Dash towards target enemy
+      final targetX = enemyPositions[targetedEnemyIndex] - 50;
+      warriorX = warriorBaseX + (targetX - warriorBaseX) * math.min(warriorActionProgress * 1.8, 1.0);
+    }
+
+    _drawWarrior(canvas, warriorX, groundY, warriorState, warriorActionProgress, animationTime);
+
+    // 11. Slash & Impact Particles
     for (final sp in slashParticles) {
       final particlePaint = Paint()
         ..color = sp.color.withOpacity(math.max(0, sp.life))
@@ -170,34 +184,6 @@ class ParallaxForestPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round;
       canvas.drawLine(Offset(sp.x, sp.y), Offset(sp.x - sp.vx * 3, sp.y - sp.vy * 3), particlePaint);
     }
-  }
-
-  // Draw Japanese Stone Lantern (Toro)
-  void _drawStoneLantern(Canvas canvas, double x, double groundY, double time) {
-    if (x < -50 || x > 2000) return;
-    final lanternPaint = Paint()..color = const Color(0xFF1F2937);
-
-    // Base pedestal
-    canvas.drawRect(Rect.fromCenter(center: Offset(x, groundY - 12), width: 34, height: 24), lanternPaint);
-    // Pillar
-    canvas.drawRect(Rect.fromCenter(center: Offset(x, groundY - 42), width: 14, height: 38), lanternPaint);
-    // Firebox
-    canvas.drawRect(Rect.fromCenter(center: Offset(x, groundY - 72), width: 30, height: 24), lanternPaint);
-    // Roof Pagoda
-    final roofPath = Path();
-    roofPath.moveTo(x - 24, groundY - 84);
-    roofPath.lineTo(x + 24, groundY - 84);
-    roofPath.lineTo(x + 8, groundY - 100);
-    roofPath.lineTo(x - 8, groundY - 100);
-    roofPath.close();
-    canvas.drawPath(roofPath, lanternPaint);
-
-    // Flickering Flame inside firebox
-    final flicker = 0.7 + 0.3 * math.sin(time * 8 + x);
-    final flamePaint = Paint()
-      ..color = const Color(0xFFFF6A00).withOpacity(flicker)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-    canvas.drawCircle(Offset(x, groundY - 72), 7, flamePaint);
   }
 
   // Draw Samurai Warrior with Ronin Hat, Katana, and Slashing Energy
@@ -278,12 +264,21 @@ class ParallaxForestPainter extends CustomPainter {
     canvas.restore();
   }
 
-  // Draw Shadow Demon Enemy / Chapter Boss
-  void _drawEnemy(Canvas canvas, double x, double y, KatanaEnemyState state, double progress, double time, bool isBoss) {
-    final scale = isBoss ? 1.45 : 1.0;
+  // Draw 3D-styled Shadow Demon Enemy with floating option badge
+  void _drawEnemy(
+    Canvas canvas,
+    double x,
+    double y,
+    KatanaEnemyState state,
+    double progress,
+    double time,
+    bool isBoss,
+    String optionLetter,
+  ) {
+    final scale = isBoss ? 1.25 : 0.9;
     final isHit = state == KatanaEnemyState.hit;
     final floatY = math.sin(time * 3.0 + 1.2) * 5;
-    final enemyY = y - (isBoss ? 80 : 60) + floatY;
+    final enemyY = y - (isBoss ? 75 : 55) + floatY;
 
     canvas.save();
     canvas.translate(x, enemyY);
@@ -320,11 +315,29 @@ class ParallaxForestPainter extends CustomPainter {
     canvas.drawCircle(const Offset(-8, -8), isBoss ? 4.5 : 3.0, redEyePaint);
     canvas.drawCircle(const Offset(8, -8), isBoss ? 4.5 : 3.0, redEyePaint);
 
-    // Boss Crown / Spikes if Boss
-    if (isBoss) {
-      final crownPaint = Paint()..color = const Color(0xFFF59E0B);
-      canvas.drawCircle(const Offset(0, -28), 5, crownPaint);
-    }
+    // Option Badge Pill Above Enemy Head [A], [B], [C], [D]
+    final badgePaint = Paint()..color = const Color(0xFFFF6A00);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromCenter(center: const Offset(0, -56), width: 28, height: 28), const Radius.circular(14)),
+      badgePaint,
+    );
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: optionLetter,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    textPainter.paint(
+      canvas,
+      Offset(-textPainter.width / 2, -56 - textPainter.height / 2),
+    );
 
     canvas.restore();
   }

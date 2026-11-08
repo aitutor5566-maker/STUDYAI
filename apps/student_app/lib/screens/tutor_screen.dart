@@ -175,7 +175,7 @@ class _TutorScreenState extends State<TutorScreen> {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Structured curriculum lessons, Three.js 3D models, labeled scientific diagrams, and interactive self-check quizzes',
+            'Structured curriculum lessons, verified scientific diagrams, audio lessons, and interactive self-check quizzes',
             style: TextStyle(fontSize: 13, color: StudyAiColors.textMuted),
           ),
           const SizedBox(height: 20),
@@ -866,9 +866,9 @@ class _TutorScreenState extends State<TutorScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Component 5: Interactive 3D Model — $topic', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white)),
+                          Text('Component 5: Scientific Concept Diagram — $topic', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white)),
                           const SizedBox(height: 2),
-                          const Text('Visual positioned directly at the core concept. Orbit, zoom, and inspect layers.', style: TextStyle(fontSize: 11, color: Colors.white70)),
+                          const Text('Visual positioned directly at the core concept with 8-point pedagogical breakdown.', style: TextStyle(fontSize: 11, color: Colors.white70)),
                         ],
                       ),
                     ),
@@ -883,7 +883,7 @@ class _TutorScreenState extends State<TutorScreen> {
                         Interactive3DDialog.show(context, modelTitle: modelId);
                       },
                       icon: const Icon(Icons.fullscreen_rounded, size: 18),
-                      label: const Text('Open Interactive 3D Lab'),
+                      label: const Text('Inspect Diagram & Walkthrough'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: StudyAiColors.primaryDark,
@@ -1214,7 +1214,7 @@ class _TutorScreenState extends State<TutorScreen> {
                 ElevatedButton(
                   onPressed: () => Interactive3DDialog.show(context, modelTitle: modelId),
                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7)),
-                  child: const Text('View 3D Schematic', style: TextStyle(fontSize: 12)),
+                  child: const Text('View Scientific Schematic', style: TextStyle(fontSize: 12)),
                 ),
               ],
             ),

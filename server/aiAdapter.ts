@@ -997,6 +997,7 @@ export interface TutorRequestInput {
   topic: string;
   question: string;
   mode: 'simple' | 'detailed';
+  studentName?: string;
   subject?: string;
   level?: string;
   grade?: number;
@@ -1058,6 +1059,9 @@ export function detectSpellingGuidance(query: string): { original: string; corre
 
 export async function generateTutorExplanation(input: TutorRequestInput): Promise<any> {
   const baseLesson = await generateTutorExplanationInner(input);
+  if (input.studentName) {
+    (baseLesson as any).studentName = input.studentName;
+  }
   if (!baseLesson.spellingGuidance && detectSpellingGuidance(input.question)) {
     baseLesson.spellingGuidance = detectSpellingGuidance(input.question);
   }
@@ -1075,7 +1079,14 @@ export async function generateTutorExplanation(input: TutorRequestInput): Promis
   if (!baseLesson.explanationLength) {
     (baseLesson as any).explanationLength = input.explanationLength || input.adaptiveProfile?.explanation_style || 'balanced';
   }
-  return enrichLessonWithRebuildStructure(baseLesson, generateScientificSvgDataUrl);
+  return enrichLessonWithRebuildStructure(
+    {
+      ...baseLesson,
+      question: input.question,
+      selectedVisualComponent: input.selectedVisualComponent
+    },
+    generateScientificSvgDataUrl
+  );
 }
 
 async function generateTutorExplanationInner(input: TutorRequestInput) {

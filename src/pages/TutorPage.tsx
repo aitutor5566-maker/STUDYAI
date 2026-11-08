@@ -26,7 +26,12 @@ import {
   Radio,
   Trash2,
   ShieldCheck,
-  Sliders
+  Sliders,
+  Folder,
+  MessageSquare,
+  Plus,
+  X,
+  Clock
 } from 'lucide-react';
 import { TopBrandBar } from '../components/GlassNav';
 import { Interactive3DViewer } from '../components/Interactive3DLab';
@@ -171,13 +176,15 @@ const InteractiveGeometryConstruction: React.FC<{ topic?: string }> = ({ topic }
         </svg>
 
         <div style={{ background: '#0F172A', padding: 12, borderRadius: 10, fontSize: '0.78rem', border: '1px solid #1E293B' }}>
-          <div style={{ color: '#FDBA74', fontWeight: 700, marginBottom: 4 }}>
-            Step {currentStep} of {totalSteps}:
+          <div style={{ color: '#38BDF8', fontWeight: 800, marginBottom: 6 }}>
+            Complete Construction Sequence (All Steps Available):
           </div>
-          {currentStep === 1 && <div>1. Draw base segment AB of length {ab} cm with a straightedge.</div>}
-          {currentStep === 2 && <div>2. Set compass to radius {ac} cm. Needle at vertex A; draw an arc above AB.</div>}
-          {currentStep === 3 && <div>3. Set compass to radius {bc} cm. Needle at vertex B; draw an arc intersecting the first arc at C.</div>}
-          {currentStep === 4 && <div>4. Join AC ({ac} cm) and BC ({bc} cm) with straightedge. Triangle ABC is complete and verified!</div>}
+          <div style={{ display: 'grid', gap: 4 }}>
+            <div style={{ color: currentStep >= 1 ? '#F8FAFC' : '#64748B' }}>1. Draw base segment AB of length {ab} cm with a straightedge.</div>
+            <div style={{ color: currentStep >= 2 ? '#F8FAFC' : '#64748B' }}>2. Set compass to radius {ac} cm. Needle at vertex A; draw an arc above AB.</div>
+            <div style={{ color: currentStep >= 3 ? '#F8FAFC' : '#64748B' }}>3. Set compass to radius {bc} cm. Needle at vertex B; draw an arc intersecting the first arc at C.</div>
+            <div style={{ color: currentStep >= 4 ? '#F8FAFC' : '#64748B' }}>4. Join AC ({ac} cm) and BC ({bc} cm) with straightedge. Triangle ABC is complete and verified!</div>
+          </div>
           <div style={{ marginTop: 8, color: '#4ADE80', fontSize: '0.72rem' }}>
             ✓ SSS Congruence Theorem: {ab} + {ac} &gt; {bc} (Valid)
           </div>
@@ -319,7 +326,8 @@ export const TutorPage: React.FC = () => {
 
   // Conversation & Input States
   const [conversations, setConversations] = useState<any[]>([]);
-  const [activeConvId, setActiveConvId] = useState<string>('conv-photosynthesis');
+  const [activeConvId, setActiveConvId] = useState<string>('');
+  const [showSavedChatsDrawer, setShowSavedChatsDrawer] = useState<boolean>(false);
   const [messages, setMessages] = useState<any[]>([]);
   const [questionInput, setQuestionInput] = useState<string>('');
   const [attachmentNote, setAttachmentNote] = useState<string>('');
@@ -456,17 +464,17 @@ export const TutorPage: React.FC = () => {
     const queryTopic = searchParams.get('topic');
     apiFetch<any[]>('/api/tutor/conversations')
       .then(async (list) => {
-        setConversations(list);
+        setConversations(list || []);
         if (queryTopic && queryTopic.trim()) {
-          const matching = list.find((c) => c.topic.toLowerCase() === queryTopic.trim().toLowerCase());
+          const matching = (list || []).find((c) => c.topic.toLowerCase() === queryTopic.trim().toLowerCase());
           if (matching) {
             loadConversation(matching.id);
           } else {
             await submitQuestion(`Explain ${queryTopic.trim()} in ${mode} terms`, queryTopic.trim(), null);
           }
-        } else if (list.length > 0) {
-          loadConversation(list[0].id);
         }
+        // Clean initial state: when opened without ?topic=, do NOT auto-load list[0].
+        // Conversation area stays clean and empty until the student types a question or opens Saved Chats!
       })
       .catch(() => {});
   }, [searchParams.get('topic')]);
@@ -501,10 +509,14 @@ export const TutorPage: React.FC = () => {
 
   // Reset / Clear Active Conversation
   const handleResetConversation = () => {
-    setActiveConvId(`conv-${Date.now().toString(36)}`);
+    setActiveConvId('');
     setMessages([]);
     setStreamingText('');
-    setActionToast('Started a fresh AI Tutor lesson.');
+    setQuestionInput('');
+    setAttachmentNote('');
+    setSelectedVisualComponent(null);
+    setShowSavedChatsDrawer(false);
+    setActionToast('Started a fresh, clean AI Tutor conversation.');
     setTimeout(() => setActionToast(''), 2500);
   };
 
@@ -892,7 +904,7 @@ export const TutorPage: React.FC = () => {
               </span>
             </div>
             <p style={{ fontSize: '0.84rem', color: '#6B7280', margin: '4px 0 0 0' }}>
-              Multilingual AI Teacher • Grades 1–10 • English + Telugu + Hindi • Interactive 3D &amp; Visuals
+              Multilingual AI Teacher • Grades 1–10 • English + Telugu + Hindi • Curriculum Diagrams &amp; Visuals
             </p>
           </div>
         </div>
@@ -920,13 +932,24 @@ export const TutorPage: React.FC = () => {
 
           <button
             type="button"
-            onClick={handleResetConversation}
-            title="Reset Lesson Conversation"
+            onClick={() => setShowSavedChatsDrawer(true)}
+            title="Browse past conversations and saved study sessions"
             className="btn-glass"
-            style={{ fontSize: '0.76rem', padding: '6px 12px' }}
+            style={{ fontSize: '0.78rem', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: 6 }}
           >
-            <RotateCcw size={13} color="#FF6A00" />
-            <span>New Topic</span>
+            <Folder size={14} color="#FF6A00" />
+            <span>Saved Chats ({conversations.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleResetConversation}
+            title="Start a clean, fresh AI Tutor chat"
+            className="btn-glass"
+            style={{ fontSize: '0.78rem', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: 6 }}
+          >
+            <Plus size={14} color="#FF6A00" />
+            <span>New Chat</span>
           </button>
         </div>
       </section>
@@ -1121,127 +1144,7 @@ export const TutorPage: React.FC = () => {
           <span>Start Voice Lesson</span>
         </button>
 
-        {/* Universal 3D Interactive Diagram Studio Button */}
-        <button
-          type="button"
-          onClick={() => setShow3DStudioDrawer((prev) => !prev)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '8px 18px',
-            borderRadius: 999,
-            background: show3DStudioDrawer ? 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)' : '#FFF3E8',
-            border: '1.5px solid rgba(255, 106, 0, 0.4)',
-            color: show3DStudioDrawer ? '#FFFFFF' : '#E85D00',
-            fontWeight: 800,
-            fontSize: '0.82rem',
-            cursor: 'pointer',
-            boxShadow: show3DStudioDrawer ? '0 4px 14px rgba(255, 106, 0, 0.35)' : 'none',
-            transition: 'all 0.2s ease'
-          }}
-        >
-          <Box size={16} color={show3DStudioDrawer ? '#FFFFFF' : '#FF6A00'} />
-          <span>{show3DStudioDrawer ? 'Hide 3D Studio' : 'Interactive 3D Studio'}</span>
-          <span
-            style={{
-              fontSize: '0.68rem',
-              padding: '2px 7px',
-              borderRadius: 999,
-              background: show3DStudioDrawer ? 'rgba(255,255,255,0.25)' : '#FFE4CC',
-              color: show3DStudioDrawer ? '#FFFFFF' : '#E85D00'
-            }}
-          >
-            5 Models
-          </span>
-        </button>
       </section>
-
-      {/* Interactive 3D Diagram Studio Drawer (Seamless AI Tutor Integration) */}
-      {show3DStudioDrawer && (
-        <section
-          style={{
-            marginBottom: 20,
-            borderRadius: 24,
-            overflow: 'hidden',
-            border: '2px solid rgba(255, 106, 0, 0.35)',
-            boxShadow: '0 16px 40px rgba(255, 106, 0, 0.12)',
-            background: '#FFFFFF'
-          }}
-        >
-          <div
-            style={{
-              padding: '12px 20px',
-              background: 'linear-gradient(90deg, #FFF3E8 0%, #FFE4CC 100%)',
-              borderBottom: '1.5px solid rgba(255, 106, 0, 0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: 10
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: '1.2rem' }}>🔬</span>
-              <div>
-                <strong style={{ fontSize: '0.94rem', color: '#202124' }}>Universal 3D Educational Diagram Studio</strong>
-                <p style={{ margin: 0, fontSize: '0.78rem', color: '#6B7280' }}>
-                  Rotate 360°, inspect callouts, explode layers, and tap any component to question the AI Tutor
-                </p>
-              </div>
-            </div>
-
-            {/* Quick Model Selector Pills */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-              {[
-                { id: 'human_heart', label: '❤️ Heart' },
-                { id: 'human_lungs', label: '🫁 Lungs' },
-                { id: 'electric_circuit', label: '⚡ Circuit' },
-                { id: 'human_torso_anatomy', label: '🧬 Torso' },
-                { id: 'human_ear', label: '👂 Ear' }
-              ].map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => setStudioModelKey(m.id)}
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: 999,
-                    border: '1px solid ' + (studioModelKey === m.id ? '#FF6A00' : 'rgba(255,106,0,0.2)'),
-                    background: studioModelKey === m.id ? '#FF6A00' : '#FFFFFF',
-                    color: studioModelKey === m.id ? '#FFFFFF' : '#202124',
-                    fontSize: '0.76rem',
-                    fontWeight: 800,
-                    cursor: 'pointer'
-                  }}
-                >
-                  {m.label}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => setShow3DStudioDrawer(false)}
-                className="btn-glass"
-                style={{ padding: '6px 12px', fontSize: '0.76rem', color: '#6B7280' }}
-              >
-                ✕ Close
-              </button>
-            </div>
-          </div>
-
-          <Interactive3DViewer
-            topic={activeTopic}
-            modelType={studioModelKey || inferTopicModel3D(activeTopic) || 'human_heart'}
-            onClose={() => setShow3DStudioDrawer(false)}
-            onSelectComponent={(comp) => {
-              setSelectedVisualComponent(comp);
-              const q = `Explain the biological / physical role of ${comp.label} in ${activeTopic || 'this system'} in simple terms.`;
-              setQuestionInput(q);
-              submitQuestion(q, activeTopic, null);
-            }}
-          />
-        </section>
-      )}
 
       {/* Multilingual, Multi-Grade & Pedagogical Controls Bar */}
       <section
@@ -1478,30 +1381,123 @@ export const TutorPage: React.FC = () => {
       {/* Conversation Thread */}
       <section style={{ display: 'grid', gap: 18, marginBottom: 22 }}>
         {messages.length === 0 && !loading && (
-          <div className="glass-card" style={{ padding: 28, textAlign: 'center' }}>
-            <Sparkles size={32} color="#FF6A00" />
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: 8 }}>
-              {language === 'Telugu'
-                ? 'ఈ రోజు మీరు ఏ అంశాన్ని నేర్చుకోవాలనుకుంటున్నారు?'
-                : language === 'Hindi'
-                ? 'आज आप कौन सा विषय पढ़ना चाहते हैं?'
-                : `What concept in ${subject} would you like to master today?`}
+          <div
+            className="glass-card"
+            style={{
+              padding: '36px 28px',
+              textAlign: 'center',
+              maxWidth: 720,
+              margin: '0 auto',
+              borderRadius: 24,
+              border: '2px solid rgba(255, 106, 0, 0.2)',
+              background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF7 100%)',
+              boxShadow: '0 12px 36px rgba(255, 106, 0, 0.08)'
+            }}
+          >
+            <div
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #FFF3E8 0%, #FFE4CC 100%)',
+                border: '2px solid #FF6A00',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px auto',
+                boxShadow: '0 8px 20px rgba(255, 106, 0, 0.18)'
+              }}
+            >
+              <Bot size={34} color="#FF6A00" />
+            </div>
+
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4px 14px',
+                borderRadius: 999,
+                background: 'rgba(255, 106, 0, 0.1)',
+                border: '1px solid rgba(255, 106, 0, 0.3)',
+                color: '#FF6A00',
+                fontSize: '0.78rem',
+                fontWeight: 800,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                marginBottom: 12
+              }}
+            >
+              <Sparkles size={13} />
+              <span>STUDYAI AI Tutor</span>
+            </div>
+
+            <h2
+              style={{
+                fontSize: '1.45rem',
+                fontWeight: 800,
+                color: '#1E293B',
+                margin: '0 0 10px 0',
+                lineHeight: 1.3
+              }}
+            >
+              Hey! I'm your STUDYAI teacher. What would you like to learn today?
             </h2>
-            <p style={{ fontSize: '0.88rem', color: '#6B7280', marginTop: 4, marginBottom: 16 }}>
-              {gradeBand.desc} • Tailored for Grade {grade} • Powered by local Ollama (qwen2.5:7b)
+
+            <p
+              style={{
+                fontSize: '0.92rem',
+                color: '#64748B',
+                maxWidth: 580,
+                margin: '0 auto 22px auto',
+                lineHeight: 1.5
+              }}
+            >
+              Ask any educational question, curriculum concept, or formula. I will explain it step by step with clear definitions, real-life examples, and simple educational diagrams.
             </p>
-            <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 8 }}>
-              {suggestedList.map((sq) => (
-                <button
-                  key={sq}
-                  type="button"
-                  onClick={() => submitQuestion(sq, sq, null)}
-                  className="btn-glass"
-                  style={{ fontSize: '0.82rem', borderColor: 'rgba(255, 106, 0, 0.28)' }}
-                >
-                  ✦ {sq}
-                </button>
-              ))}
+
+            <div style={{ marginTop: 8 }}>
+              <p
+                style={{
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: '#94A3B8',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: 10
+                }}
+              >
+                Suggested Curriculum Topics (Click to explore)
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 8 }}>
+                {[
+                  'Photosynthesis',
+                  'Human Heart',
+                  'Mitosis',
+                  "Newton's Laws of Motion",
+                  'Chemical Bonding',
+                  'Fractions',
+                  'Water Cycle'
+                ].map((sq) => (
+                  <button
+                    key={sq}
+                    type="button"
+                    onClick={() => submitQuestion(sq, sq, null)}
+                    className="btn-glass"
+                    style={{
+                      fontSize: '0.82rem',
+                      fontWeight: 600,
+                      borderColor: 'rgba(255, 106, 0, 0.28)',
+                      padding: '8px 14px',
+                      borderRadius: 12,
+                      background: '#FFFFFF',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+                    }}
+                  >
+                    ✦ {sq}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -1639,23 +1635,6 @@ export const TutorPage: React.FC = () => {
                     <span>Voice Teacher</span>
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setInline3DMsgId(showInline3D ? null : msg.id)}
-                    className="btn-glass"
-                    style={{
-                      fontSize: '0.76rem',
-                      padding: '5px 12px',
-                      background: showInline3D ? '#FF6A00' : '#FFF7ED',
-                      color: showInline3D ? '#FFFFFF' : '#EA580C',
-                      borderColor: 'rgba(255,106,0,0.3)'
-                    }}
-                    title="Toggle Interactive 3D Lab"
-                  >
-                    <Box size={14} />
-                    <span>{showInline3D ? 'Hide 3D Lab' : '3D Model Lab'}</span>
-                  </button>
-
                   <span
                     style={{
                       fontSize: '0.73rem',
@@ -1689,7 +1668,7 @@ export const TutorPage: React.FC = () => {
                   <span>{teachingMode === 'normal' ? '🌱' : '⚡'}</span>
                   <span>
                     {teachingMode === 'normal'
-                      ? 'NORMAL LEARNING MODE: Everyday explanations, concept breakdown, integrated diagrams & 3D models'
+                      ? 'NORMAL LEARNING MODE: Everyday explanations, concept breakdown, integrated diagrams & visuals'
                       : 'EXAM PREPARATION MODE: Formal definitions, full forms glossary, formulas, labeled schematics & practice tests'}
                   </span>
                 </div>
@@ -1702,18 +1681,6 @@ export const TutorPage: React.FC = () => {
                   Switch to {teachingMode === 'normal' ? 'Exam Prep ⚡' : 'Normal Mode 🌱'}
                 </button>
               </div>
-
-              {/* Standalone / Inline 3D Viewer if toggled or auto-available */}
-              {(showInline3D || (!s?.imageUrl && inferTopicModel3D(s?.topic || activeTopic))) && (
-                <div style={{ marginBottom: 18, border: '2px solid rgba(255,106,0,0.3)', borderRadius: 20, overflow: 'hidden' }}>
-                  <Interactive3DViewer
-                    topic={s?.topic || activeTopic}
-                    modelType={s?.model3dType || inferTopicModel3D(s?.topic || activeTopic) || undefined}
-                    compact
-                    onClose={() => setInline3DMsgId(null)}
-                  />
-                </div>
-              )}
 
               {/* Gentle Spelling Guidance Notice */}
               {s?.spellingGuidance && (
@@ -1863,7 +1830,7 @@ export const TutorPage: React.FC = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8 }}>
                       {(s?.learningOutcomes || [
                         `Master the foundational concepts and definitions of ${s?.topic || activeTopic}`,
-                        'Visualize structural parts and mechanisms through diagrams & 3D models',
+                        'Visualize structural parts and mechanisms through diagrams & visuals',
                         'Understand the step-by-step sequence of operations and connections',
                         'Identify and avoid common misconceptions students make in exams'
                       ]).map((item: string, i: number) => (
@@ -2423,7 +2390,7 @@ export const TutorPage: React.FC = () => {
                   <div style={{ padding: 16, borderRadius: 18, background: '#FFFFFF', border: '1.5px solid #0284C7' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
                       <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0369A1' }}>
-                        📐 Component 5: Labeled Examination Diagrams &amp; 3D Schematics
+                        📐 Component 5: Labeled Examination Diagrams &amp; Schematics
                       </div>
                       <span style={{ fontSize: '0.74rem', color: '#0284C7', fontWeight: 700, background: '#E0F2FE', padding: '3px 8px', borderRadius: 999 }}>
                         High-Yield Exam Diagrams
@@ -2962,6 +2929,205 @@ export const TutorPage: React.FC = () => {
         tutorContent={voiceLessonTutorContent}
         apiFetch={apiFetch}
       />
+
+      {/* Saved Conversations Drawer / History Modal */}
+      {showSavedChatsDrawer && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.45)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 9999,
+            display: 'flex',
+            justifyContent: 'flex-end'
+          }}
+          onClick={() => setShowSavedChatsDrawer(false)}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: 420,
+              height: '100%',
+              background: '#FFFFFF',
+              boxShadow: '-8px 0 32px rgba(0,0,0,0.15)',
+              display: 'flex',
+              flexDirection: 'column',
+              padding: '24px 20px'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 18,
+                borderBottom: '1px solid #E2E8F0',
+                paddingBottom: 14
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    background: 'rgba(255, 106, 0, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Folder size={18} color="#FF6A00" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: '#1E293B' }}>
+                    Saved Conversations
+                  </h3>
+                  <p style={{ fontSize: '0.78rem', color: '#64748B', margin: 0 }}>
+                    {conversations.length} lessons recorded
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSavedChatsDrawer(false)}
+                className="btn-glass"
+                style={{ padding: '6px 8px', borderRadius: 8 }}
+              >
+                <X size={18} color="#64748B" />
+              </button>
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <button
+                type="button"
+                onClick={handleResetConversation}
+                className="btn-orange"
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: 12,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  fontSize: '0.88rem',
+                  fontWeight: 700
+                }}
+              >
+                <Plus size={16} />
+                <span>Start New Clean Chat</span>
+              </button>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {conversations.length === 0 ? (
+                <div style={{ padding: '32px 16px', textAlign: 'center', color: '#94A3B8' }}>
+                  <MessageSquare size={36} color="#CBD5E1" style={{ margin: '0 auto 10px auto' }} />
+                  <p style={{ fontSize: '0.9rem', fontWeight: 600, margin: 0 }}>No saved chats yet</p>
+                  <p style={{ fontSize: '0.78rem', marginTop: 4 }}>
+                    Ask a question to begin your first study session.
+                  </p>
+                </div>
+              ) : (
+                conversations.map((c) => {
+                  const isActive = c.id === activeConvId;
+                  const dateFormatted = c.updated_at
+                    ? new Date(c.updated_at).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
+                    : '';
+                  return (
+                    <div
+                      key={c.id}
+                      onClick={() => {
+                        loadConversation(c.id);
+                        setShowSavedChatsDrawer(false);
+                        setActionToast(`Loaded conversation: ${c.topic}`);
+                        setTimeout(() => setActionToast(''), 2500);
+                      }}
+                      style={{
+                        padding: '14px',
+                        borderRadius: 14,
+                        border: isActive ? '2px solid #FF6A00' : '1px solid #E2E8F0',
+                        background: isActive ? '#FFF7ED' : '#FAFAFA',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: 4
+                        }}
+                      >
+                        <h4
+                          style={{
+                            fontSize: '0.92rem',
+                            fontWeight: 800,
+                            margin: 0,
+                            color: '#1E293B',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            maxWidth: 260
+                          }}
+                        >
+                          {c.topic || 'Untitled Lesson'}
+                        </h4>
+                        {isActive && (
+                          <span
+                            style={{
+                              fontSize: '0.68rem',
+                              fontWeight: 800,
+                              color: '#FF6A00',
+                              background: 'rgba(255, 106, 0, 0.15)',
+                              padding: '2px 6px',
+                              borderRadius: 6
+                            }}
+                          >
+                            Active
+                          </span>
+                        )}
+                      </div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          fontSize: '0.74rem',
+                          color: '#64748B',
+                          flexWrap: 'wrap'
+                        }}
+                      >
+                        <span>{c.subject || 'General'}</span>
+                        <span>•</span>
+                        <span>{c.level || `Grade ${grade}`}</span>
+                        {dateFormatted && (
+                          <>
+                            <span>•</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <Clock size={11} />
+                              {dateFormatted}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

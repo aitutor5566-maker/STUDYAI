@@ -320,6 +320,107 @@ export function generateDomainSvg(domainType: string, topic: string): { dataUrl:
       </svg>`;
       break;
 
+    case 'chemistry_atomic_bohr':
+    case 'atomic_structure':
+      title = 'Atomic Structure — Bohr Planetary Model & Quantized Energy Shells';
+      caption = 'Detailed atomic model displaying central nucleus (protons + neutrons), concentric circular electron energy levels (K n=1, L n=2, M n=3), and photon emission ΔE = h·ν.';
+      svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 460" width="800" height="460">
+        <rect width="800" height="460" rx="20" fill="#0F172A"/>
+        <text x="400" y="38" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Chemistry: Bohr Atomic Model &amp; Quantized Electron Shells</text>
+        <!-- Concentric Electron Shells -->
+        <circle cx="340" cy="240" r="60" fill="none" stroke="#38BDF8" stroke-width="2" stroke-dasharray="6 4"/>
+        <circle cx="340" cy="240" r="110" fill="none" stroke="#818CF8" stroke-width="2" stroke-dasharray="6 4"/>
+        <circle cx="340" cy="240" r="160" fill="none" stroke="#C084FC" stroke-width="2" stroke-dasharray="6 4"/>
+        <!-- Central Nucleus -->
+        <circle cx="340" cy="240" r="28" fill="#EF4444" stroke="#FCA5A5" stroke-width="3"/>
+        <text x="340" y="238" font-family="Inter, sans-serif" font-size="12" font-weight="900" fill="#FFFFFF" text-anchor="middle">Nucleus</text>
+        <text x="340" y="252" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#FEE2E2" text-anchor="middle">p⁺ + n⁰</text>
+        <!-- K-Shell Electrons (2) -->
+        <circle cx="340" cy="180" r="7" fill="#38BDF8"/>
+        <circle cx="340" cy="300" r="7" fill="#38BDF8"/>
+        <!-- L-Shell Electrons (8) -->
+        <circle cx="340" cy="130" r="7" fill="#818CF8"/>
+        <circle cx="340" cy="350" r="7" fill="#818CF8"/>
+        <circle cx="230" cy="240" r="7" fill="#818CF8"/>
+        <circle cx="450" cy="240" r="7" fill="#818CF8"/>
+        <circle cx="262" cy="162" r="7" fill="#818CF8"/>
+        <circle cx="418" cy="162" r="7" fill="#818CF8"/>
+        <circle cx="262" cy="318" r="7" fill="#818CF8"/>
+        <circle cx="418" cy="318" r="7" fill="#818CF8"/>
+        <!-- M-Shell Valence Electron & Quantum Jump Arrow -->
+        <circle cx="340" cy="80" r="7" fill="#C084FC"/>
+        <path d="M 340,80 Q 370,105 340,130" fill="none" stroke="#F59E0B" stroke-width="3"/>
+        <polygon points="340,130 348,120 334,122" fill="#F59E0B"/>
+        <text x="430" y="105" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FBBF24">Photon Emission (ΔE = hν)</text>
+        <!-- Right Legend / Spec Box -->
+        <rect x="540" y="80" width="225" height="320" rx="14" fill="#1E293B" stroke="#475569" stroke-width="1.5"/>
+        <text x="652" y="112" font-family="Inter, sans-serif" font-size="14.5" font-weight="800" fill="#38BDF8" text-anchor="middle">Bohr Shell Capacity (2n²)</text>
+        <line x1="560" y1="126" x2="745" y2="126" stroke="#334155" stroke-width="1.5"/>
+        <text x="560" y="152" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#FFFFFF">• K-Shell (n = 1): Max 2 e⁻</text>
+        <text x="560" y="178" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#FFFFFF">• L-Shell (n = 2): Max 8 e⁻</text>
+        <text x="560" y="204" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#FFFFFF">• M-Shell (n = 3): Max 18 e⁻</text>
+        <text x="560" y="230" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#FFFFFF">• N-Shell (n = 4): Max 32 e⁻</text>
+        <rect x="555" y="255" width="195" height="65" rx="8" fill="#0F172A" stroke="#FF6A00" stroke-width="1.5"/>
+        <text x="652" y="280" font-family="Inter, sans-serif" font-size="11.5" font-weight="800" fill="#FF8533" text-anchor="middle">Quantum Postulate</text>
+        <text x="652" y="302" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#E2E8F0" text-anchor="middle">mvr = n·h / 2π</text>
+      </svg>`;
+      break;
+
+    case 'math_linear_equations':
+    case 'linear_equations':
+      title = 'Linear Equations — Cartesian Coordinate Graph & Slope-Intercept Form';
+      caption = 'Cartesian grid illustrating the straight line y = mx + c with slope gradient m = Δy/Δx, y-intercept (0, c), and algebraic balancing.';
+      svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 460" width="800" height="460">
+        <rect width="800" height="460" rx="20" fill="#0F172A"/>
+        <text x="400" y="38" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Mathematics: Linear Equation Graph (y = mx + c)</text>
+        <!-- Cartesian Grid Box -->
+        <g transform="translate(60, 70)">
+          <rect x="0" y="0" width="360" height="340" rx="12" fill="#1E293B" stroke="#475569" stroke-width="1.5"/>
+          <!-- Grid Lines -->
+          <line x1="40" y1="0" x2="40" y2="340" stroke="#334155" stroke-width="1"/>
+          <line x1="80" y1="0" x2="80" y2="340" stroke="#334155" stroke-width="1"/>
+          <line x1="120" y1="0" x2="120" y2="340" stroke="#334155" stroke-width="1"/>
+          <line x1="160" y1="0" x2="160" y2="340" stroke="#334155" stroke-width="1"/>
+          <line x1="200" y1="0" x2="200" y2="340" stroke="#334155" stroke-width="1"/>
+          <line x1="240" y1="0" x2="240" y2="340" stroke="#334155" stroke-width="1"/>
+          <line x1="280" y1="0" x2="280" y2="340" stroke="#334155" stroke-width="1"/>
+          <line x1="320" y1="0" x2="320" y2="340" stroke="#334155" stroke-width="1"/>
+          <!-- Main Axes -->
+          <line x1="0" y1="200" x2="360" y2="200" stroke="#94A3B8" stroke-width="2.5"/>
+          <line x1="180" y1="0" x2="180" y2="340" stroke="#94A3B8" stroke-width="2.5"/>
+          <text x="350" y="190" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#E2E8F0">X</text>
+          <text x="190" y="20" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#E2E8F0">Y</text>
+          <!-- Plotted Straight Line y = 0.8x + 40 -->
+          <line x1="30" y1="280" x2="330" y2="60" stroke="#FF6A00" stroke-width="4"/>
+          <!-- Intercept Point (0, c) -->
+          <circle cx="180" cy="170" r="7" fill="#FBBF24"/>
+          <text x="120" y="165" font-family="Inter, sans-serif" font-size="11.5" font-weight="800" fill="#FBBF24">Intercept (0, c)</text>
+          <!-- Slope Triangle -->
+          <line x1="220" y1="140" x2="280" y2="140" stroke="#38BDF8" stroke-width="2" stroke-dasharray="4 4"/>
+          <line x1="280" y1="140" x2="280" y2="95" stroke="#38BDF8" stroke-width="2" stroke-dasharray="4 4"/>
+          <text x="250" y="155" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#38BDF8" text-anchor="middle">Δx (run)</text>
+          <text x="305" y="120" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#38BDF8">Δy (rise)</text>
+        </g>
+        <!-- Right Formula & Algebraic Solution Card -->
+        <g transform="translate(450, 70)">
+          <rect x="0" y="0" width="310" height="340" rx="14" fill="#1E293B" stroke="#475569" stroke-width="1.5"/>
+          <text x="155" y="32" font-family="Inter, sans-serif" font-size="15" font-weight="800" fill="#FF8533" text-anchor="middle">Slope-Intercept Standard Form</text>
+          <rect x="25" y="48" width="260" height="46" rx="10" fill="#0F172A" stroke="#FF6A00" stroke-width="2"/>
+          <text x="155" y="78" font-family="Inter, sans-serif" font-size="18" font-weight="900" fill="#FFFFFF" text-anchor="middle">y = m·x + c</text>
+          <text x="25" y="122" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">• m = Slope = Δy / Δx</text>
+          <text x="25" y="146" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">• c = Y-Intercept (y when x = 0)</text>
+          <text x="25" y="170" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">• Point-Slope: y - y₁ = m(x - x₁)</text>
+          <line x1="25" y1="188" x2="285" y2="188" stroke="#334155" stroke-width="1.5"/>
+          <text x="155" y="212" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#38BDF8" text-anchor="middle">Systems of Linear Equations</text>
+          <text x="25" y="238" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#CBD5E1">1. Intersecting lines (m₁ ≠ m₂):</text>
+          <text x="45" y="256" font-family="Inter, sans-serif" font-size="11.5" font-weight="700" fill="#4ADE80">→ Exactly One Unique Solution</text>
+          <text x="25" y="280" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#CBD5E1">2. Parallel lines (m₁ = m₂, c₁ ≠ c₂):</text>
+          <text x="45" y="298" font-family="Inter, sans-serif" font-size="11.5" font-weight="700" fill="#F87171">→ Inconsistent (No Solution)</text>
+          <text x="25" y="322" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#CBD5E1">3. Coincident lines: Infinite Solutions</text>
+        </g>
+      </svg>`;
+      break;
+
     case 'geography_climate_monsoon':
     case 'geographical_map':
       title = 'Geography — Atmospheric Circulation & Indian Monsoon Mechanism';

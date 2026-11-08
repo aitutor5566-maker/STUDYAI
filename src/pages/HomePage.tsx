@@ -137,7 +137,7 @@ export const HomePage: React.FC = () => {
   }> = [
     {
       label: 'AI Tutor',
-      subtitle: 'Adaptive Teacher & 3D Lab',
+      subtitle: 'Friendly Personal AI Teacher',
       tag: 'Interactive AI',
       iconName: 'tutor',
       onClick: () => navigate(`/tutor?topic=${encodeURIComponent(heroTopicInput || activeTopic)}`)
@@ -244,7 +244,7 @@ export const HomePage: React.FC = () => {
               Good Day, {userName}! ☀️
             </h1>
             <p style={{ color: '#6B7280', fontSize: '0.92rem', margin: '0 0 14px 0', maxWidth: 540, lineHeight: 1.5 }}>
-              Your intelligent AI tutor is active. Enter any topic below for deep textbook notes, 3D WebGL investigations, and exam drills.
+              Your friendly personal AI teacher is ready. Enter any topic below for deep textbook notes, verified picture-based learning, and natural audio lessons.
             </p>
 
             {/* Contextual Learning Suggestion Pills */}
@@ -306,7 +306,7 @@ export const HomePage: React.FC = () => {
                 const quotes = [
                   `Ready to master "${heroTopicInput || activeTopic}" with AI Tutor?`,
                   "Click any suggestion pill to begin your lesson!",
-                  "Tip: 3D models and video explainers are built right into AI Tutor!",
+                  "Tip: Picture-first diagrams and voice lessons are built right into AI Tutor!",
                   "Consistency is key — your streak is active!"
                 ];
                 setAssistantBubble(quotes[Math.floor(Math.random() * quotes.length)]);
@@ -476,7 +476,7 @@ export const HomePage: React.FC = () => {
               Core Learning Modules
             </h3>
             <p style={{ fontSize: '0.78rem', color: '#6B7280', margin: '2px 0 0 0' }}>
-              All 3D models and video visualizers are integrated contextually into your AI Tutor workspace.
+              Deep educational notebooks, verified scientific diagrams, and friendly voice lessons integrated into your workspace.
             </p>
           </div>
         </div>

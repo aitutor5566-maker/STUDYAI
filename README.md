@@ -14,13 +14,88 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Auth_%26_RLS-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests Passing](https://img.shields.io/badge/Tests-43%2F43%20Passing-brightgreen)](tests/)
+[![Tests Passing](https://img.shields.io/badge/Tests-152%2F152%20Passing-brightgreen)](tests/)
 
 **Core Product Principle:** `One Topic → One Complete Learning Journey`
 
 *An enterprise-grade, distraction-free educational ecosystem featuring an adaptive **Personalised AI Tutor**, cross-platform **Flutter (Android, iOS & Web)** client apps, interactive 60fps Three.js 3D spatial simulations, meaning-preserving concise explanations, educational games, 40-mark weekly examination engines, and transparent parental oversight.*
 
 </div>
+
+---
+
+# 🌟 NEW FLAGSHIP FEATURE: SPEAK ENGLISH & SPOKEN ENGLISH FLUENCY STUDIO
+
+<div align="center">
+
+![Speak English Fluency Studio](docs/assets/speak_english_fluency_studio.svg)
+
+</div>
+
+### Master Spoken English with Real-Time AI Acoustic Feedback & Real-World Dialogues
+
+The **Speak English Fluency Studio** transforms language learning from passive grammar drilling into an active, conversational, spoken-confidence engine. Students receive live phonetic feedback, practice with native accent models, and simulate realistic conversation scenarios.
+
+#### 🎙️ 1. Real-Time Phonetic Analysis & Waveform Feedback
+- **IPA Phoneme Accuracy:** Evaluates each spoken word phoneme-by-phoneme using the International Phonetic Alphabet (e.g., distinguishing short lax `[ɪ]` in *ship* from long tense `[iː]` in *sheep*).
+- **Pitch & Intonation Contours:** Visualizes student vocal energy and pitch curves directly against native speaker reference waveforms to correct robotic cadence and unnatural rising intonation.
+- **3-Metric Fluency Breakdown:**
+  1. *Pronunciation Accuracy (%):* Measures consonant articulation, vowel length, and phoneme precision.
+  2. *Rhythm & Natural Stress (%):* Checks syllable stress placement (e.g., `sched-ule`, `pho-tog-ra-phy`) and connector pauses.
+  3. *Speaking Pace (Words Per Minute):* Calibrates speech rate against natural conversational fluency (120–150 WPM).
+
+#### 💼 2. Dynamic Real-World Conversation Scenarios (8 Interactive Simulations)
+Students engage in turn-based, spoken English roleplay with **AI Coach Nova**:
+1. **Technical & Corporate Job Interview:** Practicing the STAR method (Situation, Task, Action, Result) with real-time vocabulary upgrades (e.g., changing *"I talked to them"* to *"facilitated constructive team consensus"*).
+2. **Everyday Coffee Shop & Restaurant Ordering:** Natural conversational English, politeness markers, dietary preferences, and billing.
+3. **Airport & Customs Navigation:** Terminal directions, boarding protocols, visa inquiries, and baggage claim communication.
+4. **Doctor & Healthcare Consultation:** Expressing symptoms accurately, describing pain frequency, and comprehending medical prescriptions.
+5. **Academic Presentations & University Seminars:** Formulating thesis statements, presenting empirical evidence, defending research, and fielding questions.
+6. **Customer Service & Tech Support:** Expressing technical issues politely, verifying identity, and following troubleshooting steps.
+7. **Hotel Reservation & Travel Booking:** Check-in, room upgrades, concierge inquiries, and itinerary confirmations.
+8. **Everyday Casual Chit-Chat:** Weather, weekend plans, hobbies, and active listening connectors (*"That sounds intriguing!"*).
+
+#### 🔤 3. Phonics Labs, Accent Training & Minimal Pairs
+- **Minimal Pairs Accent Drills:** Interactive exercises isolating difficult consonant/vowel pairs:
+  - `Ship` (/ʃɪp/) vs `Sheep` (/ʃiːp/) — Tongue height & tense vowel contrast.
+  - `Fan` (/fæn/) vs `Van` (/væn/) — Voiceless vs voiced labiodental friction.
+  - `Thought` (/θɔːt/) vs `Taught` (/tɔːt/) — Dental fricative vs alveolar plosive tongue positioning.
+- **7 Interactive Speaking Games:**
+  - *Game A: Word Scramble Challenge* — Unscramble phonemes into fluent speech.
+  - *Game B: Match Sound to Picture* — Audio ear-training linking spoken English to visual objects.
+  - *Game C: Missing Word Speed Run* — Rapid sentence completion under time pressure.
+  - *Game D: Spot the Grammatical Slip* — Identify syntax errors and vocalize the corrected phrase.
+  - *Games E, F, G:* Pronunciation matching, tonal rhythm tap, and contextual dialogue completion.
+
+#### 🌐 4. Target-vs-Support Mother Tongue Bridging
+- Explains difficult English nuances, idioms, phrasal verbs, and grammar rules in the student's native language (Telugu, Hindi, Spanish, French, Japanese, German, etc.).
+- Example: Explaining the nuance between *"I have been studying"* and *"I studied"* in Telugu (*"మీరు గతంలో మొదలుపెట్టి ఇంకా చదువుతున్నారు"*), eliminating confusion without diluting immersive English practice.
+
+---
+
+# 📜 COMPLETE SINGLE-PAGE DIGITAL NOTES & UNIVERSAL TEACHING WORKFLOW
+
+<div align="center">
+
+![Single-Page Digital Notes Architecture](docs/assets/single_page_digital_textbook_architecture.svg)
+
+</div>
+
+### Zero Forced Gating — Everything in ONE Continuous, Scrollable Digital Study Document
+
+The forced five-step sequential learning lock has been completely eliminated. All educational content is delivered together in one continuous page following the universal pedagogical structure:
+
+- **Top Table of Contents Jump Bar:** Instant anchor navigation jumping directly to any section:
+  - **Section A: Definitions & Academic Meaning** — Main topic definition, formal textbook definition, everyday explanation, keyword breakdown, and prerequisites.
+  - **Section B: Key Points & Core Principles** — Fundamental physical/biological conservation laws, essential facts, key components, and functions in equilibrium.
+  - **Section C: Key Terms & Full Forms** — Standardized terminology table with official scientific expansions, definitions, curriculum roles, and examples.
+  - **Section D: Main Concepts & Subtopics** — Every subtopic is accompanied by its **own dedicated educational diagram** with an 8-point scientific breakdown (what it shows, labelled parts, functions, relationships, process direction, step-by-step interpretation, learning outcome, and exam memory hook).
+  - **Section E: Key Differences & Comparisons** — Comparative analysis tables (Aspect of Comparison, Concept A, Concept B), cause-and-effect insights, and summary takeaways.
+  - **Section F: Important Processes & Mechanisms** — Sequential step-by-step operational mechanisms, starting conditions, participating components, sequence of events, final outcome, and process flow diagram.
+  - **Section G: Formulas & Equations** — Primary governing equations, exploded variable meanings with standard SI metric units, derivations, and worked numericals.
+  - **Section H: Problem-Solving Methods (Mathematics & Physics)** — The **10-point problem-solving framework**, representative solved problem types with identification clues and alternative methods, plus practice problems with verified solutions.
+  - **Section I: Exam-Oriented Preparation** — Multi-format exam questions: MCQs, 1-mark definitions, short answer, and long answer questions with examiner model answers and marking scheme advice.
+  - **Section J: Final Revision Section** — Topic recap, core takeaway, quick revision checklist, common misconceptions busted, and high-yield board traps to avoid.
 
 ---
 

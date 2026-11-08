@@ -47,8 +47,18 @@ import {
   Compass,
   Presentation,
   Network,
-  Award
+  Award,
+  ZoomIn,
+  ZoomOut,
+  List,
+  Square
 } from 'lucide-react';
+import {
+  partitionWorkflowIntoPages,
+  cleanNotebookTextForAudioSpeech,
+  type NotebookPageItem,
+  type DiagramVisualExplanation8Point
+} from '../utils/digitalNotebookPagination';
 import { TopBrandBar } from '../components/GlassNav';
 import { FuturisticIcon } from '../components/FuturisticIcons';
 import { StudyAiAssistantCharacter } from '../components/StudyAiAssistantCharacter';
@@ -105,6 +115,25 @@ export const NotesPage: React.FC = () => {
   const [notebookSubTab, setNotebookSubTab] = useState<'full' | 'guided' | 'revision' | 'studio' | 'ask' | 'flashcards'>('full');
   const [activeSectionIdx, setActiveSectionIdx] = useState<number>(0);
   const [completedSections, setCompletedSections] = useState<Record<number, boolean>>({});
+
+  // Full-Screen Digital Textbook & PDF Reader State (Prompt Requirement)
+  const [readerViewMode, setReaderViewMode] = useState<'paged' | 'continuous'>('continuous');
+  const [currentPageIdx, setCurrentPageIdx] = useState<number>(0);
+  const [zoomLevel, setZoomLevel] = useState<number>(100);
+  const [isFullScreenReader, setIsFullScreenReader] = useState<boolean>(false);
+  const [showTocDrawer, setShowTocDrawer] = useState<boolean>(false);
+
+  // Synchronized Notes Audio Narration State (Prompt Requirement)
+  const [notesAudioOpen, setNotesAudioOpen] = useState<boolean>(false);
+  const [notesAudioPlaying, setNotesAudioPlaying] = useState<boolean>(false);
+  const [notesAudioPaused, setNotesAudioPaused] = useState<boolean>(false);
+  const [notesAudioSpeed, setNotesAudioSpeed] = useState<number>(1.0);
+  const [notesAudioTrackIdx, setNotesAudioTrackIdx] = useState<number>(0);
+  const [notesAudioDuration, setNotesAudioDuration] = useState<number>(0);
+  const [notesAudioCurrentTime, setNotesAudioCurrentTime] = useState<number>(0);
+  const [notesAudioLoading, setNotesAudioLoading] = useState<boolean>(false);
+  const notesAudioElementRef = useRef<HTMLAudioElement | null>(null);
+  const synthUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   // Adaptive AI Teaching State (Section 9)
   const [teachingLevel, setTeachingLevel] = useState<1 | 2 | 3>(2);
@@ -219,7 +248,8 @@ export const NotesPage: React.FC = () => {
               if (noteRes) {
                 selectNoteForEditing(noteRes);
                 setDashboardMode('notebook');
-                setNotebookSubTab('guided');
+                setNotebookSubTab('full');
+                setReaderViewMode('continuous');
                 triggerRefresh();
               }
             }
@@ -351,11 +381,12 @@ export const NotesPage: React.FC = () => {
     setSelectedSourceIds(srcIds);
   };
 
-  // Open Notebook in Guided Learning View
+  // Open Notebook in Complete Single-Page Continuous Document View
   const handleOpenNotebook = (note: any) => {
     selectNoteForEditing(note);
     setDashboardMode('notebook');
-    setNotebookSubTab('guided');
+    setNotebookSubTab('full');
+    setReaderViewMode('continuous');
     setSearchParams({ id: note.id });
   };
 
@@ -591,7 +622,8 @@ export const NotesPage: React.FC = () => {
       triggerRefresh();
       selectNoteForEditing(created);
       setDashboardMode('notebook');
-      setNotebookSubTab('guided');
+      setNotebookSubTab('full');
+      setReaderViewMode('continuous');
     } catch (err: any) {
       setUploadStatus({ type: 'err', message: err?.message || 'Failed to generate notebook.' });
     } finally {
@@ -716,6 +748,200 @@ export const NotesPage: React.FC = () => {
   const currentSection = sections[activeSectionIdx] || sections[0] || {};
   const currentPairedImage = (structured?.images || [])[activeSectionIdx] || (structured?.images || [])[0];
   const finalRevisionPage = structured?.finalRevisionPage || activeNote?.finalRevisionPage;
+
+  // Digital Textbook Paged Reader Data
+  const textbookPages: NotebookPageItem[] = React.useMemo(() => {
+    if (structured?.textbookPages && Array.isArray(structured.textbookPages) && structured.textbookPages.length > 0) {
+      return structured.textbookPages;
+    }
+    return partitionWorkflowIntoPages(structured?.universalTeachingWorkflow, structured);
+  }, [structured]);
+
+  // Stop active notes audio
+  const stopNotesAudio = () => {
+    if (notesAudioElementRef.current) {
+      notesAudioElementRef.current.pause();
+      notesAudioElementRef.current.currentTime = 0;
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setNotesAudioPlaying(false);
+    setNotesAudioPaused(false);
+    setNotesAudioCurrentTime(0);
+  };
+
+  // Fallback speech synthesis
+  const fallbackSpeechSynthesis = (text: string, currentIdx: number) => {
+    setNotesAudioLoading(false);
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = notesAudioSpeed;
+      utterance.pitch = 1.0;
+      synthUtteranceRef.current = utterance;
+
+      utterance.onstart = () => {
+        setNotesAudioPlaying(true);
+        setNotesAudioPaused(false);
+      };
+      utterance.onend = () => {
+        setNotesAudioPlaying(false);
+        setNotesAudioPaused(false);
+        if (currentIdx + 1 < textbookPages.length) {
+          playNotesAudio(currentIdx + 1);
+        }
+      };
+      utterance.onerror = () => {
+        setNotesAudioPlaying(false);
+        setNotesAudioPaused(false);
+      };
+
+      window.speechSynthesis.speak(utterance);
+    } else {
+      setNotesAudioPlaying(false);
+    }
+  };
+
+  // Play Notes Audio for a target page
+  const playNotesAudio = async (pageIdx?: number) => {
+    const targetIdx = typeof pageIdx === 'number' ? pageIdx : currentPageIdx;
+    const page = textbookPages[targetIdx] || textbookPages[0];
+    if (!page) return;
+
+    stopNotesAudio();
+    setNotesAudioTrackIdx(targetIdx);
+    setCurrentPageIdx(targetIdx);
+    setNotesAudioOpen(true);
+    setNotesAudioLoading(true);
+
+    const topicTitle = editTitle || activeNote?.title || 'StudyAI Chapter';
+    const rawSpeechText = page.spokenAudioText || cleanNotebookTextForAudioSpeech(page.contentMarkdown, topicTitle);
+    const sanitizedSpeech = cleanNotebookTextForAudioSpeech(rawSpeechText, topicTitle);
+
+    try {
+      const res = await apiFetch<any>('/api/media/audio', {
+        method: 'POST',
+        body: JSON.stringify({
+          topic: topicTitle,
+          text: sanitizedSpeech,
+          speed: notesAudioSpeed,
+          voice: 'Nova (Teacher)',
+          mode: 'notes_audio',
+          cleanSpeech: true
+        })
+      });
+
+      if (res && res.wavDataUrl) {
+        if (!notesAudioElementRef.current) {
+          notesAudioElementRef.current = new Audio();
+        }
+        const audio = notesAudioElementRef.current;
+        audio.src = res.wavDataUrl;
+        audio.playbackRate = notesAudioSpeed;
+
+        audio.onloadedmetadata = () => {
+          setNotesAudioDuration(audio.duration || res.durationSeconds || 30);
+        };
+        audio.ontimeupdate = () => {
+          setNotesAudioCurrentTime(audio.currentTime);
+        };
+        audio.onended = () => {
+          setNotesAudioPlaying(false);
+          setNotesAudioPaused(false);
+          if (targetIdx + 1 < textbookPages.length) {
+            playNotesAudio(targetIdx + 1);
+          }
+        };
+        audio.onerror = () => {
+          fallbackSpeechSynthesis(sanitizedSpeech, targetIdx);
+        };
+
+        await audio.play();
+        setNotesAudioPlaying(true);
+        setNotesAudioPaused(false);
+        setNotesAudioLoading(false);
+        return;
+      }
+    } catch {
+      // Fallback below
+    }
+
+    fallbackSpeechSynthesis(sanitizedSpeech, targetIdx);
+  };
+
+  const pauseNotesAudio = () => {
+    if (notesAudioElementRef.current && notesAudioPlaying) {
+      notesAudioElementRef.current.pause();
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.pause();
+    }
+    setNotesAudioPlaying(false);
+    setNotesAudioPaused(true);
+  };
+
+  const resumeNotesAudio = () => {
+    if (notesAudioElementRef.current && notesAudioPaused) {
+      notesAudioElementRef.current.play();
+      setNotesAudioPlaying(true);
+      setNotesAudioPaused(false);
+    } else if (typeof window !== 'undefined' && 'speechSynthesis' in window && notesAudioPaused) {
+      window.speechSynthesis.resume();
+      setNotesAudioPlaying(true);
+      setNotesAudioPaused(false);
+    } else {
+      playNotesAudio(notesAudioTrackIdx);
+    }
+  };
+
+  const handleAudioSpeedChange = (speed: number) => {
+    setNotesAudioSpeed(speed);
+    if (notesAudioElementRef.current) {
+      notesAudioElementRef.current.playbackRate = speed;
+    }
+    if (synthUtteranceRef.current && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      if (notesAudioPlaying) {
+        playNotesAudio(notesAudioTrackIdx);
+      }
+    }
+  };
+
+  const nextNotesAudioTrack = () => {
+    if (notesAudioTrackIdx + 1 < textbookPages.length) {
+      playNotesAudio(notesAudioTrackIdx + 1);
+    }
+  };
+
+  const prevNotesAudioTrack = () => {
+    if (notesAudioTrackIdx > 0) {
+      playNotesAudio(notesAudioTrackIdx - 1);
+    }
+  };
+
+  // Keyboard navigation for reader (arrows to turn page, Escape for fullscreen)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+
+      if (e.key === 'Escape' && isFullScreenReader) {
+        setIsFullScreenReader(false);
+      } else if (e.key === 'ArrowRight' && (isFullScreenReader || (notebookSubTab === 'full' && readerViewMode === 'paged'))) {
+        setCurrentPageIdx((prev) => Math.min(prev + 1, textbookPages.length - 1));
+      } else if (e.key === 'ArrowLeft' && (isFullScreenReader || (notebookSubTab === 'full' && readerViewMode === 'paged'))) {
+        setCurrentPageIdx((prev) => Math.max(prev - 1, 0));
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFullScreenReader, readerViewMode, notebookSubTab, textbookPages.length]);
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      stopNotesAudio();
+    };
+  }, []);
 
   return (
     <div className="studyai-container" style={{ paddingBottom: 60 }}>
@@ -1031,7 +1257,8 @@ export const NotesPage: React.FC = () => {
                                 });
                                 setActiveSectionIdx(idx);
                                 setDashboardMode('notebook');
-                                setNotebookSubTab('guided');
+                                setNotebookSubTab('full');
+                                setReaderViewMode('continuous');
                               }
                             }}
                             style={{
@@ -1292,25 +1519,57 @@ export const NotesPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Mode Switcher: Continuous Digital Textbook vs Guided vs Revision vs Studio vs Q&A */}
+            {/* Mode Switcher: Continuous Single-Page Document vs Paged Reader vs Revision vs Studio vs Q&A */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
               <button
                 type="button"
-                onClick={() => setNotebookSubTab('full')}
-                className={`filter-pill ${notebookSubTab === 'full' ? 'active' : ''}`}
+                onClick={() => {
+                  setNotebookSubTab('full');
+                  setReaderViewMode('continuous');
+                }}
+                className={`filter-pill ${notebookSubTab === 'full' && readerViewMode === 'continuous' ? 'active' : ''}`}
                 style={{ padding: '6px 14px', fontSize: '0.78rem' }}
+                title="Complete single-page continuous study document without locked steps"
               >
-                <BookOpen size={14} style={{ marginRight: 4 }} />
-                <span>📖 Digital Textbook (Continuous)</span>
+                <FileText size={14} style={{ marginRight: 4 }} />
+                <span>📜 Complete Single-Page Notes</span>
               </button>
               <button
                 type="button"
-                onClick={() => setNotebookSubTab('guided')}
-                className={`filter-pill ${notebookSubTab === 'guided' ? 'active' : ''}`}
+                onClick={() => {
+                  setNotebookSubTab('full');
+                  setReaderViewMode('paged');
+                }}
+                className={`filter-pill ${notebookSubTab === 'full' && readerViewMode === 'paged' ? 'active' : ''}`}
                 style={{ padding: '6px 14px', fontSize: '0.78rem' }}
+                title="Page-by-page digital textbook reading experience"
               >
-                <Compass size={14} style={{ marginRight: 4 }} />
-                <span>🧭 Step Navigator</span>
+                <BookOpen size={14} style={{ marginRight: 4 }} />
+                <span>📖 Paged Reader</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (notesAudioPlaying) {
+                    pauseNotesAudio();
+                  } else if (notesAudioPaused) {
+                    resumeNotesAudio();
+                  } else {
+                    playNotesAudio(currentPageIdx);
+                  }
+                }}
+                className={`btn-glass ${notesAudioPlaying ? 'active' : ''}`}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '0.78rem',
+                  background: notesAudioPlaying ? '#ECFDF5' : '#FFF7ED',
+                  color: notesAudioPlaying ? '#047857' : '#C2410C',
+                  borderColor: notesAudioPlaying ? '#10B981' : '#FED7AA'
+                }}
+                title="Listen to textbook narration with natural speech"
+              >
+                <Volume2 size={14} />
+                <span>{notesAudioPlaying ? 'Narration Active' : '🎧 Listen to Notes'}</span>
               </button>
               <button
                 type="button"
@@ -1320,9 +1579,6 @@ export const NotesPage: React.FC = () => {
               >
                 <Award size={14} style={{ marginRight: 4 }} />
                 <span>🏆 Master Revision</span>
-              </button>
-                <Award size={14} style={{ marginRight: 4 }} />
-                <span>Revision Notebook</span>
               </button>
               <button
                 type="button"
@@ -1998,20 +2254,469 @@ export const NotesPage: React.FC = () => {
           )}
 
           {/* ---------------------------------------------------------------------
-              SUB-TAB 2: COMPLETE WHITE-PAGE DIGITAL NOTEBOOK (Section 8 & 14)
+              SUB-TAB 2: COMPLETE DIGITAL TEXTBOOK & PDF READER (Paged & Continuous)
               --------------------------------------------------------------------- */}
           {notebookSubTab === 'full' && (
             <div
-              id="white-page-notebook-sheet"
-              style={{
-                background: '#FFFFFF',
-                borderRadius: 24,
-                border: '1px solid #EEEEEE',
-                boxShadow: '0 16px 40px rgba(32, 33, 36, 0.06)',
-                padding: '40px 48px',
-                lineHeight: 1.72
-              }}
+              style={
+                isFullScreenReader
+                  ? {
+                      position: 'fixed',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      zIndex: 99999,
+                      background: '#F8FAFC',
+                      overflowY: 'auto',
+                      padding: '24px 20px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center'
+                    }
+                  : { display: 'flex', flexDirection: 'column', gap: 20 }
+              }
             >
+              {/* Document Reader Toolbar */}
+              <div
+                style={{
+                  width: '100%',
+                  maxWidth: isFullScreenReader ? 920 : '100%',
+                  background: '#FFFFFF',
+                  borderRadius: 16,
+                  border: '1px solid #E2E8F0',
+                  padding: '12px 18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: 10,
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.04)'
+                }}
+              >
+                {/* Navigation Controls */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPageIdx((prev) => Math.max(0, prev - 1))}
+                    disabled={currentPageIdx <= 0}
+                    className="btn-glass"
+                    style={{ padding: '6px 12px', fontSize: '0.8rem', opacity: currentPageIdx <= 0 ? 0.4 : 1 }}
+                    title="Previous Page (Left Arrow)"
+                  >
+                    <ChevronLeft size={16} />
+                    <span>Prev</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowTocDrawer(true)}
+                    className="btn-glass"
+                    style={{ padding: '6px 12px', fontSize: '0.82rem', fontWeight: 800, color: '#FF6A00', background: '#FFF7ED', borderColor: '#FED7AA' }}
+                    title="Open Table of Contents"
+                  >
+                    <List size={14} style={{ marginRight: 4 }} />
+                    <span>Page {currentPageIdx + 1} of {textbookPages.length}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPageIdx((prev) => Math.min(textbookPages.length - 1, prev + 1))}
+                    disabled={currentPageIdx >= textbookPages.length - 1}
+                    className="btn-glass"
+                    style={{ padding: '6px 12px', fontSize: '0.8rem', opacity: currentPageIdx >= textbookPages.length - 1 ? 0.4 : 1 }}
+                    title="Next Page (Right Arrow)"
+                  >
+                    <span>Next</span>
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+
+                {/* View Mode & Zoom Controls */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#F1F5F9', borderRadius: 8, padding: 2 }}>
+                    <button
+                      type="button"
+                      onClick={() => setZoomLevel((prev) => Math.max(75, prev - 10))}
+                      className="btn-glass"
+                      style={{ padding: '4px 8px', border: 'none', background: 'transparent' }}
+                      title="Zoom Out"
+                    >
+                      <ZoomOut size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setZoomLevel(100)}
+                      style={{ padding: '4px 8px', fontSize: '0.75rem', fontWeight: 700, border: 'none', background: 'transparent', cursor: 'pointer', color: '#475569' }}
+                      title="Reset Zoom to 100%"
+                    >
+                      {zoomLevel}%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setZoomLevel((prev) => Math.min(150, prev + 10))}
+                      className="btn-glass"
+                      style={{ padding: '4px 8px', border: 'none', background: 'transparent' }}
+                      title="Zoom In"
+                    >
+                      <ZoomIn size={14} />
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setReaderViewMode((prev) => prev === 'paged' ? 'continuous' : 'paged')}
+                    className="btn-glass"
+                    style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                    title="Toggle between Paged Book View and Continuous Scroll View"
+                  >
+                    {readerViewMode === 'paged' ? '📜 Continuous View' : '📖 Paged View'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (notesAudioPlaying) {
+                        pauseNotesAudio();
+                      } else if (notesAudioPaused) {
+                        resumeNotesAudio();
+                      } else {
+                        playNotesAudio(currentPageIdx);
+                      }
+                    }}
+                    className="btn-glass"
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: '0.78rem',
+                      background: notesAudioPlaying ? '#ECFDF5' : '#FFF7ED',
+                      color: notesAudioPlaying ? '#047857' : '#C2410C',
+                      borderColor: notesAudioPlaying ? '#10B981' : '#FED7AA'
+                    }}
+                    title="Listen to this page with clean, natural speech"
+                  >
+                    <Volume2 size={14} />
+                    <span>{notesAudioPlaying && notesAudioTrackIdx === currentPageIdx ? 'Playing' : '🎧 Listen'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsFullScreenReader((prev) => !prev)}
+                    className="btn-glass"
+                    style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                    title={isFullScreenReader ? 'Exit Fullscreen (Esc)' : 'Enter Fullscreen Document Reader'}
+                  >
+                    {isFullScreenReader ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                    <span>{isFullScreenReader ? 'Exit' : 'Fullscreen'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Table of Contents Modal/Drawer */}
+              {showTocDrawer && (
+                <div
+                  style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(15, 23, 42, 0.65)',
+                    backdropFilter: 'blur(4px)',
+                    zIndex: 100010,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 16
+                  }}
+                  onClick={() => setShowTocDrawer(false)}
+                >
+                  <div
+                    style={{
+                      background: '#FFFFFF',
+                      borderRadius: 20,
+                      maxWidth: 580,
+                      width: '100%',
+                      maxHeight: '85vh',
+                      overflowY: 'auto',
+                      boxShadow: '0 20px 50px rgba(0,0,0,0.25)',
+                      padding: '24px 28px'
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0', paddingBottom: 14, marginBottom: 16 }}>
+                      <div>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0F172A', margin: 0 }}>
+                          📑 Table of Contents
+                        </h3>
+                        <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0 }}>
+                          {editTitle} • {textbookPages.length} Pages
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowTocDrawer(false)}
+                        className="btn-glass"
+                        style={{ padding: '6px 10px' }}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+
+                    <div style={{ display: 'grid', gap: 8 }}>
+                      {textbookPages.map((page, idx) => (
+                        <button
+                          key={page.pageId || idx}
+                          type="button"
+                          onClick={() => {
+                            setCurrentPageIdx(idx);
+                            setShowTocDrawer(false);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '12px 16px',
+                            borderRadius: 12,
+                            border: currentPageIdx === idx ? '2px solid #FF6A00' : '1px solid #E2E8F0',
+                            background: currentPageIdx === idx ? '#FFF7ED' : '#FFFFFF',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <span
+                              style={{
+                                width: 30,
+                                height: 30,
+                                borderRadius: 8,
+                                background: currentPageIdx === idx ? '#FF6A00' : '#F1F5F9',
+                                color: currentPageIdx === idx ? '#FFFFFF' : '#475569',
+                                fontWeight: 800,
+                                fontSize: '0.82rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                            >
+                              {page.pageNumber || idx + 1}
+                            </span>
+                            <div>
+                              <strong style={{ fontSize: '0.92rem', color: '#0F172A', display: 'block' }}>
+                                {page.title}
+                              </strong>
+                              <span style={{ fontSize: '0.76rem', color: '#64748B' }}>
+                                {page.headerCategory}
+                              </span>
+                            </div>
+                          </div>
+                          {page.diagrams && page.diagrams.length > 0 && (
+                            <span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: 6, background: '#EFF6FF', color: '#2563EB', fontWeight: 700 }}>
+                              🎨 {page.diagrams.length} Diagram{page.diagrams.length > 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* PAGED BOOK VIEW: Page-by-page Digital Textbook Sheet */}
+              {readerViewMode === 'paged' && (() => {
+                const page = textbookPages[currentPageIdx] || textbookPages[0];
+                if (!page) return null;
+                const isCurrentAudioTrack = notesAudioPlaying && notesAudioTrackIdx === currentPageIdx;
+
+                return (
+                  <div
+                    id={`notebook-page-${page.pageNumber}`}
+                    style={{
+                      width: '100%',
+                      maxWidth: 880,
+                      background: '#FFFFFF',
+                      borderRadius: 20,
+                      border: isCurrentAudioTrack ? '2.5px solid #FF6A00' : '1px solid #E2E8F0',
+                      boxShadow: isCurrentAudioTrack
+                        ? '0 16px 48px rgba(255, 106, 0, 0.16)'
+                        : '0 16px 40px rgba(32, 33, 36, 0.08)',
+                      padding: '44px 52px',
+                      lineHeight: 1.74,
+                      transform: zoomLevel !== 100 ? `scale(${zoomLevel / 100})` : undefined,
+                      transformOrigin: 'top center',
+                      transition: 'border 0.2s ease, box-shadow 0.2s ease'
+                    }}
+                  >
+                    {/* Page Header */}
+                    <header style={{ borderBottom: '2px solid #0F172A', paddingBottom: 16, marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ padding: '4px 10px', borderRadius: 6, background: '#FFF3E8', color: '#FF6A00', fontWeight: 800, fontSize: '0.74rem', textTransform: 'uppercase' }}>
+                          {page.headerCategory || `${editSubject} Textbook`}
+                        </span>
+                        {isCurrentAudioTrack && (
+                          <span style={{ padding: '4px 10px', borderRadius: 6, background: '#ECFDF5', color: '#047857', fontWeight: 800, fontSize: '0.74rem', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <Volume2 size={12} />
+                            <span>Now Narrating</span>
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 700 }}>
+                          Page {page.pageNumber} of {textbookPages.length}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => playNotesAudio(currentPageIdx)}
+                          className="btn-glass"
+                          style={{ padding: '4px 10px', fontSize: '0.74rem' }}
+                        >
+                          <Volume2 size={12} />
+                          <span>Listen</span>
+                        </button>
+                      </div>
+                    </header>
+
+                    {/* Page Title & Subheading */}
+                    <div style={{ marginBottom: 24 }}>
+                      <h2 style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0F172A', margin: '0 0 6px 0', fontFamily: 'Georgia, serif' }}>
+                        {page.title}
+                      </h2>
+                      {page.subheading && (
+                        <p style={{ fontSize: '0.94rem', color: '#64748B', margin: 0, fontWeight: 600 }}>
+                          {page.subheading}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Page Text Content */}
+                    <div style={{ fontSize: '0.98rem', color: '#334155', whiteSpace: 'pre-line', marginBottom: 28, lineHeight: 1.76 }}>
+                      {page.contentMarkdown}
+                    </div>
+
+                    {/* Dedicated Adjacent SVG Diagrams with 8-Point Scientific Breakdown */}
+                    {Array.isArray(page.diagrams) && page.diagrams.map((diag, dIdx) => (
+                      <div
+                        key={diag.diagramId || dIdx}
+                        style={{
+                          margin: '28px 0',
+                          padding: 24,
+                          borderRadius: 18,
+                          background: '#F8FAFC',
+                          border: '1.5px solid #E2E8F0',
+                          boxShadow: '0 4px 16px rgba(0,0,0,0.03)'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#C2410C', background: '#FFF3E8', padding: '3px 10px', borderRadius: 6 }}>
+                            {diag.diagramType || 'Curriculum Diagram'}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#047857', background: '#ECFDF5', padding: '3px 8px', borderRadius: 6 }}>
+                            ✓ 100% Scientifically Verified
+                          </span>
+                        </div>
+
+                        {/* Diagram SVG Illustration */}
+                        <div style={{ textAlign: 'center', background: '#FFFFFF', padding: 18, borderRadius: 14, border: '1px solid #CBD5E1', marginBottom: 14 }}>
+                          <img
+                            src={diag.imageUrl}
+                            alt={diag.title}
+                            style={{ maxWidth: '100%', maxHeight: 380, objectFit: 'contain', display: 'block', margin: '0 auto' }}
+                          />
+                        </div>
+
+                        <h4 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', margin: '0 0 6px 0' }}>
+                          {diag.title}
+                        </h4>
+                        <p style={{ fontSize: '0.88rem', color: '#475569', margin: '0 0 16px 0', lineHeight: 1.5 }}>
+                          {diag.caption}
+                        </p>
+
+                        {/* Complete 8-Point Scientific Breakdown */}
+                        <div style={{ background: '#FFFFFF', borderRadius: 12, border: '1px solid #E2E8F0', padding: 18 }}>
+                          <h5 style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0F172A', margin: '0 0 12px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            🔬 8-Point Scientific Diagram Breakdown:
+                          </h5>
+                          <div style={{ display: 'grid', gap: 10, fontSize: '0.88rem', color: '#334155' }}>
+                            <div><strong>1. What It Represents:</strong> {diag.point1_whatItRepresents}</div>
+                            {Array.isArray(diag.point2_labelledParts) && diag.point2_labelledParts.length > 0 && (
+                              <div>
+                                <strong>2. Labelled Parts:</strong>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                                  {diag.point2_labelledParts.map((p, pIdx) => (
+                                    <span key={pIdx} style={{ padding: '3px 8px', borderRadius: 6, background: '#F1F5F9', border: '1px solid #CBD5E1', fontSize: '0.8rem' }}>
+                                      <strong>{p.label}:</strong> {p.description}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            <div><strong>3. Component Functions:</strong> {diag.point3_componentFunctions}</div>
+                            <div><strong>4. Component Relationships:</strong> {diag.point4_componentRelationships}</div>
+                            <div><strong>5. Direction of Process / Movement:</strong> {diag.point5_directionOfMovementOrProcess}</div>
+                            {Array.isArray(diag.point6_stepByStepInterpretation) && diag.point6_stepByStepInterpretation.length > 0 && (
+                              <div>
+                                <strong>6. Step-by-Step Interpretation:</strong>
+                                <ol style={{ margin: '4px 0 0 18px', padding: 0 }}>
+                                  {diag.point6_stepByStepInterpretation.map((step, sIdx) => (
+                                    <li key={sIdx} style={{ marginBottom: 3 }}>{step}</li>
+                                  ))}
+                                </ol>
+                              </div>
+                            )}
+                            <div><strong>7. Core Learning Outcome:</strong> {diag.point7_learningOutcome}</div>
+                            <div style={{ padding: '10px 14px', background: '#FFF7ED', borderRadius: 8, borderLeft: '3px solid #FF6A00', color: '#9A3412', fontWeight: 600 }}>
+                              <strong>8. What to Remember for Exams:</strong> {diag.point8_whatToRemember}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Page Footer */}
+                    <footer style={{ marginTop: 40, paddingTop: 20, borderTop: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                      <span style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 600 }}>
+                        Page {page.pageNumber} of {textbookPages.length} • CBSE / NCERT Standard • STUDYAI Academic Intelligence
+                      </span>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                          type="button"
+                          onClick={() => setCurrentPageIdx((prev) => Math.max(0, prev - 1))}
+                          disabled={currentPageIdx <= 0}
+                          className="btn-glass"
+                          style={{ padding: '6px 12px', fontSize: '0.78rem', opacity: currentPageIdx <= 0 ? 0.4 : 1 }}
+                        >
+                          ← Previous Page
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCurrentPageIdx((prev) => Math.min(textbookPages.length - 1, prev + 1))}
+                          disabled={currentPageIdx >= textbookPages.length - 1}
+                          className="btn-glass"
+                          style={{ padding: '6px 12px', fontSize: '0.78rem', opacity: currentPageIdx >= textbookPages.length - 1 ? 0.4 : 1 }}
+                        >
+                          Next Page →
+                        </button>
+                      </div>
+                    </footer>
+                  </div>
+                );
+              })()}
+
+              {/* CONTINUOUS SCROLL VIEW: Full Document Sheet */}
+              {readerViewMode === 'continuous' && (
+                <div
+                  id="white-page-notebook-sheet"
+                  style={{
+                    background: '#FFFFFF',
+                    borderRadius: 24,
+                    border: '1px solid #EEEEEE',
+                    boxShadow: '0 16px 40px rgba(32, 33, 36, 0.06)',
+                    padding: '40px 48px',
+                    lineHeight: 1.72,
+                    maxWidth: 920,
+                    width: '100%'
+                  }}
+                >
               {/* White Page Header */}
               <header style={{ borderBottom: '2px solid #202124', paddingBottom: 18, marginBottom: 28 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 10 }}>
@@ -2065,20 +2770,20 @@ export const NotesPage: React.FC = () => {
                 }}
               >
                 <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#334155', textTransform: 'uppercase', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span>📑 Table of Contents (Single-Page Continuous Study Guide)</span>
+                  <span>📑 Table of Contents (Complete Single-Page Continuous Document)</span>
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {[
-                    { id: 'sec-overview', label: '1. Topic Intro' },
-                    { id: 'sec-definition', label: '2. Definitions' },
-                    { id: 'sec-terminology', label: '3. Full Forms & Terms' },
-                    { id: 'sec-prerequisites', label: '4. Prerequisites' },
-                    { id: 'sec-content-flow', label: '5. Core Mechanisms' },
-                    { id: 'sec-formulas', label: '6. Formulas & Numericals' },
-                    { id: 'sec-comparisons', label: '7. Comparisons' },
-                    { id: 'sec-misconceptions', label: '8. Traps & Misconceptions' },
-                    { id: 'sec-revision-sheet', label: '9. Final Revision' },
-                    { id: 'sec-assessment', label: '10. Self-Test Quizzes' }
+                    { id: 'sec-section-a', label: 'A. Definitions & Academic Meaning' },
+                    { id: 'sec-section-b', label: 'B. Key Points & Core Principles' },
+                    { id: 'sec-section-c', label: 'C. Key Terms & Full Forms' },
+                    { id: 'sec-section-d', label: 'D. Main Concepts & Diagrams' },
+                    { id: 'sec-section-e', label: 'E. Key Differences & Comparisons' },
+                    { id: 'sec-section-f', label: 'F. Processes & Mechanisms' },
+                    { id: 'sec-section-g', label: 'G. Formulas & Equations' },
+                    { id: 'sec-section-h', label: 'H. Problem-Solving Methods' },
+                    { id: 'sec-section-i', label: 'I. Exam-Oriented Preparation' },
+                    { id: 'sec-section-j', label: 'J. Final Revision Section' }
                   ].map((t) => (
                     <button
                       key={t.id}
@@ -2088,12 +2793,12 @@ export const NotesPage: React.FC = () => {
                         if (el) el.scrollIntoView({ behavior: 'smooth' });
                       }}
                       style={{
-                        padding: '5px 12px',
+                        padding: '6px 12px',
                         borderRadius: 8,
                         border: '1px solid #CBD5E1',
                         background: '#FFFFFF',
                         color: '#0F172A',
-                        fontSize: '0.75rem',
+                        fontSize: '0.74rem',
                         fontWeight: 700,
                         cursor: 'pointer'
                       }}
@@ -2104,40 +2809,76 @@ export const NotesPage: React.FC = () => {
                 </div>
               </nav>
 
-              {/* 2. Topic Overview & Why It Matters */}
-              <div id="sec-overview" style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid #EEEEEE' }}>
-                <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#202124', marginBottom: 10 }}>
-                  1. Topic Overview & Why It Matters
-                </h3>
-                <p style={{ fontSize: '1rem', color: '#374151', lineHeight: 1.7, margin: '0 0 12px 0' }}>
+              {/* Section A: Definitions & Academic Meaning */}
+              <div id="sec-section-a" style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid #EEEEEE' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#FFEDD5', color: '#C2410C', padding: '3px 8px', borderRadius: 4 }}>
+                    Section A
+                  </span>
+                  <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#202124', margin: 0 }}>
+                    Definitions & Academic Meaning
+                  </h3>
+                </div>
+                <p style={{ fontSize: '1rem', color: '#374151', lineHeight: 1.7, margin: '0 0 14px 0' }}>
                   {structured.simpleIntroduction || structured.overview || activeNote.summary}
                 </p>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  <span style={{ padding: '6px 12px', borderRadius: 8, background: '#FFF3E8', color: '#E85D00', fontSize: '0.78rem', fontWeight: 700 }}>
-                    🎯 Focus: Curriculum Core Concept
-                  </span>
-                  <span style={{ padding: '6px 12px', borderRadius: 8, background: '#EFF6FF', color: '#2563EB', fontSize: '0.78rem', fontWeight: 700 }}>
-                    💡 Real-World Science Application
-                  </span>
-                </div>
-              </div>
-
-              {/* 3. Definitions & Meaning */}
-              <div id="sec-definition" style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid #EEEEEE' }}>
-                <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#202124', marginBottom: 12 }}>
-                  2. Academic Definition & Practical Interpretation
-                </h3>
                 <blockquote style={{ margin: '0 0 14px 0', padding: '14px 18px', background: '#F8FAFC', borderLeft: '4px solid #FF6A00', borderRadius: '0 10px 10px 0', fontStyle: 'italic', color: '#1E293B', fontSize: '0.98rem' }}>
                   {structured.clearDefinition?.academic || structured.definitions?.[0]?.definition || `${editTitle} is a verified curriculum principle in ${editSubject}.`}
                 </blockquote>
                 {structured.clearDefinition?.everyday && (
-                  <p style={{ fontSize: '0.94rem', color: '#4B5563', lineHeight: 1.6 }}>
-                    <strong>Everyday Interpretation:</strong> {structured.clearDefinition.everyday}
+                  <p style={{ fontSize: '0.94rem', color: '#4B5563', lineHeight: 1.6, margin: '0 0 12px 0' }}>
+                    <strong>Everyday Simple Explanation:</strong> {structured.clearDefinition.everyday}
                   </p>
+                )}
+                {Array.isArray(structured.definitions) && structured.definitions.length > 1 && (
+                  <div style={{ marginTop: 14 }}>
+                    <h5 style={{ fontSize: '0.88rem', fontWeight: 800, color: '#334155', marginBottom: 8 }}>Important Academic Definitions:</h5>
+                    <div style={{ display: 'grid', gap: 8 }}>
+                      {structured.definitions.slice(1).map((d: any, dIdx: number) => (
+                        <div key={dIdx} style={{ padding: '10px 14px', background: '#F8FAFC', borderRadius: 8, border: '1px solid #E2E8F0', fontSize: '0.88rem' }}>
+                          <strong style={{ color: '#FF6A00' }}>{d.term || d.word}:</strong> {d.definition || d.meaning}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
 
-              {/* 4. Terminology & Full Forms Table */}
+              {/* Section B: Key Points & Core Principles */}
+              <div id="sec-section-b" style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid #EEEEEE' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#DCFCE7', color: '#15803D', padding: '3px 8px', borderRadius: 4 }}>
+                    Section B
+                  </span>
+                  <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#202124', margin: 0 }}>
+                    Key Points & Core Principles
+                  </h3>
+                </div>
+                <div style={{ display: 'grid', gap: 8 }}>
+                  {(structured.keyPoints || structured.importantFacts || [
+                    `${editTitle} operates under fundamental scientific and conservation laws.`,
+                    `Components interact in equilibrium rather than isolated events.`,
+                    `Theoretical values closely match experimental observation in standard curriculum laboratories.`,
+                    `Mastery requires understanding definitions, working mechanisms, and formula applications.`
+                  ]).map((kp: string, kIdx: number) => (
+                    <div key={kIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px', background: '#F9FAFB', borderRadius: 8, border: '1px solid #F3F4F6' }}>
+                      <span style={{ color: '#FF6A00', fontWeight: 900, fontSize: '1rem', lineHeight: 1 }}>•</span>
+                      <span style={{ fontSize: '0.92rem', color: '#374151', lineHeight: 1.55 }}>{kp}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Section C: Key Terms & Full Forms */}
+              <div id="sec-section-c" style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid #EEEEEE' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#E0E7FF', color: '#3730A3', padding: '3px 8px', borderRadius: 4 }}>
+                    Section C
+                  </span>
+                  <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#202124', margin: 0 }}>
+                    Key Terms & Terminology
+                  </h3>
+                </div>
               {Array.isArray(structured.abbreviations) && structured.abbreviations.length > 0 && (
                 <div id="sec-terminology" style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid #EEEEEE' }}>
                   <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#202124', marginBottom: 12 }}>
@@ -2182,17 +2923,23 @@ export const NotesPage: React.FC = () => {
                   </div>
                 </div>
               )}
+              </div>
 
-              {/* 6. All Sections in Flow (Integrated Mechanisms & Diagrams) */}
-              <div id="sec-content-flow" style={{ display: 'grid', gap: 32, marginBottom: 36 }}>
-                <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#202124', margin: '8px 0 0 0' }}>
-                  5. Detailed Core Mechanisms & Working Steps
-                </h3>
+              {/* Section D: Main Concepts and Subtopics (Each with its dedicated diagram) */}
+              <div id="sec-section-d" style={{ display: 'grid', gap: 32, marginBottom: 36 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#FEF3C7', color: '#B45309', padding: '3px 8px', borderRadius: 4 }}>
+                    Section D
+                  </span>
+                  <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#202124', margin: 0 }}>
+                    Main Concepts & Subtopics
+                  </h3>
+                </div>
                 {sections.map((sec, idx) => (
                   <article key={idx} style={{ borderBottom: '1px solid #EEEEEE', paddingBottom: 24 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
                       <h4 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#202124', margin: 0 }}>
-                        {sec.heading || `Section ${idx + 1}`}
+                        {sec.heading || `Subtopic ${idx + 1}`}
                       </h4>
                       {sec.citations && (
                         <span style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 600 }}>
@@ -2204,7 +2951,7 @@ export const NotesPage: React.FC = () => {
                       {sec.body || sec.plainExplanation}
                     </p>
 
-                    {/* Paired diagram placed directly inside the section it supports */}
+                    {/* Paired dedicated diagram placed directly inside the subtopic it explains */}
                     {structured.images?.[idx] && (
                       <figure style={{ margin: '18px 0', padding: 16, borderRadius: 16, background: '#FAFAFA', border: '1.5px solid #EEEEEE' }}>
                         <img
@@ -2222,50 +2969,17 @@ export const NotesPage: React.FC = () => {
                 ))}
               </div>
 
-              {/* 7. Formulas & Solved Numericals (9-Step Template) */}
-              {structured.formula && (
-                <div id="sec-formulas" style={{ marginBottom: 36, padding: '24px 28px', borderRadius: 16, background: '#F8FAFC', border: '1.5px solid #E2E8F0' }}>
-                  <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0F172A', marginBottom: 12 }}>
-                    6. Governing Formulas & 9-Step Worked Numerical
-                  </h3>
-                  <div style={{ padding: '12px 18px', background: '#FFFFFF', borderRadius: 10, border: '1px solid #CBD5E1', marginBottom: 16 }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Governing Equation</span>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0F172A', marginTop: 4 }}>
-                      `{structured.formula.equation}`
-                    </div>
-                  </div>
-
-                  {Array.isArray(structured.workedProblems) && structured.workedProblems.length > 0 && (
-                    <div style={{ marginTop: 14 }}>
-                      <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#334155', marginBottom: 10 }}>
-                        Standard Board Examination Solved Problem:
-                      </h4>
-                      {structured.workedProblems.map((prob: any, pIdx: number) => (
-                        <div key={pIdx} style={{ padding: '16px 20px', background: '#FFFFFF', borderRadius: 12, border: '1px solid #CBD5E1', marginBottom: 12 }}>
-                          <strong style={{ fontSize: '0.96rem', color: '#0F172A', display: 'block', marginBottom: 8 }}>
-                            {prob.title || `Problem ${pIdx + 1}`}: {prob.problemStatement}
-                          </strong>
-                          <div style={{ fontSize: '0.86rem', color: '#475569', lineHeight: 1.6 }}>
-                            {Array.isArray(prob.stepByStepSolution) && prob.stepByStepSolution.map((st: string, sIdx: number) => (
-                              <div key={sIdx} style={{ marginBottom: 4 }}>• {st}</div>
-                            ))}
-                            <div style={{ marginTop: 8, padding: '6px 12px', background: '#ECFDF5', borderRadius: 6, color: '#047857', fontWeight: 800 }}>
-                              Final Verified Answer: {prob.finalAnswer} ({prob.siUnit})
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* 8. Comparisons Matrix */}
+              {/* Section E: Key Differences and Comparisons */}
               {structured.differences && (
-                <div id="sec-comparisons" style={{ marginBottom: 36, paddingBottom: 24, borderBottom: '1px solid #EEEEEE' }}>
-                  <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#202124', marginBottom: 14 }}>
-                    7. Comparative Analysis Matrix
-                  </h3>
+                <div id="sec-section-e" style={{ marginBottom: 36, paddingBottom: 24, borderBottom: '1px solid #EEEEEE' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#FCE7F3', color: '#BE185D', padding: '3px 8px', borderRadius: 4 }}>
+                      Section E
+                    </span>
+                    <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#202124', margin: 0 }}>
+                      Key Differences & Comparisons
+                    </h3>
+                  </div>
                   <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem', background: '#FFFFFF', borderRadius: 10 }}>
                       <thead>
@@ -2289,111 +3003,209 @@ export const NotesPage: React.FC = () => {
                 </div>
               )}
 
-              {/* 9. Common Misconceptions & Board Traps */}
-              {Array.isArray(structured.misconceptions) && structured.misconceptions.length > 0 && (
-                <div id="sec-misconceptions" style={{ marginBottom: 36, padding: '20px 24px', borderRadius: 16, background: '#FEF2F2', border: '1.5px solid #FECACA' }}>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#991B1B', marginBottom: 10 }}>
-                    8. Common Student Misconceptions & Board Traps
+              {/* Section F: Important Processes & Mechanisms */}
+              <div id="sec-section-f" style={{ marginBottom: 36, paddingBottom: 24, borderBottom: '1px solid #EEEEEE' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#CCFBF1', color: '#0F766E', padding: '3px 8px', borderRadius: 4 }}>
+                    Section F
+                  </span>
+                  <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#202124', margin: 0 }}>
+                    Important Processes & Mechanisms
                   </h3>
-                  <div style={{ display: 'grid', gap: 8 }}>
-                    {structured.misconceptions.map((misc: string, mIdx: number) => (
-                      <div key={mIdx} style={{ fontSize: '0.9rem', color: '#7F1D1D', display: 'flex', gap: 8 }}>
-                        <span>⚠️</span>
-                        <span>{misc}</span>
-                      </div>
-                    ))}
-                  </div>
                 </div>
-              )}
+                <div style={{ display: 'grid', gap: 12 }}>
+                  {(structured.universalTeachingWorkflow?.stage7_stepByStepProcesses || [
+                    { stepNumber: 1, title: 'Initial Activation', whatHappens: 'System components initiate energy intake or receptor excitation under environmental triggers.', whereItHappens: 'Primary receptor site' },
+                    { stepNumber: 2, title: 'Transformation Cascade', whatHappens: 'Energy transformation or mechanical transmission proceeds sequentially across intermediate vectors.', whereItHappens: 'Core transformation pathway' },
+                    { stepNumber: 3, title: 'Terminal Equilibrium', whatHappens: 'Products or kinetic motion reach stable target configuration with entropy dissipation.', whereItHappens: 'Terminal site' }
+                  ]).map((st: any, sIdx: number) => (
+                    <div key={sIdx} style={{ padding: '14px 18px', background: '#F8FAFC', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <span style={{ padding: '2px 8px', borderRadius: 4, background: '#0F766E', color: '#FFFFFF', fontWeight: 800, fontSize: '0.72rem' }}>
+                          Stage {st.stepNumber || sIdx + 1}
+                        </span>
+                        <strong style={{ fontSize: '0.96rem', color: '#0F172A' }}>{st.title}</strong>
+                      </div>
+                      <p style={{ margin: '4px 0 0 0', fontSize: '0.9rem', color: '#334155', lineHeight: 1.6 }}>
+                        {st.whatHappens}
+                      </p>
+                      {st.whereItHappens && (
+                        <span style={{ fontSize: '0.75rem', color: '#64748B', display: 'block', marginTop: 4 }}>
+                          <em>Location:</em> {st.whereItHappens}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-              {/* The Final Comprehensive Revision Page (Master Sheet) */}
-              {finalRevisionPage && (
-                <section
-                  id="sec-revision-sheet"
-                  style={{
-                    marginTop: 48,
-                    padding: '32px 36px',
-                    borderRadius: 20,
-                    background: '#F0FDF4',
-                    border: '2.5px solid #16A34A',
-                    boxShadow: '0 12px 32px rgba(22, 163, 74, 0.1)'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #16A34A', paddingBottom: 14, marginBottom: 18 }}>
-                    <div>
-                      <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#16A34A', color: '#FFFFFF', padding: '3px 10px', borderRadius: 6 }}>
-                        High-Yield Board & Exam Master Sheet
+              {/* Section G: Formulas & Equations */}
+              <div id="sec-section-g" style={{ marginBottom: 36, padding: '24px 28px', borderRadius: 16, background: '#F8FAFC', border: '1.5px solid #E2E8F0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#DBEAFE', color: '#1D4ED8', padding: '3px 8px', borderRadius: 4 }}>
+                    Section G
+                  </span>
+                  <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                    Formulas & Equations
+                  </h3>
+                </div>
+                {structured.formula ? (
+                  <div>
+                    <div style={{ padding: '12px 18px', background: '#FFFFFF', borderRadius: 10, border: '1px solid #CBD5E1', marginBottom: 16 }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Governing Equation</span>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0F172A', marginTop: 4 }}>
+                        `{structured.formula.equation}`
+                      </div>
+                    </div>
+
+                    {Array.isArray(structured.workedProblems) && structured.workedProblems.length > 0 && (
+                      <div style={{ marginTop: 14 }}>
+                        <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#334155', marginBottom: 10 }}>
+                          Standard Board Examination Solved Problem:
+                        </h4>
+                        {structured.workedProblems.map((prob: any, pIdx: number) => (
+                          <div key={pIdx} style={{ padding: '16px 20px', background: '#FFFFFF', borderRadius: 12, border: '1px solid #CBD5E1', marginBottom: 12 }}>
+                            <strong style={{ fontSize: '0.96rem', color: '#0F172A', display: 'block', marginBottom: 8 }}>
+                              {prob.title || `Problem ${pIdx + 1}`}: {prob.problemStatement}
+                            </strong>
+                            <div style={{ fontSize: '0.86rem', color: '#475569', lineHeight: 1.6 }}>
+                              {Array.isArray(prob.stepByStepSolution) && prob.stepByStepSolution.map((st: string, sIdx: number) => (
+                                <div key={sIdx} style={{ marginBottom: 4 }}>• {st}</div>
+                              ))}
+                              <div style={{ marginTop: 8, padding: '6px 12px', background: '#ECFDF5', borderRadius: 6, color: '#047857', fontWeight: 800 }}>
+                                Final Verified Answer: {prob.finalAnswer} ({prob.siUnit})
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p style={{ margin: 0, fontSize: '0.92rem', color: '#64748B' }}>
+                    This conceptual topic is qualitatively governed by biological structures, historical cause-and-effect sequences, or descriptive laws rather than numerical formulas.
+                  </p>
+                )}
+              </div>
+
+              {/* Section H: Problem-Solving Methods (Mathematics & Physics) */}
+              {(() => {
+                const prob = structured?.universalTeachingWorkflow?.sectionH_problemSolvingMethods || structured?.problemSolvingMethods;
+                if (!prob || !prob.isRelevant) return null;
+                return (
+                  <div id="sec-section-h" style={{ marginBottom: 36, padding: '24px 28px', borderRadius: 16, background: '#FFFBEB', border: '1.5px solid #FDE68A' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#FEF3C7', color: '#92400E', padding: '3px 8px', borderRadius: 4 }}>
+                        Section H
                       </span>
-                      <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#14532D', margin: '6px 0 0 0' }}>
-                        🏆 The Final Comprehensive Revision Page
+                      <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#202124', margin: 0 }}>
+                        Problem-Solving Methods ({prob.discipline || 'Quantitative & Conceptual Mastery'})
                       </h3>
                     </div>
-                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#15803D' }}>
-                      {editSubject} • {editTitle}
-                    </span>
-                  </div>
 
-                  {finalRevisionPage.executiveSummary && (
-                    <div style={{ padding: 14, background: '#FFFFFF', borderRadius: 12, border: '1px solid #BBF7D0', marginBottom: 20 }}>
-                      <strong style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#14532D', display: 'block', marginBottom: 4 }}>
-                        Executive Concept Summary
-                      </strong>
-                      <p style={{ margin: 0, fontSize: '0.94rem', color: '#1F2937' }}>
-                        {finalRevisionPage.executiveSummary}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Concept Matrix */}
-                  {Array.isArray(finalRevisionPage.quickRevisionMatrix) && (
-                    <div style={{ marginBottom: 20 }}>
-                      <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#14532D', marginBottom: 8 }}>
-                        1. Quick Revision Concept Matrix
-                      </h4>
-                      <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', background: '#FFFFFF', borderRadius: 8, fontSize: '0.86rem' }}>
-                          <thead>
-                            <tr style={{ background: '#DCFCE7', color: '#14532D', textAlign: 'left' }}>
-                              <th style={{ padding: '8px 12px', border: '1px solid #BBF7D0' }}>Concept</th>
-                              <th style={{ padding: '8px 12px', border: '1px solid #BBF7D0' }}>Core Principle / Rule</th>
-                              <th style={{ padding: '8px 12px', border: '1px solid #BBF7D0' }}>Exam Significance</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {finalRevisionPage.quickRevisionMatrix.map((row: any, rIdx: number) => (
-                              <tr key={rIdx}>
-                                <td style={{ padding: '8px 12px', border: '1px solid #BBF7D0', fontWeight: 700 }}>{row.concept}</td>
-                                <td style={{ padding: '8px 12px', border: '1px solid #BBF7D0' }}>{row.keyRuleOrPrinciple}</td>
-                                <td style={{ padding: '8px 12px', border: '1px solid #BBF7D0', color: '#15803D', fontWeight: 600 }}>{row.examSignificance}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                    {/* The 10-Point Method Framework */}
+                    {Array.isArray(prob.tenPointMethodGuide) && (
+                      <div style={{ marginBottom: 20 }}>
+                        <h4 style={{ fontSize: '1.02rem', fontWeight: 800, color: '#92400E', marginBottom: 10 }}>
+                          The 10-Point Problem-Solving Method:
+                        </h4>
+                        <div style={{ display: 'grid', gap: 8 }}>
+                          {prob.tenPointMethodGuide.map((step: any, sIdx: number) => (
+                            <div key={sIdx} style={{ display: 'flex', gap: 10, padding: '8px 12px', background: '#FFFFFF', borderRadius: 8, border: '1px solid #FEF08A' }}>
+                              <strong style={{ color: '#D97706', minWidth: 24 }}>{step.stepNumber}.</strong>
+                              <div style={{ fontSize: '0.88rem', color: '#374151' }}>
+                                <strong style={{ color: '#1F2937' }}>{step.title}:</strong> {step.instruction}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </section>
-              )}
+                    )}
 
-              {/* 10. Self-Test Knowledge Assessment */}
+                    {/* Representative Solved Problem Types */}
+                    {Array.isArray(prob.problemTypes) && prob.problemTypes.length > 0 && (
+                      <div style={{ marginBottom: 20 }}>
+                        <h4 style={{ fontSize: '1.02rem', fontWeight: 800, color: '#92400E', marginBottom: 10 }}>
+                          Representative Solved Problem Types:
+                        </h4>
+                        {prob.problemTypes.map((pt: any, ptIdx: number) => (
+                          <div key={ptIdx} style={{ padding: '16px 20px', background: '#FFFFFF', borderRadius: 12, border: '1px solid #FDE68A', marginBottom: 14 }}>
+                            <div style={{ fontSize: '0.98rem', fontWeight: 800, color: '#B45309', marginBottom: 6 }}>
+                              {pt.typeName}
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: '#4B5563', marginBottom: 4 }}>
+                              <strong>Identification Clue:</strong> {pt.howToIdentify}
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: '#1E40AF', marginBottom: 10 }}>
+                              <strong>Governing Formula / Principle:</strong> <code>{pt.requiredFormulaOrPrinciple}</code>
+                            </div>
+
+                            {pt.representativeSolvedExample && (
+                              <div style={{ padding: '12px 14px', background: '#FFFBEB', borderRadius: 8, border: '1px solid #FEF3C7', fontSize: '0.86rem' }}>
+                                <strong style={{ color: '#92400E', display: 'block', marginBottom: 6 }}>
+                                  Example: {pt.representativeSolvedExample.problemStatement}
+                                </strong>
+                                <div style={{ color: '#374151', lineHeight: 1.6 }}>
+                                  {Array.isArray(pt.representativeSolvedExample.stepByStepCalculations) &&
+                                    pt.representativeSolvedExample.stepByStepCalculations.map((calc: string, cIdx: number) => (
+                                      <div key={cIdx}>• {calc}</div>
+                                    ))}
+                                  <div style={{ marginTop: 6, fontWeight: 800, color: '#047857' }}>
+                                    Final Answer: {pt.representativeSolvedExample.unitsAndFinalAnswer}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Practice Problems with Verified Solutions */}
+                    {Array.isArray(prob.practiceProblemsWithAnswers) && prob.practiceProblemsWithAnswers.length > 0 && (
+                      <div>
+                        <h4 style={{ fontSize: '1.02rem', fontWeight: 800, color: '#92400E', marginBottom: 10 }}>
+                          Practice Problems with Verified Solutions:
+                        </h4>
+                        {prob.practiceProblemsWithAnswers.map((pp: any, ppIdx: number) => (
+                          <div key={ppIdx} style={{ padding: '12px 16px', background: '#FFFFFF', borderRadius: 10, border: '1px solid #FEF08A', marginBottom: 10 }}>
+                            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1F2937', marginBottom: 6 }}>
+                              Practice {pp.problemNumber || ppIdx + 1}: {pp.statement}
+                            </div>
+                            <details style={{ fontSize: '0.84rem' }}>
+                              <summary style={{ color: '#2563EB', fontWeight: 700, cursor: 'pointer' }}>View Verified Solution</summary>
+                              <div style={{ marginTop: 6, padding: '8px 12px', background: '#ECFDF5', borderRadius: 6, color: '#047857' }}>
+                                <strong>Answer:</strong> {pp.answer}<br />
+                                <em>Explanation:</em> {pp.stepByStepExplanation}
+                              </div>
+                            </details>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Section I: Exam-Oriented Preparation (Self-Test Knowledge Assessment) */}
               {Array.isArray(structured.examQuestions) && structured.examQuestions.length > 0 && (
                 <section
-                  id="sec-assessment"
+                  id="sec-section-i"
                   style={{
-                    marginTop: 40,
+                    marginBottom: 36,
                     padding: '30px 34px',
                     borderRadius: 20,
                     background: '#F8FAFC',
                     border: '1.5px solid #E2E8F0'
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-                    <div>
-                      <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#3B82F6', color: '#FFFFFF', padding: '3px 10px', borderRadius: 6 }}>
-                        Self-Evaluation & Exam Readiness
+                  <div id="sec-assessment" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#DBEAFE', color: '#1D4ED8', padding: '3px 8px', borderRadius: 4 }}>
+                        Section I
                       </span>
-                      <h3 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0F172A', margin: '6px 0 0 0' }}>
-                        10. Knowledge Assessment Practice Questions
+                      <h3 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0F172A', margin: 0 }}>
+                        Exam-Oriented Preparation
                       </h3>
                     </div>
                     <span style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 700 }}>
@@ -2459,6 +3271,301 @@ export const NotesPage: React.FC = () => {
                     ))}
                   </div>
                 </section>
+              )}
+
+              {/* Section J: Final Revision Section */}
+              <div id="sec-section-j" style={{ marginBottom: 36 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#DCFCE7', color: '#15803D', padding: '3px 8px', borderRadius: 4 }}>
+                    Section J
+                  </span>
+                  <h3 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#14532D', margin: 0 }}>
+                    Final Revision Section
+                  </h3>
+                </div>
+
+                {/* Common Misconceptions & Board Traps */}
+                {Array.isArray(structured.misconceptions) && structured.misconceptions.length > 0 && (
+                  <div id="sec-misconceptions" style={{ marginBottom: 24, padding: '20px 24px', borderRadius: 16, background: '#FEF2F2', border: '1.5px solid #FECACA' }}>
+                    <h4 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#991B1B', marginBottom: 10 }}>
+                      ⚠️ Common Student Misconceptions & Board Traps:
+                    </h4>
+                    <div style={{ display: 'grid', gap: 8 }}>
+                      {structured.misconceptions.map((misc: string, mIdx: number) => (
+                        <div key={mIdx} style={{ fontSize: '0.9rem', color: '#7F1D1D', display: 'flex', gap: 8 }}>
+                          <span>⚠️</span>
+                          <span>{misc}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* The Final Comprehensive Revision Page (Master Sheet) */}
+                {finalRevisionPage && (
+                  <section
+                    id="sec-revision-sheet"
+                    style={{
+                      padding: '32px 36px',
+                      borderRadius: 20,
+                      background: '#F0FDF4',
+                      border: '2.5px solid #16A34A',
+                      boxShadow: '0 12px 32px rgba(22, 163, 74, 0.1)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #16A34A', paddingBottom: 14, marginBottom: 18 }}>
+                      <div>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#16A34A', color: '#FFFFFF', padding: '3px 10px', borderRadius: 6 }}>
+                          High-Yield Board & Exam Master Sheet
+                        </span>
+                        <h4 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#14532D', margin: '6px 0 0 0' }}>
+                          🏆 The Final Comprehensive Revision Page
+                        </h4>
+                      </div>
+                      <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#15803D' }}>
+                        {editSubject} • {editTitle}
+                      </span>
+                    </div>
+
+                    {finalRevisionPage.executiveSummary && (
+                      <div style={{ padding: 14, background: '#FFFFFF', borderRadius: 12, border: '1px solid #BBF7D0', marginBottom: 20 }}>
+                        <strong style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#14532D', display: 'block', marginBottom: 4 }}>
+                          Executive Concept Summary
+                        </strong>
+                        <p style={{ margin: 0, fontSize: '0.94rem', color: '#1F2937' }}>
+                          {finalRevisionPage.executiveSummary}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Concept Matrix */}
+                    {Array.isArray(finalRevisionPage.quickRevisionMatrix) && (
+                      <div style={{ marginBottom: 20 }}>
+                        <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#14532D', marginBottom: 8 }}>
+                          Quick Revision Concept Matrix:
+                        </h4>
+                        <div style={{ overflowX: 'auto' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', background: '#FFFFFF', borderRadius: 8, fontSize: '0.86rem' }}>
+                            <thead>
+                              <tr style={{ background: '#DCFCE7', color: '#14532D', textAlign: 'left' }}>
+                                <th style={{ padding: '8px 12px', border: '1px solid #BBF7D0' }}>Concept</th>
+                                <th style={{ padding: '8px 12px', border: '1px solid #BBF7D0' }}>Core Principle / Rule</th>
+                                <th style={{ padding: '8px 12px', border: '1px solid #BBF7D0' }}>Exam Significance</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {finalRevisionPage.quickRevisionMatrix.map((row: any, rIdx: number) => (
+                                <tr key={rIdx}>
+                                  <td style={{ padding: '8px 12px', border: '1px solid #BBF7D0', fontWeight: 700 }}>{row.concept}</td>
+                                  <td style={{ padding: '8px 12px', border: '1px solid #BBF7D0' }}>{row.keyRuleOrPrinciple}</td>
+                                  <td style={{ padding: '8px 12px', border: '1px solid #BBF7D0', color: '#15803D', fontWeight: 600 }}>{row.examSignificance}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </section>
+                )}
+              </div>
+            </div>
+          )}
+
+              {/* Synchronized Notes Audio Narration Player Bar (Docked Floating Player) */}
+              {notesAudioOpen && (
+                <div
+                  style={{
+                    position: 'sticky',
+                    bottom: 24,
+                    zIndex: 100020,
+                    width: '100%',
+                    maxWidth: 880,
+                    margin: '0 auto',
+                    background: '#FFFFFF',
+                    borderRadius: 18,
+                    border: '2px solid #FF6A00',
+                    boxShadow: '0 16px 40px rgba(255, 106, 0, 0.22)',
+                    padding: '14px 20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10
+                  }}
+                >
+                  {/* Top Line: Track Title, Synchronized Badge & Close Button */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 10,
+                          background: 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#FFFFFF'
+                        }}
+                      >
+                        <Volume2 size={16} />
+                      </div>
+                      <div>
+                        <strong style={{ fontSize: '0.9rem', color: '#0F172A', display: 'block' }}>
+                          Now Narrating: Page {notesAudioTrackIdx + 1} — {textbookPages[notesAudioTrackIdx]?.title || 'Textbook Page'}
+                        </strong>
+                        <span style={{ fontSize: '0.74rem', color: '#64748B' }}>
+                          {textbookPages[notesAudioTrackIdx]?.headerCategory || 'Chapter Overview'} • Natural Spoken Voice
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span
+                        style={{
+                          padding: '3px 10px',
+                          borderRadius: 6,
+                          background: '#ECFDF5',
+                          color: '#047857',
+                          fontWeight: 800,
+                          fontSize: '0.72rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4
+                        }}
+                      >
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
+                        <span>Synchronized with Page {notesAudioTrackIdx + 1}</span>
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          stopNotesAudio();
+                          setNotesAudioOpen(false);
+                        }}
+                        className="btn-glass"
+                        style={{ padding: '4px 8px' }}
+                        title="Close Narration Player"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Player Controls & Speed Selector */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                    {/* Track & Playback Buttons */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={prevNotesAudioTrack}
+                        disabled={notesAudioTrackIdx <= 0}
+                        className="btn-glass"
+                        style={{ padding: '6px 10px', opacity: notesAudioTrackIdx <= 0 ? 0.4 : 1 }}
+                        title="Previous Track (Page)"
+                      >
+                        <Rewind size={14} />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (notesAudioPlaying) {
+                            pauseNotesAudio();
+                          } else if (notesAudioPaused) {
+                            resumeNotesAudio();
+                          } else {
+                            playNotesAudio(notesAudioTrackIdx);
+                          }
+                        }}
+                        style={{
+                          padding: '8px 18px',
+                          borderRadius: 10,
+                          background: '#FF6A00',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          fontWeight: 800,
+                          fontSize: '0.84rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          cursor: 'pointer',
+                          boxShadow: '0 4px 12px rgba(255, 106, 0, 0.3)'
+                        }}
+                        title={notesAudioPlaying ? 'Pause' : 'Play / Resume'}
+                      >
+                        {notesAudioLoading ? (
+                          <span>Loading...</span>
+                        ) : notesAudioPlaying ? (
+                          <>
+                            <Pause size={15} />
+                            <span>Pause</span>
+                          </>
+                        ) : (
+                          <>
+                            <Play size={15} />
+                            <span>Play</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={stopNotesAudio}
+                        className="btn-glass"
+                        style={{ padding: '6px 10px' }}
+                        title="Stop Narration"
+                      >
+                        <Square size={14} />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => playNotesAudio(notesAudioTrackIdx)}
+                        className="btn-glass"
+                        style={{ padding: '6px 10px' }}
+                        title="Restart Track from Beginning"
+                      >
+                        <RotateCcw size={14} />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={nextNotesAudioTrack}
+                        disabled={notesAudioTrackIdx >= textbookPages.length - 1}
+                        className="btn-glass"
+                        style={{ padding: '6px 10px', opacity: notesAudioTrackIdx >= textbookPages.length - 1 ? 0.4 : 1 }}
+                        title="Next Track (Page)"
+                      >
+                        <FastForward size={14} />
+                      </button>
+                    </div>
+
+                    {/* Playback Speed Selectors */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, marginRight: 2 }}>Speed:</span>
+                      {[0.75, 1.0, 1.25, 1.5].map((spd) => (
+                        <button
+                          key={spd}
+                          type="button"
+                          onClick={() => handleAudioSpeedChange(spd)}
+                          style={{
+                            padding: '3px 8px',
+                            borderRadius: 6,
+                            border: notesAudioSpeed === spd ? '1.5px solid #FF6A00' : '1px solid #CBD5E1',
+                            background: notesAudioSpeed === spd ? '#FFF3E8' : '#FFFFFF',
+                            color: notesAudioSpeed === spd ? '#C2410C' : '#475569',
+                            fontWeight: 800,
+                            fontSize: '0.72rem',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {spd}x
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           )}

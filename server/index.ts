@@ -27,7 +27,8 @@ import {
 } from './aiAdapter.ts';
 import {
   enrichLessonWithRebuildStructure,
-  buildTopicEducationalVideoStoryboard
+  buildTopicEducationalVideoStoryboard,
+  generateFriendlyPersonalTeacherIntro
 } from './tutorRebuildEngine.ts';
 import {
   classifyUniversalTopic
@@ -53,7 +54,8 @@ import {
 import { studyAiEngine } from './studyAiAutonomousEngine.ts';
 import {
   educationalImageResearchEngine,
-  decomposeTopicIntoSectionVisuals
+  decomposeTopicIntoSectionVisuals,
+  researchAndRetrieveEducationalVisual
 } from './educationalImageResearchEngine.ts';
 import {
   notebookGenerationOrchestrator,
@@ -72,6 +74,16 @@ import {
   buildSinglePageDigitalTextbookMarkdown,
   type UniversalTeachingWorkflow
 } from './universalTeachingWorkflowEngine.ts';
+import {
+  cleanNotebookTextForAudioSpeech,
+  partitionWorkflowIntoPages,
+  buildAudioPlaylistForNotebook
+} from './digitalNotebookPaginationEngine.ts';
+import {
+  planTopicEducationalVisuals,
+  getSubtopicDiagramsForTopic,
+  findDiagramForSpecificConcept
+} from './subtopicDiagramCatalog.ts';
 import {
   PICTURE_VOCABULARY_CATEGORIES,
   getPictureVocabularyForLanguage,
@@ -93,6 +105,7 @@ initDatabase();
 
 // Simple in-memory audio cache by content+voice+speed hash (Section 10 requirement)
 const audioAssetCache = new Map<string, { id: string; wavDataUrl: string; durationSeconds: number; script: string; voice: string; speed: number; cachedAt: string }>();
+const activeVoiceLessons = new Map<string, any>();
 
 // Staff and Tester Session Store
 interface StaffSession {
@@ -477,8 +490,8 @@ export function createAppServer() {
         if (!ctx) {
           ctx = {
             user_id: studentId,
-            active_topic: 'Photosynthesis',
-            subject: 'Science',
+            active_topic: '',
+            subject: '',
             level: 'Grade 10',
             explanation_mode: 'simple',
             last_conversation_id: null,
@@ -487,6 +500,27 @@ export function createAppServer() {
           };
         }
         sendJson(res, 200, ctx);
+        return;
+      }
+
+      // Educational Visual Explanation Planner & Structured Instructions (6-Step Plan)
+      if (pathname === '/api/visuals/plan' && req.method === 'GET') {
+        const qTopic = sanitizeText(parsedUrl.searchParams.get('topic') || '', 180);
+        const qSubtopic = sanitizeText(parsedUrl.searchParams.get('subtopic') || '', 180);
+        const qSubject = sanitizeText(parsedUrl.searchParams.get('subject') || '', 60);
+        const qGrade = parseInt(parsedUrl.searchParams.get('grade') || '10', 10);
+        const qBoard = sanitizeText(parsedUrl.searchParams.get('board') || 'CBSE', 40);
+        const qConcept = sanitizeText(parsedUrl.searchParams.get('concept') || '', 180);
+
+        const visualPlan = planTopicEducationalVisuals({
+          topic: qTopic || qConcept || 'Photosynthesis',
+          subtopic: qSubtopic,
+          subject: qSubject,
+          grade: qGrade,
+          board: qBoard,
+          specificConcept: qConcept
+        });
+        sendJson(res, 200, visualPlan);
         return;
       }
 
@@ -853,13 +887,15 @@ export function createAppServer() {
         const teachingMode: 'learning' | 'exam' = (rawMode === 'exam' || rawMode === 'detailed' || body.examMode === true) ? 'exam' : 'learning';
 
         // Automatically resolve student's curriculum board & grade from stored database profile without prompting
-        const studentUser = db.prepare('SELECT grade, board FROM users WHERE id = ?').get(studentId) as any;
+        const studentUser = db.prepare('SELECT name, grade, board FROM users WHERE id = ?').get(studentId) as any;
         let studentProfile: any = null;
         try {
           studentProfile = db.prepare('SELECT current_grade, current_board FROM student_profiles WHERE id = ?').get(studentId) as any;
         } catch {
           studentProfile = null;
         }
+
+        const studentName = sanitizeText(body.studentName || studentUser?.name || '', 60);
 
         const resolvedGrade = typeof body.grade === 'number'
           ? body.grade
@@ -944,6 +980,7 @@ export function createAppServer() {
           level,
           grade,
           language,
+          studentName,
           history: historyRows,
           attachmentSummary,
           selectedVisualComponent: body.selectedVisualComponent || undefined,
@@ -956,6 +993,7 @@ export function createAppServer() {
           subject,
           grade,
           board: resolvedBoard,
+          studentName,
           rawLesson: structured
         });
         structured.universalTeachingWorkflow = workflow;
@@ -2006,10 +2044,11 @@ export function createAppServer() {
         }
 
         // Automatic Student Profile & Curriculum Context Resolution (No prompt required!)
-        const studentUser = db.prepare('SELECT grade, board FROM users WHERE id = ?').get(studentId) as any;
+        const studentUser = db.prepare('SELECT name, grade, board FROM users WHERE id = ?').get(studentId) as any;
         const studentProfile = db.prepare('SELECT current_grade, current_board FROM student_profiles WHERE id = ?').get(studentId) as any;
         const studentPref = db.prepare('SELECT explanation_depth FROM learning_preferences WHERE user_id = ?').get(studentId) as any;
         const recentTopics = (db.prepare('SELECT topic FROM learning_activity WHERE user_id = ? ORDER BY created_at DESC LIMIT 6').all(studentId) as any[]).map(a => a.topic);
+        const studentName = sanitizeText(body.studentName || studentUser?.name || '', 60);
 
         const studentContext = {
           grade: typeof body.grade === 'number' ? body.grade : (body.level ? parseInt(String(body.level).replace(/\D/g, ''), 10) || null : null) || studentUser?.grade || (studentProfile?.current_grade ? parseInt(String(studentProfile.current_grade).replace(/\D/g, ''), 10) : 10),
@@ -2118,7 +2157,8 @@ export function createAppServer() {
             topic,
             subject: resolvedSubject,
             grade: studentContext.grade,
-            board: studentContext.board
+            board: studentContext.board,
+            studentName
           });
           const textbookMarkdown = buildSinglePageDigitalTextbookMarkdown(workflow);
 
@@ -2295,9 +2335,41 @@ export function createAppServer() {
         const language = sanitizeText(body.language || 'English', 40);
         const speed = Math.min(Math.max(Number(body.speed) || 1.0, 0.5), 2.0);
 
-        const scriptText =
-          rawText ||
-          `Welcome to your STUDYAI audio lesson on ${topic}. Let's walk through the core concept step by step so you can master how ${topic} works and apply it with confidence.`;
+        const studentUser = db.prepare('SELECT name FROM users WHERE id = ?').get(studentId) as any;
+        const studentName = sanitizeText(body.studentName || studentUser?.name || '', 60);
+
+        let scriptText = rawText;
+        if (!scriptText || body.includeIntro || body.mode === 'notes_audio') {
+          const teacherIntro = generateFriendlyPersonalTeacherIntro({
+            studentName,
+            topic,
+            subject: body.subject,
+            mode: 'notes_audio'
+          });
+          if (rawText) {
+            scriptText = `${teacherIntro} ${rawText}`;
+          } else {
+            scriptText = `${teacherIntro} Welcome to your deep audio study session. Let's walk through the core principles, physical mechanisms, and key examination focal points for ${topic}.`;
+          }
+        }
+
+        // If verbalizeDiagrams is requested, append verbal diagram description for listening students
+        if (body.verbalizeDiagrams) {
+          try {
+            const visual = await researchAndRetrieveEducationalVisual(topic, 10, body.subject);
+            const wt = visual?.walkthrough;
+            if (wt) {
+              const rep = wt.whatItRepresents || wt.whatIsShown || visual.description;
+              const flow = wt.arrowIndications || wt.processSequence || 'Energy and components interact systematically';
+              const conclusion = wt.importantConclusion || wt.examTip || 'Check key labels and functions';
+              scriptText += ` Visual Walkthrough: On the diagram, ${rep}. ${flow}. Key takeaway to remember: ${conclusion}.`;
+            }
+          } catch {}
+        }
+
+        if (body.mode === 'notes_audio' || body.cleanSpeech) {
+          scriptText = cleanNotebookTextForAudioSpeech(scriptText, topic);
+        }
 
         const cacheKey = crypto.createHash('sha256').update(`${topic}|${scriptText}|${voice}|${language}|${speed}`).digest('hex');
         const cached = audioAssetCache.get(cacheKey);
@@ -2372,6 +2444,170 @@ export function createAppServer() {
         }
 
         sendJson(res, 200, { ...audioAsset, reusedCache: false });
+        return;
+      }
+
+      // Voice Teacher Lessons (Personal AI Teacher with Synced Educational Visuals)
+      if (pathname === '/api/v1/voice/start-lesson' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const topic = sanitizeText(body.topic || 'Photosynthesis', 180);
+        const grade = typeof body.grade === 'number' ? body.grade : 10;
+        const subject = sanitizeText(body.subject || inferSubjectFromTopic(topic), 60);
+        const mode = sanitizeText(body.mode || 'learning', 40);
+        const voiceName = sanitizeText(body.voice_name || 'Nova (Teacher)', 60);
+
+        const studentUser = db.prepare('SELECT name FROM users WHERE id = ?').get(studentId) as any;
+        const studentName = sanitizeText(body.student_name || body.studentName || studentUser?.name || '', 60);
+
+        const sessionId = `vsession-${crypto.randomUUID().slice(0, 10)}`;
+
+        // Retrieve verified educational visual with 8-point walkthrough
+        const visual = await researchAndRetrieveEducationalVisual(topic, grade, subject);
+
+        // Friendly personal teacher opening
+        const introGreeting = generateFriendlyPersonalTeacherIntro({
+          studentName,
+          topic,
+          subject,
+          mode: 'voice'
+        });
+
+        // 5 Structured Pedagogical Steps
+        const steps = [
+          {
+            title: '1. Overview & Fundamentals',
+            speech: `${introGreeting} Today we are exploring ${topic}. In fundamental terms, this is a cornerstone concept in ${subject}. Let's make sure you understand the core meaning before we break down how it actually operates. Ready to begin?`
+          },
+          {
+            title: '2. Deep Scientific Mechanism',
+            speech: `Let's break down the exact mechanism of ${topic}. Notice how the fundamental parts interact: energy and matter transfer step by step through specific physical and biological rules. In exam questions, examiners love asking about this precise sequence of events.`
+          },
+          {
+            title: '3. Visual & Diagram Interpretation',
+            speech: visual.walkthrough
+              ? `Let's examine the scientific diagram together. On your screen, look closely: ${visual.walkthrough.whatItRepresents || visual.walkthrough.whatIsShown || visual.description}. ${visual.walkthrough.arrowIndications || visual.walkthrough.processSequence || 'Energy and components interact systematically'}. When studying this schematic, always remember: ${visual.walkthrough.importantConclusion || visual.walkthrough.examTip || 'Check key labels and functions'}.`
+              : `Take a look at the scientific schematic on your screen. Notice how every labeled component is positioned and connects directly to the working principles we just discussed.`
+          },
+          {
+            title: '4. Real-World Applications & Examples',
+            speech: `Now, where do we see ${topic} in real everyday life and modern technology? From industrial processes to living ecosystems, the principles of ${topic} govern how systems sustain equilibrium. Can you think of an everyday observation that links to this?`
+          },
+          {
+            title: '5. Exam Mastery & Key Takeaways',
+            speech: `Outstanding effort! For your upcoming examinations, keep these three key points in mind: first, state the exact definition and scientific law; second, always draw and label your diagram accurately; and third, explain cause and effect step by step. You're ready to score full marks!`
+          }
+        ];
+
+        const sessionData = {
+          sessionId,
+          userId: studentId,
+          studentName,
+          topic,
+          subject,
+          grade,
+          mode,
+          voiceName,
+          visual,
+          steps,
+          currentStepIndex: 0,
+          transcript: [{ speaker: 'teacher', text: steps[0].speech, timestamp: new Date().toISOString() }],
+          createdAt: new Date().toISOString()
+        };
+
+        activeVoiceLessons.set(sessionId, sessionData);
+
+        sendJson(res, 200, {
+          session_id: sessionId,
+          teacher_speech: steps[0].speech,
+          step_title: steps[0].title,
+          current_step_index: 0,
+          total_steps: steps.length,
+          synced_visual: {
+            title: visual.title,
+            imageUrl: visual.directImageUrl,
+            svg: visual.directImageUrl?.startsWith('data:image/svg+xml') ? visual.directImageUrl : undefined,
+            diagramType: visual.educationalContext?.visualType || 'labelled_diagram',
+            description: visual.description,
+            walkthrough: visual.walkthrough
+          }
+        });
+        return;
+      }
+
+      if (pathname === '/api/v1/voice/interact' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const sessionId = sanitizeText(body.session_id || '', 80);
+        const studentUtterance = sanitizeText(body.student_utterance || '', 2000);
+
+        const session = activeVoiceLessons.get(sessionId);
+        if (!session) {
+          sendJson(res, 404, { error: 'Voice lesson session expired or not found.' });
+          return;
+        }
+
+        session.transcript.push({
+          speaker: 'student',
+          text: studentUtterance,
+          timestamp: new Date().toISOString()
+        });
+
+        let nextIndex = session.currentStepIndex;
+        const lower = studentUtterance.toLowerCase();
+        if (
+          lower.includes('next') ||
+          lower.includes('yes') ||
+          lower.includes('ready') ||
+          lower.includes('understand') ||
+          lower.includes('go on') ||
+          lower.includes('tell me') ||
+          lower.includes('explain') ||
+          lower.includes('continue') ||
+          studentUtterance.length > 20
+        ) {
+          if (nextIndex < session.steps.length - 1) {
+            nextIndex++;
+            session.currentStepIndex = nextIndex;
+          }
+        }
+
+        const step = session.steps[nextIndex];
+        const teacherSpeech =
+          nextIndex > 0
+            ? `That's a thoughtful point. ${step.speech}`
+            : step.speech;
+
+        session.transcript.push({
+          speaker: 'teacher',
+          text: teacherSpeech,
+          timestamp: new Date().toISOString()
+        });
+
+        sendJson(res, 200, {
+          session_id: sessionId,
+          teacher_speech: teacherSpeech,
+          step_title: step.title,
+          current_step_index: nextIndex,
+          total_steps: session.steps.length,
+          synced_visual: {
+            title: session.visual.title,
+            imageUrl: session.visual.directImageUrl,
+            svg: session.visual.directImageUrl?.startsWith('data:image/svg+xml') ? session.visual.directImageUrl : undefined,
+            diagramType: session.visual.educationalContext?.visualType || 'labelled_diagram',
+            description: session.visual.description,
+            walkthrough: session.visual.walkthrough
+          }
+        });
+        return;
+      }
+
+      if (pathname === '/api/v1/voice/control' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const sessionId = sanitizeText(body.session_id || '', 80);
+        const action = sanitizeText(body.action || 'stop', 30);
+        if (action === 'stop' && sessionId) {
+          activeVoiceLessons.delete(sessionId);
+        }
+        sendJson(res, 200, { status: 'ok', session_id: sessionId, action });
         return;
       }
 

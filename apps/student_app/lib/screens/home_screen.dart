@@ -5,7 +5,7 @@ import '../widgets/continue_learning_card.dart';
 import '../widgets/subject_card.dart';
 import '../widgets/activity_chart.dart';
 import '../widgets/upcoming_exam_card.dart';
-import '../widgets/interactive_3d_dialog.dart';
+import '../widgets/voice_teacher_dialog.dart';
 
 class HomeScreen extends StatelessWidget {
   final StudentAppState state;
@@ -38,7 +38,13 @@ class HomeScreen extends StatelessWidget {
               state.setNavIndex(2); // Switch to AI Tutor
             },
             onOpen3DLab: () {
-              Interactive3DDialog.show(context, modelTitle: 'plant_cell', initialPart: 'chloroplast');
+              VoiceTeacherDialog.show(
+                context,
+                topic: state.activeTopic,
+                grade: 10,
+                subject: state.activeSubject,
+                apiClient: state.apiClient,
+              );
             },
           ),
           const SizedBox(height: 28),
@@ -140,7 +146,7 @@ class HomeScreen extends StatelessWidget {
     final actions = [
       {'title': 'AI Tutor', 'icon': Icons.psychology_rounded, 'color': StudyAiColors.primary, 'tab': 2},
       {'title': 'AI Notes', 'icon': Icons.menu_book_rounded, 'color': StudyAiColors.cyanAccent, 'tab': 1},
-      {'title': '3D Science Lab', 'icon': Icons.view_in_ar_rounded, 'color': StudyAiColors.greenAccent, 'tab': 3},
+      {'title': 'Audio Lessons', 'icon': Icons.headphones_rounded, 'color': StudyAiColors.greenAccent, 'tab': 2},
       {'title': 'Space Shooter', 'icon': Icons.rocket_launch_rounded, 'color': StudyAiColors.purpleAccent, 'tab': 3},
       {'title': 'Library', 'icon': Icons.folder_special_rounded, 'color': StudyAiColors.amberAccent, 'tab': 3},
     ];
@@ -164,8 +170,14 @@ class HomeScreen extends StatelessWidget {
               return StudyAiGlassCard(
                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                 onTap: () {
-                  if (act['title'] == '3D Science Lab') {
-                    Interactive3DDialog.show(context, modelTitle: 'solar_system');
+                  if (act['title'] == 'Audio Lessons') {
+                    VoiceTeacherDialog.show(
+                      context,
+                      topic: state.activeTopic,
+                      grade: 10,
+                      subject: state.activeSubject,
+                      apiClient: state.apiClient,
+                    );
                   } else {
                     state.setNavIndex(act['tab'] as int);
                   }

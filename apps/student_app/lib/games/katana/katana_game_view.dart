@@ -37,6 +37,8 @@ class _KatanaGameViewState extends State<KatanaGameView> with SingleTickerProvid
   KatanaWarriorState _warriorState = KatanaWarriorState.idle;
   KatanaEnemyState _enemyState = KatanaEnemyState.idle;
   double _actionProgress = 0.0;
+  int _targetedEnemyIndex = 0;
+  final Set<int> _defeatedEnemies = {};
 
   // Particle systems
   final List<FireflyParticle> _fireflies = [];
@@ -101,50 +103,42 @@ class _KatanaGameViewState extends State<KatanaGameView> with SingleTickerProvid
     _startBattleSession();
   }
 
+  @override
+  void dispose() {
+    _tickerController.removeListener(_onTick);
+    _tickerController.dispose();
+    super.dispose();
+  }
+
   void _onTick() {
     setState(() {
       _animationTime += 0.016;
-      _cameraX += 0.8;
+      _cameraX += 0.6;
 
-      // Update fireflies
-      for (final f in _fireflies) {
-        f.x += f.speedX;
-        f.y += f.speedY;
-        if (f.x < -20) f.x = 1220;
-        if (f.x > 1220) f.x = -20;
-        if (f.y < 40) f.y = 480;
-        if (f.y > 520) f.y = 50;
-      }
-
-      // Update slash particles
-      for (int i = _slashParticles.length - 1; i >= 0; i--) {
-        final sp = _slashParticles[i];
-        sp.x += sp.vx;
-        sp.y += sp.vy;
-        sp.life -= 0.04;
-        if (sp.life <= 0) {
-          _slashParticles.removeAt(i);
-        }
-      }
-
-      // Animation transition timers
+      // Handle warrior action animation progress
       if (_warriorState == KatanaWarriorState.slashing) {
-        _actionProgress += 0.06;
+        _actionProgress += 0.05;
         if (_actionProgress >= 1.0) {
           _warriorState = KatanaWarriorState.idle;
+          _enemyState = KatanaEnemyState.idle;
           _actionProgress = 0.0;
         }
       } else if (_warriorState == KatanaWarriorState.hit) {
         _actionProgress += 0.05;
-        if (_actionProgress >= 1.0) {
+        if (_actionProgress >= 0.8) {
           _warriorState = KatanaWarriorState.idle;
           _actionProgress = 0.0;
         }
       }
 
-      if (_enemyState == KatanaEnemyState.hit) {
-        if (_actionProgress >= 0.8) {
-          _enemyState = KatanaEnemyState.idle;
+      // Update slash particles
+      for (int i = _slashParticles.length - 1; i >= 0; i--) {
+        final p = _slashParticles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.04;
+        if (p.life <= 0) {
+          _slashParticles.removeAt(i);
         }
       }
     });
@@ -168,6 +162,7 @@ class _KatanaGameViewState extends State<KatanaGameView> with SingleTickerProvid
         if (res['currentQuestion'] != null) {
           _currentQuestion = KatanaQuestion.fromJson(res['currentQuestion'] as Map<String, dynamic>);
         }
+        _defeatedEnemies.clear();
         _isLoading = false;
       });
     } catch (_) {
@@ -179,21 +174,23 @@ class _KatanaGameViewState extends State<KatanaGameView> with SingleTickerProvid
           subject: widget.subject,
           topic: widget.topic,
           prompt: 'During photosynthesis in green plants, which molecule is split to release oxygen gas into the atmosphere?',
-          options: ['Water (H2O)', 'Carbon dioxide (CO2)', 'Glucose (C6H12O6)'],
+          options: ['Carbon dioxide (CO2)', 'Water (H2O)', 'Glucose (C6H12O6)', 'Adenosine triphosphate (ATP)'],
           difficulty: 'medium',
           conceptTag: 'Photolysis & Light Reactions',
           questionType: 'mcq_battle',
         );
+        _defeatedEnemies.clear();
         _isLoading = false;
       });
     }
   }
 
-  Future<void> _handleSelectOption(String option) async {
+  Future<void> _handleSelectOption(String option, int optionIndex) async {
     if (_isCheckingAnswer || _currentQuestion == null || _isGameOver) return;
 
     setState(() {
       _selectedOption = option;
+      _targetedEnemyIndex = optionIndex;
       _isCheckingAnswer = true;
     });
 
@@ -245,6 +242,7 @@ class _KatanaGameViewState extends State<KatanaGameView> with SingleTickerProvid
         _enemyState = KatanaEnemyState.hit;
         _actionProgress = 0.0;
         _enemyHp = math.max(0, _enemyHp - strike.damageDealt);
+        _defeatedEnemies.add(_targetedEnemyIndex);
 
         // Spawn glowing orange & cyan slash sparks
         final rnd = math.Random();
@@ -270,6 +268,7 @@ class _KatanaGameViewState extends State<KatanaGameView> with SingleTickerProvid
           // Advance to next wave
           _currentWave++;
           _enemyHp = _isBoss ? 250 : 100;
+          _defeatedEnemies.clear();
           _currentQuestion = strike.nextQuestion ?? _currentQuestion;
         } else {
           // Stage cleared!
@@ -278,16 +277,14 @@ class _KatanaGameViewState extends State<KatanaGameView> with SingleTickerProvid
       } else if (_playerHp <= 0) {
         // Player defeated
         _triggerDefeat();
-      } else {
-        // Next question
-        if (strike.nextQuestion != null) {
-          _currentQuestion = strike.nextQuestion;
-        }
+      } else if (strike.nextQuestion != null && strike.isCorrect) {
+        _defeatedEnemies.clear();
+        _currentQuestion = strike.nextQuestion;
       }
     });
   }
 
-  Future<void> _triggerVictory() async {
+  void _triggerVictory() async {
     setState(() {
       _isGameOver = true;
       _isVictory = true;
@@ -311,41 +308,45 @@ class _KatanaGameViewState extends State<KatanaGameView> with SingleTickerProvid
     }
   }
 
-  Future<void> _triggerDefeat() async {
+  void _triggerDefeat() {
     setState(() {
       _isGameOver = true;
       _isVictory = false;
       _warriorState = KatanaWarriorState.defeat;
     });
-
-    try {
-      await widget.apiClient.completeKatanaSession(
-        sessionId: _sessionId ?? 'local-sess',
-        victory: false,
-      );
-    } catch (_) {}
   }
 
-  @override
-  void dispose() {
-    _tickerController.dispose();
-    super.dispose();
+  void _handleRestart() {
+    setState(() {
+      _isGameOver = false;
+      _isVictory = false;
+      _playerHp = 100;
+      _enemyHp = _isBoss ? 250 : 100;
+      _currentWave = 1;
+      _comboCount = 0;
+      _score = 0;
+      _warriorState = KatanaWarriorState.idle;
+      _lastExplanation = null;
+      _lastAnswerCorrect = null;
+      _defeatedEnemies.clear();
+    });
+    _startBattleSession();
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Container(
-        color: const Color(0xFF060B19),
-        child: const Center(
+      return Scaffold(
+        backgroundColor: const Color(0xFF060B19),
+        body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: [
+            children: const [
               CircularProgressIndicator(color: StudyAiColors.primary),
               SizedBox(height: 16),
               Text(
-                'Entering the Moonlit Bamboo Forest...',
-                style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
+                'Forging Wisdom Katana Arena...',
+                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
               ),
             ],
           ),
@@ -357,7 +358,7 @@ class _KatanaGameViewState extends State<KatanaGameView> with SingleTickerProvid
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // 1. 2.5D Canvas Render Layer (Parallax Bamboo Forest, Samurai & Enemy)
+          // 1. 3D Fantasy Canvas Render Layer (Parallax Forest, 3D Samurai & 4 Option Enemies)
           Positioned.fill(
             child: CustomPaint(
               painter: ParallaxForestPainter(
@@ -366,18 +367,21 @@ class _KatanaGameViewState extends State<KatanaGameView> with SingleTickerProvid
                 warriorState: _warriorState,
                 enemyState: _enemyState,
                 warriorActionProgress: _actionProgress,
+                targetedEnemyIndex: _targetedEnemyIndex,
+                defeatedEnemies: _defeatedEnemies,
                 fireflies: _fireflies,
                 slashParticles: _slashParticles,
                 isBoss: _isBoss,
                 enemyHpRatio: _enemyMaxHp > 0 ? _enemyHp / _enemyMaxHp : 0.0,
                 playerHpRatio: _playerMaxHp > 0 ? _playerHp / _playerMaxHp : 0.0,
+                optionLetters: const ['A', 'B', 'C', 'D'],
               ),
             ),
           ),
 
           // 2. Top Tactical HUD (HP Bars, Combo, Wave, Exit)
           Positioned(
-            top: 24,
+            top: 20,
             left: 20,
             right: 20,
             child: Row(
@@ -388,7 +392,7 @@ class _KatanaGameViewState extends State<KatanaGameView> with SingleTickerProvid
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A).withOpacity(0.85),
+                    color: const Color(0xFF0F172A).withOpacity(0.88),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: StudyAiColors.primary.withOpacity(0.4)),
                   ),
@@ -399,7 +403,7 @@ class _KatanaGameViewState extends State<KatanaGameView> with SingleTickerProvid
                         children: [
                           const Icon(Icons.shield_rounded, size: 16, color: StudyAiColors.cyanAccent),
                           const SizedBox(width: 6),
-                          const Text('WARRIOR', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white)),
+                          const Text('KATANA WARRIOR', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white)),
                           if (_comboCount > 1) ...[
                             const SizedBox(width: 10),
                             Container(
@@ -444,7 +448,7 @@ class _KatanaGameViewState extends State<KatanaGameView> with SingleTickerProvid
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
+                    color: Colors.black.withOpacity(0.75),
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(color: Colors.white12),
                   ),
@@ -467,7 +471,7 @@ class _KatanaGameViewState extends State<KatanaGameView> with SingleTickerProvid
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0F172A).withOpacity(0.85),
+                        color: const Color(0xFF0F172A).withOpacity(0.88),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: Colors.red.withOpacity(0.4)),
                       ),
@@ -475,13 +479,13 @@ class _KatanaGameViewState extends State<KatanaGameView> with SingleTickerProvid
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Row(
-                            children: [
+                            children: const [
                               Text(
-                                _isBoss ? 'SHADOW WARLORD' : 'SHADOW SPIRIT',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.redAccent),
+                                '4 SHADOW SQUAD',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.redAccent),
                               ),
-                              const SizedBox(width: 6),
-                              const Icon(Icons.flash_on_rounded, size: 16, color: Colors.redAccent),
+                              SizedBox(width: 6),
+                              Icon(Icons.flash_on_rounded, size: 16, color: Colors.redAccent),
                             ],
                           ),
                           const SizedBox(height: 6),
@@ -526,30 +530,29 @@ class _KatanaGameViewState extends State<KatanaGameView> with SingleTickerProvid
             ),
           ),
 
-          // 3. Bottom Tactical Question Card & 3-Choice Combat Actions
+          // 3. Top-Pinned Question Card HUD (Leaves Battlefield Center Fully Clear)
           if (!_isGameOver && _currentQuestion != null)
             Positioned(
-              bottom: 24,
-              left: 24,
-              right: 24,
+              top: 86,
+              left: 20,
+              right: 20,
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 820),
+                  constraints: const BoxConstraints(maxWidth: 860),
                   child: Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                     decoration: BoxDecoration(
                       color: const Color(0xFF0F172A).withOpacity(0.92),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: StudyAiColors.primary.withOpacity(0.6), width: 1.5),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: StudyAiColors.primary, width: 1.5),
                       boxShadow: [
-                        BoxShadow(color: StudyAiColors.primary.withOpacity(0.2), blurRadius: 24, offset: const Offset(0, 6)),
+                        BoxShadow(color: Colors.black.withOpacity(0.6), blurRadius: 20, offset: const Offset(0, 6)),
                       ],
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Tag & Question Header
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -564,103 +567,40 @@ class _KatanaGameViewState extends State<KatanaGameView> with SingleTickerProvid
                                 style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: StudyAiColors.primary),
                               ),
                             ),
-                            Text('Score: $_score', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white70)),
+                            Text('Score: $_score', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: StudyAiColors.cyanAccent)),
                           ],
                         ),
-                        const SizedBox(height: 10),
-
-                        // Prompt
+                        const SizedBox(height: 8),
                         Text(
                           _currentQuestion!.prompt,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white, height: 1.4),
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white, height: 1.35),
                         ),
-                        const SizedBox(height: 16),
-
-                        // 3 Tactical Answer Options
-                        Column(
-                          children: _currentQuestion!.options.map((opt) {
-                            final isSelected = _selectedOption == opt;
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(12),
-                                  onTap: () => _handleSelectOption(opt),
-                                  child: Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? StudyAiColors.primary.withOpacity(0.25)
-                                          : const Color(0xFF1E293B).withOpacity(0.8),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: isSelected ? StudyAiColors.primary : Colors.white12,
-                                        width: isSelected ? 1.5 : 1.0,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          width: 28,
-                                          height: 28,
-                                          decoration: BoxDecoration(
-                                            color: isSelected ? StudyAiColors.primary : Colors.white10,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Center(
-                                            child: Icon(
-                                              isSelected ? Icons.sports_martial_arts_rounded : Icons.radio_button_unchecked_rounded,
-                                              size: 14,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Text(
-                                            opt,
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                                              color: isSelected ? StudyAiColors.primaryLight : Colors.white,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-
-                        // Educational Explanation Popup
                         if (_lastExplanation != null) ...[
                           const SizedBox(height: 10),
                           Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: (_lastAnswerCorrect == true ? const Color(0xFF065F46) : const Color(0xFF991B1B)).withOpacity(0.4),
+                              color: (_lastAnswerCorrect == true)
+                                  ? const Color(0xFF065F46).withOpacity(0.55)
+                                  : const Color(0xFF991B1B).withOpacity(0.55),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: _lastAnswerCorrect == true ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                                color: (_lastAnswerCorrect == true) ? const Color(0xFF10B981) : const Color(0xFFEF4444),
                               ),
                             ),
                             child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Icon(
-                                  _lastAnswerCorrect == true ? Icons.check_circle_rounded : Icons.info_outline_rounded,
-                                  size: 18,
-                                  color: _lastAnswerCorrect == true ? const Color(0xFF34D399) : const Color(0xFFF87171),
+                                  (_lastAnswerCorrect == true) ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                                  color: (_lastAnswerCorrect == true) ? const Color(0xFF34D399) : const Color(0xFFF87171),
+                                  size: 16,
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     _lastExplanation!,
-                                    style: const TextStyle(fontSize: 12, color: Colors.white, height: 1.4),
+                                    style: const TextStyle(fontSize: 12, color: Colors.white, height: 1.35),
                                   ),
                                 ),
                               ],
@@ -674,105 +614,191 @@ class _KatanaGameViewState extends State<KatanaGameView> with SingleTickerProvid
               ),
             ),
 
-          // 4. Victory / Defeat Modal
-          if (_isGameOver)
-            Container(
-              color: Colors.black.withOpacity(0.85),
+          // 4. Tactical 4-Option Attack Bar at Bottom
+          if (!_isGameOver && _currentQuestion != null)
+            Positioned(
+              bottom: 24,
+              left: 20,
+              right: 20,
               child: Center(
-                child: Container(
-                  width: 440,
-                  padding: const EdgeInsets.all(28),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: _isVictory ? StudyAiColors.primary : Colors.red, width: 2),
-                    boxShadow: [
-                      BoxShadow(color: (_isVictory ? StudyAiColors.primary : Colors.red).withOpacity(0.25), blurRadius: 32),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _isVictory ? Icons.emoji_events_rounded : Icons.refresh_rounded,
-                        size: 56,
-                        color: _isVictory ? const Color(0xFFF59E0B) : Colors.redAccent,
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        _isVictory ? 'WISDOM STRIKE VICTORY!' : 'SPIRIT DEPLETED',
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _isVictory
-                            ? 'You shattered the shadow spirits with precise curriculum mastery!'
-                            : 'Review weak concepts and reforge your spirit to conquer this challenge.',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 13, color: StudyAiColors.textMuted, height: 1.4),
-                      ),
-                      const SizedBox(height: 20),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 880),
+                  child: Row(
+                    children: _currentQuestion!.options.asMap().entries.map((entry) {
+                      final idx = entry.key;
+                      final opt = entry.value;
+                      final isSelected = _selectedOption == opt;
+                      final letter = String.fromCharCode(65 + idx);
 
-                      if (_isVictory) ...[
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(3, (idx) {
-                            return Icon(
-                              Icons.star_rounded,
-                              size: 36,
-                              color: idx < _earnedStars ? const Color(0xFFF59E0B) : Colors.white12,
-                            );
-                          }),
-                        ),
-                        const SizedBox(height: 12),
-                        Text('+$_earnedXp XP Earned', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: StudyAiColors.primary)),
-                        const SizedBox(height: 20),
-                      ],
-
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () {
-                                if (widget.onExit != null) {
-                                  widget.onExit!();
-                                } else {
-                                  Navigator.of(context).pop();
-                                }
-                              },
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                side: const BorderSide(color: Colors.white24),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      return Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(14),
+                              onTap: _isCheckingAnswer ? null : () => _handleSelectOption(opt, idx),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? StudyAiColors.primary.withOpacity(0.35)
+                                      : const Color(0xFF0F172A).withOpacity(0.9),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: isSelected ? StudyAiColors.primary : Colors.white24,
+                                    width: isSelected ? 2 : 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: isSelected ? StudyAiColors.primary.withOpacity(0.3) : Colors.black45,
+                                      blurRadius: 10,
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 24,
+                                      height: 24,
+                                      decoration: BoxDecoration(
+                                        color: isSelected ? StudyAiColors.primary : Colors.white12,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          letter,
+                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.white),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        opt,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              child: const Text('Back to Library'),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  _playerHp = 100;
-                                  _enemyHp = _isBoss ? 250 : 100;
-                                  _isGameOver = false;
-                                  _isVictory = false;
-                                  _currentWave = 1;
-                                  _startBattleSession();
-                                });
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: StudyAiColors.primary,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+            ),
+
+          // 5. Victory / Defeat Overlay
+          if (_isGameOver)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.85),
+                child: Center(
+                  child: Container(
+                    width: 440,
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: _isVictory ? StudyAiColors.primary : Colors.redAccent,
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _isVictory
+                              ? StudyAiColors.primary.withOpacity(0.3)
+                              : Colors.redAccent.withOpacity(0.3),
+                          blurRadius: 40,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _isVictory ? Icons.emoji_events_rounded : Icons.replay_rounded,
+                          size: 64,
+                          color: _isVictory ? Colors.amber : Colors.redAccent,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _isVictory ? 'WISDOM BATTLE VICTORY!' : 'SPIRIT DEPLETED',
+                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _isVictory
+                              ? 'Your katana strikes vanquished the shadow warriors with flawless academic understanding.'
+                              : 'Review concept explanations and challenge the shadow warriors again.',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 13, color: Colors.white70, height: 1.4),
+                        ),
+                        if (_isVictory) ...[
+                          const SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(
+                              3,
+                              (i) => Icon(
+                                Icons.star_rounded,
+                                size: 32,
+                                color: (i < _earnedStars) ? Colors.amber : Colors.white24,
                               ),
-                              child: const Text('Battle Again', style: TextStyle(fontWeight: FontWeight.w800)),
                             ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '+$_earnedXp XP Earned',
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: StudyAiColors.primary),
                           ),
                         ],
-                      ),
-                    ],
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: Colors.white24),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                ),
+                                onPressed: () {
+                                  if (widget.onExit != null) {
+                                    widget.onExit!();
+                                  } else {
+                                    Navigator.of(context).pop();
+                                  }
+                                },
+                                child: const Text('Exit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: StudyAiColors.primary,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                ),
+                                onPressed: _handleRestart,
+                                child: const Text('Battle Again', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

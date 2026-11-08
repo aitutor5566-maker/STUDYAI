@@ -180,13 +180,25 @@ export class KatanaEngine {
     board: string;
     count: number;
   }) {
-    const rows = db.prepare(`
+    // 1. Prioritize exact topic matching first (Zero Topic Mismatch)
+    let rows = db.prepare(`
       SELECT id, subject, topic, prompt, options_json, difficulty, concept_tag, question_type
       FROM katana_question_bank
-      WHERE subject = ? OR topic = ?
+      WHERE LOWER(topic) = LOWER(?) OR LOWER(topic) LIKE LOWER(?)
       ORDER BY RANDOM()
       LIMIT ?
-    `).all(params.subject, params.topic, params.count) as any[];
+    `).all(params.topic, `%${params.topic}%`, params.count) as any[];
+
+    // 2. If no questions match specific topic, fallback to subject
+    if (!rows || rows.length === 0) {
+      rows = db.prepare(`
+        SELECT id, subject, topic, prompt, options_json, difficulty, concept_tag, question_type
+        FROM katana_question_bank
+        WHERE subject = ?
+        ORDER BY RANDOM()
+        LIMIT ?
+      `).all(params.subject, params.count) as any[];
+    }
 
     if (!rows || rows.length === 0) {
       // Fallback verified starter question

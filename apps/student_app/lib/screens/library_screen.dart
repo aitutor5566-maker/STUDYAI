@@ -40,7 +40,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Explore interactive 3D simulations, curriculum textbooks, scientific diagrams, and arcade learning games',
+            'Explore verified curriculum textbooks, scientific diagrams, audio lessons, and arcade learning games',
             style: TextStyle(fontSize: 13, color: StudyAiColors.textMuted),
           ),
           const SizedBox(height: 20),
@@ -49,7 +49,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: ['All', 'Weekly Examinations & Mock Tests', '3D Science Models', 'Curriculum Textbooks', 'Games Arcade'].map((cat) {
+              children: ['All', 'Weekly Examinations & Mock Tests', 'Scientific Diagrams & Visuals', 'Curriculum Textbooks', 'Games Arcade'].map((cat) {
                 final isSelected = (_selectedCategory == cat);
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
@@ -351,13 +351,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
             const SizedBox(height: 24),
           ],
 
-          // 1. 3D Science Models Grid
-          if (_selectedCategory == 'All' || _selectedCategory == '3D Science Models') ...[
+          // 1. Scientific Visuals & Diagrams Grid
+          if (_selectedCategory == 'All' || _selectedCategory == 'Scientific Diagrams & Visuals') ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('3D Science Simulations (Three.js)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
-                Text('${_models.length} models', style: const TextStyle(fontSize: 12, color: StudyAiColors.primary)),
+                const Text('Curriculum Scientific Visuals', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+                Text('${_models.length} visuals', style: const TextStyle(fontSize: 12, color: StudyAiColors.primary)),
               ],
             ),
             const SizedBox(height: 12),

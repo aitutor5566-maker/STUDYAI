@@ -132,8 +132,8 @@ class ContinueLearningCard extends StatelessWidget {
                       const SizedBox(width: 12),
                       OutlinedButton.icon(
                         onPressed: onOpen3DLab,
-                        icon: const Icon(Icons.view_in_ar_rounded, size: 18, color: Colors.white),
-                        label: const Text('Open 3D Model', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white)),
+                        icon: const Icon(Icons.headphones_rounded, size: 18, color: Colors.white),
+                        label: const Text('Voice Lesson', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white)),
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Colors.white, width: 1.5),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
