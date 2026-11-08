@@ -833,10 +833,119 @@ export function initDatabase() {
       created_at TEXT NOT NULL,
       UNIQUE(user_id, diagram_id)
     );
+
+    -- KATANA: SHADOW WARRIORS — THE WISDOM BATTLE Tables
+    CREATE TABLE IF NOT EXISTS katana_sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      mode TEXT NOT NULL, -- 'campaign', 'practice', 'endless'
+      environment TEXT NOT NULL DEFAULT 'moonlit_bamboo_forest',
+      subject TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      grade INTEGER NOT NULL DEFAULT 10,
+      board TEXT NOT NULL DEFAULT 'CBSE',
+      current_stage INTEGER NOT NULL DEFAULT 1,
+      current_wave INTEGER NOT NULL DEFAULT 1,
+      player_hp INTEGER NOT NULL DEFAULT 100,
+      player_max_hp INTEGER NOT NULL DEFAULT 100,
+      spirit_energy INTEGER NOT NULL DEFAULT 0,
+      score INTEGER NOT NULL DEFAULT 0,
+      combo_count INTEGER NOT NULL DEFAULT 0,
+      accuracy_percent INTEGER NOT NULL DEFAULT 0,
+      xp_earned INTEGER NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'in_progress', -- 'in_progress', 'victory', 'defeat', 'abandoned'
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS katana_question_bank (
+      id TEXT PRIMARY KEY,
+      subject TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      grade INTEGER NOT NULL,
+      board TEXT NOT NULL,
+      question_type TEXT NOT NULL, -- 'mcq_battle', 'fill_blank', 'true_false', 'concept_match', 'boss_challenge'
+      prompt TEXT NOT NULL,
+      options_json TEXT NOT NULL,
+      correct_answer_hash TEXT NOT NULL,
+      explanation TEXT NOT NULL,
+      difficulty TEXT NOT NULL, -- 'easy', 'medium', 'hard'
+      concept_tag TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS katana_attempts (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      question_id TEXT NOT NULL,
+      student_answer TEXT NOT NULL,
+      is_correct INTEGER NOT NULL,
+      damage_dealt INTEGER NOT NULL DEFAULT 0,
+      combo_count INTEGER NOT NULL DEFAULT 0,
+      time_taken_ms INTEGER NOT NULL DEFAULT 0,
+      concept_tag TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS katana_topic_mastery (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      mastery_score INTEGER NOT NULL DEFAULT 0,
+      total_attempts INTEGER NOT NULL DEFAULT 0,
+      correct_attempts INTEGER NOT NULL DEFAULT 0,
+      weak_concepts_json TEXT NOT NULL DEFAULT '[]',
+      last_played_at TEXT NOT NULL,
+      UNIQUE(user_id, subject, topic)
+    );
+
+    CREATE TABLE IF NOT EXISTS katana_revision_queue (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      weak_concept TEXT NOT NULL,
+      priority TEXT NOT NULL DEFAULT 'high',
+      attempts_failed INTEGER NOT NULL DEFAULT 1,
+      resolved INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS katana_inventory (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      item_type TEXT NOT NULL, -- 'outfit', 'katana_blade', 'armor', 'aura'
+      item_id TEXT NOT NULL,
+      item_name TEXT NOT NULL,
+      rarity TEXT NOT NULL DEFAULT 'common',
+      is_equipped INTEGER NOT NULL DEFAULT 0,
+      unlocked_at TEXT NOT NULL,
+      UNIQUE(user_id, item_type, item_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS katana_level_progress (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      environment_id TEXT NOT NULL,
+      stage_index INTEGER NOT NULL,
+      stars INTEGER NOT NULL DEFAULT 0,
+      high_score INTEGER NOT NULL DEFAULT 0,
+      cleared INTEGER NOT NULL DEFAULT 0,
+      cleared_at TEXT,
+      UNIQUE(user_id, environment_id, stage_index)
+    );
   `);
 
   try {
     db.prepare("ALTER TABLE notes ADD COLUMN design_mode TEXT DEFAULT 'handwritten'").run();
+  } catch {
+    // column already exists
+  }
+
+  try {
+    db.prepare("ALTER TABLE users ADD COLUMN xp INTEGER DEFAULT 1450").run();
   } catch {
     // column already exists
   }
@@ -847,6 +956,7 @@ export function initDatabase() {
   seedLanguageDataIfEmpty();
   seedEducationalGamesIfEmpty();
   seed3DDiagramsIfEmpty();
+  seedKatanaDataIfEmpty();
   try {
     db.prepare("UPDATE supported_languages SET script_name = 'ひらがな, カタカナ & 漢字 (Hiragana, Katakana & Kanji)' WHERE code = 'ja'").run();
   } catch {}
@@ -2018,6 +2128,174 @@ function seed3DDiagramsIfEmpty() {
         c.color
       );
     }
+  }
+}
+
+function seedKatanaDataIfEmpty() {
+  const existingItem = db.prepare('SELECT id FROM katana_inventory LIMIT 1').get();
+  if (existingItem) return;
+
+  const now = new Date().toISOString();
+
+  // 1. Seed Starter Cosmetics for Vishwak and default students
+  const insertInventory = db.prepare(`
+    INSERT OR IGNORE INTO katana_inventory (id, user_id, item_type, item_id, item_name, rarity, is_equipped, unlocked_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const initialItems = [
+    { id: 'inv-1', user: 'student-vishwak', type: 'outfit', itemId: 'outfit_novice_ronin', name: 'Novice Shadow Ronin Garb', rarity: 'common', equipped: 1 },
+    { id: 'inv-2', user: 'student-vishwak', type: 'katana_blade', itemId: 'katana_steel_whisper', name: 'Steel Whisper Katana', rarity: 'common', equipped: 1 },
+    { id: 'inv-3', user: 'student-vishwak', type: 'aura', itemId: 'aura_cherry_blossom', name: 'Floating Sakura Petals', rarity: 'common', equipped: 1 },
+    { id: 'inv-4', user: 'student-vishwak', type: 'outfit', itemId: 'outfit_crimson_samurai', name: 'Crimson Sakura Armor', rarity: 'rare', equipped: 0 },
+    { id: 'inv-5', user: 'student-vishwak', type: 'katana_blade', itemId: 'katana_flame_edge', name: 'Flame Edge Katana', rarity: 'rare', equipped: 0 },
+  ];
+
+  for (const item of initialItems) {
+    insertInventory.run(item.id, item.user, item.type, item.itemId, item.name, item.rarity, item.equipped, now);
+  }
+
+  // 2. Seed Level Progress for Moonlit Bamboo Forest
+  const insertProgress = db.prepare(`
+    INSERT OR IGNORE INTO katana_level_progress (id, user_id, environment_id, stage_index, stars, high_score, cleared, cleared_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  insertProgress.run('prog-1', 'student-vishwak', 'moonlit_bamboo_forest', 1, 3, 2400, 1, now);
+  insertProgress.run('prog-2', 'student-vishwak', 'moonlit_bamboo_forest', 2, 2, 1850, 1, now);
+  insertProgress.run('prog-3', 'student-vishwak', 'moonlit_bamboo_forest', 3, 0, 0, 0, null);
+
+  // 3. Seed Topic Mastery
+  const insertMastery = db.prepare(`
+    INSERT OR IGNORE INTO katana_topic_mastery (id, user_id, subject, topic, mastery_score, total_attempts, correct_attempts, weak_concepts_json, last_played_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  insertMastery.run(
+    'mast-1',
+    'student-vishwak',
+    'Science',
+    'Photosynthesis',
+    88,
+    25,
+    22,
+    JSON.stringify(['Photophosphorylation energy yield']),
+    now
+  );
+
+  insertMastery.run(
+    'mast-2',
+    'student-vishwak',
+    'Science',
+    'Structure of the Human Heart',
+    92,
+    30,
+    28,
+    JSON.stringify([]),
+    now
+  );
+
+  // 4. Seed Verified Starter Combat Questions in Question Bank
+  const insertQuestion = db.prepare(`
+    INSERT OR IGNORE INTO katana_question_bank (id, subject, topic, grade, board, question_type, prompt, options_json, correct_answer_hash, explanation, difficulty, concept_tag, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const initialQuestions = [
+    {
+      id: 'kq-photo-1',
+      subject: 'Science',
+      topic: 'Photosynthesis',
+      grade: 10,
+      board: 'CBSE',
+      type: 'mcq_battle',
+      prompt: 'During the light-dependent reactions of photosynthesis, which molecule undergoes photolysis to release oxygen gas?',
+      options: ['Carbon dioxide (CO2)', 'Water (H2O)', 'Glucose (C6H12O6)', 'Adenosine triphosphate (ATP)'],
+      correct: 'Water (H2O)',
+      explanation: 'Photolysis splits water (2H2O -> 4H+ + 4e- + O2) in the thylakoid lumen, releasing gaseous oxygen as a byproduct.',
+      difficulty: 'medium',
+      tag: 'Photolysis & Light Reactions'
+    },
+    {
+      id: 'kq-photo-2',
+      subject: 'Science',
+      topic: 'Photosynthesis',
+      grade: 10,
+      board: 'CBSE',
+      type: 'mcq_battle',
+      prompt: 'Which internal sub-structure within the chloroplast houses the chlorophyll pigments that capture sunlight?',
+      options: ['Thylakoid membrane', 'Stroma fluid', 'Outer membrane pores', 'Ribosomal matrix'],
+      correct: 'Thylakoid membrane',
+      explanation: 'Chlorophyll molecules are embedded in the thylakoid membranes arranged in stacks called grana.',
+      difficulty: 'easy',
+      tag: 'Chloroplast Anatomy'
+    },
+    {
+      id: 'kq-heart-1',
+      subject: 'Science',
+      topic: 'Structure of the Human Heart',
+      grade: 10,
+      board: 'CBSE',
+      type: 'mcq_battle',
+      prompt: 'Why is the muscular wall of the left ventricle significantly thicker than that of the right ventricle?',
+      options: [
+        'It must pump blood to the entire systemic body under high pressure',
+        'It stores deoxygenated blood awaiting oxygenation',
+        'It connects directly to the pulmonary veins without valves',
+        'It absorbs metabolic waste directly from surrounding capillaries'
+      ],
+      correct: 'It must pump blood to the entire systemic body under high pressure',
+      explanation: 'The left ventricle pumps oxygenated blood through the aorta into the entire systemic circulation against high peripheral vascular resistance.',
+      difficulty: 'medium',
+      tag: 'Ventricular Myocardium & Pressures'
+    },
+    {
+      id: 'kq-force-1',
+      subject: 'Physics',
+      topic: 'Laws of Motion',
+      grade: 9,
+      board: 'CBSE',
+      type: 'mcq_battle',
+      prompt: 'According to Newton’s Second Law of Motion, what is the force required to accelerate a 5 kg mass at 4 m/s²?',
+      options: ['20 N', '9 N', '1.25 N', '100 N'],
+      correct: '20 N',
+      explanation: 'Using the formula F = m * a: F = 5 kg * 4 m/s² = 20 Newtons (N).',
+      difficulty: 'easy',
+      tag: 'Newton Second Law Calculation'
+    },
+    {
+      id: 'kq-boss-1',
+      subject: 'Science',
+      topic: 'Structure of the Human Heart',
+      grade: 10,
+      board: 'CBSE',
+      type: 'boss_challenge',
+      prompt: 'CHAPTER FINAL BOSS: Which heart valve prevents the backflow of oxygenated blood from the left ventricle into the left atrium during ventricular systole?',
+      options: ['Bicuspid (Mitral) valve', 'Tricuspid valve', 'Aortic semilunar valve', 'Pulmonary valve'],
+      correct: 'Bicuspid (Mitral) valve',
+      explanation: 'The bicuspid (mitral) valve guards the left atrioventricular opening, closing during left ventricular contraction to ensure unidirectional blood flow into the aorta.',
+      difficulty: 'hard',
+      tag: 'Heart Valves & Cardiac Cycle'
+    }
+  ];
+
+  for (const q of initialQuestions) {
+    const hash = crypto.createHash('sha256').update(q.correct.trim().toLowerCase()).digest('hex');
+    insertQuestion.run(
+      q.id,
+      q.subject,
+      q.topic,
+      q.grade,
+      q.board,
+      q.type,
+      q.prompt,
+      JSON.stringify(q.options),
+      hash,
+      q.explanation,
+      q.difficulty,
+      q.tag,
+      now
+    );
   }
 }
 

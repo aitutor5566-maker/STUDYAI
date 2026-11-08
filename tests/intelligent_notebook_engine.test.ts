@@ -4,30 +4,13 @@ import { notebookGenerationOrchestrator } from '../server/notebookGenerationOrch
 import { educationalImageResearchEngine } from '../server/educationalImageResearchEngine.ts';
 
 test('1. Topic Roadmap Generation and Subtopic Completeness', async () => {
-  const context = {
-    userId: 'student-test-01',
-    grade: 10,
-    subject: 'Biology',
-    board: 'CBSE',
-    targetExams: ['CBSE Board Exam'],
-    preferredDepth: 'detailed' as const,
-    languagePreference: 'en',
-    weakTopics: []
-  };
+  const context = notebookGenerationOrchestrator.getStudentContext('student-test-01', 'Biology', 'detailed');
+  const classification = notebookGenerationOrchestrator.classifyTopic('Structure of the Human Heart', context);
 
   const roadmap = await notebookGenerationOrchestrator.generateTopicRoadmap(
     'Structure of the Human Heart',
     context,
-    {
-      discipline: 'science',
-      subDiscipline: 'biology',
-      topicType: 'conceptual_scientific',
-      gradeRange: [9, 10],
-      requiresMathDerivation: false,
-      requiresLabApparatus: true,
-      hasChronology: false,
-      suggestedSectionCount: 6
-    }
+    classification
   );
 
   assert.ok(roadmap, 'Roadmap is generated');
@@ -38,30 +21,13 @@ test('1. Topic Roadmap Generation and Subtopic Completeness', async () => {
 });
 
 test('2. 5 Teaching Levels and 14 Concept Dimensions Generation', async () => {
-  const context = {
-    userId: 'student-test-01',
-    grade: 10,
-    subject: 'Physics',
-    board: 'ICSE',
-    targetExams: ['ICSE Board'],
-    preferredDepth: 'detailed' as const,
-    languagePreference: 'en',
-    weakTopics: []
-  };
+  const context = notebookGenerationOrchestrator.getStudentContext('student-test-01', 'Physics', 'detailed');
+  const classification = notebookGenerationOrchestrator.classifyTopic('Force', context);
 
   const roadmap = await notebookGenerationOrchestrator.generateTopicRoadmap(
     'Force',
     context,
-    {
-      discipline: 'science',
-      subDiscipline: 'physics',
-      topicType: 'quantitative_formula',
-      gradeRange: [9, 10],
-      requiresMathDerivation: true,
-      requiresLabApparatus: false,
-      hasChronology: false,
-      suggestedSectionCount: 5
-    }
+    classification
   );
 
   const section = await notebookGenerationOrchestrator.generateDetailedSectionContent(
@@ -84,26 +50,25 @@ test('2. 5 Teaching Levels and 14 Concept Dimensions Generation', async () => {
 });
 
 test('3. Topic 1: Structure of the Human Heart - Visual and 8-Point Walkthrough', async () => {
+  const context = notebookGenerationOrchestrator.getStudentContext('student-test-01', 'Biology', 'detailed');
+  const classification = notebookGenerationOrchestrator.classifyTopic('Structure of the Human Heart', context);
+  const roadmap = await notebookGenerationOrchestrator.generateTopicRoadmap(
+    'Structure of the Human Heart',
+    context,
+    classification
+  );
+
+  const section = await notebookGenerationOrchestrator.generateDetailedSectionContent(
+    'Structure of the Human Heart',
+    0,
+    'Four Chambers and Great Vessels',
+    context,
+    roadmap
+  );
+
   const result = await notebookGenerationOrchestrator.retrieveOrGenerateSectionVisual(
     'Structure of the Human Heart',
-    {
-      id: 'sec-heart-0',
-      sectionIndex: 0,
-      title: 'Four Chambers and Great Vessels',
-      heading: 'Four Chambers and Great Vessels',
-      status: 'pending',
-      fiveLevels: {
-        foundation: '',
-        detailedUnderstanding: '',
-        deepConceptual: '',
-        applicationAndProblems: '',
-        advancedInsight: ''
-      },
-      contentMarkdown: '',
-      plainExplanation: '',
-      keyTakeaways: [],
-      citations: []
-    }
+    section
   );
 
   assert.ok(result.visual, 'Visual asset retrieved');
@@ -118,26 +83,25 @@ test('3. Topic 1: Structure of the Human Heart - Visual and 8-Point Walkthrough'
 });
 
 test('4. Topic 2: Photosynthesis - Complete Visual and Chemical Accuracy', async () => {
+  const context = notebookGenerationOrchestrator.getStudentContext('student-test-01', 'Biology', 'detailed');
+  const classification = notebookGenerationOrchestrator.classifyTopic('Photosynthesis', context);
+  const roadmap = await notebookGenerationOrchestrator.generateTopicRoadmap(
+    'Photosynthesis',
+    context,
+    classification
+  );
+
+  const section = await notebookGenerationOrchestrator.generateDetailedSectionContent(
+    'Photosynthesis',
+    0,
+    'Light-Dependent Reactions and Chloroplast Ultrastructure',
+    context,
+    roadmap
+  );
+
   const result = await notebookGenerationOrchestrator.retrieveOrGenerateSectionVisual(
     'Photosynthesis',
-    {
-      id: 'sec-photo-0',
-      sectionIndex: 0,
-      title: 'Light-Dependent Reactions and Chloroplast Ultrastructure',
-      heading: 'Light-Dependent Reactions and Chloroplast Ultrastructure',
-      status: 'pending',
-      fiveLevels: {
-        foundation: '',
-        detailedUnderstanding: '',
-        deepConceptual: '',
-        applicationAndProblems: '',
-        advancedInsight: ''
-      },
-      contentMarkdown: '',
-      plainExplanation: '',
-      keyTakeaways: [],
-      citations: []
-    }
+    section
   );
 
   assert.ok(result.visual, 'Visual asset retrieved');
@@ -146,26 +110,25 @@ test('4. Topic 2: Photosynthesis - Complete Visual and Chemical Accuracy', async
 });
 
 test('5. Topic 3: DNA Structure - Molecular Fidelity and Base Pairing', async () => {
+  const context = notebookGenerationOrchestrator.getStudentContext('student-test-01', 'Biology', 'detailed');
+  const classification = notebookGenerationOrchestrator.classifyTopic('DNA Structure', context);
+  const roadmap = await notebookGenerationOrchestrator.generateTopicRoadmap(
+    'DNA Structure',
+    context,
+    classification
+  );
+
+  const section = await notebookGenerationOrchestrator.generateDetailedSectionContent(
+    'DNA Structure',
+    0,
+    'Watson-Crick Double Helix and Complementary Base Pairing',
+    context,
+    roadmap
+  );
+
   const result = await notebookGenerationOrchestrator.retrieveOrGenerateSectionVisual(
     'DNA Structure',
-    {
-      id: 'sec-dna-0',
-      sectionIndex: 0,
-      title: 'Watson-Crick Double Helix and Complementary Base Pairing',
-      heading: 'Watson-Crick Double Helix and Complementary Base Pairing',
-      status: 'pending',
-      fiveLevels: {
-        foundation: '',
-        detailedUnderstanding: '',
-        deepConceptual: '',
-        applicationAndProblems: '',
-        advancedInsight: ''
-      },
-      contentMarkdown: '',
-      plainExplanation: '',
-      keyTakeaways: [],
-      citations: []
-    }
+    section
   );
 
   assert.ok(result.visual, 'Visual asset retrieved');
@@ -173,30 +136,13 @@ test('5. Topic 3: DNA Structure - Molecular Fidelity and Base Pairing', async ()
 });
 
 test('6. Topic 4 & 5: Force & Work, Power and Energy - Physics Derivations and Worked Examples', async () => {
-  const context = {
-    userId: 'student-test-01',
-    grade: 9,
-    subject: 'Physics',
-    board: 'CBSE',
-    targetExams: ['School Exams'],
-    preferredDepth: 'detailed' as const,
-    languagePreference: 'en',
-    weakTopics: []
-  };
+  const context = notebookGenerationOrchestrator.getStudentContext('student-test-01', 'Physics', 'detailed');
+  const classification = notebookGenerationOrchestrator.classifyTopic('Work, Power and Energy', context);
 
   const roadmap = await notebookGenerationOrchestrator.generateTopicRoadmap(
     'Work, Power and Energy',
     context,
-    {
-      discipline: 'science',
-      subDiscipline: 'physics',
-      topicType: 'quantitative_formula',
-      gradeRange: [9, 10],
-      requiresMathDerivation: true,
-      requiresLabApparatus: false,
-      hasChronology: false,
-      suggestedSectionCount: 5
-    }
+    classification
   );
 
   const workSection = await notebookGenerationOrchestrator.generateDetailedSectionContent(
@@ -212,26 +158,25 @@ test('6. Topic 4 & 5: Force & Work, Power and Energy - Physics Derivations and W
 });
 
 test('7. Topic 6: Atomic Structure - Subatomic Particles and Orbital Models', async () => {
+  const context = notebookGenerationOrchestrator.getStudentContext('student-test-01', 'Chemistry', 'detailed');
+  const classification = notebookGenerationOrchestrator.classifyTopic('Atomic Structure', context);
+  const roadmap = await notebookGenerationOrchestrator.generateTopicRoadmap(
+    'Atomic Structure',
+    context,
+    classification
+  );
+
+  const section = await notebookGenerationOrchestrator.generateDetailedSectionContent(
+    'Atomic Structure',
+    0,
+    'Bohr Model and Electron Energy Levels',
+    context,
+    roadmap
+  );
+
   const result = await notebookGenerationOrchestrator.retrieveOrGenerateSectionVisual(
     'Atomic Structure',
-    {
-      id: 'sec-atom-0',
-      sectionIndex: 0,
-      title: 'Bohr Model and Electron Energy Levels',
-      heading: 'Bohr Model and Electron Energy Levels',
-      status: 'pending',
-      fiveLevels: {
-        foundation: '',
-        detailedUnderstanding: '',
-        deepConceptual: '',
-        applicationAndProblems: '',
-        advancedInsight: ''
-      },
-      contentMarkdown: '',
-      plainExplanation: '',
-      keyTakeaways: [],
-      citations: []
-    }
+    section
   );
 
   assert.ok(result.visual, 'Atomic visual returned');
@@ -239,30 +184,13 @@ test('7. Topic 6: Atomic Structure - Subatomic Particles and Orbital Models', as
 });
 
 test('8. Topic 7: Linear Equations - Mathematical Rigor and Step-by-Step Balancing', async () => {
-  const context = {
-    userId: 'student-test-01',
-    grade: 8,
-    subject: 'Mathematics',
-    board: 'CBSE',
-    targetExams: ['CBSE Term Exam'],
-    preferredDepth: 'detailed' as const,
-    languagePreference: 'en',
-    weakTopics: []
-  };
+  const context = notebookGenerationOrchestrator.getStudentContext('student-test-01', 'Mathematics', 'detailed');
+  const classification = notebookGenerationOrchestrator.classifyTopic('Linear Equations', context);
 
   const roadmap = await notebookGenerationOrchestrator.generateTopicRoadmap(
     'Linear Equations',
     context,
-    {
-      discipline: 'mathematics',
-      subDiscipline: 'algebra',
-      topicType: 'quantitative_formula',
-      gradeRange: [7, 8],
-      requiresMathDerivation: true,
-      requiresLabApparatus: false,
-      hasChronology: false,
-      suggestedSectionCount: 4
-    }
+    classification
   );
 
   const mathSection = await notebookGenerationOrchestrator.generateDetailedSectionContent(
@@ -278,89 +206,42 @@ test('8. Topic 7: Linear Equations - Mathematical Rigor and Step-by-Step Balanci
 });
 
 test('9. Topic 8: World War II - Historical Cause-and-Effect and Chronology', async () => {
-  const context = {
-    userId: 'student-test-01',
-    grade: 10,
-    subject: 'History',
-    board: 'CBSE',
-    targetExams: ['CBSE Board Exam'],
-    preferredDepth: 'detailed' as const,
-    languagePreference: 'en',
-    weakTopics: []
-  };
+  const context = notebookGenerationOrchestrator.getStudentContext('student-test-01', 'History', 'detailed');
+  const classification = notebookGenerationOrchestrator.classifyTopic('World War II', context);
 
   const historyRoadmap = await notebookGenerationOrchestrator.generateTopicRoadmap(
     'World War II',
     context,
-    {
-      discipline: 'humanities',
-      subDiscipline: 'history',
-      topicType: 'historical_chronological',
-      gradeRange: [9, 10],
-      requiresMathDerivation: false,
-      requiresLabApparatus: false,
-      hasChronology: true,
-      suggestedSectionCount: 6
-    }
+    classification
   );
 
   assert.ok(historyRoadmap.subtopics.some(s => s.toLowerCase().includes('origin') || s.toLowerCase().includes('cause') || s.toLowerCase().includes('turning') || s.toLowerCase().includes('theatre') || s.toLowerCase().includes('europe')), 'Chronological subtopics present');
 });
 
 test('10. Separate Condensed Revision Notebook Generation', async () => {
-  const context = {
-    userId: 'student-test-01',
-    grade: 10,
-    subject: 'Biology',
-    board: 'CBSE',
-    targetExams: ['CBSE Board Exam'],
-    preferredDepth: 'detailed' as const,
-    languagePreference: 'en',
-    weakTopics: []
-  };
+  const context = notebookGenerationOrchestrator.getStudentContext('student-test-01', 'Biology', 'detailed');
+  const classification = notebookGenerationOrchestrator.classifyTopic('Structure of the Human Heart', context);
 
   const roadmap = await notebookGenerationOrchestrator.generateTopicRoadmap(
     'Structure of the Human Heart',
     context,
-    {
-      discipline: 'science',
-      subDiscipline: 'biology',
-      topicType: 'conceptual_scientific',
-      gradeRange: [9, 10],
-      requiresMathDerivation: false,
-      requiresLabApparatus: true,
-      hasChronology: false,
-      suggestedSectionCount: 4
-    }
+    classification
   );
 
-  const sections = [
-    {
-      id: 's1',
-      sectionIndex: 0,
-      title: 'Chambers and Valves',
-      heading: 'Chambers and Valves',
-      status: 'ready' as const,
-      fiveLevels: {
-        foundation: 'The heart has four chambers: two atria and two ventricles.',
-        detailedUnderstanding: 'Right atrium receives deoxygenated blood from vena cava.',
-        deepConceptual: 'Pressure gradients govern atrioventricular valve opening.',
-        applicationAndProblems: 'Worked problem: cardiac output Q = SV x HR.',
-        advancedInsight: 'Electrical conduction originates at SA node.'
-      },
-      contentMarkdown: '# Chambers and Valves\n...',
-      plainExplanation: 'Four chamber muscular pump',
-      keyTakeaways: ['4 chambers', 'Tricuspid & Bicuspid valves prevent backflow'],
-      citations: []
-    }
-  ];
+  const section = await notebookGenerationOrchestrator.generateDetailedSectionContent(
+    'Structure of the Human Heart',
+    0,
+    'Chambers and Valves',
+    context,
+    roadmap
+  );
 
   const revision = await notebookGenerationOrchestrator.generateSeparateRevisionNotebook(
     'note-heart-01',
     'Structure of the Human Heart',
     context,
     roadmap,
-    sections
+    [section]
   );
 
   assert.ok(revision, 'Revision notebook created');

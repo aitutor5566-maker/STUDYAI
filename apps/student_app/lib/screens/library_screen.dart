@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_ui/shared_ui.dart';
 import '../state/student_app_state.dart';
 import '../widgets/interactive_3d_dialog.dart';
+import '../games/katana/katana_game_dialog.dart';
 
 class LibraryScreen extends StatefulWidget {
   final StudentAppState state;
@@ -436,9 +437,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
           // 2. Games Arcade Section (Three Adaptive Educational Games)
           if (_selectedCategory == 'All' || _selectedCategory == 'Games Arcade') ...[
-            const Text('Three Adaptive Educational Games', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+            const Text('Adaptive Educational Games', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
             const SizedBox(height: 12),
             ...[
+              {
+                'id': 'katana_shadow_warriors',
+                'title': 'KATANA: SHADOW WARRIORS — THE WISDOM BATTLE',
+                'genre': 'Cinematic 2.5D Fantasy Action-Adventure',
+                'desc': 'Unleash katana strikes charged with academic wisdom. Journey across Moonlit Bamboo Forest, charge your spirit gauge, and defeat shadow warlords through curriculum mastery.',
+                'icon': Icons.sports_martial_arts_rounded,
+                'color': StudyAiColors.primary,
+                'isFlagship': true,
+              },
               {
                 'id': 'answer_battle',
                 'title': 'Concept Duel: Knowledge Arena',
@@ -509,19 +519,30 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         const SizedBox(width: 14),
                         ElevatedButton(
                           onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Launching ${game['title']} adaptive game session!'),
-                                backgroundColor: StudyAiColors.primary,
-                              ),
-                            );
+                            if (game['id'] == 'katana_shadow_warriors') {
+                              KatanaGameDialog.show(
+                                context,
+                                apiClient: widget.state.apiClient,
+                                topic: widget.state.activeTopic,
+                                subject: widget.state.activeSubject,
+                                mode: 'campaign',
+                                stageIndex: 1,
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Launching ${game['title']} adaptive game session!'),
+                                  backgroundColor: StudyAiColors.primary,
+                                ),
+                              );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: StudyAiColors.primary,
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
-                          child: const Text('Play', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                          child: Text(game['id'] == 'katana_shadow_warriors' ? 'Enter Katana' : 'Play', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
                         ),
                       ],
                     ),

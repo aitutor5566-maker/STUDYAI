@@ -5,4 +5,5 @@ export 'src/lesson.dart';
 export 'src/note.dart';
 export 'src/visual.dart';
 export 'src/game.dart';
+export 'src/katana.dart';
 export 'src/academic.dart';

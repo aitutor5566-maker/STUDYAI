@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Play, Trophy } from 'lucide-react';
 import { useLearning } from '../context/LearningContext';
 import { EducationalGamePlayerModal } from './EducationalGamePlayerModal';
+import { KatanaGameModal } from './games/KatanaGameModal';
 
 interface GameItem {
   id: string;
@@ -30,6 +31,7 @@ export const EducationalGamesSection: React.FC = () => {
 
   // Modal player state
   const [activeModalGame, setActiveModalGame] = useState<{ slug: string; name: string } | null>(null);
+  const [katanaOpen, setKatanaOpen] = useState<boolean>(false);
 
   // Student stats
   const [, setRecentStats] = useState<any[]>([]);
@@ -197,7 +199,73 @@ export const EducationalGamesSection: React.FC = () => {
         </div>
       </div>
 
-      {/* Search & Category Filter Pills */}
+      {/* KATANA: SHADOW WARRIORS — FLAGSHIP 2.5D ACTION-ADVENTURE BANNER */}
+      <div
+        style={{
+          margin: '0 0 24px 0',
+          padding: 24,
+          borderRadius: 24,
+          background: 'linear-gradient(135deg, #0A1128 0%, #1C2541 50%, #0B525B 100%)',
+          border: '2px solid #FF6A00',
+          boxShadow: '0 16px 40px rgba(255, 106, 0, 0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 20
+        }}
+      >
+        <div style={{ flex: '1 1 360px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <span
+              style={{
+                background: '#FF6A00',
+                color: '#FFFFFF',
+                padding: '4px 12px',
+                borderRadius: 999,
+                fontSize: '0.74rem',
+                fontWeight: 900,
+                letterSpacing: '0.05em'
+              }}
+            >
+              FLAGSHIP 2.5D ADVENTURE
+            </span>
+            <span style={{ color: '#48CAE4', fontSize: '0.82rem', fontWeight: 800 }}>
+              Moonlit Bamboo Forest • 60 FPS Engine
+            </span>
+          </div>
+
+          <h3 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#FFFFFF', margin: '0 0 6px 0', letterSpacing: '-0.01em' }}>
+            KATANA: SHADOW WARRIORS — THE WISDOM BATTLE
+          </h3>
+          <p style={{ fontSize: '0.88rem', color: '#CBD5E1', margin: 0, lineHeight: 1.5 }}>
+            Master your academic curriculum in real-time samurai combat. Unleash wisdom strikes, charge your spirit katana gauge, and defeat shadow warlords.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setKatanaOpen(true)}
+          style={{
+            padding: '14px 28px',
+            borderRadius: 16,
+            background: 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)',
+            border: 'none',
+            color: '#FFFFFF',
+            fontSize: '0.96rem',
+            fontWeight: 900,
+            cursor: 'pointer',
+            boxShadow: '0 8px 24px rgba(255, 106, 0, 0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            transition: 'transform 0.15s ease'
+          }}
+        >
+          <Play size={18} fill="#FFFFFF" />
+          <span>Enter Katana Battle</span>
+        </button>
+      </div>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 20, alignItems: 'center' }}>
         <div
           style={{
@@ -363,6 +431,13 @@ export const EducationalGamesSection: React.FC = () => {
           initialTopic={gameTopic || 'Photosynthesis'}
         />
       )}
+
+      {/* Flagship KATANA 2.5D Action-Adventure Game Modal */}
+      <KatanaGameModal
+        isOpen={katanaOpen}
+        onClose={() => setKatanaOpen(false)}
+        topic={gameTopic || 'Photosynthesis'}
+      />
     </section>
   );
 };

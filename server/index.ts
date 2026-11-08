@@ -59,6 +59,7 @@ import {
   notebookGenerationOrchestrator,
   type GenerationJobState
 } from './notebookGenerationOrchestrator.ts';
+import { katanaEngine } from './katanaEngine.ts';
 import {
   SUPPORTED_LANGUAGES,
   getLanguageMeta,
@@ -4448,6 +4449,83 @@ export function createAppServer() {
           stats,
           totalSessionsCompleted: sessions.filter((s) => s.status === 'completed').length
         });
+        return;
+      }
+
+      // -----------------------------------------------------------------------
+      // KATANA: SHADOW WARRIORS — THE WISDOM BATTLE API Endpoints
+      // -----------------------------------------------------------------------
+
+      // 1. Get Game Catalog & Warrior Status
+      if (pathname === '/api/katana/catalog' && req.method === 'GET') {
+        const catalog = katanaEngine.getCatalog(studentId);
+        sendJson(res, 200, catalog);
+        return;
+      }
+
+      // 2. Start Battle Session
+      if (pathname === '/api/katana/session/start' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const sessionData = katanaEngine.startSession({
+          userId: studentId,
+          mode: body.mode || 'campaign',
+          environment: body.environment || 'moonlit_bamboo_forest',
+          subject: body.subject,
+          topic: body.topic,
+          stageIndex: Number(body.stageIndex) || 1
+        });
+        sendJson(res, 201, sessionData);
+        return;
+      }
+
+      // 3. Validate Battle Strike
+      if (pathname === '/api/katana/battle/validate' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        if (!body.sessionId || !body.questionId || !body.studentAnswer) {
+          sendJson(res, 400, { error: 'sessionId, questionId, and studentAnswer are required.' });
+          return;
+        }
+
+        const result = katanaEngine.validateBattleStrike({
+          sessionId: body.sessionId,
+          userId: studentId,
+          questionId: body.questionId,
+          studentAnswer: body.studentAnswer,
+          timeTakenMs: Number(body.timeTakenMs) || 1200
+        });
+        sendJson(res, 200, result);
+        return;
+      }
+
+      // 4. Complete Battle Session
+      if (pathname === '/api/katana/session/complete' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        if (!body.sessionId) {
+          sendJson(res, 400, { error: 'sessionId is required.' });
+          return;
+        }
+        const summary = katanaEngine.completeSession(body.sessionId, studentId, Boolean(body.victory));
+        sendJson(res, 200, summary);
+        return;
+      }
+
+      // 5. Get Revision Missions
+      if (pathname === '/api/katana/revision' && req.method === 'GET') {
+        const rev = katanaEngine.getRevisionMissions(studentId);
+        sendJson(res, 200, rev);
+        return;
+      }
+
+      // 6. Equip Inventory Item
+      if (pathname === '/api/katana/inventory/equip' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        if (!body.itemType || !body.itemId) {
+          sendJson(res, 400, { error: 'itemType and itemId are required.' });
+          return;
+        }
+        db.prepare('UPDATE katana_inventory SET is_equipped = 0 WHERE user_id = ? AND item_type = ?').run(studentId, body.itemType);
+        db.prepare('UPDATE katana_inventory SET is_equipped = 1 WHERE user_id = ? AND item_type = ? AND item_id = ?').run(studentId, body.itemType, body.itemId);
+        sendJson(res, 200, { success: true, message: `Equipped ${body.itemId}` });
         return;
       }
 

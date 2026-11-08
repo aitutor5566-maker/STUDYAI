@@ -315,4 +315,70 @@ class StudyAiApiClient {
     });
     return res as Map<String, dynamic>;
   }
+
+  // --- KATANA: SHADOW WARRIORS — THE WISDOM BATTLE API Client Methods ---
+
+  Future<Map<String, dynamic>> getKatanaCatalog() async {
+    final res = await get('/api/katana/catalog');
+    return res as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> startKatanaSession({
+    required String mode,
+    String environment = 'moonlit_bamboo_forest',
+    required String subject,
+    required String topic,
+    int stageIndex = 1,
+  }) async {
+    final res = await post('/api/katana/session/start', {
+      'mode': mode,
+      'environment': environment,
+      'subject': subject,
+      'topic': topic,
+      'stageIndex': stageIndex,
+    });
+    return res as Map<String, dynamic>;
+  }
+
+  Future<KatanaStrikeResult> validateKatanaStrike({
+    required String sessionId,
+    required String questionId,
+    required String studentAnswer,
+    int timeTakenMs = 1200,
+  }) async {
+    final res = await post('/api/katana/battle/validate', {
+      'sessionId': sessionId,
+      'questionId': questionId,
+      'studentAnswer': studentAnswer,
+      'timeTakenMs': timeTakenMs,
+    });
+    return KatanaStrikeResult.fromJson(res as Map<String, dynamic>);
+  }
+
+  Future<Map<String, dynamic>> completeKatanaSession({
+    required String sessionId,
+    required bool victory,
+  }) async {
+    final res = await post('/api/katana/session/complete', {
+      'sessionId': sessionId,
+      'victory': victory,
+    });
+    return res as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> getKatanaRevisions() async {
+    final res = await get('/api/katana/revision');
+    return res as Map<String, dynamic>;
+  }
+
+  Future<bool> equipKatanaItem({
+    required String itemType,
+    required String itemId,
+  }) async {
+    final res = await post('/api/katana/inventory/equip', {
+      'itemType': itemType,
+      'itemId': itemId,
+    });
+    return res['success'] == true;
+  }
 }
