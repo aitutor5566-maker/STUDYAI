@@ -72,7 +72,7 @@ test('1. Topic intelligence & note generation creates structured roadmap with ve
   // Verified diagrams generated
   assert.ok(Array.isArray(res.data.structured?.images));
   assert.ok(res.data.structured.images.length > 0);
-  assert.ok(res.data.structured.images[0].imageUrl.startsWith('data:image/svg+xml'));
+  assert.ok(res.data.structured.images[0].imageUrl.startsWith('data:image/svg+xml') || res.data.structured.images[0].imageUrl.startsWith('http'));
 });
 
 test('2. Adaptive AI Teaching endpoint adjusts explanations to Level 1 (Simplify), Level 3 (Deep), and Example', async () => {

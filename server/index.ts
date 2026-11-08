@@ -56,6 +56,10 @@ import {
   decomposeTopicIntoSectionVisuals
 } from './educationalImageResearchEngine.ts';
 import {
+  notebookGenerationOrchestrator,
+  type GenerationJobState
+} from './notebookGenerationOrchestrator.ts';
+import {
   SUPPORTED_LANGUAGES,
   getLanguageMeta,
   generateCurriculumForLanguage,
@@ -1124,6 +1128,123 @@ export function createAppServer() {
         return;
       }
 
+      // ==============================================================================
+      // COMPLETE INTELLIGENT NOTEBOOK ENGINE: PROGRESSIVE JOBS & DISCOVERY API
+      // ==============================================================================
+      if (pathname === '/api/notebooks/jobs/create' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const topic = sanitizeText(body.topic || 'Science', 180);
+        const subject = sanitizeText(body.subject || 'Science', 60);
+        const depth = sanitizeText(body.depth || 'detailed', 30);
+
+        const job = await notebookGenerationOrchestrator.startProgressiveNotebookJob(
+          studentId,
+          topic,
+          subject,
+          depth
+        );
+
+        sendJson(res, 200, { success: true, job });
+        return;
+      }
+
+      if (pathname.startsWith('/api/notebooks/jobs/') && !pathname.includes('retry-section') && req.method === 'GET') {
+        const jobId = pathname.replace('/api/notebooks/jobs/', '').trim();
+        const state = notebookGenerationOrchestrator.getJobState(jobId);
+        if (!state) {
+          sendJson(res, 404, { error: 'Generation job not found.' });
+          return;
+        }
+        sendJson(res, 200, { success: true, job: state });
+        return;
+      }
+
+      if (pathname.startsWith('/api/notebooks/jobs/') && pathname.endsWith('/retry-section') && req.method === 'POST') {
+        const parts = pathname.split('/');
+        const jobId = parts[4];
+        const body = await readJsonBody(req);
+        const sectionIdx = typeof body.sectionIndex === 'number' ? body.sectionIndex : 0;
+
+        const retried = await notebookGenerationOrchestrator.retryFailedSection(jobId, sectionIdx);
+        if (!retried) {
+          sendJson(res, 400, { error: 'Unable to retry section.' });
+          return;
+        }
+        sendJson(res, 200, { success: true, section: retried });
+        return;
+      }
+
+      if (pathname.startsWith('/api/notebooks/') && pathname.endsWith('/revision') && req.method === 'GET') {
+        const noteId = pathname.replace('/api/notebooks/', '').replace('/revision', '').trim();
+        const row = db.prepare('SELECT * FROM revision_notes WHERE note_id = ?').get(noteId) as any;
+        if (row) {
+          sendJson(res, 200, {
+            success: true,
+            revision: {
+              noteId: row.note_id,
+              topic: row.topic,
+              subject: row.subject,
+              executiveSummary: row.executive_summary,
+              quickRevisionMatrix: JSON.parse(row.quick_revision_matrix_json || '[]'),
+              keyFormulasOrDatesOrRules: JSON.parse(row.key_formulas_or_dates_json || '[]'),
+              highYieldDefinitions: JSON.parse(row.high_yield_definitions_json || '[]'),
+              memoryMnemonics: JSON.parse(row.memory_mnemonics_json || '[]'),
+              commonMisconceptionsAndPitfalls: JSON.parse(row.common_misconceptions_json || '[]'),
+              modelExamQuestions: JSON.parse(row.model_exam_questions_json || '[]'),
+              createdAt: row.created_at
+            }
+          });
+          return;
+        }
+        // Fallback: check note structured_json
+        const noteRow = db.prepare('SELECT * FROM notes WHERE id = ?').get(noteId) as any;
+        if (noteRow) {
+          try {
+            const parsed = JSON.parse(noteRow.structured_json || '{}');
+            if (parsed.revisionNotebook) {
+              sendJson(res, 200, { success: true, revision: parsed.revisionNotebook });
+              return;
+            }
+          } catch {}
+        }
+        sendJson(res, 404, { error: 'Revision notebook not found for this note.' });
+        return;
+      }
+
+      if (pathname === '/api/notebooks/image/ask' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const topic = sanitizeText(body.topic || 'Science', 180);
+        const sectionTitle = sanitizeText(body.sectionTitle || topic, 180);
+        const imageTitle = sanitizeText(body.imageTitle || topic, 180);
+        const question = sanitizeText(body.question || '', 500);
+        const walkthrough = body.walkthrough as any;
+
+        const result = notebookGenerationOrchestrator.answerImageQuestion(
+          topic,
+          sectionTitle,
+          imageTitle,
+          question,
+          walkthrough
+        );
+
+        sendJson(res, 200, { success: true, ...result });
+        return;
+      }
+
+      if (pathname === '/api/notebooks/discovery/pinterest' && req.method === 'GET') {
+        const query = parsedUrl.searchParams.get('q') || 'Science Diagram';
+        const result = notebookGenerationOrchestrator.getPinterestDiscovery(query);
+        sendJson(res, 200, { success: true, ...result });
+        return;
+      }
+
+      if (pathname === '/api/notebooks/discovery/google' && req.method === 'GET') {
+        const query = parsedUrl.searchParams.get('q') || 'Science Diagram';
+        const result = notebookGenerationOrchestrator.getGoogleDiscovery(query);
+        sendJson(res, 200, { success: true, ...result });
+        return;
+      }
+
       if (pathname === '/api/notes' && req.method === 'GET') {
         const subjectFilter = parsedUrl.searchParams.get('subject');
         const q = (parsedUrl.searchParams.get('q') || '').trim().toLowerCase();
@@ -1447,12 +1568,15 @@ export function createAppServer() {
         };
 
         // Build Structured Slide Deck (7 Editable Slides)
-        const primaryDiagramUrl =
-          imgs[0]?.imageUrl ||
-          generateScientificSvgDataUrl(
-            enrichedRow.topic || enrichedRow.title,
-            `${enrichedRow.title} Visual Overview ${defs.slice(0, 4).map((d: any) => d.term).join(' ')}`
-          ).dataUrl;
+        const primarySvgDataUrl =
+          (imgs[0]?.imageUrl && imgs[0].imageUrl.startsWith('data:image/svg+xml')
+            ? imgs[0].imageUrl
+            : generateScientificSvgDataUrl(
+                enrichedRow.topic || enrichedRow.title,
+                `${enrichedRow.title} Visual Overview ${defs.slice(0, 4).map((d: any) => d.term).join(' ')}`
+              ).dataUrl);
+
+        const primaryDiagramUrl = imgs[0]?.imageUrl || primarySvgDataUrl;
 
         const slideDeck = [
           {
@@ -1565,7 +1689,7 @@ export function createAppServer() {
           title: `${enrichedRow.title} — Visual Study Infographic`,
           subtitle: `${enrichedRow.subject} • Source-Grounded Visual Summary`,
           style: body.infographicStyle || 'scientific',
-          svgDataUrl: primaryDiagramUrl,
+          svgDataUrl: primarySvgDataUrl,
           overview: s.simpleIntroduction || s.summary || '',
           keyMetrics: [
             { label: 'Source Coverage', value: `${s.coverageVerification?.coveragePercent || 100}%`, detail: 'Verified Extraction' },
@@ -1855,13 +1979,69 @@ export function createAppServer() {
           const hasUploadedSources = Boolean(body.sourceText || (Array.isArray(body.sources) && body.sources.length > 0) || body.youtubeUrl || body.webUrl || (Array.isArray(body.pdfPages) && body.pdfPages.length > 0));
 
           if (!hasUploadedSources) {
-            generated = await generateUniversalEducationalNote({
+            const noteTempId = `note-${crypto.randomUUID().slice(0, 8)}`;
+            const orchestratorContext = notebookGenerationOrchestrator.getStudentContext(studentId, resolvedSubject, studentContext.explanationDepth);
+            const orchestratorRoadmap = notebookGenerationOrchestrator.generateTopicRoadmap(topic, orchestratorContext, classification);
+
+            const generatedSections = await Promise.all(
+              orchestratorRoadmap.subtopics.map(async (st, idx) => {
+                const vReq = orchestratorRoadmap.visualRequirements[idx];
+                const sec = notebookGenerationOrchestrator.generateDetailedSectionContent(
+                  topic,
+                  idx,
+                  st,
+                  orchestratorContext,
+                  orchestratorRoadmap,
+                  vReq
+                );
+                try {
+                  const { visual, walkthrough } = await notebookGenerationOrchestrator.retrieveOrGenerateSectionVisual(
+                    topic,
+                    sec,
+                    vReq,
+                    orchestratorContext
+                  );
+                  sec.visual = visual;
+                  sec.imageWalkthrough = walkthrough;
+                } catch {}
+                return sec;
+              })
+            );
+
+            const revision = notebookGenerationOrchestrator.generateSeparateRevisionNotebook(
+              noteTempId,
               topic,
+              orchestratorContext,
+              orchestratorRoadmap,
+              generatedSections
+            );
+
+            const assembled = notebookGenerationOrchestrator.assembleCompleteLearningNotebook(
+              noteTempId,
+              topic,
+              orchestratorContext,
+              orchestratorRoadmap,
+              generatedSections,
+              revision
+            );
+
+            generated = {
+              id: noteTempId,
+              title: assembled.title,
               subject: resolvedSubject,
-              context: studentContext,
-              designModeOverride: designMode,
-              depthOverride: studentContext.explanationDepth
-            });
+              topic,
+              level: `Grade ${orchestratorContext.grade} (${orchestratorContext.board})`,
+              depth: orchestratorContext.explanationDepth,
+              notebook: resolvedSubject,
+              content_markdown: assembled.markdown,
+              structured: {
+                ...assembled.structured,
+                finalRevisionPage: buildComprehensiveRevisionPage(classification, assembled.markdown),
+                revisionNotebook: revision
+              },
+              flashcards: assembled.structured.flashcards,
+              quiz: assembled.structured.quiz
+            };
           } else {
             generated = await generateStructuredNote({
               topic,

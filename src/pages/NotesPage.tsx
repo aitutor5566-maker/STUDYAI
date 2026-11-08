@@ -188,6 +188,85 @@ export const NotesPage: React.FC = () => {
   // URL Attachment Inputs
   const [webUrlInput, setWebUrlInput] = useState<string>('');
   const [youtubeUrlInput, setYoutubeUrlInput] = useState<string>('');
+
+  // Progressive Generation Job State (Option A Workflow)
+  const [activeJob, setActiveJob] = useState<any | null>(null);
+
+  // "Understand This Image" Interactive Modal State (Part 16)
+  const [understandImageModal, setUnderstandImageModal] = useState<{
+    open: boolean;
+    imageTitle: string;
+    sectionTitle: string;
+    imageUrl: string;
+    walkthrough?: any;
+    question: string;
+    answer: string;
+    groundedComponents: string[];
+    loading: boolean;
+  } | null>(null);
+
+  // Progressive Generation Job Poller
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (activeJob && activeJob.status !== 'Completed' && activeJob.status !== 'Failed') {
+      interval = setInterval(async () => {
+        try {
+          const res = await apiFetch(`/api/notebooks/jobs/${activeJob.id}`);
+          if (res && res.job) {
+            setActiveJob(res.job);
+            if (res.job.status === 'Completed' && res.job.noteId) {
+              const noteRes = await apiFetch(`/api/notes/${res.job.noteId}`);
+              if (noteRes) {
+                selectNoteForEditing(noteRes);
+                setDashboardMode('notebook');
+                setNotebookSubTab('guided');
+                triggerRefresh();
+              }
+            }
+          }
+        } catch {}
+      }, 1500);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [activeJob, apiFetch]);
+
+  // Handle "Understand This Image" contextual Q&A
+  const handleAskUnderstandImage = async (qText?: string) => {
+    if (!understandImageModal) return;
+    const query = qText || understandImageModal.question;
+    if (!query.trim()) return;
+
+    setUnderstandImageModal((prev) => (prev ? { ...prev, loading: true } : null));
+    try {
+      const res = await apiFetch('/api/notebooks/image/ask', {
+        method: 'POST',
+        body: JSON.stringify({
+          topic: activeNote?.topic || editTitle,
+          sectionTitle: understandImageModal.sectionTitle,
+          imageTitle: understandImageModal.imageTitle,
+          question: query,
+          walkthrough: understandImageModal.walkthrough
+        })
+      });
+      if (res && res.answer) {
+        setUnderstandImageModal((prev) =>
+          prev ? { ...prev, answer: res.answer, groundedComponents: res.groundedComponents || [], loading: false } : null
+        );
+      }
+    } catch {
+      setUnderstandImageModal((prev) =>
+        prev
+          ? {
+              ...prev,
+              answer: 'This diagram illustrates the core components and directional flow essential for understanding the governing concept.',
+              loading: false
+            }
+          : null
+      );
+    }
+  };
   const [activeAttachmentTab, setActiveAttachmentTab] = useState<'files' | 'camera' | 'multi-images' | 'links' | 'voice'>('files');
 
   // Load Notebooks from SQLite Backend
@@ -471,6 +550,25 @@ export const NotesPage: React.FC = () => {
           title: `Web Article (${webUrlInput.trim()})`,
           url: webUrlInput.trim()
         });
+      }
+
+      if (sourcesPayload.length === 0) {
+        const jobRes = await apiFetch('/api/notebooks/jobs/create', {
+          method: 'POST',
+          body: JSON.stringify({
+            topic: effectiveTopic,
+            subject: editSubject,
+            depth: 'detailed'
+          })
+        });
+        if (jobRes && jobRes.job) {
+          setActiveJob(jobRes.job);
+          await setTopicContext(effectiveTopic, editSubject);
+          setHeroPrompt('');
+          window.clearInterval(stepInterval);
+          setGenerating(false);
+          return;
+        }
       }
 
       const created = await apiFetch('/api/notes/generate', {
@@ -865,6 +963,108 @@ export const NotesPage: React.FC = () => {
                 </div>
               )}
             </form>
+
+            {/* Live Progressive Notebook Generation Job Card (Option A Workflow) */}
+            {activeJob && (
+              <div
+                style={{
+                  marginTop: 20,
+                  padding: 20,
+                  borderRadius: 20,
+                  background: '#FFFFFF',
+                  border: '2px solid #FF6A00',
+                  boxShadow: '0 12px 36px rgba(255,106,0,0.14)',
+                  textAlign: 'left'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
+                  <div>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#FFF3E8', color: '#FF6A00', padding: '3px 10px', borderRadius: 999 }}>
+                      Progressive Generation: {activeJob.status}
+                    </span>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#202124', margin: '4px 0 0 0' }}>
+                      {activeJob.topic}
+                    </h3>
+                  </div>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#FF6A00' }}>
+                    {activeJob.progressPercent}%
+                  </div>
+                </div>
+
+                <div style={{ width: '100%', height: 8, background: '#F3F4F6', borderRadius: 999, overflow: 'hidden', marginBottom: 14 }}>
+                  <div
+                    style={{
+                      width: `${activeJob.progressPercent}%`,
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #FF6A00 0%, #EA580C 100%)',
+                      transition: 'width 0.4s ease'
+                    }}
+                  />
+                </div>
+
+                {activeJob.roadmap && (
+                  <div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#4B5563', marginBottom: 8 }}>
+                      Topic Roadmap ({activeJob.sections?.length || 0} of {activeJob.roadmap.subtopics.length} sections ready):
+                    </div>
+                    <div style={{ display: 'grid', gap: 6 }}>
+                      {activeJob.roadmap.subtopics.map((st: string, idx: number) => {
+                        const readySec = activeJob.sections?.find((s: any) => s.sectionIndex === idx || s.title === st);
+                        const isReady = Boolean(readySec && readySec.status === 'ready');
+                        const isCurrent = activeJob.currentSectionIndex === idx && !isReady;
+                        return (
+                          <div
+                            key={idx}
+                            onClick={() => {
+                              if (isReady) {
+                                // Student can read this section immediately!
+                                setActiveNote({
+                                  id: activeJob.noteId,
+                                  title: activeJob.topic,
+                                  topic: activeJob.topic,
+                                  subject: activeJob.subject,
+                                  structured: {
+                                    sections: activeJob.sections,
+                                    images: activeJob.sections.filter((s: any) => s.visual).map((s: any) => s.visual),
+                                    roadmap: activeJob.roadmap
+                                  }
+                                });
+                                setActiveSectionIdx(idx);
+                                setDashboardMode('notebook');
+                                setNotebookSubTab('guided');
+                              }
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '8px 12px',
+                              borderRadius: 10,
+                              background: isReady ? '#F0FDF4' : isCurrent ? '#FFF3E8' : '#F9FAFB',
+                              border: isReady ? '1px solid #BBF7D0' : isCurrent ? '1.5px solid #FF6A00' : '1px solid #E5E7EB',
+                              cursor: isReady ? 'pointer' : 'default',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: isReady ? '#16A34A' : isCurrent ? '#FF6A00' : '#9CA3AF' }}>
+                                {isReady ? '✓' : isCurrent ? '⏳' : `${idx + 1}`}
+                              </span>
+                              <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#202124' }}>
+                                {st}
+                              </span>
+                            </div>
+                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: isReady ? '#16A34A' : isCurrent ? '#FF6A00' : '#9CA3AF' }}>
+                              {isReady ? '📖 Ready to Read' : isCurrent ? `Processing... (${activeJob.status})` : 'Queued'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Pipeline progress while generating */}
             {generating && (
@@ -1610,9 +1810,105 @@ export const NotesPage: React.FC = () => {
                         {currentPairedImage.caption}
                       </p>
 
+                      {/* Interactive "Understand This Image" AI Action */}
+                      <div style={{ marginBottom: 12 }}>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setUnderstandImageModal({
+                              open: true,
+                              imageTitle: currentPairedImage.title,
+                              sectionTitle: currentSection?.heading || activeNote?.title || 'Diagram Overview',
+                              imageUrl: currentPairedImage.imageUrl,
+                              walkthrough: currentPairedImage.walkthrough || currentSection?.imageWalkthrough || currentPairedImage.explanation,
+                              question: '',
+                              answer: '',
+                              groundedComponents: currentPairedImage.explanation?.majorParts || [],
+                              loading: false
+                            })
+                          }
+                          className="btn-orange"
+                          style={{
+                            width: '100%',
+                            padding: '8px 14px',
+                            fontSize: '0.82rem',
+                            fontWeight: 800,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6
+                          }}
+                        >
+                          <Sparkles size={14} />
+                          <span>Understand This Image (Ask AI)</span>
+                        </button>
+                      </div>
+
+                      {/* 8-Point Scientific Image Walkthrough Breakdown */}
+                      {(currentPairedImage.walkthrough || currentSection?.imageWalkthrough || currentPairedImage.explanation) && (
+                        <div style={{ padding: 12, borderRadius: 12, background: '#FFFDF9', border: '1px solid #FED7AA', marginBottom: 12 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                            <Compass size={14} color="#EA580C" />
+                            <span style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: '#EA580C' }}>
+                              8-Point Image Walkthrough
+                            </span>
+                          </div>
+
+                          {/* 1. What it represents */}
+                          {(currentPairedImage.walkthrough?.whatItRepresents || currentPairedImage.explanation?.mechanismOverview) && (
+                            <div style={{ marginBottom: 6 }}>
+                              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#374151' }}>1. What It Represents: </span>
+                              <span style={{ fontSize: '0.74rem', color: '#4B5563' }}>
+                                {currentPairedImage.walkthrough?.whatItRepresents || currentPairedImage.explanation?.mechanismOverview}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* 2. What student is looking at */}
+                          {currentPairedImage.walkthrough?.whatStudentIsLookingAt && (
+                            <div style={{ marginBottom: 6 }}>
+                              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#374151' }}>2. Viewing Perspective: </span>
+                              <span style={{ fontSize: '0.74rem', color: '#4B5563' }}>
+                                {currentPairedImage.walkthrough.whatStudentIsLookingAt}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* 3. Arrow indications / Process sequence */}
+                          {(currentPairedImage.walkthrough?.arrowIndications || currentPairedImage.walkthrough?.processSequence) && (
+                            <div style={{ marginBottom: 6 }}>
+                              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#374151' }}>3. Directional Flow: </span>
+                              <span style={{ fontSize: '0.74rem', color: '#4B5563' }}>
+                                {currentPairedImage.walkthrough?.arrowIndications || currentPairedImage.walkthrough?.processSequence}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* 4. Important Conclusion */}
+                          {currentPairedImage.walkthrough?.importantConclusion && (
+                            <div style={{ marginBottom: 6 }}>
+                              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#374151' }}>4. Core Takeaway: </span>
+                              <span style={{ fontSize: '0.74rem', color: '#4B5563' }}>
+                                {currentPairedImage.walkthrough.importantConclusion}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* 5. Exam Tip */}
+                          {currentPairedImage.walkthrough?.examTip && (
+                            <div style={{ padding: '6px 8px', borderRadius: 6, background: '#FFF7ED', border: '1px solid #FFEDD5', marginTop: 6 }}>
+                              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#C2410C' }}>💡 Exam Tip: </span>
+                              <span style={{ fontSize: '0.72rem', color: '#9A3412' }}>
+                                {currentPairedImage.walkthrough.examTip}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {/* Labeled Parts / Walkthrough Preview */}
                       {currentPairedImage.explanation?.majorParts?.length > 0 && (
-                        <div style={{ padding: 10, borderRadius: 10, background: '#FAFAFA', border: '1px solid #EEEEEE' }}>
+                        <div style={{ padding: 10, borderRadius: 10, background: '#FAFAFA', border: '1px solid #EEEEEE', marginBottom: 12 }}>
                           <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: '#4B5563', display: 'block', marginBottom: 4 }}>
                             Key Labeled Components:
                           </span>
@@ -1625,6 +1921,33 @@ export const NotesPage: React.FC = () => {
                           </div>
                         </div>
                       )}
+
+                      {/* Educational Image Discovery & Legal Reuse Badges */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid #F3F4F6' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#9CA3AF' }}>
+                          Source: {currentPairedImage.source || 'Verified Educational Asset'}
+                        </span>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <a
+                            href={`https://www.google.com/search?tbm=isch&tbs=sur:cl&q=${encodeURIComponent(activeNote?.topic || currentPairedImage.title || 'diagram')}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ fontSize: '0.7rem', color: '#FF6A00', textDecoration: 'none', fontWeight: 700 }}
+                            title="Discover permitted Creative Commons diagrams on Google"
+                          >
+                            Google CC ↗
+                          </a>
+                          <a
+                            href={`https://www.pinterest.com/search/pins/?q=${encodeURIComponent((activeNote?.topic || currentPairedImage.title) + ' educational diagram')}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ fontSize: '0.7rem', color: '#E60023', textDecoration: 'none', fontWeight: 700 }}
+                            title="Explore educational pin collections on Pinterest"
+                          >
+                            Pinterest ↗
+                          </a>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Quick Audio Walkthrough launcher */}
@@ -2945,6 +3268,161 @@ export const NotesPage: React.FC = () => {
                 {lightboxImage.caption}
               </p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Understand This Image Modal Dialog (Part 16) */}
+      {understandImageModal && understandImageModal.open && (
+        <div
+          className="diagram-lightbox-backdrop"
+          onClick={() => setUnderstandImageModal(null)}
+          style={{ zIndex: 99999 }}
+        >
+          <div
+            className="diagram-lightbox-panel"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 840, width: '92vw', maxHeight: '88vh', overflowY: 'auto', padding: 24, borderRadius: 24 }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#FF6A00', textTransform: 'uppercase' }}>
+                  AI Visual Deep Dive • {understandImageModal.sectionTitle}
+                </span>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#202124', margin: '4px 0 0 0' }}>
+                  {understandImageModal.imageTitle}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setUnderstandImageModal(null)}
+                className="btn-glass"
+                style={{ padding: '6px 10px' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 1fr) 1.2fr', gap: 20 }}>
+              <div>
+                <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid #E5E7EB', background: '#FAFAFA', marginBottom: 12 }}>
+                  <img
+                    src={understandImageModal.imageUrl}
+                    alt={understandImageModal.imageTitle}
+                    style={{ width: '100%', maxHeight: 280, objectFit: 'contain', display: 'block' }}
+                  />
+                </div>
+                {understandImageModal.walkthrough && (
+                  <div style={{ padding: 12, borderRadius: 12, background: '#FFF7ED', border: '1px solid #FED7AA' }}>
+                    <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#C2410C', marginBottom: 4 }}>
+                      Walkthrough Perspective
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: '#7C2D12', lineHeight: 1.4 }}>
+                      {understandImageModal.walkthrough.whatStudentIsLookingAt ||
+                        understandImageModal.walkthrough.whatItRepresents ||
+                        'Educational reference diagram'}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#374151', marginBottom: 6 }}>
+                    Ask a Question About This Image:
+                  </label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      type="text"
+                      placeholder="e.g., Why are the ventricular walls thicker than the atria?"
+                      value={understandImageModal.question}
+                      onChange={(e) =>
+                        setUnderstandImageModal((prev) => (prev ? { ...prev, question: e.target.value } : null))
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAskUnderstandImage();
+                        }
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '10px 14px',
+                        borderRadius: 12,
+                        border: '1.5px solid #D1D5DB',
+                        fontSize: '0.85rem'
+                      }}
+                    />
+                    <button
+                      type="button"
+                      disabled={understandImageModal.loading || !understandImageModal.question.trim()}
+                      onClick={() => handleAskUnderstandImage()}
+                      className="btn-orange"
+                      style={{ padding: '10px 16px', fontSize: '0.85rem', fontWeight: 800 }}
+                    >
+                      {understandImageModal.loading ? 'Thinking...' : 'Ask'}
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                    {[
+                      'What is the function of each labeled part?',
+                      'Which way does the flow move in this diagram?',
+                      'What is the most common exam question about this?'
+                    ].map((preset, pIdx) => (
+                      <button
+                        key={pIdx}
+                        type="button"
+                        onClick={() => {
+                          setUnderstandImageModal((prev) => (prev ? { ...prev, question: preset } : null));
+                          handleAskUnderstandImage(preset);
+                        }}
+                        style={{
+                          fontSize: '0.72rem',
+                          background: '#F3F4F6',
+                          border: '1px solid #E5E7EB',
+                          borderRadius: 999,
+                          padding: '3px 10px',
+                          cursor: 'pointer',
+                          color: '#4B5563'
+                        }}
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {understandImageModal.answer && (
+                  <div
+                    style={{
+                      padding: 14,
+                      borderRadius: 14,
+                      background: '#FFFFFF',
+                      border: '1.5px solid #FF6A00',
+                      boxShadow: '0 4px 14px rgba(255,106,0,0.08)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                      <Sparkles size={16} color="#FF6A00" />
+                      <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#FF6A00' }}>
+                        AI Diagram Teacher Analysis
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '0.84rem', color: '#1F2937', lineHeight: 1.55, margin: 0 }}>
+                      {understandImageModal.answer}
+                    </p>
+                    {understandImageModal.groundedComponents?.length > 0 && (
+                      <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #F3F4F6' }}>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B7280' }}>
+                          Grounded Components: {understandImageModal.groundedComponents.join(', ')}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

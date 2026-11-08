@@ -76,7 +76,7 @@ test('3. Topic 1: Structure of the Human Heart Visual Retrieval & Metadata', asy
   assert.ok(asset.title.toLowerCase().includes('heart'), 'Title reflects heart');
   assert.ok(asset.licenseType, 'License type preserved');
   assert.ok(asset.attributionRequirements, 'Attribution requirements provided');
-  assert.ok(asset.walkthrough?.keyComponents.length! >= 3, 'Walkthrough lists key components');
+  assert.ok((asset.walkthrough?.keyComponents?.length || 0) >= 3, 'Walkthrough lists key components');
 });
 
 test('4. Topic 2: Photosynthesis Visual Retrieval & Metadata', async () => {
@@ -93,7 +93,7 @@ test('4. Topic 2: Photosynthesis Visual Retrieval & Metadata', async () => {
   assert.ok(asset.title.toLowerCase().includes('photosynthesis'), 'Title reflects photosynthesis');
   assert.ok(asset.licenseType, 'License type preserved');
   assert.ok(asset.attributionRequirements, 'Attribution requirements provided');
-  assert.ok(asset.walkthrough?.keyComponents.length! >= 3, 'Walkthrough lists key components');
+  assert.ok((asset.walkthrough?.keyComponents?.length || 0) >= 3, 'Walkthrough lists key components');
 });
 
 test('5. Topic 3: DNA Structure Visual Retrieval & Metadata', async () => {

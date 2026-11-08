@@ -29,9 +29,18 @@ export interface EducationalImageMetadata {
   };
   labels?: Array<{ text: string; x: number; y: number; role?: string }>;
   walkthrough?: {
-    whatIsShown: string;
-    keyComponents: Array<{ name: string; role: string }>;
+    whatIsShown?: string;
+    keyComponents?: Array<{ name: string; role: string }>;
+    whatItRepresents?: string;
+    whatStudentIsLookingAt?: string;
+    importantComponents?: Array<{ name: string; role?: string; function?: string }>;
+    componentFunctions?: string | Record<string, string>;
+    componentRelationships?: string;
+    arrowIndications?: string;
+    processSequence?: string;
+    importantConclusion?: string;
     examTip?: string;
+    commonMistake?: string;
   };
   googleDiscoveryUrl?: string;
   pinterestDiscoveryUrl?: string;

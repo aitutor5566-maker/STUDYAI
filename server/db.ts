@@ -423,6 +423,60 @@ export function initDatabase() {
       created_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS topic_roadmaps (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      grade INTEGER NOT NULL DEFAULT 10,
+      board TEXT NOT NULL DEFAULT 'CBSE',
+      learning_objectives_json TEXT NOT NULL DEFAULT '[]',
+      prerequisites_json TEXT NOT NULL DEFAULT '[]',
+      subtopics_json TEXT NOT NULL DEFAULT '[]',
+      visual_requirements_json TEXT NOT NULL DEFAULT '[]',
+      misconceptions_json TEXT NOT NULL DEFAULT '[]',
+      exam_points_json TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS notebook_sections (
+      id TEXT PRIMARY KEY,
+      note_id TEXT NOT NULL,
+      job_id TEXT NOT NULL,
+      section_index INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      deep_content_markdown TEXT NOT NULL DEFAULT '',
+      plain_explanation TEXT NOT NULL DEFAULT '',
+      five_level_content_json TEXT NOT NULL DEFAULT '{}',
+      visual_asset_json TEXT NOT NULL DEFAULT '{}',
+      image_walkthrough_json TEXT NOT NULL DEFAULT '{}',
+      key_takeaways_json TEXT NOT NULL DEFAULT '[]',
+      citations_json TEXT NOT NULL DEFAULT '[]',
+      validation_report_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS revision_notes (
+      id TEXT PRIMARY KEY,
+      note_id TEXT NOT NULL UNIQUE,
+      user_id TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      executive_summary TEXT NOT NULL,
+      quick_revision_matrix_json TEXT NOT NULL DEFAULT '[]',
+      key_formulas_or_dates_json TEXT NOT NULL DEFAULT '[]',
+      high_yield_definitions_json TEXT NOT NULL DEFAULT '[]',
+      memory_mnemonics_json TEXT NOT NULL DEFAULT '[]',
+      common_misconceptions_json TEXT NOT NULL DEFAULT '[]',
+      model_exam_questions_json TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS test_cases (
       id TEXT PRIMARY KEY,
       module TEXT NOT NULL,
