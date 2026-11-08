@@ -674,9 +674,40 @@ export const LibraryPage: React.FC = () => {
                       alignItems: 'center'
                     }}
                   >
-                    <span style={{ fontSize: '0.72rem', color: '#15803D', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                      ● Ready • Verified
-                    </span>
+                    {(() => {
+                      const st = String(item.status || 'ready').toLowerCase();
+                      const isVerified = Boolean(item.content?.verified);
+                      if (st === 'generating') {
+                        return (
+                          <span style={{ fontSize: '0.72rem', color: '#D97706', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#D97706', display: 'inline-block' }} />
+                            Generating...
+                          </span>
+                        );
+                      }
+                      if (st === 'needs_review') {
+                        return (
+                          <span style={{ fontSize: '0.72rem', color: '#EA580C', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#EA580C', display: 'inline-block' }} />
+                            Needs Review
+                          </span>
+                        );
+                      }
+                      if (st === 'failed') {
+                        return (
+                          <span style={{ fontSize: '0.72rem', color: '#DC2626', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#DC2626', display: 'inline-block' }} />
+                            Failed
+                          </span>
+                        );
+                      }
+                      return (
+                        <span style={{ fontSize: '0.72rem', color: isVerified ? '#15803D' : '#059669', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: isVerified ? '#15803D' : '#059669', display: 'inline-block' }} />
+                          {isVerified ? 'Ready • Verified' : 'Ready'}
+                        </span>
+                      );
+                    })()}
                     <button
                       type="button"
                       onClick={(e) => {

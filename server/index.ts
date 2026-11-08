@@ -843,7 +843,9 @@ export function createAppServer() {
         const body = await readJsonBody(req);
         const question = sanitizeText(body.question, 2000);
         const topic = sanitizeText(body.topic || question, 180);
-        const mode: 'simple' | 'detailed' = body.mode === 'detailed' ? 'detailed' : 'simple';
+        const rawMode = String(body.mode || '').toLowerCase();
+        const mode: 'simple' | 'detailed' = (rawMode === 'detailed' || rawMode === 'exam' || body.examMode === true) ? 'detailed' : 'simple';
+        const teachingMode: 'learning' | 'exam' = (rawMode === 'exam' || rawMode === 'detailed' || body.examMode === true) ? 'exam' : 'learning';
 
         // Automatically resolve student's curriculum board & grade from stored database profile without prompting
         const studentUser = db.prepare('SELECT grade, board FROM users WHERE id = ?').get(studentId) as any;
@@ -2104,20 +2106,41 @@ export function createAppServer() {
           generated.structured?.images?.[0]?.imageUrl ||
           generated.structured?.imageUrl ||
           null;
-        db.prepare(`
-          INSERT INTO library_resources (id, user_id, resource_type, title, subject, topic, summary, content_json, media_url, status, created_at)
-          VALUES (?, ?, 'note', ?, ?, ?, ?, ?, ?, 'ready', ?)
-        `).run(
-          `res-${id}`,
-          studentId,
-          `${generated.title || topic} Notes`,
-          generated.subject || resolvedSubject,
-          generated.topic || topic,
-          generated.structured?.summary || generated.title || topic,
-          JSON.stringify({ noteId: id, markdown: generated.content_markdown || '', designMode, imageUrl: primaryNoteDiagramUrl }),
-          primaryNoteDiagramUrl,
-          now
-        );
+
+        const existingNoteResource = db.prepare(`
+          SELECT id FROM library_resources 
+          WHERE user_id = ? AND resource_type = 'note' AND LOWER(topic) = LOWER(?)
+        `).get(studentId, topic) as any;
+
+        if (existingNoteResource && !body.forceRegenerate) {
+          db.prepare(`
+            UPDATE library_resources
+            SET title = ?, subject = ?, summary = ?, content_json = ?, media_url = ?, status = 'ready'
+            WHERE id = ?
+          `).run(
+            `${generated.title || topic} Notes`,
+            generated.subject || resolvedSubject,
+            generated.structured?.summary || generated.title || topic,
+            JSON.stringify({ noteId: id, markdown: generated.content_markdown || '', designMode, imageUrl: primaryNoteDiagramUrl }),
+            primaryNoteDiagramUrl,
+            existingNoteResource.id
+          );
+        } else {
+          db.prepare(`
+            INSERT INTO library_resources (id, user_id, resource_type, title, subject, topic, summary, content_json, media_url, status, created_at)
+            VALUES (?, ?, 'note', ?, ?, ?, ?, ?, ?, 'ready', ?)
+          `).run(
+            `res-${id}`,
+            studentId,
+            `${generated.title || topic} Notes`,
+            generated.subject || resolvedSubject,
+            generated.topic || topic,
+            generated.structured?.summary || generated.title || topic,
+            JSON.stringify({ noteId: id, markdown: generated.content_markdown || '', designMode, imageUrl: primaryNoteDiagramUrl }),
+            primaryNoteDiagramUrl,
+            now
+          );
+        }
 
         db.prepare(`
           INSERT INTO learning_activity (id, user_id, activity_type, title, subject, topic, duration_minutes, score_percent, resource_id, created_at)
@@ -2326,28 +2349,52 @@ export function createAppServer() {
 
         let resourceId: string | null = null;
         if (body.saveToLibrary !== false) {
-          resourceId = `res-${jobId}`;
-          db.prepare(`
-            INSERT INTO library_resources (id, user_id, resource_type, title, subject, topic, summary, content_json, media_url, status, created_at)
-            VALUES (?, ?, 'image', ?, ?, ?, ?, ?, ?, 'ready', ?)
-          `).run(
-            resourceId,
-            studentId,
-            `${topic} (${style})`,
-            subject,
-            topic,
-            generated.caption,
-            JSON.stringify({
-              diagramType: generated.diagramType,
-              caption: generated.caption,
-              limitationNote: generated.limitationNote,
-              providerUsed: generated.providerUsed,
-              explanation: generated.explanation,
-              validation: generated.validation
-            }),
-            generated.dataUrl,
-            now
-          );
+          const existingImageResource = db.prepare(`
+            SELECT id FROM library_resources 
+            WHERE user_id = ? AND resource_type = 'image' AND LOWER(topic) = LOWER(?)
+          `).get(studentId, topic) as any;
+
+          const contentPayload = JSON.stringify({
+            diagramType: generated.diagramType,
+            caption: generated.caption,
+            limitationNote: generated.limitationNote,
+            providerUsed: generated.providerUsed,
+            explanation: generated.explanation,
+            validation: generated.validation,
+            verified: true
+          });
+
+          if (existingImageResource && !body.forceRegenerate) {
+            resourceId = existingImageResource.id;
+            db.prepare(`
+              UPDATE library_resources
+              SET title = ?, subject = ?, summary = ?, content_json = ?, media_url = ?, status = 'ready'
+              WHERE id = ?
+            `).run(
+              `${topic} (${style})`,
+              subject,
+              generated.caption,
+              contentPayload,
+              generated.dataUrl,
+              existingImageResource.id
+            );
+          } else {
+            resourceId = `res-${jobId}`;
+            db.prepare(`
+              INSERT INTO library_resources (id, user_id, resource_type, title, subject, topic, summary, content_json, media_url, status, created_at)
+              VALUES (?, ?, 'image', ?, ?, ?, ?, ?, ?, 'ready', ?)
+            `).run(
+              resourceId,
+              studentId,
+              `${topic} (${style})`,
+              subject,
+              topic,
+              generated.caption,
+              contentPayload,
+              generated.dataUrl,
+              now
+            );
+          }
         }
 
         sendJson(res, 200, {
@@ -2606,25 +2653,48 @@ export function createAppServer() {
         const aiSpec = await generate3DModelSpec(topic, subject, modelType);
 
         const summary = `Interactive 3D visualization for ${topic} (${aiSpec.providerUsed}) with ${aiSpec.parts.length} labeled structures and guided steps.`;
-        db.prepare(`
-          INSERT INTO library_resources (id, user_id, resource_type, title, subject, topic, summary, content_json, media_url, status, created_at)
-          VALUES (?, ?, 'model3d', ?, ?, ?, ?, ?, NULL, 'ready', ?)
-        `).run(
-          resId,
-          studentId,
-          `${topic} 3D Model`,
-          subject,
+        const existing3DResource = db.prepare(`
+          SELECT id FROM library_resources 
+          WHERE user_id = ? AND resource_type = 'model3d' AND LOWER(topic) = LOWER(?)
+        `).get(studentId, topic) as any;
+
+        const model3DContent = JSON.stringify({
+          modelId: modelType,
           topic,
-          summary,
-          JSON.stringify({
-            modelId: modelType,
+          spec: aiSpec,
+          verified: true,
+          verificationLabel: aiSpec.verificationBadge
+        });
+
+        let targetResId = resId;
+        if (existing3DResource && !body.forceRegenerate) {
+          targetResId = existing3DResource.id;
+          db.prepare(`
+            UPDATE library_resources
+            SET title = ?, subject = ?, summary = ?, content_json = ?, status = 'ready'
+            WHERE id = ?
+          `).run(
+            `${topic} 3D Model`,
+            subject,
+            summary,
+            model3DContent,
+            existing3DResource.id
+          );
+        } else {
+          db.prepare(`
+            INSERT INTO library_resources (id, user_id, resource_type, title, subject, topic, summary, content_json, media_url, status, created_at)
+            VALUES (?, ?, 'model3d', ?, ?, ?, ?, ?, NULL, 'ready', ?)
+          `).run(
+            resId,
+            studentId,
+            `${topic} 3D Model`,
+            subject,
             topic,
-            spec: aiSpec,
-            verified: true,
-            verificationLabel: aiSpec.verificationBadge
-          }),
-          now
-        );
+            summary,
+            model3DContent,
+            now
+          );
+        }
 
         db.prepare(`
           INSERT INTO learning_activity (id, user_id, activity_type, title, subject, topic, duration_minutes, score_percent, resource_id, created_at)

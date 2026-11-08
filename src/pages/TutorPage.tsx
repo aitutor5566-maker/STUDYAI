@@ -773,7 +773,9 @@ export const TutorPage: React.FC = () => {
           conversationId: targetConvId,
           topic: topicOverride || cleanQ,
           question: cleanQ,
-          mode,
+          mode: teachingMode === 'exam' ? 'detailed' : mode,
+          teachingMode,
+          examMode: teachingMode === 'exam',
           grade,
           level: `Grade ${grade}`,
           subject,
@@ -1395,24 +1397,36 @@ export const TutorPage: React.FC = () => {
         {/* 4. Teaching Depth & Stream Toggles */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', background: 'rgba(255,255,255,0.9)', padding: 3, borderRadius: 999, border: '1px solid rgba(255,106,0,0.2)' }}>
-            {(['simple', 'detailed'] as const).map((m) => (
+            {[
+              { id: 'simple', label: '🌿 Conceptual' },
+              { id: 'detailed', label: '🎯 Exam Depth' }
+            ].map((m) => (
               <button
-                key={m}
+                key={m.id}
                 type="button"
-                onClick={() => setMode(m)}
+                onClick={() => {
+                  setMode(m.id as any);
+                  if (m.id === 'detailed') {
+                    setTeachingMode('exam');
+                    setActionToast('Switched to EXAM PREPARATION MODE');
+                  } else {
+                    setTeachingMode('normal');
+                    setActionToast('Switched to NORMAL LEARNING MODE');
+                  }
+                  setTimeout(() => setActionToast(''), 3000);
+                }}
                 style={{
                   padding: '5px 12px',
                   borderRadius: 999,
                   border: 'none',
-                  background: mode === m ? '#FF6A00' : 'transparent',
-                  color: mode === m ? '#FFFFFF' : '#6B7280',
+                  background: mode === m.id ? '#FF6A00' : 'transparent',
+                  color: mode === m.id ? '#FFFFFF' : '#6B7280',
                   fontSize: '0.76rem',
                   fontWeight: 700,
-                  cursor: 'pointer',
-                  textTransform: 'capitalize'
+                  cursor: 'pointer'
                 }}
               >
-                {m}
+                {m.label}
               </button>
             ))}
           </div>

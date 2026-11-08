@@ -210,6 +210,142 @@ const ABBREVIATION_DICTIONARY: Record<string, AbbreviationItem & { keywords: Reg
     roleInTopic: 'Demonstrates persistent organic pollutants and biomagnification up ecological food chains.',
     example: 'DDT accumulates in fatty tissues of fish and birds of prey, causing eggshell thinning.',
     keywords: /\b(ddt|dichlorodiphenyltrichloroethane|insecticide|biomagnification|pesticide)\b/i
+  },
+  AIDS: {
+    abbr: 'AIDS',
+    fullForm: 'Acquired Immunodeficiency Syndrome',
+    simpleDefinition: 'A chronic, life-threatening condition caused by the Human Immunodeficiency Virus (HIV) that severely damages the immune system.',
+    roleInTopic: 'Represents viral infection targeting helper T-lymphocytes (CD4+ cells), reducing body resistance to opportunistic pathogens.',
+    example: 'ELISA and Western Blot tests are used to diagnose antibodies against HIV/AIDS.',
+    keywords: /\b(aids|hiv|immunodeficiency|syndrome|retrovirus|cd4|immunity)\b/i
+  },
+  HIV: {
+    abbr: 'HIV',
+    fullForm: 'Human Immunodeficiency Virus',
+    simpleDefinition: 'A retrovirus with an RNA genome that infects and progressively destroys CD4+ helper T-cells in the immune system.',
+    roleInTopic: 'Uses reverse transcriptase enzyme to convert its viral RNA into DNA inside host immune cells.',
+    example: 'Antiretroviral therapy (ART) inhibits viral enzymes to slow HIV replication.',
+    keywords: /\b(hiv|human immunodeficiency|retrovirus|reverse transcriptase)\b/i
+  },
+  BCG: {
+    abbr: 'BCG',
+    fullForm: 'Bacillus Calmette–Guérin',
+    simpleDefinition: 'A live-attenuated vaccine prepared from Mycobacterium bovis that provides immunity against tuberculosis (TB).',
+    roleInTopic: 'Provides active acquired immunity against severe forms of childhood tuberculosis.',
+    example: 'Administered intradermally to newborns as part of the universal immunization programme.',
+    keywords: /\b(bcg|bacillus calmette|tuberculosis|vaccine|immunization|mycobacterium)\b/i
+  },
+  CNG: {
+    abbr: 'CNG',
+    fullForm: 'Compressed Natural Gas',
+    simpleDefinition: 'Methane (CH₄) gas stored under high pressure (200–250 bar) as a cleaner alternative to petrol and diesel fuel.',
+    roleInTopic: 'Clean hydrocarbon fuel producing significantly lower carbon monoxide and particulate emissions.',
+    example: 'Public transit buses in major cities run on CNG to reduce urban smog.',
+    keywords: /\b(cng|compressed natural gas|methane|fuel|fossil fuel|clean energy)\b/i
+  },
+  LPG: {
+    abbr: 'LPG',
+    fullForm: 'Liquefied Petroleum Gas',
+    simpleDefinition: 'A pressurized mixture of propane (C₃H₈) and butane (C₄H₁₀) liquefied under moderate pressure for domestic cooking and heating.',
+    roleInTopic: 'High-calorific value hydrocarbon fuel stored in steel cylinders; ethyl mercaptan is added for leak odor detection.',
+    example: 'Household cooking gas cylinders contain LPG in liquid state under pressure.',
+    keywords: /\b(lpg|liquefied petroleum|propane|butane|cooking gas|calorific)\b/i
+  },
+  LED: {
+    abbr: 'LED',
+    fullForm: 'Light Emitting Diode',
+    simpleDefinition: 'A heavily doped p-n junction semiconductor that emits incoherent light when forward-biased via spontaneous electron-hole recombination.',
+    roleInTopic: 'Converts electrical energy directly into light energy with high efficiency and minimal heat loss compared to filament incandescent bulbs.',
+    example: 'LED indicator lamps operate on low DC voltage (1.8V to 3.3V) and last over 50,000 hours.',
+    keywords: /\b(led|light emitting diode|semiconductor|diode|pn junction|photodiode)\b/i
+  },
+  LASER: {
+    abbr: 'LASER',
+    fullForm: 'Light Amplification by Stimulated Emission of Radiation',
+    simpleDefinition: 'A device that produces a narrow, highly intense, monochromatic, coherent, and directional beam of light.',
+    roleInTopic: 'Employs population inversion and stimulated emission in an optical resonator cavity.',
+    example: 'Used in optical disc drives, fiber-optic telecommunications, and laser surgical scalpels.',
+    keywords: /\b(laser|stimulated emission|population inversion|coherent light|monochromatic)\b/i
+  },
+  SONAR: {
+    abbr: 'SONAR',
+    fullForm: 'Sound Navigation and Ranging',
+    simpleDefinition: 'A technique using transmitted and reflected ultrasonic sound pulses to calculate underwater distances, ocean depth, or map submerged objects.',
+    roleInTopic: 'Applies echo reflection principle: Distance d = (v × t) / 2, where v is speed of sound in seawater and t is round-trip time.',
+    example: 'Submarines and oceanographic vessels use SONAR to map oceanic trenches and detect obstacles.',
+    keywords: /\b(sonar|sound navigation|ultrasound|ultrasonic|echo|depth measurement)\b/i
+  },
+  RADAR: {
+    abbr: 'RADAR',
+    fullForm: 'Radio Detection and Ranging',
+    simpleDefinition: 'A system using reflected high-frequency radio or microwave pulses to detect the range, angle, and radial velocity of aircraft or weather systems.',
+    roleInTopic: 'Calculates target range using speed of light c and pulse transit time: d = (c × t) / 2.',
+    example: 'Air traffic control towers rely on RADAR to track civilian airplane flight trajectories.',
+    keywords: /\b(radar|radio detection|microwaves|radio waves|air traffic)\b/i
+  },
+  AC: {
+    abbr: 'AC',
+    fullForm: 'Alternating Current',
+    simpleDefinition: 'An electric current that periodically reverses its direction and changes its magnitude continuously with time.',
+    roleInTopic: 'Standard grid transmission standard (typically 50 Hz in India/Europe, 60 Hz in USA) because voltage can be stepped up or down efficiently using transformers.',
+    example: 'Household wall sockets supply 220V–240V AC at 50 Hz.',
+    keywords: /\b(ac|alternating current|generator|transformer|frequency|sinusoidal)\b/i
+  },
+  DC: {
+    abbr: 'DC',
+    fullForm: 'Direct Current',
+    simpleDefinition: 'An electric current that flows unidirectionally with constant or non-reversing polarity.',
+    roleInTopic: 'Supplied by chemical cells, batteries, and solar photovoltaic panels; essential for DC electronic circuit boards.',
+    example: 'A 9V dry cell battery powers a flashlight with pure Direct Current.',
+    keywords: /\b(dc|direct current|battery|galvanic cell|commutator|dry cell)\b/i
+  },
+  EMF: {
+    abbr: 'EMF',
+    fullForm: 'Electromotive Force',
+    simpleDefinition: 'The maximum potential difference between the two terminals of an electric source when no current is drawn (open circuit).',
+    roleInTopic: 'Represents the work done per unit charge (ε = W/q) by non-electrostatic forces inside the power source, measured in Volts (V).',
+    example: 'A car battery has an open-circuit EMF of 12.6 Volts.',
+    keywords: /\b(emf|electromotive force|internal resistance|terminal voltage|potential difference)\b/i
+  },
+  STP: {
+    abbr: 'STP',
+    fullForm: 'Standard Temperature and Pressure',
+    simpleDefinition: 'A standard reference state in chemistry defined as temperature 273.15 K (0 °C) and pressure 1 bar (or 1 atm).',
+    roleInTopic: 'At STP, 1 mole of any ideal gas occupies approximately 22.4 litres (or 22.7 L under IUPAC 1 bar definition).',
+    example: '2 moles of Oxygen gas (O₂) occupy 44.8 L volume at standard STP conditions.',
+    keywords: /\b(stp|standard temperature and pressure|molar volume|gas laws|ideal gas)\b/i
+  },
+  RBC: {
+    abbr: 'RBC',
+    fullForm: 'Red Blood Cell (Erythrocyte)',
+    simpleDefinition: 'Biconcave enucleated blood cells packed with iron-containing hemoglobin molecules that transport oxygen from lungs to body tissues.',
+    roleInTopic: 'Biconcave disc geometry maximizes surface area-to-volume ratio for rapid O₂ and CO₂ diffusion.',
+    example: 'Healthy human blood contains approximately 4.5 to 5.5 million RBCs per cubic millimeter.',
+    keywords: /\b(rbc|red blood cell|erythrocyte|hemoglobin|oxygen transport|blood)\b/i
+  },
+  WBC: {
+    abbr: 'WBC',
+    fullForm: 'White Blood Cell (Leukocyte)',
+    simpleDefinition: 'Nucleated immune cells that defend the body against infectious diseases, foreign antigens, and invading pathogens.',
+    roleInTopic: 'Categorized into granulocytes (neutrophils, eosinophils, basophils) and agranulocytes (lymphocytes, monocytes).',
+    example: 'Phagocytic neutrophils engulf and digest bacteria during acute inflammation.',
+    keywords: /\b(wbc|white blood cell|leukocyte|phagocyte|lymphocyte|immune defense)\b/i
+  },
+  CNS: {
+    abbr: 'CNS',
+    fullForm: 'Central Nervous System',
+    simpleDefinition: 'The primary command and processing center of the vertebrate nervous system, comprising the brain and the spinal cord.',
+    roleInTopic: 'Integrates sensory inputs, controls voluntary and involuntary actions, and coordinates cognitive thought.',
+    example: 'Protected by bony cranium and vertebral column, meninges, and cerebrospinal fluid (CSF).',
+    keywords: /\b(cns|central nervous system|brain|spinal cord|meninges|neuron)\b/i
+  },
+  ECG: {
+    abbr: 'ECG',
+    fullForm: 'Electrocardiogram',
+    simpleDefinition: 'A non-invasive diagnostic recording of the electrical activity of the heart over time, detected by skin electrodes.',
+    roleInTopic: 'Displays characteristic P-wave (atrial depolarization), QRS-complex (ventricular depolarization), and T-wave (ventricular repolarization).',
+    example: 'An elevated ST-segment on an ECG indicates acute myocardial infarction (heart attack).',
+    keywords: /\b(ecg|ekg|electrocardiogram|p wave|qrs|heart rhythm|cardiac cycle)\b/i
   }
 };
 
@@ -251,7 +387,7 @@ export function extractAndExplainAbbreviations(topic: string, question: string, 
     );
   }
 
-  return matched.slice(0, 6);
+  return matched.slice(0, 12);
 }
 
 /**
@@ -1717,8 +1853,82 @@ export function enrichLessonWithRebuildStructure(
   const workedProblems = buildWorkedNumericalProblems(topic, subject, baseLesson.formula);
   const formulaExploded = buildFormulaExploded(topic, baseLesson.formula);
 
+  // 12. 13-Part Normal Learning Journey
+  const learningJourney = {
+    part1_topicIntroduction: simpleIntroduction,
+    part2_studentFriendlyDefinition: clearDefinition.everyday,
+    part3_whyItMatters: baseLesson.analogies || `Helps us understand how ${subject} operates in real life.`,
+    part4_prerequisitesBridge: prerequisites,
+    part5_terminologyWithFullForms: abbreviations.map((a) => ({
+      term: a.abbr,
+      fullForm: a.fullForm,
+      meaning: a.simpleDefinition,
+      example: a.example
+    })),
+    part6_deepMechanisms: conceptSections.map((sec) => ({
+      title: sec.title,
+      summary: sec.simpleSummary,
+      howItWorks: sec.howItWorks,
+      whereItOccurs: sec.whereItOccurs,
+      whyItMatters: sec.whyItMatters,
+      whatIfItFails: sec.whatIfItFails
+    })),
+    part7_everydayExamples: realLifeExamples,
+    part8_visualDiagrams: lessonImages.map((img) => ({
+      title: img.title,
+      caption: img.caption,
+      url: img.imageUrl,
+      walkthrough: img.explanation
+    })),
+    part9_formulasAndLaws: baseLesson.formula ? {
+      equation: baseLesson.formula.equation,
+      variables: formulaExploded,
+      reactants: baseLesson.formula.reactants,
+      products: baseLesson.formula.products
+    } : null,
+    part10_commonMisconceptions: baseLesson.misconceptions || [],
+    part11_structuredSummaryRecap: revisionNotes,
+    part12_understandingChecks: [understandingCheck],
+    part13_curiosityFollowUps: baseLesson.suggestedFollowUps || practiceQuestions
+  };
+
+  // 13. 18-Part Exam Preparation Mastery
+  const examMastery = {
+    part1_boardStandardDefinition: clearDefinition.academic,
+    part2_scientificNomenclature: abbreviations,
+    part3_formulaeAndSiUnits: formulaExploded,
+    part4_stepByStepDerivations: workedProblems.map((p) => ({
+      title: p.title,
+      derivationSteps: p.stepByStepSolution,
+      finalEquation: p.formulaUsed
+    })),
+    part5_standardWorkedNumericals: workedProblems,
+    part6_highScoringKeywords: baseLesson.keywords || [],
+    part7_tabularComparisons: baseLesson.differences ? {
+      conceptA: baseLesson.differences.titleA,
+      conceptB: baseLesson.differences.titleB,
+      rows: baseLesson.differences.rows
+    } : null,
+    part8_labelledDiagramChecklist: lessonImages[0]?.explanation?.importantParts?.map((p: any) => p.label) || [],
+    part9_boardTrapsAndPitfalls: [
+      baseLesson.misconceptions?.[0] || 'Omitting standard SI units in final numerical steps loses 0.5 to 1 mark.',
+      'Failing to show bidirectional or directional arrows in reaction / circulation diagrams.'
+    ],
+    part10_oneMarkMcqs: examQuestions.filter((q) => q.type === 'MCQ'),
+    part11_twoMarkShortQuestions: examQuestions.filter((q) => q.type === 'Definition' || q.marks === 2),
+    part12_threeMarkStructuredQuestions: examQuestions.filter((q) => q.type === 'Short Answer' || q.marks === 3),
+    part13_fiveMarkLongQuestions: examQuestions.filter((q) => q.type === 'Long Answer' || q.marks === 5),
+    part14_quickMnemonics: memoryHooks?.keyMnemonic || `Remember: ${lessonImages[0]?.explanation?.whatToRemember || topic}`,
+    part15_fastRevisionSummary: revisionNotes
+  };
+
+  const isExamMode = baseLesson.mode === 'exam' || baseLesson.mode === 'detailed';
+
   return {
     ...baseLesson,
+    teachingMode: isExamMode ? 'exam' : 'learning',
+    learningJourney,
+    examMastery,
     simpleIntroduction,
     clearDefinition,
     abbreviations,
