@@ -68,6 +68,11 @@ import {
   evaluatePlacementTest
 } from './languageLearningEngine.ts';
 import {
+  buildUniversalTeachingWorkflow,
+  buildSinglePageDigitalTextbookMarkdown,
+  type UniversalTeachingWorkflow
+} from './universalTeachingWorkflowEngine.ts';
+import {
   PICTURE_VOCABULARY_CATEGORIES,
   getPictureVocabularyForLanguage,
   LANGUAGE_SCRIPT_DECKS,
@@ -946,6 +951,15 @@ export function createAppServer() {
           explanationLength
         });
 
+        const workflow = buildUniversalTeachingWorkflow({
+          topic: effectiveTopic,
+          subject,
+          grade,
+          board: resolvedBoard,
+          rawLesson: structured
+        });
+        structured.universalTeachingWorkflow = workflow;
+
         if (body.simulateFailure === 'primary_provider') {
           structured.failureRecoveryLog = {
             simulatedFailure: 'primary_provider',
@@ -1075,6 +1089,19 @@ export function createAppServer() {
           }));
         }
 
+        if (!parsedStructured.universalTeachingWorkflow) {
+          const workflow = buildUniversalTeachingWorkflow({
+            topic: r.topic || r.title,
+            subject: r.subject || 'Science',
+            grade: 10,
+            board: 'CBSE'
+          });
+          parsedStructured.universalTeachingWorkflow = workflow;
+          if (!parsedStructured.textbookMarkdown) {
+            parsedStructured.textbookMarkdown = buildSinglePageDigitalTextbookMarkdown(workflow);
+          }
+        }
+
         if (!parsedStructured.finalRevisionPage) {
           const cls = classifyUniversalTopic(r.topic || r.title);
           parsedStructured.finalRevisionPage = buildComprehensiveRevisionPage(cls, r.content_markdown || '');
@@ -1088,6 +1115,25 @@ export function createAppServer() {
           quiz: JSON.parse(r.quiz_json || '[]')
         };
       };
+
+      // ==============================================================================
+      // UNIVERSAL TEACHING WORKFLOW API (14-STAGE CANONICAL ENGINE)
+      // ==============================================================================
+      if (pathname === '/api/v1/workflow' && req.method === 'GET') {
+        const topic = sanitizeText(parsedUrl.searchParams.get('topic') || 'Photosynthesis', 180);
+        const subject = sanitizeText(parsedUrl.searchParams.get('subject') || '', 60);
+        const grade = parseInt(parsedUrl.searchParams.get('grade') || '10', 10);
+        const board = sanitizeText(parsedUrl.searchParams.get('board') || 'CBSE', 40);
+
+        const workflow = buildUniversalTeachingWorkflow({ topic, subject, grade, board });
+        const textbookMarkdown = buildSinglePageDigitalTextbookMarkdown(workflow);
+
+        sendJson(res, 200, {
+          workflow,
+          textbookMarkdown
+        });
+        return;
+      }
 
       // ==============================================================================
       // EDUCATIONAL IMAGE RESEARCH & RETRIEVAL ENGINE API
@@ -2065,6 +2111,22 @@ export function createAppServer() {
               generated.structured.classification = classification;
               generated.structured.designMode = designMode;
             }
+          }
+
+          // Unify with Universal Teaching Workflow & Single-Page Digital Textbook
+          const workflow = buildUniversalTeachingWorkflow({
+            topic,
+            subject: resolvedSubject,
+            grade: studentContext.grade,
+            board: studentContext.board
+          });
+          const textbookMarkdown = buildSinglePageDigitalTextbookMarkdown(workflow);
+
+          if (generated) {
+            generated.content_markdown = textbookMarkdown;
+            if (!generated.structured) generated.structured = {};
+            generated.structured.universalTeachingWorkflow = workflow;
+            generated.structured.textbookMarkdown = textbookMarkdown;
           }
         } catch (err: any) {
           sendJson(res, err?.statusCode || 422, {

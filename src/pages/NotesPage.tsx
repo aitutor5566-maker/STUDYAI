@@ -102,7 +102,7 @@ export const NotesPage: React.FC = () => {
 
   // Active Note & Workspace State
   const [activeNote, setActiveNote] = useState<any | null>(null);
-  const [notebookSubTab, setNotebookSubTab] = useState<'guided' | 'full' | 'revision' | 'studio' | 'ask' | 'flashcards'>('guided');
+  const [notebookSubTab, setNotebookSubTab] = useState<'full' | 'guided' | 'revision' | 'studio' | 'ask' | 'flashcards'>('full');
   const [activeSectionIdx, setActiveSectionIdx] = useState<number>(0);
   const [completedSections, setCompletedSections] = useState<Record<number, boolean>>({});
 
@@ -1292,17 +1292,8 @@ export const NotesPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Mode Switcher: Guided vs Full Notebook vs Studio Tools vs Q&A */}
+            {/* Mode Switcher: Continuous Digital Textbook vs Guided vs Revision vs Studio vs Q&A */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={() => setNotebookSubTab('guided')}
-                className={`filter-pill ${notebookSubTab === 'guided' ? 'active' : ''}`}
-                style={{ padding: '6px 14px', fontSize: '0.78rem' }}
-              >
-                <Compass size={14} style={{ marginRight: 4 }} />
-                <span>Guided Learning</span>
-              </button>
               <button
                 type="button"
                 onClick={() => setNotebookSubTab('full')}
@@ -1310,7 +1301,16 @@ export const NotesPage: React.FC = () => {
                 style={{ padding: '6px 14px', fontSize: '0.78rem' }}
               >
                 <BookOpen size={14} style={{ marginRight: 4 }} />
-                <span>Full White-Page View</span>
+                <span>📖 Digital Textbook (Continuous)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setNotebookSubTab('guided')}
+                className={`filter-pill ${notebookSubTab === 'guided' ? 'active' : ''}`}
+                style={{ padding: '6px 14px', fontSize: '0.78rem' }}
+              >
+                <Compass size={14} style={{ marginRight: 4 }} />
+                <span>🧭 Step Navigator</span>
               </button>
               <button
                 type="button"
@@ -1318,6 +1318,9 @@ export const NotesPage: React.FC = () => {
                 className={`filter-pill ${notebookSubTab === 'revision' ? 'active' : ''}`}
                 style={{ padding: '6px 14px', fontSize: '0.78rem' }}
               >
+                <Award size={14} style={{ marginRight: 4 }} />
+                <span>🏆 Master Revision</span>
+              </button>
                 <Award size={14} style={{ marginRight: 4 }} />
                 <span>Revision Notebook</span>
               </button>
@@ -2051,34 +2054,166 @@ export const NotesPage: React.FC = () => {
                 </p>
               </header>
 
-              {/* All Sections in Flow */}
-              <div style={{ display: 'grid', gap: 32 }}>
+              {/* 1. Interactive Table of Contents (Single-Page Continuous Study Guide) */}
+              <nav
+                style={{
+                  background: '#F8FAFC',
+                  borderRadius: 16,
+                  padding: '16px 20px',
+                  marginBottom: 32,
+                  border: '1px solid #E2E8F0'
+                }}
+              >
+                <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#334155', textTransform: 'uppercase', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>📑 Table of Contents (Single-Page Continuous Study Guide)</span>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {[
+                    { id: 'sec-overview', label: '1. Topic Intro' },
+                    { id: 'sec-definition', label: '2. Definitions' },
+                    { id: 'sec-terminology', label: '3. Full Forms & Terms' },
+                    { id: 'sec-prerequisites', label: '4. Prerequisites' },
+                    { id: 'sec-content-flow', label: '5. Core Mechanisms' },
+                    { id: 'sec-formulas', label: '6. Formulas & Numericals' },
+                    { id: 'sec-comparisons', label: '7. Comparisons' },
+                    { id: 'sec-misconceptions', label: '8. Traps & Misconceptions' },
+                    { id: 'sec-revision-sheet', label: '9. Final Revision' },
+                    { id: 'sec-assessment', label: '10. Self-Test Quizzes' }
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => {
+                        const el = document.getElementById(t.id);
+                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      style={{
+                        padding: '5px 12px',
+                        borderRadius: 8,
+                        border: '1px solid #CBD5E1',
+                        background: '#FFFFFF',
+                        color: '#0F172A',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </nav>
+
+              {/* 2. Topic Overview & Why It Matters */}
+              <div id="sec-overview" style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid #EEEEEE' }}>
+                <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#202124', marginBottom: 10 }}>
+                  1. Topic Overview & Why It Matters
+                </h3>
+                <p style={{ fontSize: '1rem', color: '#374151', lineHeight: 1.7, margin: '0 0 12px 0' }}>
+                  {structured.simpleIntroduction || structured.overview || activeNote.summary}
+                </p>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <span style={{ padding: '6px 12px', borderRadius: 8, background: '#FFF3E8', color: '#E85D00', fontSize: '0.78rem', fontWeight: 700 }}>
+                    🎯 Focus: Curriculum Core Concept
+                  </span>
+                  <span style={{ padding: '6px 12px', borderRadius: 8, background: '#EFF6FF', color: '#2563EB', fontSize: '0.78rem', fontWeight: 700 }}>
+                    💡 Real-World Science Application
+                  </span>
+                </div>
+              </div>
+
+              {/* 3. Definitions & Meaning */}
+              <div id="sec-definition" style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid #EEEEEE' }}>
+                <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#202124', marginBottom: 12 }}>
+                  2. Academic Definition & Practical Interpretation
+                </h3>
+                <blockquote style={{ margin: '0 0 14px 0', padding: '14px 18px', background: '#F8FAFC', borderLeft: '4px solid #FF6A00', borderRadius: '0 10px 10px 0', fontStyle: 'italic', color: '#1E293B', fontSize: '0.98rem' }}>
+                  {structured.clearDefinition?.academic || structured.definitions?.[0]?.definition || `${editTitle} is a verified curriculum principle in ${editSubject}.`}
+                </blockquote>
+                {structured.clearDefinition?.everyday && (
+                  <p style={{ fontSize: '0.94rem', color: '#4B5563', lineHeight: 1.6 }}>
+                    <strong>Everyday Interpretation:</strong> {structured.clearDefinition.everyday}
+                  </p>
+                )}
+              </div>
+
+              {/* 4. Terminology & Full Forms Table */}
+              {Array.isArray(structured.abbreviations) && structured.abbreviations.length > 0 && (
+                <div id="sec-terminology" style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid #EEEEEE' }}>
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#202124', marginBottom: 12 }}>
+                    3. Important Terminology & Full Forms
+                  </h3>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem', background: '#FFFFFF', borderRadius: 10 }}>
+                      <thead>
+                        <tr style={{ background: '#FFF7ED', color: '#9A3412', textAlign: 'left' }}>
+                          <th style={{ padding: '10px 14px', border: '1px solid #FED7AA' }}>Abbreviation / Term</th>
+                          <th style={{ padding: '10px 14px', border: '1px solid #FED7AA' }}>Full Scientific Form</th>
+                          <th style={{ padding: '10px 14px', border: '1px solid #FED7AA' }}>Definition & Curriculum Role</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {structured.abbreviations.map((abbr: any, aIdx: number) => (
+                          <tr key={aIdx}>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', fontWeight: 800, color: '#C2410C' }}>{abbr.abbr}</td>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', fontWeight: 700 }}>{abbr.fullForm}</td>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', color: '#374151' }}>{abbr.simpleDefinition}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* 5. Prerequisites */}
+              {Array.isArray(structured.prerequisites) && structured.prerequisites.length > 0 && (
+                <div id="sec-prerequisites" style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid #EEEEEE' }}>
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#202124', marginBottom: 12 }}>
+                    4. Fundamentals & Prerequisites
+                  </h3>
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    {structured.prerequisites.map((req: string, rIdx: number) => (
+                      <div key={rIdx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#F9FAFB', borderRadius: 8, border: '1px solid #F3F4F6' }}>
+                        <span style={{ color: '#16A34A', fontWeight: 800 }}>✓</span>
+                        <span style={{ fontSize: '0.9rem', color: '#374151' }}>{req}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 6. All Sections in Flow (Integrated Mechanisms & Diagrams) */}
+              <div id="sec-content-flow" style={{ display: 'grid', gap: 32, marginBottom: 36 }}>
+                <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#202124', margin: '8px 0 0 0' }}>
+                  5. Detailed Core Mechanisms & Working Steps
+                </h3>
                 {sections.map((sec, idx) => (
                   <article key={idx} style={{ borderBottom: '1px solid #EEEEEE', paddingBottom: 24 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-                      <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#202124', margin: 0 }}>
+                      <h4 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#202124', margin: 0 }}>
                         {sec.heading || `Section ${idx + 1}`}
-                      </h3>
+                      </h4>
                       {sec.citations && (
                         <span style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 600 }}>
                           {sec.citations[0]}
                         </span>
                       )}
                     </div>
-                    <p style={{ fontSize: '1rem', color: '#374151', margin: '0 0 12px 0', whiteSpace: 'pre-line' }}>
+                    <p style={{ fontSize: '1rem', color: '#374151', margin: '0 0 12px 0', whiteSpace: 'pre-line', lineHeight: 1.72 }}>
                       {sec.body || sec.plainExplanation}
                     </p>
 
-                    {/* Paired diagram if available */}
+                    {/* Paired diagram placed directly inside the section it supports */}
                     {structured.images?.[idx] && (
-                      <figure style={{ margin: '16px 0', padding: 14, borderRadius: 12, background: '#FAFAFA', border: '1px solid #EEEEEE' }}>
+                      <figure style={{ margin: '18px 0', padding: 16, borderRadius: 16, background: '#FAFAFA', border: '1.5px solid #EEEEEE' }}>
                         <img
                           src={structured.images[idx].imageUrl}
                           alt={structured.images[idx].title}
-                          style={{ width: '100%', maxHeight: 320, objectFit: 'contain', display: 'block', background: '#FFFFFF', borderRadius: 8 }}
+                          style={{ width: '100%', maxHeight: 340, objectFit: 'contain', display: 'block', background: '#FFFFFF', borderRadius: 10 }}
                         />
-                        <figcaption style={{ marginTop: 8, fontSize: '0.84rem', color: '#4B5563' }}>
-                          <strong>{structured.images[idx].title}: </strong>
+                        <figcaption style={{ marginTop: 10, fontSize: '0.86rem', color: '#4B5563' }}>
+                          <strong style={{ color: '#FF6A00' }}>{structured.images[idx].title}: </strong>
                           {structured.images[idx].caption}
                         </figcaption>
                       </figure>
@@ -2087,9 +2222,94 @@ export const NotesPage: React.FC = () => {
                 ))}
               </div>
 
+              {/* 7. Formulas & Solved Numericals (9-Step Template) */}
+              {structured.formula && (
+                <div id="sec-formulas" style={{ marginBottom: 36, padding: '24px 28px', borderRadius: 16, background: '#F8FAFC', border: '1.5px solid #E2E8F0' }}>
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0F172A', marginBottom: 12 }}>
+                    6. Governing Formulas & 9-Step Worked Numerical
+                  </h3>
+                  <div style={{ padding: '12px 18px', background: '#FFFFFF', borderRadius: 10, border: '1px solid #CBD5E1', marginBottom: 16 }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Governing Equation</span>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0F172A', marginTop: 4 }}>
+                      `{structured.formula.equation}`
+                    </div>
+                  </div>
+
+                  {Array.isArray(structured.workedProblems) && structured.workedProblems.length > 0 && (
+                    <div style={{ marginTop: 14 }}>
+                      <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#334155', marginBottom: 10 }}>
+                        Standard Board Examination Solved Problem:
+                      </h4>
+                      {structured.workedProblems.map((prob: any, pIdx: number) => (
+                        <div key={pIdx} style={{ padding: '16px 20px', background: '#FFFFFF', borderRadius: 12, border: '1px solid #CBD5E1', marginBottom: 12 }}>
+                          <strong style={{ fontSize: '0.96rem', color: '#0F172A', display: 'block', marginBottom: 8 }}>
+                            {prob.title || `Problem ${pIdx + 1}`}: {prob.problemStatement}
+                          </strong>
+                          <div style={{ fontSize: '0.86rem', color: '#475569', lineHeight: 1.6 }}>
+                            {Array.isArray(prob.stepByStepSolution) && prob.stepByStepSolution.map((st: string, sIdx: number) => (
+                              <div key={sIdx} style={{ marginBottom: 4 }}>• {st}</div>
+                            ))}
+                            <div style={{ marginTop: 8, padding: '6px 12px', background: '#ECFDF5', borderRadius: 6, color: '#047857', fontWeight: 800 }}>
+                              Final Verified Answer: {prob.finalAnswer} ({prob.siUnit})
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 8. Comparisons Matrix */}
+              {structured.differences && (
+                <div id="sec-comparisons" style={{ marginBottom: 36, paddingBottom: 24, borderBottom: '1px solid #EEEEEE' }}>
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#202124', marginBottom: 14 }}>
+                    7. Comparative Analysis Matrix
+                  </h3>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem', background: '#FFFFFF', borderRadius: 10 }}>
+                      <thead>
+                        <tr style={{ background: '#FFF3E8', color: '#C2410C', textAlign: 'left' }}>
+                          <th style={{ padding: '10px 14px', border: '1px solid #FED7AA' }}>Aspect of Comparison</th>
+                          <th style={{ padding: '10px 14px', border: '1px solid #FED7AA' }}>{structured.differences.titleA}</th>
+                          <th style={{ padding: '10px 14px', border: '1px solid #FED7AA' }}>{structured.differences.titleB}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {structured.differences.rows?.map((row: any, rIdx: number) => (
+                          <tr key={rIdx}>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', fontWeight: 700 }}>{row.aspect}</td>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA' }}>{row.itemA}</td>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA' }}>{row.itemB}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* 9. Common Misconceptions & Board Traps */}
+              {Array.isArray(structured.misconceptions) && structured.misconceptions.length > 0 && (
+                <div id="sec-misconceptions" style={{ marginBottom: 36, padding: '20px 24px', borderRadius: 16, background: '#FEF2F2', border: '1.5px solid #FECACA' }}>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#991B1B', marginBottom: 10 }}>
+                    8. Common Student Misconceptions & Board Traps
+                  </h3>
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    {structured.misconceptions.map((misc: string, mIdx: number) => (
+                      <div key={mIdx} style={{ fontSize: '0.9rem', color: '#7F1D1D', display: 'flex', gap: 8 }}>
+                        <span>⚠️</span>
+                        <span>{misc}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* The Final Comprehensive Revision Page (Master Sheet) */}
               {finalRevisionPage && (
                 <section
+                  id="sec-revision-sheet"
                   style={{
                     marginTop: 48,
                     padding: '32px 36px',
@@ -2152,6 +2372,92 @@ export const NotesPage: React.FC = () => {
                       </div>
                     </div>
                   )}
+                </section>
+              )}
+
+              {/* 10. Self-Test Knowledge Assessment */}
+              {Array.isArray(structured.examQuestions) && structured.examQuestions.length > 0 && (
+                <section
+                  id="sec-assessment"
+                  style={{
+                    marginTop: 40,
+                    padding: '30px 34px',
+                    borderRadius: 20,
+                    background: '#F8FAFC',
+                    border: '1.5px solid #E2E8F0'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+                    <div>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#3B82F6', color: '#FFFFFF', padding: '3px 10px', borderRadius: 6 }}>
+                        Self-Evaluation & Exam Readiness
+                      </span>
+                      <h3 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0F172A', margin: '6px 0 0 0' }}>
+                        10. Knowledge Assessment Practice Questions
+                      </h3>
+                    </div>
+                    <span style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 700 }}>
+                      {structured.examQuestions.length} Practice Items
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gap: 18 }}>
+                    {structured.examQuestions.map((q: any, qIdx: number) => (
+                      <div
+                        key={qIdx}
+                        style={{
+                          background: '#FFFFFF',
+                          borderRadius: 12,
+                          padding: '18px 20px',
+                          border: '1px solid #E2E8F0',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#FF6A00' }}>
+                            Question {qIdx + 1} ({q.type || 'Practice'} • {q.marks || 1} Mark{(q.marks || 1) > 1 ? 's' : ''})
+                          </span>
+                        </div>
+                        <p style={{ fontSize: '0.96rem', fontWeight: 700, color: '#1E293B', margin: '0 0 10px 0' }}>
+                          {q.question}
+                        </p>
+
+                        {Array.isArray(q.options) && (
+                          <div style={{ display: 'grid', gap: 6, marginBottom: 12 }}>
+                            {q.options.map((opt: string, oIdx: number) => (
+                              <div
+                                key={oIdx}
+                                style={{
+                                  padding: '8px 12px',
+                                  borderRadius: 8,
+                                  background: '#F8FAFC',
+                                  fontSize: '0.86rem',
+                                  color: '#334155',
+                                  border: '1px solid #E2E8F0'
+                                }}
+                              >
+                                {String.fromCharCode(65 + oIdx)}. {opt}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <details style={{ marginTop: 8 }}>
+                          <summary style={{ fontSize: '0.82rem', fontWeight: 800, color: '#2563EB', cursor: 'pointer', outline: 'none' }}>
+                            View Examiner Model Answer & Explanation ▾
+                          </summary>
+                          <div style={{ marginTop: 10, padding: 12, background: '#F0FDF4', borderRadius: 8, border: '1px solid #BBF7D0', fontSize: '0.86rem', color: '#166534' }}>
+                            <strong>Model Answer:</strong> {q.modelAnswer || q.correctAnswer}
+                            {q.explanation && (
+                              <div style={{ marginTop: 6, fontSize: '0.8rem', color: '#15803D' }}>
+                                <em>Why:</em> {q.explanation}
+                              </div>
+                            )}
+                          </div>
+                        </details>
+                      </div>
+                    ))}
+                  </div>
                 </section>
               )}
             </div>
