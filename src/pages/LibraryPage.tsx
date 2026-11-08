@@ -221,10 +221,9 @@ export const LibraryPage: React.FC = () => {
     setInspectedResource(null);
     if (item.resource_type === 'note') {
       navigate(`/notes?id=${item.content?.noteId || ''}`);
-    } else if (item.resource_type === 'model3d') {
-      open3DLab(item.topic, item.content?.modelId);
-    } else if (item.resource_type === 'video') {
-      openVideoStudio(item.topic);
+    } else if (item.resource_type === 'model3d' || item.resource_type === 'video') {
+      // Integrated contextually into AI Tutor workspace per Part 3 & Part 6
+      navigate(`/tutor?topic=${encodeURIComponent(item.topic)}`);
     } else if (item.resource_type === 'image') {
       openImageStudio(item.topic);
     } else if (item.resource_type === 'audio') {
@@ -273,14 +272,12 @@ export const LibraryPage: React.FC = () => {
   };
 
   const filterTabs = [
-    { id: 'all', label: `All Visual Library (${counts.all || 0})` },
-    { id: 'note', label: `AI Notes (${counts.note || 0})` },
-    { id: 'image', label: `Images & Diagrams (${counts.image || 0})` },
-    { id: 'model3d', label: `3D Models (${counts.model3d || 0})` },
+    { id: 'all', label: `All Resources (${counts.all || 0})` },
+    { id: 'note', label: `Saved Notebooks & Revision (${counts.note || 0})` },
+    { id: 'quiz', label: `Practice Quizzes & Assessments (${counts.quiz || 0})` },
     { id: 'game', label: `Educational Games (${counts.game || 0})` },
     { id: 'audio', label: `Audio Lessons (${counts.audio || 0})` },
-    { id: 'quiz', label: `Practice & Assessments (${counts.quiz || 0})` },
-    { id: 'video', label: `Videos (${counts.video || 0})` },
+    { id: 'image', label: `Visual Schematics (${counts.image || 0})` },
     { id: 'examinations', label: 'Weekly Mock Exams' }
   ];
 
@@ -292,13 +289,12 @@ export const LibraryPage: React.FC = () => {
     count: number;
     iconName: FuturisticIconName;
   }> = [
-    { id: 'note', label: 'AI Notes', count: counts.note || 0, iconName: 'notes' },
-    { id: 'image', label: 'Diagrams & Images', count: counts.image || 0, iconName: 'image' },
-    { id: 'model3d', label: '3D Models', count: counts.model3d || 0, iconName: 'lab3d' },
-    { id: 'game', label: 'Educational Games', count: counts.game || 0, iconName: 'games' },
-    { id: 'audio', label: 'Audio Overviews', count: counts.audio || 0, iconName: 'audio' },
-    { id: 'quiz', label: 'Assessments', count: counts.quiz || 0, iconName: 'quiz' },
-    { id: 'examinations', label: 'Weekly Exams', count: 2, iconName: 'quiz' }
+    { id: 'note', label: 'Saved Notebooks', count: counts.note || 0, iconName: 'notes' },
+    { id: 'quiz', label: 'Practice & Quizzes', count: counts.quiz || 0, iconName: 'quiz' },
+    { id: 'game', label: 'Curriculum Games', count: counts.game || 0, iconName: 'games' },
+    { id: 'audio', label: 'Audio Lessons', count: counts.audio || 0, iconName: 'audio' },
+    { id: 'image', label: 'Visual Schematics', count: counts.image || 0, iconName: 'image' },
+    { id: 'examinations', label: 'Weekly Mock Exams', count: 2, iconName: 'quiz' }
   ];
 
   return (

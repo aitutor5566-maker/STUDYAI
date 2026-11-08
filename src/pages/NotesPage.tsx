@@ -46,10 +46,12 @@ import {
   Bookmark,
   Compass,
   Presentation,
-  Network
+  Network,
+  Award
 } from 'lucide-react';
 import { TopBrandBar } from '../components/GlassNav';
 import { FuturisticIcon } from '../components/FuturisticIcons';
+import { StudyAiAssistantCharacter } from '../components/StudyAiAssistantCharacter';
 import { useLearning } from '../context/LearningContext';
 
 interface PendingSourceItem {
@@ -100,7 +102,7 @@ export const NotesPage: React.FC = () => {
 
   // Active Note & Workspace State
   const [activeNote, setActiveNote] = useState<any | null>(null);
-  const [notebookSubTab, setNotebookSubTab] = useState<'guided' | 'full' | 'studio' | 'ask' | 'flashcards'>('guided');
+  const [notebookSubTab, setNotebookSubTab] = useState<'guided' | 'full' | 'revision' | 'studio' | 'ask' | 'flashcards'>('guided');
   const [activeSectionIdx, setActiveSectionIdx] = useState<number>(0);
   const [completedSections, setCompletedSections] = useState<Record<number, boolean>>({});
 
@@ -692,6 +694,18 @@ export const NotesPage: React.FC = () => {
               boxShadow: '0 20px 48px -12px rgba(255, 106, 0, 0.12)'
             }}
           >
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+              <StudyAiAssistantCharacter
+                size="md"
+                state={generating ? 'thinking' : 'idle'}
+                speechBubble={
+                  generating
+                    ? `Researching: ${PIPELINE_STEP_LABELS[pipelineStepIdx] || 'Synthesizing knowledge...'}`
+                    : 'Ready to research! Ask any syllabus topic or attach textbooks.'
+                }
+              />
+            </div>
+
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 9999, background: '#FFF3E8', color: '#FF6A00', fontWeight: 800, fontSize: '0.76rem', marginBottom: 12 }}>
               <Sparkles size={14} />
               <span>AI-Powered Guided Roadmaps</span>
@@ -1097,6 +1111,15 @@ export const NotesPage: React.FC = () => {
               >
                 <BookOpen size={14} style={{ marginRight: 4 }} />
                 <span>Full White-Page View</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setNotebookSubTab('revision')}
+                className={`filter-pill ${notebookSubTab === 'revision' ? 'active' : ''}`}
+                style={{ padding: '6px 14px', fontSize: '0.78rem' }}
+              >
+                <Award size={14} style={{ marginRight: 4 }} />
+                <span>Revision Notebook</span>
               </button>
               <button
                 type="button"
@@ -1812,6 +1835,119 @@ export const NotesPage: React.FC = () => {
           )}
 
           {/* ---------------------------------------------------------------------
+              SUB-TAB: SEPARATE CONDENSED REVISION NOTEBOOK
+              --------------------------------------------------------------------- */}
+          {notebookSubTab === 'revision' && (
+            <div className="glass-card" style={{ padding: '32px 36px', borderRadius: 24, background: '#FFFFFF', boxShadow: '0 8px 30px rgba(0,0,0,0.06)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid rgba(255,106,0,0.2)', paddingBottom: 16, marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF' }}>
+                    <Award size={24} />
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.74rem', fontWeight: 800, textTransform: 'uppercase', background: '#FFF3E8', color: '#FF6A00', padding: '3px 10px', borderRadius: 999 }}>
+                      Condensed Exam Revision Notebook
+                    </span>
+                    <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#202124', margin: '4px 0 0 0' }}>
+                      {editTitle || activeNote?.title || 'Comprehensive Revision Guide'}
+                    </h2>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => handleExport('html')}
+                    className="btn-orange"
+                    style={{ fontSize: '0.82rem', padding: '8px 16px' }}
+                  >
+                    <Printer size={15} />
+                    <span>Print Revision Sheet</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Executive Concept Summary */}
+              <div style={{ padding: 18, background: '#FFF7ED', borderRadius: 16, border: '1.5px solid #FFEDD5', marginBottom: 24 }}>
+                <strong style={{ fontSize: '0.82rem', textTransform: 'uppercase', color: '#9A3412', display: 'block', marginBottom: 6 }}>
+                  ⚡ Executive Concept Summary
+                </strong>
+                <p style={{ margin: 0, fontSize: '0.96rem', color: '#1F2937', lineHeight: 1.65 }}>
+                  {finalRevisionPage?.executiveSummary ||
+                    structured?.sections?.[0]?.content?.slice(0, 320) ||
+                    'High-yield summary of core syllabus definitions, fundamental laws, and exam principles.'}
+                </p>
+              </div>
+
+              {/* Concept Matrix */}
+              <div style={{ marginBottom: 28 }}>
+                <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#202124', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span>📊 1. Quick Revision Concept Matrix</span>
+                </h4>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', background: '#FFFFFF', borderRadius: 12, overflow: 'hidden', fontSize: '0.88rem', border: '1px solid #E5E7EB' }}>
+                    <thead>
+                      <tr style={{ background: '#FFF3E8', color: '#9A3412', textAlign: 'left' }}>
+                        <th style={{ padding: '10px 14px', border: '1px solid #FED7AA' }}>Concept / Principle</th>
+                        <th style={{ padding: '10px 14px', border: '1px solid #FED7AA' }}>Core Rule / Scientific Mechanism</th>
+                        <th style={{ padding: '10px 14px', border: '1px solid #FED7AA' }}>High-Frequency Exam Trap</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array.isArray(finalRevisionPage?.quickRevisionMatrix) && finalRevisionPage.quickRevisionMatrix.length > 0 ? (
+                        finalRevisionPage.quickRevisionMatrix.map((row: any, rIdx: number) => (
+                          <tr key={rIdx} style={{ background: rIdx % 2 === 0 ? '#FFFFFF' : '#FAFAFA' }}>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', fontWeight: 700, color: '#202124' }}>{row.concept}</td>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', color: '#4B5563' }}>{row.keyRuleOrPrinciple}</td>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', color: '#EA580C', fontWeight: 600 }}>{row.examSignificance}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        (structured?.sections || []).map((sec: any, sIdx: number) => (
+                          <tr key={sIdx} style={{ background: sIdx % 2 === 0 ? '#FFFFFF' : '#FAFAFA' }}>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', fontWeight: 700, color: '#202124' }}>{sec.title}</td>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', color: '#4B5563' }}>{sec.learningObjective || sec.content?.slice(0, 100)}</td>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', color: '#EA580C', fontWeight: 600 }}>Key Board Question Section</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* High-Yield Key Points & Formulas */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+                {(structured?.sections || []).map((sec: any, idx: number) => (
+                  <div
+                    key={idx}
+                    style={{
+                      padding: 16,
+                      borderRadius: 16,
+                      background: '#FAFAFA',
+                      border: '1.5px solid #EEEEEE'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                      <span style={{ fontSize: '0.74rem', fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#FF6A00', color: '#FFFFFF' }}>
+                        § {idx + 1}
+                      </span>
+                      <strong style={{ fontSize: '0.92rem', color: '#202124' }}>{sec.title}</strong>
+                    </div>
+                    <ul style={{ margin: 0, paddingLeft: 18, fontSize: '0.84rem', color: '#4B5563', lineHeight: 1.6 }}>
+                      {(sec.keyTakeaways || []).length > 0 ? (
+                        sec.keyTakeaways.map((k: string, kIdx: number) => <li key={kIdx}>{k}</li>)
+                      ) : (
+                        <li>{sec.learningObjective || sec.content?.slice(0, 140)}</li>
+                      )}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ---------------------------------------------------------------------
               SUB-TAB 3: STUDIO TOOLS (Section 12 & 13)
               --------------------------------------------------------------------- */}
           {notebookSubTab === 'studio' && (
@@ -2257,6 +2393,119 @@ export const NotesPage: React.FC = () => {
                   )}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ---------------------------------------------------------------------
+              SUB-TAB: SEPARATE CONDENSED REVISION NOTEBOOK
+              --------------------------------------------------------------------- */}
+          {notebookSubTab === 'revision' && (
+            <div className="glass-card" style={{ padding: '32px 36px', borderRadius: 24, background: '#FFFFFF', boxShadow: '0 8px 30px rgba(0,0,0,0.06)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid rgba(255,106,0,0.2)', paddingBottom: 16, marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF' }}>
+                    <Award size={24} />
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.74rem', fontWeight: 800, textTransform: 'uppercase', background: '#FFF3E8', color: '#FF6A00', padding: '3px 10px', borderRadius: 999 }}>
+                      Condensed Exam Revision Notebook
+                    </span>
+                    <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#202124', margin: '4px 0 0 0' }}>
+                      {editTitle || activeNote?.title || 'Comprehensive Revision Guide'}
+                    </h2>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => handleExport('html')}
+                    className="btn-orange"
+                    style={{ fontSize: '0.82rem', padding: '8px 16px' }}
+                  >
+                    <Printer size={15} />
+                    <span>Print Revision Sheet</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Executive Concept Summary */}
+              <div style={{ padding: 18, background: '#FFF7ED', borderRadius: 16, border: '1.5px solid #FFEDD5', marginBottom: 24 }}>
+                <strong style={{ fontSize: '0.82rem', textTransform: 'uppercase', color: '#9A3412', display: 'block', marginBottom: 6 }}>
+                  ⚡ Executive Concept Summary
+                </strong>
+                <p style={{ margin: 0, fontSize: '0.96rem', color: '#1F2937', lineHeight: 1.65 }}>
+                  {finalRevisionPage?.executiveSummary ||
+                    structured?.sections?.[0]?.content?.slice(0, 320) ||
+                    'High-yield summary of core syllabus definitions, fundamental laws, and exam principles.'}
+                </p>
+              </div>
+
+              {/* Concept Matrix */}
+              <div style={{ marginBottom: 28 }}>
+                <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#202124', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span>📊 1. Quick Revision Concept Matrix</span>
+                </h4>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', background: '#FFFFFF', borderRadius: 12, overflow: 'hidden', fontSize: '0.88rem', border: '1px solid #E5E7EB' }}>
+                    <thead>
+                      <tr style={{ background: '#FFF3E8', color: '#9A3412', textAlign: 'left' }}>
+                        <th style={{ padding: '10px 14px', border: '1px solid #FED7AA' }}>Concept / Principle</th>
+                        <th style={{ padding: '10px 14px', border: '1px solid #FED7AA' }}>Core Rule / Scientific Mechanism</th>
+                        <th style={{ padding: '10px 14px', border: '1px solid #FED7AA' }}>High-Frequency Exam Trap</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array.isArray(finalRevisionPage?.quickRevisionMatrix) && finalRevisionPage.quickRevisionMatrix.length > 0 ? (
+                        finalRevisionPage.quickRevisionMatrix.map((row: any, rIdx: number) => (
+                          <tr key={rIdx} style={{ background: rIdx % 2 === 0 ? '#FFFFFF' : '#FAFAFA' }}>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', fontWeight: 700, color: '#202124' }}>{row.concept}</td>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', color: '#4B5563' }}>{row.keyRuleOrPrinciple}</td>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', color: '#EA580C', fontWeight: 600 }}>{row.examSignificance}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        (structured?.sections || []).map((sec: any, sIdx: number) => (
+                          <tr key={sIdx} style={{ background: sIdx % 2 === 0 ? '#FFFFFF' : '#FAFAFA' }}>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', fontWeight: 700, color: '#202124' }}>{sec.title}</td>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', color: '#4B5563' }}>{sec.learningObjective || sec.content?.slice(0, 100)}</td>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', color: '#EA580C', fontWeight: 600 }}>Key Board Question Section</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* High-Yield Key Points & Formulas */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+                {(structured?.sections || []).map((sec: any, idx: number) => (
+                  <div
+                    key={idx}
+                    style={{
+                      padding: 16,
+                      borderRadius: 16,
+                      background: '#FAFAFA',
+                      border: '1.5px solid #EEEEEE'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                      <span style={{ fontSize: '0.74rem', fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#FF6A00', color: '#FFFFFF' }}>
+                        § {idx + 1}
+                      </span>
+                      <strong style={{ fontSize: '0.92rem', color: '#202124' }}>{sec.title}</strong>
+                    </div>
+                    <ul style={{ margin: 0, paddingLeft: 18, fontSize: '0.84rem', color: '#4B5563', lineHeight: 1.6 }}>
+                      {(sec.keyTakeaways || []).length > 0 ? (
+                        sec.keyTakeaways.map((k: string, kIdx: number) => <li key={kIdx}>{k}</li>)
+                      ) : (
+                        <li>{sec.learningObjective || sec.content?.slice(0, 140)}</li>
+                      )}
+                    </ul>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

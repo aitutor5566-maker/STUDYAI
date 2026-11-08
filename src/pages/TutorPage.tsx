@@ -31,6 +31,7 @@ import {
 import { TopBrandBar } from '../components/GlassNav';
 import { Interactive3DViewer } from '../components/Interactive3DLab';
 import { FuturisticIcon } from '../components/FuturisticIcons';
+import { StudyAiAssistantCharacter } from '../components/StudyAiAssistantCharacter';
 import { useLearning } from '../context/LearningContext';
 import { AdaptiveProfileModal } from '../components/AdaptiveProfileModal';
 import { VoiceTeacherModal } from '../components/VoiceTeacherModal';
@@ -41,11 +42,16 @@ export type TeachingMode = 'normal' | 'exam';
 
 export function inferTopicModel3D(topicName: string): string | null {
   const t = (topicName || '').toLowerCase();
-  if (t.includes('heart') || t.includes('circulation') || t.includes('cardio')) return 'human_heart';
-  if (t.includes('dna') || t.includes('helix') || t.includes('nucleotide')) return 'dna_helix';
+  if (t.includes('heart') || t.includes('circulation') || t.includes('cardio') || t.includes('ventricle') || t.includes('aorta')) return 'human_heart';
+  if (t.includes('lung') || t.includes('respiratory') || t.includes('breathing') || t.includes('trachea') || t.includes('alveoli') || t.includes('bronch')) return 'human_lungs';
+  if (t.includes('circuit') || t.includes('resistor') || t.includes('battery') || t.includes('bulb') || t.includes('electricity') || t.includes('current') || t.includes('ohm') || t.includes('capacitor')) return 'electric_circuit';
+  if (t.includes('torso') || t.includes('human body') || t.includes('anatomy') || t.includes('organ') || t.includes('internal') || t.includes('skeleton')) return 'human_torso_anatomy';
+  if (t.includes('ear') || t.includes('hearing') || t.includes('cochlea') || t.includes('tympanic') || t.includes('auditory') || t.includes('sound wave') || t.includes('eardrum')) return 'human_ear';
+  if (t.includes('motor') || t.includes('generator') || t.includes('electromagnet')) return 'electric_motor';
+  if (t.includes('dna') || t.includes('helix') || t.includes('nucleotide') || t.includes('genetic')) return 'dna_helix';
   if (t.includes('chloroplast') || t.includes('plant cell')) return 'chloroplast_molecule';
   if (t.includes('atom') || t.includes('bohr') || t.includes('electron shell')) return 'atom_bohr';
-  if (t.includes('solar') || t.includes('planet') || t.includes('kepler')) return 'solar_system';
+  if (t.includes('solar') || t.includes('planet') || t.includes('kepler') || t.includes('space') || t.includes('orbit')) return 'solar_system';
   if (t.includes('volcano')) return 'volcano';
   if (t.includes('water') && (t.includes('molecule') || t.includes('h2o') || t.includes('bent'))) return 'water_molecule';
   if (t.includes('lever') || t.includes('fulcrum') || t.includes('moments')) return 'lever_moments';
@@ -320,6 +326,16 @@ export const TutorPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [inline3DMsgId, setInline3DMsgId] = useState<string | null>(null);
+  const [show3DStudioDrawer, setShow3DStudioDrawer] = useState<boolean>(searchParams.get('tool') === '3d');
+  const [studioModelKey, setStudioModelKey] = useState<string>(searchParams.get('model') || 'human_heart');
+
+  useEffect(() => {
+    if (searchParams.get('tool') === '3d') {
+      setShow3DStudioDrawer(true);
+      const m = searchParams.get('model');
+      if (m) setStudioModelKey(m);
+    }
+  }, [searchParams]);
   const [actionToast, setActionToast] = useState<string>('');
   const [selectedVisualComponent, setSelectedVisualComponent] = useState<{ id: string; label: string; role?: string } | null>(null);
   const [revealedQuestions, setRevealedQuestions] = useState<Record<string, boolean>>({});
@@ -851,8 +867,12 @@ export const TutorPage: React.FC = () => {
 
       {/* Main AI Tutor Studio Header & Status */}
       <section style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <FuturisticIcon name="tutor" size={46} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <StudyAiAssistantCharacter
+            size="sm"
+            state={loading ? 'thinking' : isSpeaking ? 'speaking' : 'idle'}
+            speechBubble={loading ? 'Analyzing curriculum sources...' : isSpeaking ? 'Explaining step-by-step...' : undefined}
+          />
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <h1 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#202124', margin: 0 }}>AI Tutor</h1>
@@ -1098,7 +1118,128 @@ export const TutorPage: React.FC = () => {
           <Mic size={16} color="#FFFFFF" />
           <span>Start Voice Lesson</span>
         </button>
+
+        {/* Universal 3D Interactive Diagram Studio Button */}
+        <button
+          type="button"
+          onClick={() => setShow3DStudioDrawer((prev) => !prev)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '8px 18px',
+            borderRadius: 999,
+            background: show3DStudioDrawer ? 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)' : '#FFF3E8',
+            border: '1.5px solid rgba(255, 106, 0, 0.4)',
+            color: show3DStudioDrawer ? '#FFFFFF' : '#E85D00',
+            fontWeight: 800,
+            fontSize: '0.82rem',
+            cursor: 'pointer',
+            boxShadow: show3DStudioDrawer ? '0 4px 14px rgba(255, 106, 0, 0.35)' : 'none',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <Box size={16} color={show3DStudioDrawer ? '#FFFFFF' : '#FF6A00'} />
+          <span>{show3DStudioDrawer ? 'Hide 3D Studio' : 'Interactive 3D Studio'}</span>
+          <span
+            style={{
+              fontSize: '0.68rem',
+              padding: '2px 7px',
+              borderRadius: 999,
+              background: show3DStudioDrawer ? 'rgba(255,255,255,0.25)' : '#FFE4CC',
+              color: show3DStudioDrawer ? '#FFFFFF' : '#E85D00'
+            }}
+          >
+            5 Models
+          </span>
+        </button>
       </section>
+
+      {/* Interactive 3D Diagram Studio Drawer (Seamless AI Tutor Integration) */}
+      {show3DStudioDrawer && (
+        <section
+          style={{
+            marginBottom: 20,
+            borderRadius: 24,
+            overflow: 'hidden',
+            border: '2px solid rgba(255, 106, 0, 0.35)',
+            boxShadow: '0 16px 40px rgba(255, 106, 0, 0.12)',
+            background: '#FFFFFF'
+          }}
+        >
+          <div
+            style={{
+              padding: '12px 20px',
+              background: 'linear-gradient(90deg, #FFF3E8 0%, #FFE4CC 100%)',
+              borderBottom: '1.5px solid rgba(255, 106, 0, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 10
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: '1.2rem' }}>🔬</span>
+              <div>
+                <strong style={{ fontSize: '0.94rem', color: '#202124' }}>Universal 3D Educational Diagram Studio</strong>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: '#6B7280' }}>
+                  Rotate 360°, inspect callouts, explode layers, and tap any component to question the AI Tutor
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Model Selector Pills */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              {[
+                { id: 'human_heart', label: '❤️ Heart' },
+                { id: 'human_lungs', label: '🫁 Lungs' },
+                { id: 'electric_circuit', label: '⚡ Circuit' },
+                { id: 'human_torso_anatomy', label: '🧬 Torso' },
+                { id: 'human_ear', label: '👂 Ear' }
+              ].map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setStudioModelKey(m.id)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: 999,
+                    border: '1px solid ' + (studioModelKey === m.id ? '#FF6A00' : 'rgba(255,106,0,0.2)'),
+                    background: studioModelKey === m.id ? '#FF6A00' : '#FFFFFF',
+                    color: studioModelKey === m.id ? '#FFFFFF' : '#202124',
+                    fontSize: '0.76rem',
+                    fontWeight: 800,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {m.label}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setShow3DStudioDrawer(false)}
+                className="btn-glass"
+                style={{ padding: '6px 12px', fontSize: '0.76rem', color: '#6B7280' }}
+              >
+                ✕ Close
+              </button>
+            </div>
+          </div>
+
+          <Interactive3DViewer
+            topic={activeTopic}
+            modelType={studioModelKey || inferTopicModel3D(activeTopic) || 'human_heart'}
+            onClose={() => setShow3DStudioDrawer(false)}
+            onSelectComponent={(comp) => {
+              setSelectedVisualComponent(comp);
+              const q = `Explain the biological / physical role of ${comp.label} in ${activeTopic || 'this system'} in simple terms.`;
+              setQuestionInput(q);
+              submitQuestion(q, activeTopic, null);
+            }}
+          />
+        </section>
+      )}
 
       {/* Multilingual, Multi-Grade & Pedagogical Controls Bar */}
       <section
