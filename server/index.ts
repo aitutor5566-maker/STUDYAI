@@ -6245,7 +6245,7 @@ const isMain = import.meta.url === `file://${process.argv[1]}` || process.argv[1
 if (isMain) {
   const port = Number(process.env.PORT) || 3001;
   const appServer = createAppServer();
-  appServer.listen(port, () => {
-    console.log(`STUDYAI Backend Server listening on http://localhost:${port}`);
+  appServer.listen(port, '0.0.0.0', () => {
+    console.log(`STUDYAI Backend Server listening on http://0.0.0.0:${port}`);
   });
 }

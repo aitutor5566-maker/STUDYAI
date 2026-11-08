@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "dev": "concurrently \"npm:dev:fastapi\" \"npm:dev:server\" \"npm:dev:client\"",
     "dev:fastapi": "PYTHONPATH=. venv/bin/uvicorn fastapi_server.main:app --host 127.0.0.1 --port 8000 --reload",
