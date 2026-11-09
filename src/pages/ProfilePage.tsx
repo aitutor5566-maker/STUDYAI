@@ -752,7 +752,7 @@ export const ProfilePage: React.FC = () => {
                         </div>
                       </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
                         <div style={{ padding: 14, borderRadius: 14, background: '#FFFFFF', border: '1px solid rgba(22,163,74,0.25)' }}>
                           <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#15803D', marginBottom: 6 }}>✓ Core Strengths</div>
                           <ul style={{ paddingLeft: 18, fontSize: '0.84rem', color: '#374151' }}>
@@ -949,7 +949,7 @@ export const ProfilePage: React.FC = () => {
                         <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#111827' }}>
                           Curriculum & Examination Board Configuration
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
                           <div>
                             <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#4B5563', marginBottom: 4 }}>
                               Target Education Board:

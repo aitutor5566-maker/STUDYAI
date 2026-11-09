@@ -34,7 +34,7 @@ export const GlassNav: React.FC = () => {
               className={`nav-item-btn ${isActive ? 'active' : ''}`}
             >
               <span className="nav-item-icon-box">
-                <FuturisticIcon name={item.iconName} size={isActive ? 30 : 26} />
+                <FuturisticIcon name={item.iconName} size={isActive ? 24 : 22} />
               </span>
               <span>{item.label}</span>
             </NavLink>
@@ -55,112 +55,203 @@ export const TopBrandBar: React.FC<{
   const { studentId, setStudentId, studentProfiles, activeTopic } = useLearning();
 
   return (
-    <header
-      className="glass-panel top-brand-bar-header"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 22,
-        padding: '12px 18px',
-        borderRadius: 9999,
-        gap: 12,
-        flexWrap: 'wrap',
-        background: 'rgba(255, 255, 255, 0.86)',
-        border: '1.5px solid rgba(255, 106, 0, 0.18)',
-        boxShadow: '0 10px 28px -8px rgba(255, 106, 0, 0.12), inset 0 1px 0 #FFFFFF'
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        {showBack && (
+    <header className="glass-panel top-brand-bar-header">
+      {/* Main Top Row: Brand & Quick Action Indicators */}
+      <div className="top-brand-bar-main-row">
+        <div className="top-brand-bar-brand">
+          {showBack && (
+            <button
+              type="button"
+              onClick={onBack ? onBack : () => navigate(-1)}
+              aria-label="Go Back"
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                border: '1.5px solid rgba(255, 106, 0, 0.24)',
+                background: '#FFF3E8',
+                color: '#FF6A00',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                transition: 'all 0.18s ease'
+              }}
+            >
+              ←
+            </button>
+          )}
+          <div
+            onClick={() => navigate('/')}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', minWidth: 0 }}
+          >
+            <div
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 12,
+                background: '#FFF3E8',
+                border: '1px solid rgba(255, 106, 0, 0.22)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(255, 106, 0, 0.12)',
+                flexShrink: 0
+              }}
+            >
+              <FuturisticIcon name="logo" size={28} />
+            </div>
+            <div style={{ minWidth: 0, flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'nowrap' }}>
+                <span
+                  style={{
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    fontWeight: 900,
+                    fontSize: '1.05rem',
+                    letterSpacing: '-0.03em',
+                    color: '#FF6A00',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
+                  }}
+                >
+                  STUDYAI
+                </span>
+                <span
+                  style={{
+                    fontSize: '0.62rem',
+                    fontWeight: 800,
+                    padding: '2px 6px',
+                    borderRadius: 999,
+                    background: '#FFF3E8',
+                    color: '#E85D00',
+                    border: '1px solid rgba(255, 106, 0, 0.25)',
+                    letterSpacing: '0.04em',
+                    flexShrink: 0
+                  }}
+                >
+                  AI
+                </span>
+              </div>
+              <div
+                className="desktop-only-journey"
+                style={{
+                  fontSize: '0.72rem',
+                  color: '#6B7280',
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: 180
+                }}
+              >
+                Journey: <strong style={{ color: '#202124', fontWeight: 700 }}>{activeTopic}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Badges & Quick Shortcuts */}
+        <div className="top-brand-bar-actions">
+          {streakDays > 0 && (
+            <div
+              title={`${streakDays}-day learning streak`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '5px 10px',
+                borderRadius: 999,
+                background: '#FFF3E8',
+                border: '1.5px solid rgba(255, 106, 0, 0.28)',
+                color: '#E85D00',
+                fontSize: '0.76rem',
+                fontWeight: 800,
+                boxShadow: '0 4px 12px rgba(255, 106, 0, 0.1)'
+              }}
+            >
+              <Flame size={14} fill="#FF6A00" color="#FF6A00" />
+              <span>{streakDays}d</span>
+            </div>
+          )}
+
           <button
             type="button"
-            onClick={onBack ? onBack : () => navigate(-1)}
-            aria-label="Go Back"
+            onClick={() => navigate('/library')}
+            aria-label="Notifications and Saved Activity"
+            className="header-bell-btn"
             style={{
-              width: 38,
-              height: 38,
+              position: 'relative',
+              width: 36,
+              height: 36,
               borderRadius: '50%',
-              border: '1.5px solid rgba(255, 106, 0, 0.24)',
-              background: '#FFF3E8',
+              border: '1.5px solid rgba(255, 106, 0, 0.22)',
+              background: '#FFFFFF',
               color: '#FF6A00',
-              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.18s ease'
+              flexShrink: 0,
+              boxShadow: '0 4px 12px rgba(255, 106, 0, 0.1)',
+              transition: 'transform 0.18s ease'
             }}
           >
-            ←
+            <Bell size={16} />
+            <span
+              style={{
+                position: 'absolute',
+                top: 7,
+                right: 7,
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                background: '#FF6A00',
+                boxShadow: '0 0 0 2px #FFFFFF'
+              }}
+            />
           </button>
-        )}
-        <div
-          onClick={() => navigate('/')}
-          style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
-        >
+
           <div
+            onClick={() => navigate('/profile')}
+            role="button"
+            tabIndex={0}
+            aria-label="Open Student Profile"
             style={{
-              width: 44,
-              height: 44,
-              borderRadius: 14,
-              background: '#FFF3E8',
-              border: '1px solid rgba(255, 106, 0, 0.22)',
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)',
+              color: '#FFFFFF',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(255, 106, 0, 0.12)'
+              fontWeight: 800,
+              fontSize: '0.78rem',
+              cursor: 'pointer',
+              flexShrink: 0,
+              boxShadow: '0 4px 14px rgba(255, 106, 0, 0.3)'
             }}
           >
-            <FuturisticIcon name="logo" size={34} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span
-                style={{
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                  fontWeight: 900,
-                  fontSize: '1.22rem',
-                  letterSpacing: '-0.03em',
-                  color: '#FF6A00'
-                }}
-              >
-                STUDYAI
-              </span>
-              <span
-                style={{
-                  fontSize: '0.66rem',
-                  fontWeight: 800,
-                  padding: '2px 8px',
-                  borderRadius: 999,
-                  background: '#FFF3E8',
-                  color: '#E85D00',
-                  border: '1px solid rgba(255, 106, 0, 0.25)',
-                  letterSpacing: '0.04em'
-                }}
-              >
-                AI ECOSYSTEM
-              </span>
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 500, marginTop: 1 }}>
-              Active Journey: <strong style={{ color: '#202124', fontWeight: 700 }}>{activeTopic}</strong>
-            </div>
+            VS
           </div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        {/* Student Mode Switcher (Populated vs Honest Empty State for New Student) */}
+      {/* Sub Row on Mobile / Inline on Desktop: Student Profile Selector */}
+      <div className="top-brand-bar-sub-row">
         <select
           aria-label="Select Student Profile Mode"
           value={studentId}
           onChange={(e) => setStudentId(e.target.value)}
+          className="top-brand-student-select"
           style={{
-            padding: '8px 14px',
+            padding: '6px 12px',
             borderRadius: 999,
             border: '1.5px solid rgba(255, 106, 0, 0.24)',
             background: '#FFFFFF',
-            fontSize: '0.79rem',
+            fontSize: '0.76rem',
             fontWeight: 700,
             color: '#202124',
             cursor: 'pointer',
@@ -181,87 +272,6 @@ export const TopBrandBar: React.FC<{
             </>
           )}
         </select>
-
-        {streakDays > 0 && (
-          <div
-            title={`${streakDays}-day learning streak`}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '7px 14px',
-              borderRadius: 999,
-              background: '#FFF3E8',
-              border: '1.5px solid rgba(255, 106, 0, 0.28)',
-              color: '#E85D00',
-              fontSize: '0.82rem',
-              fontWeight: 800,
-              boxShadow: '0 4px 12px rgba(255, 106, 0, 0.1)'
-            }}
-          >
-            <Flame size={15} fill="#FF6A00" color="#FF6A00" />
-            <span>{streakDays}d</span>
-          </div>
-        )}
-
-        <button
-          type="button"
-          onClick={() => navigate('/library')}
-          aria-label="Notifications and Saved Activity"
-          style={{
-            position: 'relative',
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
-            border: '1.5px solid rgba(255, 106, 0, 0.22)',
-            background: '#FFFFFF',
-            color: '#FF6A00',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(255, 106, 0, 0.1)',
-            transition: 'transform 0.18s ease'
-          }}
-        >
-          <Bell size={18} />
-          <span
-            style={{
-              position: 'absolute',
-              top: 8,
-              right: 8,
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: '#FF6A00',
-              boxShadow: '0 0 0 2px #FFFFFF'
-            }}
-          />
-        </button>
-
-        <div
-          onClick={() => navigate('/profile')}
-          role="button"
-          tabIndex={0}
-          aria-label="Open Student Profile"
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #FF7A1A 0%, #FF6A00 100%)',
-            border: '2px solid #FFFFFF',
-            boxShadow: '0 6px 16px rgba(255, 106, 0, 0.28)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 800,
-            color: '#FFFFFF',
-            fontSize: '0.86rem',
-            cursor: 'pointer'
-          }}
-        >
-          {studentId === 'student-vishwak' ? 'VS' : 'AS'}
-        </div>
       </div>
     </header>
   );

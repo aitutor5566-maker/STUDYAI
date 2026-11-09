@@ -583,25 +583,6 @@ export const NotesPage: React.FC = () => {
         });
       }
 
-      if (sourcesPayload.length === 0) {
-        const jobRes = await apiFetch('/api/notebooks/jobs/create', {
-          method: 'POST',
-          body: JSON.stringify({
-            topic: effectiveTopic,
-            subject: editSubject,
-            depth: 'detailed'
-          })
-        });
-        if (jobRes && jobRes.job) {
-          setActiveJob(jobRes.job);
-          await setTopicContext(effectiveTopic, editSubject);
-          setHeroPrompt('');
-          window.clearInterval(stepInterval);
-          setGenerating(false);
-          return;
-        }
-      }
-
       const created = await apiFetch('/api/notes/generate', {
         method: 'POST',
         body: JSON.stringify({
@@ -624,6 +605,7 @@ export const NotesPage: React.FC = () => {
       setDashboardMode('notebook');
       setNotebookSubTab('full');
       setReaderViewMode('continuous');
+      setSearchParams({ id: created.id });
     } catch (err: any) {
       setUploadStatus({ type: 'err', message: err?.message || 'Failed to generate notebook.' });
     } finally {
@@ -1044,81 +1026,83 @@ export const NotesPage: React.FC = () => {
             {/* Large Intelligent Input Bar with Plus (+) and Voice Input */}
             <form onSubmit={handleGenerateNotebook} style={{ maxWidth: 740, margin: '0 auto' }}>
               <div
+                className="glass-input-wrap-futuristic"
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
                   background: '#FFFFFF',
                   borderRadius: 20,
                   border: '2px solid #FF6A00',
                   boxShadow: '0 10px 30px rgba(255, 106, 0, 0.14)',
-                  padding: '6px 8px 6px 14px',
-                  gap: 8,
-                  transition: 'box-shadow 0.2s ease'
+                  padding: '6px 8px 6px 14px'
                 }}
               >
-                {/* Prominent Plus (+) Attachment Button */}
-                <button
-                  type="button"
-                  onClick={() => setShowAttachmentModal(true)}
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 14,
-                    background: pendingSources.length > 0 ? '#10B981' : '#FFF3E8',
-                    border: 'none',
-                    color: pendingSources.length > 0 ? '#FFFFFF' : '#FF6A00',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    transition: 'transform 0.18s ease'
-                  }}
-                  title="Attach PDF, Textbook Photo, Images, Word doc, or Links"
-                  aria-label="Add Attachments"
-                >
-                  <Plus size={22} strokeWidth={2.8} />
-                </button>
+                <div className="futuristic-input-row">
+                  {/* Prominent Plus (+) Attachment Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowAttachmentModal(true)}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 12,
+                      background: pendingSources.length > 0 ? '#10B981' : '#FFF3E8',
+                      border: 'none',
+                      color: pendingSources.length > 0 ? '#FFFFFF' : '#FF6A00',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                      transition: 'transform 0.18s ease'
+                    }}
+                    title="Attach PDF, Textbook Photo, Images, Word doc, or Links"
+                    aria-label="Add Attachments"
+                  >
+                    <Plus size={20} strokeWidth={2.8} />
+                  </button>
 
-                {/* Main Input Field */}
-                <input
-                  value={heroPrompt}
-                  onChange={(e) => setHeroPrompt(e.target.value)}
-                  placeholder="e.g. Human Heart, Photosynthesis, Quadratic Equations, Circular Motion..."
-                  style={{
-                    flex: 1,
-                    border: 'none',
-                    outline: 'none',
-                    fontSize: '1.05rem',
-                    fontWeight: 600,
-                    color: '#202124',
-                    background: 'transparent',
-                    padding: '8px 4px'
-                  }}
-                  aria-label="What would you like to learn?"
-                />
+                  {/* Main Input Field */}
+                  <input
+                    value={heroPrompt}
+                    onChange={(e) => setHeroPrompt(e.target.value)}
+                    placeholder="e.g. Human Heart, Photosynthesis, Quadratic Equations..."
+                    style={{
+                      flex: 1,
+                      border: 'none',
+                      outline: 'none',
+                      fontSize: '0.98rem',
+                      fontWeight: 600,
+                      color: '#202124',
+                      background: 'transparent',
+                      padding: '8px 4px',
+                      minWidth: 0
+                    }}
+                    aria-label="What would you like to learn?"
+                  />
 
-                {/* Voice Input Microphone Button */}
-                <button
-                  type="button"
-                  onClick={handleToggleVoiceInput}
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 12,
-                    background: isListeningVoice ? '#DC2626' : '#F3F4F6',
-                    color: isListeningVoice ? '#FFFFFF' : '#4B5563',
-                    border: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    animation: isListeningVoice ? 'pulse 1.2s infinite' : 'none'
-                  }}
-                  title={isListeningVoice ? 'Listening... click to stop' : 'Click to speak your topic'}
-                  aria-label="Voice input"
-                >
-                  <Mic size={18} />
-                </button>
+                  {/* Voice Input Microphone Button */}
+                  <button
+                    type="button"
+                    onClick={handleToggleVoiceInput}
+                    style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: 10,
+                      background: isListeningVoice ? '#DC2626' : '#F3F4F6',
+                      color: isListeningVoice ? '#FFFFFF' : '#4B5563',
+                      border: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                      animation: isListeningVoice ? 'pulse 1.2s infinite' : 'none'
+                    }}
+                    title={isListeningVoice ? 'Listening... click to stop' : 'Click to speak your topic'}
+                    aria-label="Voice input"
+                  >
+                    <Mic size={16} />
+                  </button>
+                </div>
 
                 {/* Generate Notes Button */}
                 <button
@@ -1126,13 +1110,15 @@ export const NotesPage: React.FC = () => {
                   disabled={generating}
                   className="btn-orange"
                   style={{
-                    padding: '12px 22px',
-                    borderRadius: 16,
-                    fontSize: '0.94rem',
+                    padding: '10px 20px',
+                    borderRadius: 14,
+                    fontSize: '0.9rem',
                     fontWeight: 800,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 6
+                    justifyContent: 'center',
+                    gap: 6,
+                    flexShrink: 0
                   }}
                 >
                   <Sparkles size={16} />

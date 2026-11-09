@@ -194,9 +194,9 @@ export const HomePage: React.FC = () => {
           boxShadow: '0 12px 32px -8px rgba(255, 106, 0, 0.12), inset 0 1px 0 #FFFFFF'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           {/* Welcome Text & Syllabus Context */}
-          <div style={{ flex: '1 1 360px' }}>
+          <div style={{ flex: '1 1 260px', minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
               <span
                 style={{
@@ -321,42 +321,44 @@ export const HomePage: React.FC = () => {
         <form
           onSubmit={handleStartJourney}
           className="glass-input-wrap-futuristic"
-          style={{ padding: '8px 10px 8px 22px' }}
         >
-          <Search size={22} color="#FF6A00" />
-          <input
-            className="glass-input"
-            value={heroTopicInput}
-            onChange={(e) => setHeroTopicInput(e.target.value)}
-            placeholder="Search or ask any concept... (e.g. Photosynthesis, Chemical Bonding, Linear Equations, World War II)"
-            aria-label="Enter study topic"
-            style={{ fontSize: '0.94rem' }}
-          />
+          <div className="futuristic-input-row">
+            <Search size={22} color="#FF6A00" style={{ flexShrink: 0 }} />
+            <input
+              className="glass-input"
+              value={heroTopicInput}
+              onChange={(e) => setHeroTopicInput(e.target.value)}
+              placeholder="Search or ask any concept... (e.g. Photosynthesis, Chemical Bonding, Linear Equations)"
+              aria-label="Enter study topic"
+              style={{ fontSize: '0.92rem' }}
+            />
 
-          {/* Voice Input Button */}
-          <button
-            type="button"
-            onClick={handleVoiceSearch}
-            className="btn-glass"
-            style={{
-              padding: '8px 12px',
-              borderRadius: 999,
-              background: isListeningVoice ? '#FF6A00' : '#FFF3E8',
-              color: isListeningVoice ? '#FFFFFF' : '#FF6A00',
-              borderColor: 'rgba(255, 106, 0, 0.3)'
-            }}
-            title="Search using voice"
-          >
-            <Mic size={16} />
-            <span style={{ fontSize: '0.76rem', fontWeight: 700 }}>
-              {isListeningVoice ? 'Listening...' : 'Voice'}
-            </span>
-          </button>
+            {/* Voice Input Button */}
+            <button
+              type="button"
+              onClick={handleVoiceSearch}
+              className="btn-glass"
+              style={{
+                padding: '7px 12px',
+                borderRadius: 999,
+                background: isListeningVoice ? '#FF6A00' : '#FFF3E8',
+                color: isListeningVoice ? '#FFFFFF' : '#FF6A00',
+                borderColor: 'rgba(255, 106, 0, 0.3)',
+                flexShrink: 0
+              }}
+              title="Search using voice"
+            >
+              <Mic size={16} />
+              <span style={{ fontSize: '0.74rem', fontWeight: 700 }}>
+                {isListeningVoice ? '...' : 'Voice'}
+              </span>
+            </button>
+          </div>
 
           <button
             type="submit"
             className="btn-orange"
-            style={{ padding: '11px 24px', fontSize: '0.92rem', borderRadius: 999 }}
+            style={{ padding: '10px 22px', fontSize: '0.9rem', borderRadius: 999, flexShrink: 0 }}
           >
             Start Learning →
           </button>

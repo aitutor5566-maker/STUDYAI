@@ -751,10 +751,8 @@ export const LanguageLearningPage: React.FC = () => {
 
         {/* Navigation Pill Bar */}
         <div
+          className="responsive-tabs-scroll"
           style={{
-            display: 'flex',
-            gap: 8,
-            overflowX: 'auto',
             marginTop: 18,
             paddingTop: 16,
             borderTop: '1.5px solid rgba(255, 106, 0, 0.16)'

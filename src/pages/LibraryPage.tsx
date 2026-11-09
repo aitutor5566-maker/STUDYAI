@@ -511,7 +511,7 @@ export const LibraryPage: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(285px, 1fr))', gap: 20 }}>
+          <div className="responsive-resource-grid">
             {filteredAndSortedItems.map((item) => {
               const previewSrc = buildTopicPreviewDataUrl(item);
               return (
@@ -804,7 +804,7 @@ export const LibraryPage: React.FC = () => {
       </section>
 
       {/* Space Battle & 3D Lab Feature Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 18 }}>
         <section className="hero-glass-banner" style={{ padding: 22 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>

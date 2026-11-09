@@ -7,11 +7,27 @@ class StudyAiApiClient {
   String? authToken;
   String studentId;
 
+  static String resolveDefaultBaseUrl() {
+    const envUrl = String.fromEnvironment('API_BASE_URL');
+    if (envUrl.isNotEmpty) return envUrl;
+    try {
+      final base = Uri.base;
+      if (base.scheme == 'http' || base.scheme == 'https') {
+        // If loaded in a browser on Vite dev server (port 5173), target unified backend port 3001
+        if (base.port == 5173) {
+          return '${base.scheme}://${base.host}:3001';
+        }
+        return base.origin;
+      }
+    } catch (_) {}
+    return 'http://127.0.0.1:3001';
+  }
+
   StudyAiApiClient({
-    this.baseUrl = 'http://127.0.0.1:8000',
+    String? baseUrl,
     this.authToken,
     this.studentId = 'usr_student_001',
-  });
+  }) : baseUrl = baseUrl ?? resolveDefaultBaseUrl();
 
   Map<String, String> get _headers => {
         'Content-Type': 'application/json',
@@ -20,31 +36,99 @@ class StudyAiApiClient {
       };
 
   Future<dynamic> get(String path) async {
-    final response = await http.get(Uri.parse('$baseUrl$path'), headers: _headers);
+    http.Response response;
+    try {
+      response = await http.get(Uri.parse('$baseUrl$path'), headers: _headers);
+    } catch (e) {
+      // If direct call fails and baseUrl is not localhost:3001, retry against fallback port 3001
+      if (!baseUrl.contains(':3001')) {
+        try {
+          response = await http.get(Uri.parse('http://127.0.0.1:3001$path'), headers: _headers);
+        } catch (_) {
+          throw Exception('Network connection failed. Please ensure the STUDYAI backend server is active ($e).');
+        }
+      } else {
+        throw Exception('Network connection failed. Please ensure the STUDYAI backend server is active ($e).');
+      }
+    }
+
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body);
     }
-    throw Exception('GET $path error (${response.statusCode}): ${response.body}');
+    String errorMsg = response.body;
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map && (decoded['error'] != null || decoded['message'] != null)) {
+        errorMsg = (decoded['error'] ?? decoded['message']).toString();
+      }
+    } catch (_) {}
+    throw Exception(errorMsg);
   }
 
   Future<dynamic> post(String path, dynamic body) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl$path'),
-      headers: _headers,
-      body: jsonEncode(body),
-    );
+    http.Response response;
+    try {
+      response = await http.post(
+        Uri.parse('$baseUrl$path'),
+        headers: _headers,
+        body: jsonEncode(body),
+      );
+    } catch (e) {
+      if (!baseUrl.contains(':3001')) {
+        try {
+          response = await http.post(
+            Uri.parse('http://127.0.0.1:3001$path'),
+            headers: _headers,
+            body: jsonEncode(body),
+          );
+        } catch (_) {
+          throw Exception('Unable to reach STUDYAI server. Please check your internet connection ($e).');
+        }
+      } else {
+        throw Exception('Unable to reach STUDYAI server. Please check your internet connection ($e).');
+      }
+    }
+
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body);
     }
-    throw Exception('POST $path error (${response.statusCode}): ${response.body}');
+    String errorMsg = response.body;
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map && (decoded['error'] != null || decoded['message'] != null)) {
+        errorMsg = (decoded['error'] ?? decoded['message']).toString();
+      }
+    } catch (_) {}
+    throw Exception(errorMsg);
   }
 
   Future<dynamic> delete(String path) async {
-    final response = await http.delete(Uri.parse('$baseUrl$path'), headers: _headers);
+    http.Response response;
+    try {
+      response = await http.delete(Uri.parse('$baseUrl$path'), headers: _headers);
+    } catch (e) {
+      if (!baseUrl.contains(':3001')) {
+        try {
+          response = await http.delete(Uri.parse('http://127.0.0.1:3001$path'), headers: _headers);
+        } catch (_) {
+          throw Exception('Unable to reach STUDYAI server ($e).');
+        }
+      } else {
+        throw Exception('Unable to reach STUDYAI server ($e).');
+      }
+    }
+
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body);
     }
-    throw Exception('DELETE $path error (${response.statusCode}): ${response.body}');
+    String errorMsg = response.body;
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map && (decoded['error'] != null || decoded['message'] != null)) {
+        errorMsg = (decoded['error'] ?? decoded['message']).toString();
+      }
+    } catch (_) {}
+    throw Exception(errorMsg);
   }
 
   // --- Specialized Service Methods ---

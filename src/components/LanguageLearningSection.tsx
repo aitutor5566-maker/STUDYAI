@@ -188,7 +188,7 @@ export const LanguageLearningSection: React.FC = () => {
             type="button"
             onClick={() => navigate('/languages')}
             className="btn-orange"
-            style={{ padding: '12px 22px', fontSize: '0.92rem' }}
+            style={{ padding: '10px 20px', fontSize: '0.88rem', flex: '1 1 auto', minWidth: 160, justifyContent: 'center' }}
           >
             <span>{activeEnrolment ? 'Continue Learning' : 'Start Learning'}</span>
             <ChevronRight size={18} />

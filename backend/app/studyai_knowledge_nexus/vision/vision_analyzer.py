@@ -59,7 +59,7 @@ class VisionAnalyzer:
         }
 
     async def _call_gemini_vision(self, base64_data: str, mime_type: str, prompt: str) -> str:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={GEMINI_API_KEY}"
         payload = {
             "contents": [
                 {

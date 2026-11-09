@@ -59,13 +59,12 @@ export const StudyAiAssistantCharacter: React.FC<StudyAiAssistantCharacterProps>
         userSelect: 'none'
       }}
     >
-      {/* Optional Contextual Speech Bubble */}
+      {/* Optional Contextual Speech Bubble rendered in natural layout flow */}
       {((shouldShowBubble && effectiveBubbleText) || (isHovered && effectiveBubbleText)) && (
         <div
           className="assistant-speech-bubble"
           style={{
-            position: 'absolute',
-            bottom: '100%',
+            position: 'relative',
             marginBottom: 10,
             background: '#FFFFFF',
             border: '1.5px solid rgba(255, 106, 0, 0.28)',
@@ -75,7 +74,10 @@ export const StudyAiAssistantCharacter: React.FC<StudyAiAssistantCharacterProps>
             fontWeight: 700,
             color: '#202124',
             boxShadow: '0 10px 24px -4px rgba(255, 106, 0, 0.16)',
-            whiteSpace: 'nowrap',
+            maxWidth: 'min(280px, 85vw)',
+            whiteSpace: 'normal',
+            textAlign: 'center',
+            lineHeight: 1.35,
             zIndex: 10,
             display: 'flex',
             alignItems: 'center',

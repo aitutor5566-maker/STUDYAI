@@ -159,13 +159,24 @@ class _NotesScreenState extends State<NotesScreen> {
                                 final topic = topicController.text.trim();
                                 if (topic.isEmpty) return;
                                 setModalState(() => isGenerating = true);
-                                await widget.state.generateNoteFromSource(
+                                final newNote = await widget.state.generateNoteFromSource(
                                   topic: topic,
                                   subject: selectedSubject,
                                   sourceType: selectedSource,
                                   content: contentController.text.trim(),
                                 );
+                                if (!context.mounted) return;
                                 Navigator.of(context).pop();
+                                if (newNote != null) {
+                                  NoteDetailViewerDialog.show(context, note: newNote);
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(widget.state.errorMessage ?? 'Failed to generate note. Please try again.'),
+                                      backgroundColor: StudyAiColors.surface,
+                                    ),
+                                  );
+                                }
                               },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: StudyAiColors.primary,

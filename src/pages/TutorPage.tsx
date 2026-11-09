@@ -956,32 +956,14 @@ export const TutorPage: React.FC = () => {
 
       {/* =========================================================================
           PERMANENT TOP-LEVEL LEARNING MODE SELECTOR (PART 2 MANDATORY REQUIREMENT)
-          Visually prominent, sticky below header, accessible at all times while scrolling
+          Visually prominent, responsive, accessible at all times while scrolling
           ========================================================================= */}
-      <section
-        style={{
-          position: 'sticky',
-          top: 64,
-          zIndex: 35,
-          marginBottom: 16,
-          padding: '12px 18px',
-          borderRadius: 20,
-          background: 'rgba(255, 255, 255, 0.94)',
-          backdropFilter: 'blur(20px)',
-          border: '2px solid rgba(255, 106, 0, 0.35)',
-          boxShadow: '0 8px 30px rgba(255, 106, 0, 0.12)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 14
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <section className="tutor-mode-selector-wrap">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
           <div
             style={{
-              width: 40,
-              height: 40,
+              width: 38,
+              height: 38,
               borderRadius: 12,
               background: teachingMode === 'normal'
                 ? 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)'
@@ -991,19 +973,20 @@ export const TutorPage: React.FC = () => {
               justifyContent: 'center',
               color: '#FFFFFF',
               boxShadow: teachingMode === 'normal' ? '0 4px 14px rgba(255, 106, 0, 0.35)' : '0 4px 14px rgba(2, 132, 199, 0.35)',
-              fontSize: '1.25rem'
+              fontSize: '1.2rem',
+              flexShrink: 0
             }}
           >
             {teachingMode === 'normal' ? '✨' : '⚡'}
           </div>
-          <div>
-            <div style={{ fontSize: '0.72rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em', color: teachingMode === 'normal' ? '#EA580C' : '#0284C7' }}>
-              CURRENT TEACHING MODE
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em', color: teachingMode === 'normal' ? '#EA580C' : '#0284C7' }}>
+              TEACHING MODE
             </div>
-            <div style={{ fontSize: '0.96rem', fontWeight: 900, color: '#1F2937' }}>
+            <div style={{ fontSize: '0.92rem', fontWeight: 900, color: '#1F2937', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {teachingMode === 'normal'
-                ? 'Normal Learning Mode (Concept Mastery & Visuals)'
-                : 'Exam Preparation Mode (Formal Definitions & Revision)'}
+                ? 'Normal Mode (Concepts & Visuals)'
+                : 'Exam Prep (Definitions & Practice)'}
             </div>
           </div>
         </div>
@@ -1012,10 +995,11 @@ export const TutorPage: React.FC = () => {
         <div
           role="tablist"
           aria-label="Teaching Mode Selector"
+          className="tutor-mode-tablist"
           style={{
             display: 'flex',
             background: '#FFF3E8',
-            padding: 4,
+            padding: 3,
             borderRadius: 999,
             border: '1.5px solid rgba(255, 106, 0, 0.35)',
             boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.04)'
@@ -1033,7 +1017,7 @@ export const TutorPage: React.FC = () => {
               setTimeout(() => setActionToast(''), 3500);
             }}
             style={{
-              padding: '10px 22px',
+              padding: '8px 16px',
               borderRadius: 999,
               border: 'none',
               background: teachingMode === 'normal'
@@ -1041,17 +1025,19 @@ export const TutorPage: React.FC = () => {
                 : 'transparent',
               color: teachingMode === 'normal' ? '#FFFFFF' : '#6B7280',
               fontWeight: 800,
-              fontSize: '0.86rem',
+              fontSize: '0.82rem',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: 8,
+              gap: 6,
               boxShadow: teachingMode === 'normal' ? '0 4px 12px rgba(255,106,0,0.35)' : 'none',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              flex: '1 1 0',
+              justifyContent: 'center'
             }}
           >
             <span>✨</span>
-            <span>NORMAL LEARNING MODE</span>
+            <span>Normal Mode</span>
           </button>
 
           <button
@@ -1066,7 +1052,7 @@ export const TutorPage: React.FC = () => {
               setTimeout(() => setActionToast(''), 3500);
             }}
             style={{
-              padding: '10px 22px',
+              padding: '8px 16px',
               borderRadius: 999,
               border: 'none',
               background: teachingMode === 'exam'
@@ -1074,76 +1060,76 @@ export const TutorPage: React.FC = () => {
                 : 'transparent',
               color: teachingMode === 'exam' ? '#FFFFFF' : '#6B7280',
               fontWeight: 800,
-              fontSize: '0.86rem',
+              fontSize: '0.82rem',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: 8,
+              gap: 6,
               boxShadow: teachingMode === 'exam' ? '0 6px 16px rgba(255,106,0,0.32)' : 'none',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              flex: '1 1 0',
+              justifyContent: 'center'
             }}
           >
             <span>⚡</span>
-            <span>EXAM PREPARATION MODE</span>
+            <span>Exam Mode</span>
           </button>
         </div>
 
-        {/* Adaptive Profile Quick Trigger */}
-        <button
-          type="button"
-          onClick={() => setShowAdaptiveModal(true)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '9px 18px',
-            borderRadius: 999,
-            background: '#FFFFFF',
-            border: '1.5px solid rgba(255, 106, 0, 0.35)',
-            color: '#E85D00',
-            fontWeight: 800,
-            fontSize: '0.84rem',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(255, 106, 0, 0.1)',
-            transition: 'all 0.2s ease'
-          }}
-        >
-          <Sliders size={16} color="#FF6A00" />
-          <span>Learning Profile</span>
-        </button>
+        {/* Action Shortcuts */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => setShowAdaptiveModal(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '7px 14px',
+              borderRadius: 999,
+              background: '#FFFFFF',
+              border: '1.5px solid rgba(255, 106, 0, 0.35)',
+              color: '#E85D00',
+              fontWeight: 800,
+              fontSize: '0.78rem',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(255, 106, 0, 0.1)'
+            }}
+          >
+            <Sliders size={14} color="#FF6A00" />
+            <span>Profile</span>
+          </button>
 
-        {/* Prominent Gemini AI Teacher Voice Mode Button */}
-        <button
-          type="button"
-          onClick={() => {
-            const lastAssistantMsg = [...messages].reverse().find((m) => m.role === 'assistant');
-            if (lastAssistantMsg) {
-              setVoiceLessonTutorStructured(lastAssistantMsg.structured);
-              setVoiceLessonTutorContent(lastAssistantMsg.content);
-              setVoiceLessonQuestion(lastAssistantMsg.structured?.topic || activeTopic);
-            }
-            setShowVoiceModal(true);
-          }}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '8px 18px',
-            borderRadius: 999,
-            border: 'none',
-            background: 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)',
-            color: '#FFFFFF',
-            fontWeight: 800,
-            fontSize: '0.82rem',
-            cursor: 'pointer',
-            boxShadow: '0 4px 14px rgba(255, 106, 0, 0.35)',
-            transition: 'all 0.2s ease'
-          }}
-        >
-          <Mic size={16} color="#FFFFFF" />
-          <span>Start Voice Lesson</span>
-        </button>
-
+          <button
+            type="button"
+            onClick={() => {
+              const lastAssistantMsg = [...messages].reverse().find((m) => m.role === 'assistant');
+              if (lastAssistantMsg) {
+                setVoiceLessonTutorStructured(lastAssistantMsg.structured);
+                setVoiceLessonTutorContent(lastAssistantMsg.content);
+                setVoiceLessonQuestion(lastAssistantMsg.structured?.topic || activeTopic);
+              }
+              setShowVoiceModal(true);
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '7px 14px',
+              borderRadius: 999,
+              border: 'none',
+              background: 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)',
+              color: '#FFFFFF',
+              fontWeight: 800,
+              fontSize: '0.78rem',
+              cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(255, 106, 0, 0.35)'
+            }}
+          >
+            <Mic size={14} color="#FFFFFF" />
+            <span>Voice Lesson</span>
+          </button>
+        </div>
       </section>
 
       {/* Multilingual, Multi-Grade & Pedagogical Controls Bar */}
@@ -2825,13 +2811,13 @@ export const TutorPage: React.FC = () => {
       </section>
 
       {/* Bottom Follow-Up Question & Spoken Mic Input Bar */}
-      <form onSubmit={handleFormSubmit} className="glass-card" style={{ padding: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+      <form onSubmit={handleFormSubmit} className="tutor-composer-form">
         {/* Attachment Upload */}
         <label
           title="Attach study document or image (Max 5MB)"
           style={{
-            width: 40,
-            height: 40,
+            width: 38,
+            height: 38,
             borderRadius: '50%',
             background: '#FFF3E8',
             color: '#FF6A00',
@@ -2842,7 +2828,7 @@ export const TutorPage: React.FC = () => {
             flexShrink: 0
           }}
         >
-          <Paperclip size={18} />
+          <Paperclip size={17} />
           <input type="file" accept=".txt,.md,.pdf,.png,.jpg,.jpeg" onChange={handleAttachmentSelect} style={{ display: 'none' }} />
         </label>
 
@@ -2852,8 +2838,8 @@ export const TutorPage: React.FC = () => {
           onClick={handleToggleVoiceInput}
           title={isListening ? 'Listening... click to stop' : `Speak question in ${language}`}
           style={{
-            width: 40,
-            height: 40,
+            width: 38,
+            height: 38,
             borderRadius: '50%',
             border: 'none',
             background: isListening ? '#EF4444' : '#FFF3E8',
@@ -2867,7 +2853,7 @@ export const TutorPage: React.FC = () => {
             transition: 'all 0.2s ease'
           }}
         >
-          {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+          {isListening ? <MicOff size={17} /> : <Mic size={17} />}
         </button>
 
         {/* Text Input */}
@@ -2880,9 +2866,10 @@ export const TutorPage: React.FC = () => {
               ? `Listening in ${language}... speak now`
               : attachmentNote
               ? `Attached: ${attachmentNote} — Ask your question...`
-              : `Ask AI Tutor anything in ${subject} (${language})...`
+              : `Ask AI Tutor in ${subject} (${language})...`
           }
           aria-label="Ask AI Tutor a question"
+          style={{ flex: '1 1 auto', minWidth: 0, fontSize: '0.9rem' }}
         />
 
         {/* Send Button */}
@@ -2891,9 +2878,9 @@ export const TutorPage: React.FC = () => {
           disabled={loading}
           aria-label="Send Question"
           className="btn-orange"
-          style={{ width: 44, height: 44, padding: 0, borderRadius: '50%', flexShrink: 0 }}
+          style={{ width: 40, height: 40, padding: 0, borderRadius: '50%', flexShrink: 0 }}
         >
-          <Send size={18} />
+          <Send size={17} />
         </button>
       </form>
 
