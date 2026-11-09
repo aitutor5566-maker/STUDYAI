@@ -28,11 +28,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return StudyAiResponsiveContainer(
+      maxWidth: 1380,
+      child: SingleChildScrollView(
+        padding: StudyAiBreakpoints.pagePadding(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // Header
           const Text(
             'Visual Learning Library',
@@ -494,10 +496,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 4,
+                                crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   Text(game['title'] as String, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white)),
-                                  const SizedBox(width: 8),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
@@ -594,6 +598,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           const SizedBox(height: 40),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

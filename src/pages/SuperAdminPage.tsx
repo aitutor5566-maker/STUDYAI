@@ -736,7 +736,7 @@ export const SuperAdminPage: React.FC = () => {
         {/* 1. OVERVIEW TAB */}
         {activeTab === 'overview' && (
           <div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '28px' }}>
               <div style={{ backgroundColor: '#0F172A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '20px' }}>
                 <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase' }}>Active School Tenants</div>
                 <div style={{ fontSize: '2rem', fontWeight: 800, color: '#FFFFFF', marginTop: '6px' }}>{overviewData?.total_tenants ?? 1}</div>

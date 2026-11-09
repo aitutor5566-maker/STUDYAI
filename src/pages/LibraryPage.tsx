@@ -350,7 +350,7 @@ export const LibraryPage: React.FC = () => {
 
       {/* Search, Subject Filter & Sort Controls */}
       <section style={{ marginBottom: 22 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 12, alignItems: 'center', marginBottom: 14 }} className="library-search-bar">
+        <div style={{ display: 'grid', gap: 12, alignItems: 'center', marginBottom: 14 }} className="library-search-bar">
           <div className="glass-input-wrap" style={{ flex: 1 }}>
             <Search size={19} color="#FF6A00" />
             <input

@@ -624,64 +624,291 @@ html, body {
 
 /* ==========================================================================
    FULL-SCREEN CROSS-DEVICE RESPONSIVE DESIGN SYSTEM
-   (Android, iPhone, iPad, Tablet, Laptop, Desktop, Large Monitors)
+   Supports: Large Desktop (1440px+), Desktop (1024-1439px), Tablet (600-1023px),
+   Mobile (360-599px), and Compact Mobile (<360px).
+   Orientation (Portrait & Landscape) and Device Safe Areas Included.
    ========================================================================== */
+
+/* 1. Large Desktop (1440px and above) */
 @media (min-width: 1440px) {
   .studyai-container {
-    max-width: 1380px;
-    padding: 32px 44px 56px;
+    max-width: 1400px;
+    padding: 32px 48px 60px;
+  }
+  .dashboard-grid {
+    grid-template-columns: 1.25fr 0.75fr;
+    gap: 32px;
   }
 }
 
-@media (max-width: 1024px) {
+/* 2. Standard Desktop / Laptop (1024px to 1439px) */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .studyai-container {
+    max-width: 1200px;
+    padding: 24px 32px 52px;
+  }
+  .dashboard-grid {
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 24px;
+  }
+}
+
+/* 3. Tablet (600px to 1023px) — iPads, Android Tablets, Foldables */
+@media (min-width: 600px) and (max-width: 1023px) {
   .studyai-container {
     max-width: 100%;
-    padding: 18px 16px 36px;
+    padding: 20px 22px 48px;
   }
   .hero-glass-banner {
-    padding: 22px;
-    border-radius: 24px;
+    padding: 24px 20px;
+    border-radius: 22px;
   }
-}
-
-@media (max-width: 640px) {
-  .studyai-container {
-    padding: 14px 12px 32px;
-  }
-  .hero-glass-banner {
-    padding: 18px;
-    border-radius: 20px;
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 22px;
   }
   .quick-actions-grid {
     grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .floating-glass-nav {
+    max-width: 480px;
+    padding: 8px 12px;
+  }
+  .nav-item-btn {
+    min-width: 60px;
+    padding: 6px 10px;
+  }
+  .glass-modal-content {
+    max-width: 90vw;
+    padding: 22px;
+  }
+}
+
+/* 4. Mobile (360px to 599px) — iPhones, Android Phones */
+@media (min-width: 360px) and (max-width: 599px) {
+  .studyai-container {
+    padding: 14px 14px 36px;
+  }
+  .hero-glass-banner {
+    padding: 18px 14px;
+    border-radius: 20px;
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .quick-actions-grid {
+    grid-template-columns: repeat(2, 1fr);
     gap: 10px;
   }
   .quick-tile {
-    padding: 14px 6px;
+    padding: 14px 10px;
     border-radius: 18px;
   }
   .quick-tile-icon {
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
   }
   .glass-modal-content {
-    padding: 18px;
-    border-radius: 22px;
-    max-height: 94vh;
+    padding: 16px;
+    border-radius: 20px;
+    max-width: 96vw;
+    max-height: 92vh;
+  }
+  .floating-nav-wrapper {
+    padding: 0 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
   }
   .floating-glass-nav {
-    padding: 6px 8px;
+    max-width: 100%;
+    padding: 6px 6px;
+    gap: 2px;
   }
   .nav-item-btn {
-    min-width: 56px;
-    padding: 4px 8px;
+    min-width: 52px;
+    min-height: 48px;
+    padding: 4px 4px;
     font-size: 0.7rem;
+    gap: 2px;
+  }
+  .nav-item-icon-box {
+    width: 32px;
+    height: 26px;
   }
   h1 {
-    font-size: 1.4rem !important;
+    font-size: 1.35rem !important;
+    letter-spacing: -0.02em;
   }
   h2 {
-    font-size: 1.18rem !important;
+    font-size: 1.15rem !important;
+  }
+  p, span {
+    word-break: break-word;
+  }
+}
+
+/* 5. Compact Mobile (Below 360px) — Small phones, SE, fold cover screens */
+@media (max-width: 359px) {
+  .studyai-container {
+    padding: 10px 8px 32px;
+  }
+  .hero-glass-banner {
+    padding: 14px 10px;
+    border-radius: 16px;
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .quick-actions-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .quick-tile {
+    padding: 10px 6px;
+    border-radius: 14px;
+  }
+  .quick-tile-icon {
+    width: 34px;
+    height: 34px;
+  }
+  .floating-nav-wrapper {
+    padding: 0 4px;
+    bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+  }
+  .floating-glass-nav {
+    padding: 4px 2px;
+    border-radius: 20px;
+  }
+  .nav-item-btn {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 2px 2px;
+    font-size: 0.62rem;
+    gap: 1px;
+  }
+  .nav-item-icon-box {
+    width: 28px;
+    height: 22px;
+  }
+  .glass-card {
+    padding: 12px !important;
+    border-radius: 14px;
+  }
+  h1 {
+    font-size: 1.2rem !important;
+  }
+  h2 {
+    font-size: 1.02rem !important;
+  }
+  h3 {
+    font-size: 0.92rem !important;
+  }
+}
+
+/* Landscape Mode Adaptation for Mobile Devices */
+@media (max-height: 520px) and (orientation: landscape) {
+  .studyai-shell {
+    padding-bottom: 72px;
+  }
+  .floating-nav-wrapper {
+    bottom: 6px;
+  }
+  .floating-glass-nav {
+    padding: 4px 10px;
+  }
+  .nav-item-btn {
+    min-height: 40px;
+    flex-direction: row;
+    gap: 6px;
+  }
+  .nav-item-icon-box {
+    width: 24px;
+    height: 24px;
+  }
+  .glass-modal-content {
+    max-height: 88vh;
+  }
+}
+
+/* Universal Table & Diagram Responsive Wrappers */
+.table-responsive-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 12px 0;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 106, 0, 0.16);
+}
+
+.table-responsive-wrapper table {
+  min-width: 500px;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.diagram-responsive-frame {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.diagram-responsive-frame svg,
+.diagram-responsive-frame img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Responsive Layout Component Grids */
+.diagrams-3d-layout {
+  grid-template-columns: 1fr;
+}
+@media (min-width: 960px) {
+  .diagrams-3d-layout {
+    grid-template-columns: 290px minmax(0, 1fr);
+  }
+}
+
+.library-search-bar {
+  grid-template-columns: 1fr;
+}
+@media (min-width: 680px) {
+  .library-search-bar {
+    grid-template-columns: 1fr auto auto;
+  }
+}
+
+.responsive-student-form {
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) {
+  .responsive-student-form {
+    grid-template-columns: 2fr 1fr 1fr auto;
+  }
+}
+
+.top-brand-bar-header {
+  border-radius: 9999px;
+  padding: 12px 18px;
+}
+@media (max-width: 599px) {
+  .top-brand-bar-header {
+    border-radius: 20px !important;
+    padding: 10px 14px !important;
+    gap: 8px !important;
+  }
+}
+@media (max-width: 359px) {
+  .top-brand-bar-header {
+    border-radius: 16px !important;
+    padding: 8px 10px !important;
+    gap: 6px !important;
   }
 }
 
@@ -1027,7 +1254,7 @@ html, body {
   padding: 20px 18px;
   display: flex;
   flex-direction: column;
-  justifyContent: space-between;
+  justify-content: space-between;
   gap: 12px;
   transition: all 0.28s cubic-bezier(0.22, 1, 0.36, 1);
   cursor: pointer;

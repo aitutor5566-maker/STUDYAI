@@ -24,15 +24,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final fullName = user?.fullName ?? 'Vishwak Sai';
     final email = user?.email ?? 'vishwak@studyai.internal';
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Profile Card
-          StudyAiGlassCard(
-            padding: const EdgeInsets.all(24),
-            child: Row(
+    return StudyAiResponsiveContainer(
+      maxWidth: 1380,
+      child: SingleChildScrollView(
+        padding: StudyAiBreakpoints.pagePadding(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header Profile Card
+            StudyAiGlassCard(
+              padding: const EdgeInsets.all(24),
+              child: Row(
               children: [
                 Container(
                   width: 72,
@@ -62,14 +64,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 4),
                       Text(email, style: const TextStyle(fontSize: 13, color: StudyAiColors.textMuted)),
                       const SizedBox(height: 8),
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(color: StudyAiColors.primary.withOpacity(0.2), borderRadius: BorderRadius.circular(6)),
                             child: const Text('CBSE Class 10', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: StudyAiColors.primary)),
                           ),
-                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(color: StudyAiColors.greenAccent.withOpacity(0.2), borderRadius: BorderRadius.circular(6)),
@@ -264,8 +267,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 40),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildPreferenceRow({
     required String label,

@@ -56,7 +56,7 @@ export const TopBrandBar: React.FC<{
 
   return (
     <header
-      className="glass-panel"
+      className="glass-panel top-brand-bar-header"
       style={{
         display: 'flex',
         alignItems: 'center',

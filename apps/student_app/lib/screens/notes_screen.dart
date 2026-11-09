@@ -40,9 +40,13 @@ class _NotesScreenState extends State<NotesScreen> {
           insetPadding: const EdgeInsets.all(24),
           child: StudyAiGlassCard(
             padding: const EdgeInsets.all(24),
-            child: SizedBox(
-              width: 580,
-              child: Column(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 580,
+                maxHeight: MediaQuery.of(context).size.height * 0.85,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -179,8 +183,9 @@ class _NotesScreenState extends State<NotesScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -193,37 +198,42 @@ class _NotesScreenState extends State<NotesScreen> {
       return matchesFolder && matchesSearch;
     }).toList();
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header & Create CTA
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('AI Study Notes', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: StudyAiColors.textLight)),
-                  SizedBox(height: 4),
-                  Text('NotebookLM-inspired smart notebooks with auto-flashcards & quizzes', style: TextStyle(fontSize: 13, color: StudyAiColors.textMuted)),
-                ],
-              ),
-              ElevatedButton.icon(
-                onPressed: () => _showCreateNoteModal(context),
-                icon: const Icon(Icons.add_rounded, size: 20),
-                label: const Text('New Note', style: TextStyle(fontWeight: FontWeight.w700)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: StudyAiColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return StudyAiResponsiveContainer(
+      maxWidth: 1380,
+      child: SingleChildScrollView(
+        padding: StudyAiBreakpoints.pagePadding(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header & Create CTA
+            Wrap(
+              spacing: 16,
+              runSpacing: 12,
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('AI Study Notes', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: StudyAiColors.textLight)),
+                    SizedBox(height: 4),
+                    Text('NotebookLM-inspired smart notebooks with auto-flashcards & quizzes', style: TextStyle(fontSize: 13, color: StudyAiColors.textMuted)),
+                  ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  onPressed: () => _showCreateNoteModal(context),
+                  icon: const Icon(Icons.add_rounded, size: 20),
+                  label: const Text('New Note', style: TextStyle(fontWeight: FontWeight.w700)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: StudyAiColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
 
           // Search Bar
           TextField(
@@ -388,6 +398,7 @@ class _NotesScreenState extends State<NotesScreen> {
           const SizedBox(height: 40),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

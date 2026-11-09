@@ -21,14 +21,16 @@ class HomeScreen extends StatelessWidget {
     final user = state.userProfile;
     final firstName = user?.fullName.split(' ').first ?? 'Vishwak';
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 1. Personalized Greeting & Top Status Bar
-          _buildGreetingSection(context, firstName),
-          const SizedBox(height: 24),
+    return StudyAiResponsiveContainer(
+      maxWidth: 1380,
+      child: SingleChildScrollView(
+        padding: StudyAiBreakpoints.pagePadding(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Personalized Greeting & Top Status Bar
+            _buildGreetingSection(context, firstName),
+            const SizedBox(height: 24),
 
           // 2. Continue Learning Hero Card (Rich Orange Apple-Glass Gradient)
           ContinueLearningCard(
@@ -91,54 +93,106 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: 40),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildGreetingSection(BuildContext context, String firstName) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < StudyAiBreakpoints.mobile;
+        final isCompact = constraints.maxWidth < StudyAiBreakpoints.compactMobile;
+
+        if (isMobile) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Good morning, $firstName 👋',
+                style: TextStyle(
+                  fontSize: isCompact ? 20 : 24,
+                  fontWeight: FontWeight.w800,
+                  color: StudyAiColors.textLight,
+                  letterSpacing: -0.6,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'CBSE Class 10 • National Public School Bangalore',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: StudyAiColors.textMuted.withOpacity(0.9),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  StudyAiGlassPill(
+                    label: '${state.streakDays} Day Streak',
+                    icon: Icons.local_fire_department_rounded,
+                    color: StudyAiColors.amberAccent,
+                    isSelected: true,
+                  ),
+                  StudyAiGlassPill(
+                    label: '${state.totalPoints} pts',
+                    icon: Icons.stars_rounded,
+                    color: StudyAiColors.primary,
+                    isSelected: true,
+                  ),
+                ],
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              'Good morning, $firstName 👋',
-              style: const TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.w800,
-                color: StudyAiColors.textLight,
-                letterSpacing: -0.6,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Good morning, $firstName 👋',
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    color: StudyAiColors.textLight,
+                    letterSpacing: -0.6,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'CBSE Class 10 • National Public School Bangalore',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: StudyAiColors.textMuted.withOpacity(0.9),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              'CBSE Class 10 • National Public School Bangalore',
-              style: TextStyle(
-                fontSize: 13,
-                color: StudyAiColors.textMuted.withOpacity(0.9),
-              ),
+            Row(
+              children: [
+                StudyAiGlassPill(
+                  label: '${state.streakDays} Day Streak',
+                  icon: Icons.local_fire_department_rounded,
+                  color: StudyAiColors.amberAccent,
+                  isSelected: true,
+                ),
+                const SizedBox(width: 10),
+                StudyAiGlassPill(
+                  label: '${state.totalPoints} pts',
+                  icon: Icons.stars_rounded,
+                  color: StudyAiColors.primary,
+                  isSelected: true,
+                ),
+              ],
             ),
           ],
-        ),
-        Row(
-          children: [
-            StudyAiGlassPill(
-              label: '${state.streakDays} Day Streak',
-              icon: Icons.local_fire_department_rounded,
-              color: StudyAiColors.amberAccent,
-              isSelected: true,
-            ),
-            const SizedBox(width: 10),
-            StudyAiGlassPill(
-              label: '${state.totalPoints} pts',
-              icon: Icons.stars_rounded,
-              color: StudyAiColors.primary,
-              isSelected: true,
-            ),
-          ],
-        ),
-      ],
+        );
+      },
     );
   }
 

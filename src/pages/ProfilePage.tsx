@@ -902,7 +902,7 @@ export const ProfilePage: React.FC = () => {
                           <PlusCircle size={16} color="#FF6A00" />
                           <span>Add New Student Profile to Family</span>
                         </div>
-                        <form onSubmit={handleCreateStudent} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: 8 }}>
+                        <form onSubmit={handleCreateStudent} className="responsive-student-form" style={{ display: 'grid', gap: 8 }}>
                           <input
                             type="text"
                             value={newProfileName}

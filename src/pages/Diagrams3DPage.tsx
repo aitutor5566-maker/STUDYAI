@@ -259,9 +259,9 @@ export const Diagrams3DPage: React.FC = () => {
 
       {/* 2. Main Studio Workspace Layout */}
       <div
+        className="diagrams-3d-layout"
         style={{
           display: 'grid',
-          gridTemplateColumns: '290px 1fr',
           gap: 18,
           alignItems: 'start'
         }}

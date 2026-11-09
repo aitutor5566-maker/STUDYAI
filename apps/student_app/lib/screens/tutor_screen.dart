@@ -163,12 +163,14 @@ class _TutorScreenState extends State<TutorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
+    return StudyAiResponsiveContainer(
+      maxWidth: 1380,
+      child: SingleChildScrollView(
+        padding: StudyAiBreakpoints.pagePadding(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
           const Text(
             'AI Multimodal Tutor',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: StudyAiColors.textLight),
@@ -302,11 +304,13 @@ class _TutorScreenState extends State<TutorScreen> {
                   ),
                 ],
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 4,
                 children: [
                   const Icon(Icons.mic, color: Colors.white, size: 22),
-                  const SizedBox(width: 10),
                   const Text(
                     'Start Voice Lesson',
                     style: TextStyle(
@@ -316,7 +320,6 @@ class _TutorScreenState extends State<TutorScreen> {
                       letterSpacing: 0.5,
                     ),
                   ),
-                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
@@ -466,8 +469,9 @@ class _TutorScreenState extends State<TutorScreen> {
           const SizedBox(height: 40),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildDropdown({
     required String label,

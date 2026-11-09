@@ -17,8 +17,9 @@ class MainShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isDesktop = constraints.maxWidth >= 1024;
-        final isTablet = constraints.maxWidth >= 768 && constraints.maxWidth < 1024;
+        final isDesktop = constraints.maxWidth >= StudyAiBreakpoints.tablet;
+        final isTablet = constraints.maxWidth >= StudyAiBreakpoints.mobile && constraints.maxWidth < StudyAiBreakpoints.tablet;
+        final isCompactMobile = constraints.maxWidth < StudyAiBreakpoints.compactMobile;
 
         return Scaffold(
           backgroundColor: StudyAiColors.background,
@@ -28,7 +29,7 @@ class MainShell extends StatelessWidget {
               Expanded(
                 child: Column(
                   children: [
-                    _buildTopHeader(context),
+                    _buildTopHeader(context, isCompact: isCompactMobile),
                     Expanded(
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 200),
@@ -63,10 +64,10 @@ class MainShell extends StatelessWidget {
     }
   }
 
-  Widget _buildTopHeader(BuildContext context) {
+  Widget _buildTopHeader(BuildContext context, {bool isCompact = false}) {
     return Container(
       height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: EdgeInsets.symmetric(horizontal: isCompact ? 12 : 24),
       decoration: BoxDecoration(
         color: StudyAiColors.background.withOpacity(0.85),
         border: const Border(bottom: BorderSide(color: StudyAiColors.glassBorder, width: 1)),
@@ -88,11 +89,11 @@ class MainShell extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              const Text(
+              Text(
                 'STUDYAI',
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
-                  fontSize: 18,
+                  fontSize: isCompact ? 16 : 18,
                   letterSpacing: -0.5,
                   color: Colors.white,
                 ),
@@ -101,22 +102,24 @@ class MainShell extends StatelessWidget {
           ),
           Row(
             children: [
-              StudyAiGlassPill(
-                label: '${state.streakDays} Days',
-                icon: Icons.local_fire_department_rounded,
-                color: StudyAiColors.amberAccent,
-                isSelected: true,
-              ),
-              const SizedBox(width: 8),
+              if (!isCompact) ...[
+                StudyAiGlassPill(
+                  label: '${state.streakDays} Days',
+                  icon: Icons.local_fire_department_rounded,
+                  color: StudyAiColors.amberAccent,
+                  isSelected: true,
+                ),
+                const SizedBox(width: 8),
+              ],
               StudyAiGlassPill(
                 label: '${state.totalPoints} pts',
                 icon: Icons.stars_rounded,
                 color: StudyAiColors.primary,
                 isSelected: true,
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 8),
               IconButton(
-                icon: const Icon(Icons.notifications_outlined, color: StudyAiColors.textLight, size: 22),
+                icon: const Icon(Icons.notifications_outlined, color: StudyAiColors.textLight, size: 20),
                 tooltip: 'Notifications',
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -239,6 +242,7 @@ class MainShell extends StatelessWidget {
   }
 
   Widget _buildFloatingBottomNav(BuildContext context) {
+    final isCompact = MediaQuery.of(context).size.width < StudyAiBreakpoints.compactMobile;
     final navItems = [
       {'title': 'Home', 'icon': Icons.home_rounded},
       {'title': 'Notes', 'icon': Icons.menu_book_rounded},
@@ -247,66 +251,68 @@ class MainShell extends StatelessWidget {
       {'title': 'Profile', 'icon': Icons.person_rounded},
     ];
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-          child: Container(
-            height: 64,
-            decoration: BoxDecoration(
-              color: StudyAiColors.surface.withOpacity(0.85),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: StudyAiColors.glassBorder, width: 1.2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(navItems.length, (i) {
-                final item = navItems[i];
-                final isSelected = (state.currentNavIndex == i);
+    return SafeArea(
+      child: Container(
+        margin: EdgeInsets.fromLTRB(isCompact ? 8 : 16, 0, isCompact ? 8 : 16, isCompact ? 6 : 12),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Container(
+              height: isCompact ? 56 : 64,
+              decoration: BoxDecoration(
+                color: StudyAiColors.surface.withOpacity(0.85),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: StudyAiColors.glassBorder, width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: List.generate(navItems.length, (i) {
+                  final item = navItems[i];
+                  final isSelected = (state.currentNavIndex == i);
 
-                return GestureDetector(
-                  onTap: () => state.setNavIndex(i),
-                  behavior: HitTestBehavior.opaque,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        item['icon'] as IconData,
-                        size: 22,
-                        color: isSelected ? StudyAiColors.primary : StudyAiColors.textMuted,
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        item['title'] as String,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  return GestureDetector(
+                    onTap: () => state.setNavIndex(i),
+                    behavior: HitTestBehavior.opaque,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          item['icon'] as IconData,
+                          size: isCompact ? 19 : 22,
                           color: isSelected ? StudyAiColors.primary : StudyAiColors.textMuted,
                         ),
-                      ),
-                      if (isSelected)
-                        Container(
-                          margin: const EdgeInsets.only(top: 2),
-                          width: 4,
-                          height: 4,
-                          decoration: const BoxDecoration(
-                            color: StudyAiColors.primary,
-                            shape: BoxShape.circle,
+                        const SizedBox(height: 2),
+                        Text(
+                          item['title'] as String,
+                          style: TextStyle(
+                            fontSize: isCompact ? 9 : 10,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: isSelected ? StudyAiColors.primary : StudyAiColors.textMuted,
                           ),
                         ),
-                    ],
-                  ),
-                );
-              }),
+                        if (isSelected)
+                          Container(
+                            margin: const EdgeInsets.only(top: 2),
+                            width: 4,
+                            height: 4,
+                            decoration: const BoxDecoration(
+                              color: StudyAiColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                }),
+              ),
             ),
           ),
         ),
