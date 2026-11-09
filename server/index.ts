@@ -111,7 +111,18 @@ import { knowledgeIntelligenceAdmin } from './knowledgeIntelligenceAdmin.ts';
 import { multiBoardKnowledgeEngine, SUPPORTED_CURRICULA } from './multiBoardKnowledgeEngine.ts';
 import { ResearchIntelligenceEngine } from './researchIntelligenceEngine.ts';
 import { UnifiedVisualIntelligenceEngine } from './visualIntelligenceEngineUnified.ts';
-import { getVisualAssets, getVisualAssetById, getResearchJobs, getSyllabusChangeLogs } from './db.ts';
+import { StudyAiPersonalTeacherEngine } from './studyAiPersonalTeacherEngine.ts';
+import {
+  getVisualAssets,
+  getVisualAssetById,
+  getResearchJobs,
+  getSyllabusChangeLogs,
+  getStudentMisconceptions,
+  recordStudentMisconception,
+  resolveStudentMisconception,
+  getStudentTopicProgress,
+  updateStudentTopicProgress
+} from './db.ts';
 
 initDatabase();
 
@@ -853,6 +864,110 @@ export function createAppServer() {
         return;
       }
 
+      // =========================================================
+      // STUDYAI Phase 4: Advanced Personal AI Teacher Endpoints
+      // =========================================================
+
+      // 10-Step Numerical Problem Solver (Part 7)
+      if ((pathname === '/api/v1/tutor/solve-numerical' || pathname === '/api/tutor/solve-numerical') && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        if (!body.problemStatement) {
+          sendJson(res, 400, { error: 'problemStatement is required.' });
+          return;
+        }
+
+        const subject = (body.subject === 'Mathematics' || body.subject === 'Chemistry') ? body.subject : 'Physics';
+        const grade = typeof body.grade === 'number' ? body.grade : 10;
+        const solution = StudyAiPersonalTeacherEngine.solveNumericalProblem(
+          sanitizeText(body.problemStatement, 1000),
+          subject,
+          grade
+        );
+
+        sendJson(res, 200, { success: true, solution });
+        return;
+      }
+
+      // Adaptive Response Evaluation & Misconception Tracking (Part 8 & 9)
+      if ((pathname === '/api/v1/tutor/evaluate-response' || pathname === '/api/tutor/evaluate-response') && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        if (!body.topic || !body.studentAnswer || !body.correctAnswer) {
+          sendJson(res, 400, { error: 'topic, studentAnswer, and correctAnswer are required.' });
+          return;
+        }
+
+        const evalResult = StudyAiPersonalTeacherEngine.evaluateStudentAnswer({
+          userId: studentId,
+          topic: sanitizeText(body.topic, 100),
+          subject: sanitizeText(body.subject || inferSubjectFromTopic(body.topic), 50),
+          question: sanitizeText(body.question || `Question about ${body.topic}`, 500),
+          studentAnswer: sanitizeText(body.studentAnswer, 500),
+          correctAnswer: sanitizeText(body.correctAnswer, 500),
+          explanation: sanitizeText(body.explanation || 'Verified curriculum explanation.', 500)
+        });
+
+        sendJson(res, 200, { success: true, ...evalResult });
+        return;
+      }
+
+      // Student Misconceptions Query & Resolve (Part 9)
+      if ((pathname === '/api/v1/tutor/misconceptions' || pathname === '/api/tutor/misconceptions') && req.method === 'GET') {
+        const subject = parsedUrl.searchParams.get('subject') || undefined;
+        const status = parsedUrl.searchParams.get('status') || undefined;
+        const misconceptions = getStudentMisconceptions(studentId, subject, status);
+        sendJson(res, 200, {
+          total: misconceptions.length,
+          userId: studentId,
+          misconceptions
+        });
+        return;
+      }
+
+      if ((pathname === '/api/v1/tutor/misconceptions/resolve' || pathname === '/api/tutor/misconceptions/resolve') && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        if (!body.misconceptionId) {
+          sendJson(res, 400, { error: 'misconceptionId is required.' });
+          return;
+        }
+
+        const resolved = resolveStudentMisconception(sanitizeText(body.misconceptionId, 60));
+        sendJson(res, 200, { success: true, resolved });
+        return;
+      }
+
+      // Student Learning Progress Tracking (Part 16)
+      if ((pathname === '/api/v1/tutor/progress' || pathname === '/api/tutor/progress') && req.method === 'GET') {
+        const subject = parsedUrl.searchParams.get('subject') || undefined;
+        const progress = getStudentTopicProgress(studentId, subject);
+        sendJson(res, 200, {
+          total: progress.length,
+          userId: studentId,
+          progress
+        });
+        return;
+      }
+
+      // Document / Image Question Understanding (Part 11)
+      if ((pathname === '/api/v1/tutor/parse-document-question' || pathname === '/api/tutor/parse-document-question') && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const imageContent = sanitizeText(body.image || body.content || '', 10000);
+        const isLegible = body.isLegible !== false && imageContent.length > 5;
+
+        const analysis = StudyAiPersonalTeacherEngine.parseDocumentQuestion({
+          imageBase64OrText: imageContent,
+          isLegible,
+          studentContext: {
+            studentId,
+            studentName: sanitizeText(body.studentName || '', 50),
+            grade: typeof body.grade === 'number' ? body.grade : 10,
+            board: sanitizeText(body.board || 'CBSE', 30)
+          }
+        });
+
+        sendJson(res, 200, { success: true, analysis });
+        return;
+      }
+
       if (pathname === '/api/tutor/health' && req.method === 'GET') {
         try {
           const ollamaRes = await fetch('http://127.0.0.1:11434/api/tags', { signal: AbortSignal.timeout(3000) });
@@ -1553,6 +1668,27 @@ export function createAppServer() {
           structured.educationalVisualPlan = visualPlan;
         } catch (visErr) {
           console.warn('[AI_TUTOR] Visual planning non-blocking error:', visErr);
+        }
+
+        // Phase 4: StudyAi Personal AI Teacher Engine
+        try {
+          const teacherVisualLang = language.toLowerCase().startsWith('te') ? 'te' : (language.toLowerCase().startsWith('hi') ? 'hi' : 'en');
+          const personalTeacher = await StudyAiPersonalTeacherEngine.teachConcept({
+            question,
+            studentContext: {
+              studentId,
+              studentName,
+              grade,
+              board: resolvedBoard,
+              preferredLanguage: teacherVisualLang,
+              conversationId: convId,
+              history: historyRows
+            },
+            mode: teachingMode
+          });
+          structured.personalTeacher = personalTeacher;
+        } catch (teachErr) {
+          console.warn('[AI_TUTOR] Personal Teacher Engine non-blocking warning:', teachErr);
         }
 
         if (body.simulateFailure === 'primary_provider') {

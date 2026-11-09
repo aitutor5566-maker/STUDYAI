@@ -1162,6 +1162,37 @@ export function initDatabase() {
       labels_json TEXT NOT NULL DEFAULT '[]',
       created_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS student_misconceptions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      skill_or_concept TEXT NOT NULL,
+      misconception_type TEXT NOT NULL,
+      evidence_text TEXT NOT NULL,
+      observed_count INTEGER NOT NULL DEFAULT 1,
+      confidence REAL NOT NULL DEFAULT 0.85,
+      corrective_explanation TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'active',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS student_topic_progress (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      stage TEXT NOT NULL DEFAULT 'viewed',
+      practice_score REAL NOT NULL DEFAULT 0,
+      attempts_count INTEGER NOT NULL DEFAULT 0,
+      demonstrated_understanding_at TEXT,
+      mastery_established_at TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(user_id, subject, topic)
+    );
   `);
 
   try {
@@ -3262,6 +3293,172 @@ export function insertSyllabusChangeLog(log: {
     now
   );
   return db.prepare('SELECT * FROM syllabus_change_logs WHERE id = ?').get(log.id);
+}
+
+// -------------------------------------------------------------
+// Phase 4 Database Accessors: Misconceptions & Topic Progress
+// -------------------------------------------------------------
+
+export function getStudentMisconceptions(userId: string, subject?: string, status?: string) {
+  let query = 'SELECT * FROM student_misconceptions WHERE user_id = ?';
+  const params: any[] = [userId];
+
+  if (subject) {
+    query += ' AND LOWER(subject) = ?';
+    params.push(subject.toLowerCase());
+  }
+  if (status) {
+    query += ' AND status = ?';
+    params.push(status);
+  }
+
+  query += ' ORDER BY observed_count DESC, updated_at DESC';
+  return db.prepare(query).all(...params);
+}
+
+export function recordStudentMisconception(data: {
+  userId: string;
+  subject: string;
+  topic: string;
+  skillOrConcept: string;
+  misconceptionType: string;
+  evidenceText: string;
+  confidence?: number;
+  correctiveExplanation: string;
+}) {
+  const now = new Date().toISOString();
+  
+  // Check if identical active misconception already exists for user
+  const existing = db.prepare(`
+    SELECT * FROM student_misconceptions
+    WHERE user_id = ? AND LOWER(topic) = ? AND misconception_type = ? AND status != 'resolved'
+    LIMIT 1
+  `).get(data.userId, data.topic.toLowerCase(), data.misconceptionType) as any;
+
+  if (existing) {
+    db.prepare(`
+      UPDATE student_misconceptions
+      SET observed_count = observed_count + 1,
+          evidence_text = ?,
+          confidence = MIN(0.99, confidence + 0.05),
+          corrective_explanation = ?,
+          updated_at = ?
+      WHERE id = ?
+    `).run(data.evidenceText, data.correctiveExplanation, now, existing.id);
+    return db.prepare('SELECT * FROM student_misconceptions WHERE id = ?').get(existing.id);
+  }
+
+  const id = `misc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  db.prepare(`
+    INSERT INTO student_misconceptions (
+      id, user_id, subject, topic, skill_or_concept, misconception_type,
+      evidence_text, observed_count, confidence, corrective_explanation, status, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, 'active', ?, ?)
+  `).run(
+    id,
+    data.userId,
+    data.subject,
+    data.topic,
+    data.skillOrConcept,
+    data.misconceptionType,
+    data.evidenceText,
+    data.confidence ?? 0.85,
+    data.correctiveExplanation,
+    now,
+    now
+  );
+  return db.prepare('SELECT * FROM student_misconceptions WHERE id = ?').get(id);
+}
+
+export function resolveStudentMisconception(id: string) {
+  const now = new Date().toISOString();
+  db.prepare(`
+    UPDATE student_misconceptions
+    SET status = 'resolved', updated_at = ?
+    WHERE id = ?
+  `).run(now, id);
+  return db.prepare('SELECT * FROM student_misconceptions WHERE id = ?').get(id);
+}
+
+export function getStudentTopicProgress(userId: string, subject?: string) {
+  let query = 'SELECT * FROM student_topic_progress WHERE user_id = ?';
+  const params: any[] = [userId];
+
+  if (subject) {
+    query += ' AND LOWER(subject) = ?';
+    params.push(subject.toLowerCase());
+  }
+
+  query += ' ORDER BY updated_at DESC';
+  return db.prepare(query).all(...params);
+}
+
+export function updateStudentTopicProgress(data: {
+  userId: string;
+  subject: string;
+  topic: string;
+  stage: 'viewed' | 'explained' | 'practice_attempted' | 'understanding_demonstrated' | 'mastered';
+  practiceScore?: number;
+}) {
+  const now = new Date().toISOString();
+
+  // Stage precedence: viewed < explained < practice_attempted < understanding_demonstrated < mastered
+  const stageWeights: Record<string, number> = {
+    viewed: 1,
+    explained: 2,
+    practice_attempted: 3,
+    understanding_demonstrated: 4,
+    mastered: 5
+  };
+
+  const existing = db.prepare(`
+    SELECT * FROM student_topic_progress
+    WHERE user_id = ? AND LOWER(topic) = ? AND LOWER(subject) = ?
+  `).get(data.userId, data.topic.toLowerCase(), data.subject.toLowerCase()) as any;
+
+  if (existing) {
+    const currentWeight = stageWeights[existing.stage] || 1;
+    const newWeight = stageWeights[data.stage] || 1;
+    const finalStage = newWeight >= currentWeight ? data.stage : existing.stage;
+    const finalScore = data.practiceScore !== undefined ? Math.max(existing.practice_score || 0, data.practiceScore) : existing.practice_score;
+    const demonstratedAt = (data.stage === 'understanding_demonstrated' || data.stage === 'mastered')
+      ? (existing.demonstrated_understanding_at || now)
+      : existing.demonstrated_understanding_at;
+    const masteredAt = data.stage === 'mastered' ? (existing.mastery_established_at || now) : existing.mastery_established_at;
+
+    db.prepare(`
+      UPDATE student_topic_progress
+      SET stage = ?, practice_score = ?, attempts_count = attempts_count + 1,
+          demonstrated_understanding_at = ?, mastery_established_at = ?, updated_at = ?
+      WHERE id = ?
+    `).run(finalStage, finalScore, demonstratedAt, masteredAt, now, existing.id);
+
+    return db.prepare('SELECT * FROM student_topic_progress WHERE id = ?').get(existing.id);
+  }
+
+  const id = `stp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const demonstratedAt = (data.stage === 'understanding_demonstrated' || data.stage === 'mastered') ? now : null;
+  const masteredAt = data.stage === 'mastered' ? now : null;
+
+  db.prepare(`
+    INSERT INTO student_topic_progress (
+      id, user_id, subject, topic, stage, practice_score, attempts_count,
+      demonstrated_understanding_at, mastery_established_at, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
+  `).run(
+    id,
+    data.userId,
+    data.subject,
+    data.topic,
+    data.stage,
+    data.practiceScore ?? 0,
+    demonstratedAt,
+    masteredAt,
+    now,
+    now
+  );
+
+  return db.prepare('SELECT * FROM student_topic_progress WHERE id = ?').get(id);
 }
 
 

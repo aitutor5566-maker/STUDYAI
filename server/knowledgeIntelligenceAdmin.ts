@@ -68,6 +68,20 @@ export interface KnowledgeIntelligenceDashboardReport {
     categories: string[];
     verifiedAccuratePercent: number;
   };
+  tutorIntelligence?: {
+    totalConversations: number;
+    totalMessages: number;
+    activeMisconceptionsCount: number;
+    resolvedMisconceptionsCount: number;
+    masteredTopicsCount: number;
+    topicStageBreakdown: {
+      viewed: number;
+      explained: number;
+      practice_attempted: number;
+      understanding_demonstrated: number;
+      mastered: number;
+    };
+  };
   discoveredOfficialResources: Array<{
     sourceId: string;
     title: string;
@@ -276,6 +290,41 @@ export class KnowledgeIntelligenceAdminService {
             totalAssetsCount: 0,
             categories: [],
             verifiedAccuratePercent: 100
+          };
+        }
+      })(),
+      tutorIntelligence: (() => {
+        try {
+          const convCount = (db.prepare('SELECT COUNT(*) as c FROM tutor_conversations').get() as any)?.c || 0;
+          const msgCount = (db.prepare('SELECT COUNT(*) as c FROM tutor_messages').get() as any)?.c || 0;
+          const activeMisc = (db.prepare("SELECT COUNT(*) as c FROM student_misconceptions WHERE status = 'active'").get() as any)?.c || 0;
+          const resolvedMisc = (db.prepare("SELECT COUNT(*) as c FROM student_misconceptions WHERE status = 'resolved'").get() as any)?.c || 0;
+          const masteredCount = (db.prepare("SELECT COUNT(*) as c FROM student_topic_progress WHERE stage = 'mastered'").get() as any)?.c || 0;
+
+          const progressRows = db.prepare('SELECT stage, COUNT(*) as c FROM student_topic_progress GROUP BY stage').all() as any[];
+          const breakdown = { viewed: 0, explained: 0, practice_attempted: 0, understanding_demonstrated: 0, mastered: 0 };
+          for (const row of progressRows) {
+            if (row.stage in breakdown) {
+              (breakdown as any)[row.stage] = row.c;
+            }
+          }
+
+          return {
+            totalConversations: convCount,
+            totalMessages: msgCount,
+            activeMisconceptionsCount: activeMisc,
+            resolvedMisconceptionsCount: resolvedMisc,
+            masteredTopicsCount: masteredCount,
+            topicStageBreakdown: breakdown
+          };
+        } catch {
+          return {
+            totalConversations: 0,
+            totalMessages: 0,
+            activeMisconceptionsCount: 0,
+            resolvedMisconceptionsCount: 0,
+            masteredTopicsCount: 0,
+            topicStageBreakdown: { viewed: 0, explained: 0, practice_attempted: 0, understanding_demonstrated: 0, mastered: 0 }
           };
         }
       })(),
