@@ -1109,6 +1109,59 @@ export function initDatabase() {
       preserves_formulas INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS research_jobs (
+      id TEXT PRIMARY KEY,
+      job_type TEXT NOT NULL,
+      priority INTEGER NOT NULL DEFAULT 2,
+      status TEXT NOT NULL DEFAULT 'queued',
+      topic TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      grade INTEGER NOT NULL,
+      board TEXT NOT NULL,
+      source_references_json TEXT NOT NULL DEFAULT '[]',
+      result_json TEXT NOT NULL DEFAULT '{}',
+      retry_count INTEGER NOT NULL DEFAULT 0,
+      max_retries INTEGER NOT NULL DEFAULT 3,
+      failure_reason TEXT,
+      created_at TEXT NOT NULL,
+      started_at TEXT,
+      completed_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS syllabus_change_logs (
+      id TEXT PRIMARY KEY,
+      board TEXT NOT NULL,
+      academic_year TEXT NOT NULL,
+      change_type TEXT NOT NULL,
+      affected_subject TEXT NOT NULL,
+      affected_chapter TEXT NOT NULL,
+      details_json TEXT NOT NULL DEFAULT '{}',
+      verified_source_url TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS visual_asset_library (
+      image_id TEXT PRIMARY KEY,
+      topic TEXT NOT NULL,
+      subtopic TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      grade_min INTEGER NOT NULL DEFAULT 1,
+      grade_max INTEGER NOT NULL DEFAULT 10,
+      board TEXT NOT NULL DEFAULT 'ALL',
+      visual_category TEXT NOT NULL,
+      source_type TEXT NOT NULL DEFAULT 'vector_svg',
+      license_type TEXT NOT NULL DEFAULT 'CC-BY-4.0',
+      attribution TEXT NOT NULL DEFAULT 'STUDYAI Visual Intelligence Engine',
+      provider TEXT NOT NULL DEFAULT 'studyai_vector',
+      prompt TEXT NOT NULL,
+      verification_status TEXT NOT NULL DEFAULT 'verified',
+      accuracy_status TEXT NOT NULL DEFAULT 'accurate',
+      svg_xml TEXT,
+      preview_url TEXT NOT NULL,
+      labels_json TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL
+    );
   `);
 
   try {
@@ -1146,6 +1199,11 @@ export function initDatabase() {
     seedMultiBoardBaselineKnowledgeIfEmpty();
   } catch (err: any) {
     console.warn('[DB_INIT] seedMultiBoardBaselineKnowledge warning:', err?.message || err);
+  }
+  try {
+    seedPhase3VisualAssetLibraryIfEmpty();
+  } catch (err: any) {
+    console.warn('[DB_INIT] seedPhase3VisualAssetLibrary warning:', err?.message || err);
   }
   try {
     db.prepare("UPDATE supported_languages SET script_name = 'ひらがな, カタカナ & 漢字 (Hiragana, Katakana & Kanji)' WHERE code = 'ja'").run();
@@ -2764,5 +2822,447 @@ function seedMultiBoardBaselineKnowledgeIfEmpty() {
     now
   );
 }
+
+function seedPhase3VisualAssetLibraryIfEmpty() {
+  const existing = db.prepare('SELECT COUNT(*) as count FROM visual_asset_library').get() as { count: number };
+  if (existing && existing.count > 0) return;
+
+  const now = new Date().toISOString();
+  const insertAsset = db.prepare(`
+    INSERT OR REPLACE INTO visual_asset_library (
+      image_id, topic, subtopic, subject, grade_min, grade_max, board, visual_category,
+      source_type, license_type, attribution, provider, prompt, verification_status,
+      accuracy_status, svg_xml, preview_url, labels_json, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const benchmarkAssets = [
+    {
+      id: 'vis-bio-photosynthesis-chloroplast',
+      topic: 'Photosynthesis',
+      subtopic: 'Chloroplast Structure & Thylakoid Stacks',
+      subject: 'Biology',
+      gradeMin: 6,
+      gradeMax: 10,
+      category: 'anatomical_diagram',
+      prompt: 'Scientific vector illustration of a chloroplast organelle showing double outer membrane, stroma fluid, granum thylakoid stacks, and lumen.',
+      labels: [
+        { key: 'outer_membrane', en: 'Outer Membrane', te: 'బాహ్య పొర', hi: 'बाहरी झिल्ली' },
+        { key: 'inner_membrane', en: 'Inner Membrane', te: 'అంతర్గత పొర', hi: 'आंतरिक झिल्ली' },
+        { key: 'granum', en: 'Granum (Thylakoid Stack)', te: 'గ్రానా (థైలకాయిడ్ దంతం)', hi: 'ग्रैनम (थायलाकोइड ढेर)' },
+        { key: 'stroma', en: 'Stroma Fluid (Dark Reaction Site)', te: 'స్ట్రోమా ద్రవం', hi: 'स्ट्रोमा द्रव' },
+        { key: 'thylakoid_lumen', en: 'Thylakoid Lumen', te: 'థైలకాయిడ్ ల్యూమన్', hi: 'थायलाकोइड ल्यूमेन' }
+      ],
+      svg: `<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="500" fill="#F0FDF4" rx="16"/><ellipse cx="400" cy="250" rx="340" ry="200" fill="#86EFAC" stroke="#16A34A" stroke-width="8"/><ellipse cx="400" cy="250" rx="320" ry="180" fill="#BBF7D0" stroke="#15803D" stroke-width="4"/><g transform="translate(180, 160)"><ellipse cx="60" cy="40" rx="55" ry="16" fill="#15803D"/><ellipse cx="60" cy="65" rx="55" ry="16" fill="#16A34A"/><ellipse cx="60" cy="90" rx="55" ry="16" fill="#22C55E"/><ellipse cx="60" cy="115" rx="55" ry="16" fill="#4ADE80"/><text x="60" y="160" text-anchor="middle" font-weight="bold" fill="#065F46">Granum Stack</text></g><g transform="translate(480, 160)"><ellipse cx="60" cy="40" rx="55" ry="16" fill="#15803D"/><ellipse cx="60" cy="65" rx="55" ry="16" fill="#16A34A"/><ellipse cx="60" cy="90" rx="55" ry="16" fill="#22C55E"/><ellipse cx="60" cy="115" rx="55" ry="16" fill="#4ADE80"/><text x="60" y="160" text-anchor="middle" font-weight="bold" fill="#065F46">Granum Stack</text></g><line x1="280" y1="230" x2="490" y2="230" stroke="#16A34A" stroke-width="6" stroke-dasharray="6,4"/><text x="400" y="320" text-anchor="middle" font-size="18" font-weight="bold" fill="#047857">Stroma (Site of Light-Independent Reactions)</text></svg>`
+    },
+    {
+      id: 'vis-bio-human-heart-chambers',
+      topic: 'Human Heart',
+      subtopic: 'Internal Anatomy and 4 Chambers Circulation',
+      subject: 'Biology',
+      gradeMin: 7,
+      gradeMax: 10,
+      category: 'anatomical_diagram',
+      prompt: 'Scientific cross-section diagram of human heart with Right Atrium, Right Ventricle, Left Atrium, Left Ventricle, Aorta, and Bicuspid/Tricuspid valves.',
+      labels: [
+        { key: 'right_atrium', en: 'Right Atrium (Deoxygenated Blood In)', te: 'కుడి కర్ణిక', hi: 'दायां अलिंद' },
+        { key: 'right_ventricle', en: 'Right Ventricle (Pumps to Lungs)', te: 'కుడి జఠరిక', hi: 'दायां निलय' },
+        { key: 'left_atrium', en: 'Left Atrium (Oxygenated Blood In)', te: 'ఎడమ కర్ణిక', hi: 'बायां अलिंद' },
+        { key: 'left_ventricle', en: 'Left Ventricle (Thick Myocardium to Body)', te: 'ఎడమ జఠరిక', hi: 'बायां निलय' },
+        { key: 'aorta', en: 'Aorta (Main Systemic Artery)', te: 'మహాధమని (బృహద్ధమని)', hi: 'महाधमनी (एओर्टा)' }
+      ],
+      svg: `<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="500" fill="#FFF1F2" rx="16"/><path d="M 400 120 C 350 40, 200 60, 200 210 C 200 330, 360 410, 400 450 C 440 410, 600 330, 600 210 C 600 60, 450 40, 400 120 Z" fill="#FDA4AF" stroke="#E11D48" stroke-width="6"/><line x1="400" y1="120" x2="400" y2="450" stroke="#9F1239" stroke-width="6"/><line x1="220" y1="260" x2="580" y2="260" stroke="#9F1239" stroke-width="4"/><text x="300" y="210" text-anchor="middle" font-weight="bold" fill="#1E3A8A">Right Atrium (Blue / Deox)</text><text x="300" y="340" text-anchor="middle" font-weight="bold" fill="#1E3A8A">Right Ventricle</text><text x="500" y="210" text-anchor="middle" font-weight="bold" fill="#991B1B">Left Atrium (Red / Ox)</text><text x="500" y="340" text-anchor="middle" font-weight="bold" fill="#991B1B">Left Ventricle (Thick Wall)</text></svg>`
+    },
+    {
+      id: 'vis-bio-plant-cell',
+      topic: 'Plant Cell',
+      subtopic: 'Plant Cell Organelles and Cell Wall',
+      subject: 'Biology',
+      gradeMin: 6,
+      gradeMax: 10,
+      category: 'anatomical_diagram',
+      prompt: 'Detailed cross section of plant cell showing cell wall, plasma membrane, large central vacuole, nucleus, mitochondria, chloroplasts, and cytoplasm.',
+      labels: [
+        { key: 'cell_wall', en: 'Rigid Cellulose Cell Wall', te: 'కణ కవచం', hi: 'कोशिका भित्ति' },
+        { key: 'central_vacuole', en: 'Large Central Vacuole', te: 'కేంద్ర రిక్తిక', hi: 'केंद्रीय रसधानी' },
+        { key: 'nucleus', en: 'Nucleus with Chromatin', te: 'కేంద్రకం', hi: 'केंद्रक' },
+        { key: 'chloroplast', en: 'Chloroplast (Photosynthetic)', te: 'హరితరేణువు', hi: 'हरितलवक' }
+      ],
+      svg: `<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="500" fill="#F0FDF4" rx="16"/><rect x="80" y="60" width="640" height="380" rx="30" fill="#DCFCE7" stroke="#16A34A" stroke-width="12"/><rect x="100" y="80" width="600" height="340" rx="20" fill="#F0FDF4" stroke="#4ADE80" stroke-width="4"/><ellipse cx="440" cy="250" rx="180" ry="110" fill="#E0F2FE" stroke="#0284C7" stroke-width="4"/><circle cx="230" cy="200" r="60" fill="#DDD6FE" stroke="#7C3AED" stroke-width="4"/><text x="440" y="255" text-anchor="middle" font-weight="bold" fill="#0369A1">Central Vacuole (Turgor Pressure)</text><text x="230" y="205" text-anchor="middle" font-weight="bold" fill="#5B21B6">Nucleus</text></svg>`
+    },
+    {
+      id: 'vis-bio-dna-helix',
+      topic: 'DNA Double Helix',
+      subtopic: 'Antiparallel Strands & Base Pairs',
+      subject: 'Biology',
+      gradeMin: 8,
+      gradeMax: 10,
+      category: 'molecular_structure',
+      prompt: 'Accurate B-DNA double helix schematic showing complementary base pairing Adenine with Thymine and Cytosine with Guanine along sugar-phosphate backbone.',
+      labels: [
+        { key: 'adenine_thymine', en: 'Adenine (A) = Thymine (T) [2 H-Bonds]', te: 'ఎడినైన్ - థైమిన్', hi: 'एडेनिन - थायमिन' },
+        { key: 'guanine_cytosine', en: 'Guanine (G) ≡ Cytosine (C) [3 H-Bonds]', te: 'గ్వానైన్ - సైటోసిన్', hi: 'ग्वानिन - साइटोसिन' },
+        { key: 'sugar_phosphate', en: 'Sugar-Phosphate Backbone (5\' to 3\')', te: 'చక్కెర-ఫాస్ఫేట్ వెన్నెముక', hi: 'शर्करा-फॉस्फेट आधार' }
+      ],
+      svg: `<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="500" fill="#F8FAFC" rx="16"/><path d="M 150 50 Q 250 250 150 450" fill="none" stroke="#2563EB" stroke-width="8"/><path d="M 350 50 Q 250 250 350 450" fill="none" stroke="#DC2626" stroke-width="8"/><line x1="165" y1="120" x2="335" y2="120" stroke="#059669" stroke-width="6"/><line x1="200" y1="180" x2="300" y2="180" stroke="#D97706" stroke-width="6"/><line x1="250" y1="250" x2="250" y2="250" stroke="#7C3AED" stroke-width="8"/><line x1="200" y1="320" x2="300" y2="320" stroke="#059669" stroke-width="6"/><line x1="165" y1="380" x2="335" y2="380" stroke="#D97706" stroke-width="6"/><text x="480" y="160" font-weight="bold" fill="#059669" font-size="20">A = T (2 Hydrogen Bonds)</text><text x="480" y="240" font-weight="bold" fill="#D97706" font-size="20">G ≡ C (3 Hydrogen Bonds)</text><text x="480" y="320" font-weight="bold" fill="#1E293B" font-size="16">Antiparallel 5' → 3' and 3' → 5'</text></svg>`
+    },
+    {
+      id: 'vis-bio-digestive-system',
+      topic: 'Digestive System',
+      subtopic: 'Alimentary Canal and Accessory Glands',
+      subject: 'Biology',
+      gradeMin: 6,
+      gradeMax: 10,
+      category: 'anatomical_diagram',
+      prompt: 'Human digestive system anatomy showing mouth, esophagus, stomach, liver, gall bladder, pancreas, small intestine, and large intestine.',
+      labels: [
+        { key: 'stomach', en: 'Stomach (Gastric Acid & Pepsin)', te: 'జీర్ణాశయం', hi: 'आमाशय' },
+        { key: 'small_intestine', en: 'Small Intestine (Villi Nutrient Absorption)', te: 'చిన్న పేగు', hi: 'छोटी आंत' },
+        { key: 'liver', en: 'Liver (Bile Secretion)', te: 'కాలేయం', hi: 'यकृत' },
+        { key: 'large_intestine', en: 'Large Intestine (Water Reabsorption)', te: 'పెద్ద పేగు', hi: 'बड़ी आंत' }
+      ],
+      svg: `<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="500" fill="#FFFBEB" rx="16"/><line x1="300" y1="60" x2="300" y2="170" stroke="#D97706" stroke-width="10"/><path d="M 280 170 Q 380 180 340 270 Q 300 300 270 270 Z" fill="#F87171" stroke="#DC2626" stroke-width="4"/><path d="M 210 170 L 270 170 L 250 230 Z" fill="#B45309" stroke="#92400E" stroke-width="4"/><rect x="230" y="290" width="160" height="130" rx="20" fill="#FDE68A" stroke="#D97706" stroke-width="5"/><text x="480" y="140" font-weight="bold" fill="#92400E" font-size="18">Esophagus</text><text x="480" y="210" font-weight="bold" fill="#DC2626" font-size="18">Stomach (HCl + Pepsin)</text><text x="480" y="280" font-weight="bold" fill="#D97706" font-size="18">Small Intestine (Duodenum/Jejunum)</text><text x="480" y="350" font-weight="bold" fill="#451A03" font-size="18">Large Intestine (Colon)</text></svg>`
+    },
+    {
+      id: 'vis-chem-bonding',
+      topic: 'Chemical Bonding',
+      subtopic: 'Ionic vs Covalent Electron Behavior',
+      subject: 'Chemistry',
+      gradeMin: 8,
+      gradeMax: 10,
+      category: 'molecular_structure',
+      prompt: 'Comparison of ionic bonding showing electron transfer between sodium and chlorine, and covalent bonding showing electron sharing between hydrogen and oxygen.',
+      labels: [
+        { key: 'electron_transfer', en: 'Ionic: Complete Electron Transfer (Na⁺ + Cl⁻)', te: 'అయానిక్ బంధం: ఎలక్ట్రాన్ బదిలీ', hi: 'आयनिक बंध: इलेक्ट्रॉन स्थानांतरण' },
+        { key: 'electron_sharing', en: 'Covalent: Shared Electron Pair (H:O:H)', te: 'సమయోజనీయ బంధం: భాగస్వామ్యం', hi: 'सहसंयोजक बंध: साझा इलेक्ट्रॉन' }
+      ],
+      svg: `<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="500" fill="#F5F3FF" rx="16"/><g transform="translate(150, 200)"><circle cx="0" cy="0" r="50" fill="#C7D2FE" stroke="#4F46E5" stroke-width="4"/><circle cx="120" cy="0" r="60" fill="#FED7AA" stroke="#EA580C" stroke-width="4"/><path d="M 40 -20 Q 70 -50 90 -10" fill="none" stroke="#DC2626" stroke-width="4" marker-end="url(#arrow)"/><text x="60" y="90" text-anchor="middle" font-weight="bold" fill="#312E81">Ionic Transfer (NaCl)</text></g><g transform="translate(560, 200)"><circle cx="-40" cy="0" r="50" fill="#BAE6FD" stroke="#0284C7" stroke-width="4" opacity="0.7"/><circle cx="40" cy="0" r="50" fill="#BAE6FD" stroke="#0284C7" stroke-width="4" opacity="0.7"/><circle cx="0" cy="-10" r="6" fill="#0369A1"/><circle cx="0" cy="10" r="6" fill="#0369A1"/><text x="0" y="90" text-anchor="middle" font-weight="bold" fill="#075985">Covalent Sharing (H₂O)</text></g></svg>`
+    },
+    {
+      id: 'vis-phys-light-reflection',
+      topic: 'Light Reflection and Refraction',
+      subtopic: 'Laws of Reflection & Snell’s Law of Refraction',
+      subject: 'Physics',
+      gradeMin: 7,
+      gradeMax: 10,
+      category: 'ray_diagram',
+      prompt: 'Ray diagram demonstrating angle of incidence equals angle of reflection (i = r) and refraction through a glass block bending toward normal.',
+      labels: [
+        { key: 'incident_ray', en: 'Incident Ray (Angle i)', te: 'పతన కిరణం', hi: 'आपतित किरण' },
+        { key: 'reflected_ray', en: 'Reflected Ray (Angle r = i)', te: 'పరావర్తన కిరణం', hi: 'परावर्तित किरण' },
+        { key: 'refracted_ray', en: 'Refracted Ray (Snell\'s Law n₁sin θ₁ = n₂sin θ₂)', te: 'వక్రీభవన కిరణం', hi: 'अपवर्तित किरण' },
+        { key: 'normal_line', en: 'Normal Line (90° Perpendicular)', te: 'లంబం', hi: 'अभिलंब' }
+      ],
+      svg: `<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="500" fill="#F8FAFC" rx="16"/><line x1="100" y1="280" x2="700" y2="280" stroke="#0F172A" stroke-width="6"/><line x1="400" y1="80" x2="400" y2="440" stroke="#94A3B8" stroke-width="3" stroke-dasharray="6,4"/><line x1="200" y1="120" x2="400" y2="280" stroke="#DC2626" stroke-width="5"/><line x1="400" y1="280" x2="600" y2="120" stroke="#2563EB" stroke-width="5"/><line x1="400" y1="280" x2="470" y2="440" stroke="#16A34A" stroke-width="5"/><text x="240" y="200" font-weight="bold" fill="#DC2626">Incident Ray (∠i)</text><text x="520" y="200" font-weight="bold" fill="#2563EB">Reflected Ray (∠r = ∠i)</text><text x="480" y="380" font-weight="bold" fill="#16A34A">Refracted Ray in Glass</text></svg>`
+    },
+    {
+      id: 'vis-phys-electric-circuit',
+      topic: 'Electric Circuit',
+      subtopic: 'Ohm’s Law Schematic with Resistor, Ammeter, Voltmeter',
+      subject: 'Physics',
+      gradeMin: 7,
+      gradeMax: 10,
+      category: 'circuit_schematic',
+      prompt: 'Standard schematic diagram of closed electric circuit containing DC battery cell, switch, ammeter in series, resistor with parallel voltmeter.',
+      labels: [
+        { key: 'battery', en: 'DC Voltage Source (V)', te: 'విద్యుత్ ఘటం / బ్యాటరీ', hi: 'बैटरी स्रोत' },
+        { key: 'resistor', en: 'Fixed Resistor (R in Ohms Ω)', te: 'నిరోధం (R)', hi: 'प्रतिरोधक (R)' },
+        { key: 'ammeter', en: 'Ammeter in Series (Measures Current I in Amperes)', te: 'శ్రేణిలో అమ్మీటర్', hi: 'श्रेणीक्रम में अमीटर' },
+        { key: 'voltmeter', en: 'Voltmeter in Parallel (Measures Potential Difference)', te: 'సమాంతరంగా వోల్ట్‌మీటర్', hi: 'समानांतर वोल्टमीटर' }
+      ],
+      svg: `<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="500" fill="#F8FAFC" rx="16"/><rect x="150" y="100" width="500" height="260" fill="none" stroke="#1E293B" stroke-width="5"/><g transform="translate(150, 230)"><line x1="0" y1="-25" x2="0" y2="25" stroke="#2563EB" stroke-width="8"/><line x1="20" y1="-12" x2="20" y2="12" stroke="#2563EB" stroke-width="4"/><text x="-40" y="5" font-weight="bold" fill="#2563EB">+  -</text></g><g transform="translate(400, 100)"><path d="M -50 0 L -30 -15 L -10 15 L 10 -15 L 30 15 L 50 0" fill="none" stroke="#DC2626" stroke-width="5"/><text x="0" y="-25" text-anchor="middle" font-weight="bold" fill="#DC2626">Resistor (R)</text></g><circle cx="550" cy="360" r="22" fill="#FEF08A" stroke="#CA8A04" stroke-width="4"/><text x="550" y="366" text-anchor="middle" font-weight="bold" fill="#854D0E">A</text><path d="M 330 100 L 330 40 L 470 40 L 470 100" fill="none" stroke="#7C3AED" stroke-width="3" stroke-dasharray="4,4"/><circle cx="400" cy="40" r="20" fill="#EDE9FE" stroke="#7C3AED" stroke-width="3"/><text x="400" y="46" text-anchor="middle" font-weight="bold" fill="#5B21B6">V</text><text x="400" y="440" text-anchor="middle" font-size="20" font-weight="bold" fill="#0F172A">Ohm's Law: V = I × R</text></svg>`
+    },
+    {
+      id: 'vis-geo-water-cycle',
+      topic: 'Water Cycle',
+      subtopic: 'Evaporation, Condensation, Precipitation & Transpiration',
+      subject: 'Geography',
+      gradeMin: 5,
+      gradeMax: 9,
+      category: 'geographic_cross_section',
+      prompt: 'Geographical cross section illustrating global hydrological cycle: solar radiation driving ocean evaporation, vegetation transpiration, cloud condensation, rain precipitation, and runoff.',
+      labels: [
+        { key: 'evaporation', en: 'Evaporation (Solar Powered)', te: 'భాష్పీభవనం', hi: 'वाष्पीकरण' },
+        { key: 'condensation', en: 'Condensation (Cloud Formation)', te: 'సాంద్రీకరణం', hi: 'संघनन' },
+        { key: 'precipitation', en: 'Precipitation (Rain / Snow)', te: 'అవపాతం (వర్షం)', hi: 'वर्षण (बारिश)' },
+        { key: 'transpiration', en: 'Plant Transpiration', te: 'భాష్పోత్సేకం', hi: 'वाष्पोत्सर्जन' }
+      ],
+      svg: `<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="500" fill="#E0F2FE" rx="16"/><circle cx="700" cy="90" r="50" fill="#FBBF24" stroke="#D97706" stroke-width="6"/><path d="M 0 380 Q 200 320 400 390 Q 600 440 800 380 L 800 500 L 0 500 Z" fill="#0284C7"/><path d="M 0 300 Q 150 200 320 370 Z" fill="#15803D"/><g transform="translate(420, 120)"><ellipse cx="0" cy="0" rx="60" ry="25" fill="#FFFFFF" stroke="#94A3B8" stroke-width="3"/><ellipse cx="40" cy="-10" rx="45" ry="25" fill="#FFFFFF"/><ellipse cx="-35" cy="-5" rx="40" ry="20" fill="#FFFFFF"/><text x="15" y="45" text-anchor="middle" font-weight="bold" fill="#475569">Condensation</text></g><text x="640" y="320" font-weight="bold" fill="#0369A1">Evaporation ↑</text><text x="320" y="240" font-weight="bold" fill="#15803D">Transpiration ↑</text><text x="440" y="220" font-weight="bold" fill="#1E40AF">Precipitation ↓</text></svg>`
+    },
+    {
+      id: 'vis-phys-solar-system',
+      topic: 'Solar System',
+      subtopic: 'Planetary Orbits & Scale of Terrestrial and Jovian Worlds',
+      subject: 'Physics',
+      gradeMin: 4,
+      gradeMax: 9,
+      category: 'scientific_flowchart',
+      prompt: 'Astronomical representation of the 8 planets orbiting the Sun in order: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune with Asteroid Belt separator.',
+      labels: [
+        { key: 'sun', en: 'The Sun (G-Type Star)', te: 'సూర్యుడు', hi: 'सूर्य' },
+        { key: 'terrestrial', en: 'Terrestrial Planets (Mercury, Venus, Earth, Mars)', te: 'భౌమ గ్రహాలు', hi: 'स्थलीय ग्रह' },
+        { key: 'gas_giants', en: 'Gas & Ice Giants (Jupiter, Saturn, Uranus, Neptune)', te: 'వాయు మరియు మంచు మహా గ్రహాలు', hi: 'गैस दानव और बर्फ दानव' }
+      ],
+      svg: `<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="500" fill="#0B132B" rx="16"/><circle cx="0" cy="250" r="120" fill="#F59E0B" stroke="#D97706" stroke-width="8"/><circle cx="160" cy="250" r="7" fill="#94A3B8"/><circle cx="200" cy="250" r="14" fill="#FCD34D"/><circle cx="260" cy="250" r="15" fill="#38BDF8"/><circle cx="320" cy="250" r="10" fill="#EF4444"/><line x1="360" y1="80" x2="360" y2="420" stroke="#64748B" stroke-dasharray="4,6" stroke-width="2"/><circle cx="450" cy="250" r="45" fill="#FB923C"/><circle cx="570" cy="250" r="35" fill="#FDE047"/><ellipse cx="570" cy="250" rx="55" ry="12" fill="none" stroke="#FBBF24" stroke-width="3"/><circle cx="680" cy="250" r="22" fill="#7DD3FC"/><circle cx="760" cy="250" r="20" fill="#60A5FA"/><text x="360" y="60" text-anchor="middle" fill="#94A3B8" font-size="12">Asteroid Belt</text><text x="400" y="470" text-anchor="middle" fill="#F8FAFC" font-weight="bold" font-size="16">Planetary Order from Sun (Terrestrial → Giants)</text></svg>`
+    },
+    {
+      id: 'vis-math-pythagoras',
+      topic: 'Pythagoras Theorem',
+      subtopic: 'Geometric Area Proof a² + b² = c²',
+      subject: 'Mathematics',
+      gradeMin: 7,
+      gradeMax: 10,
+      category: 'geometric_proof',
+      prompt: 'Geometric square proof diagram for Pythagoras theorem showing right triangle with legs a and b and hypotenuse c with squares constructed on all three sides.',
+      labels: [
+        { key: 'theorem_statement', en: 'In a right-angled triangle: a² + b² = c²', te: 'పైథాగరస్ సిద్ధాంతం: a² + b² = c²', hi: 'पायथागोरस प्रमेय: a² + b² = c²' },
+        { key: 'hypotenuse', en: 'Hypotenuse (Longest side c opposite 90°)', te: 'కర్ణం (c)', hi: 'कर्ण (c)' },
+        { key: 'legs', en: 'Adjacent & Opposite Perpendicular Legs (a, b)', te: 'భుజాలు (a, b)', hi: 'भुजाएं (a, b)' }
+      ],
+      svg: `<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="500" fill="#F8FAFC" rx="16"/><polygon points="320,320 480,320 320,200" fill="#E2E8F0" stroke="#0F172A" stroke-width="4"/><rect x="320" y="300" width="20" height="20" fill="none" stroke="#0F172A" stroke-width="2"/><rect x="160" y="320" width="160" height="120" fill="#BFDBFE" stroke="#2563EB" stroke-width="3"/><rect x="200" y="200" width="120" height="120" fill="#BBF7D0" stroke="#16A34A" stroke-width="3"/><polygon points="320,200 480,320 600,160 440,40" fill="#FED7AA" stroke="#EA580C" stroke-width="3"/><text x="260" y="265" font-weight="bold" fill="#15803D">b²</text><text x="240" y="385" font-weight="bold" fill="#1D4ED8">a²</text><text x="470" y="180" font-weight="bold" fill="#C2410C">c² = a² + b²</text><text x="400" y="470" text-anchor="middle" font-size="20" font-weight="bold" fill="#0F172A">Pythagorean Metric: a² + b² = c²</text></svg>`
+    },
+    {
+      id: 'vis-hist-harappan-civilization',
+      topic: 'Harappan Civilization',
+      subtopic: 'Mohenjo-daro Great Bath & Grid Urban Architecture',
+      subject: 'History',
+      gradeMin: 6,
+      gradeMax: 9,
+      category: 'historical_map',
+      prompt: 'Architectural schematic plan of the Indus Valley Citadel and Great Bath at Mohenjo-daro showing fired brick waterproof lining, drainage channels, and grid layout.',
+      labels: [
+        { key: 'great_bath', en: 'The Great Bath (Bitumen Waterproofed Fired Brick Tank)', te: 'మొహెంజొదారో మహా స్నానవాటిక', hi: 'मोहनजोदड़ो का विशाल स्नानागार' },
+        { key: 'citadel', en: 'Raised Citadel (Upper Town on Mud-Brick Platform)', te: 'కోట భాగం (ఎగువ పట్టణం)', hi: 'दुर्ग (ऊपरी नगर)' },
+        { key: 'drainage', en: 'Covered Brick Drainage Network', te: 'మూసివేసిన ఇటుక మురుగునీటి కాలువలు', hi: 'ढकी हुई ईंट जल निकासी प्रणाली' }
+      ],
+      svg: `<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg"><rect width="800" height="500" fill="#FEF3C7" rx="16"/><rect x="180" y="100" width="440" height="280" rx="8" fill="#FDE68A" stroke="#B45309" stroke-width="8"/><rect x="260" y="150" width="280" height="180" rx="4" fill="#67E8F9" stroke="#0891B2" stroke-width="6"/><rect x="280" y="170" width="240" height="140" fill="#06B6D4"/><g fill="#78350F"><rect x="360" y="150" width="80" height="10"/><rect x="360" y="320" width="80" height="10"/></g><line x1="260" y1="330" x2="180" y2="390" stroke="#0E7490" stroke-width="8"/><text x="400" y="245" text-anchor="middle" font-weight="bold" fill="#FFFFFF" font-size="18">The Great Bath (Mohenjo-daro)</text><text x="400" y="440" text-anchor="middle" font-weight="bold" fill="#78350F" font-size="16">Fired Brick Architecture & Covered Drainage</text></svg>`
+    }
+  ];
+
+  for (const asset of benchmarkAssets) {
+    insertAsset.run(
+      asset.id,
+      asset.topic,
+      asset.subtopic,
+      asset.subject,
+      asset.gradeMin,
+      asset.gradeMax,
+      'ALL',
+      asset.category,
+      'vector_svg',
+      'CC-BY-4.0',
+      'STUDYAI Visual Intelligence Engine',
+      'studyai_vector',
+      asset.prompt,
+      'verified',
+      'accurate',
+      asset.svg,
+      `/api/visuals/preview/${asset.id}`,
+      JSON.stringify(asset.labels),
+      now
+    );
+  }
+}
+
+// -------------------------------------------------------------
+// Phase 3 Database Accessors
+// -------------------------------------------------------------
+
+export function getVisualAssets(filters: { topic?: string; subject?: string; grade?: number; board?: string } = {}) {
+  let query = 'SELECT * FROM visual_asset_library WHERE 1=1';
+  const params: any[] = [];
+
+  if (filters.topic) {
+    query += ' AND (LOWER(topic) LIKE ? OR LOWER(subtopic) LIKE ?)';
+    params.push(`%${filters.topic.toLowerCase()}%`, `%${filters.topic.toLowerCase()}%`);
+  }
+  if (filters.subject) {
+    query += ' AND LOWER(subject) = ?';
+    params.push(filters.subject.toLowerCase());
+  }
+  if (filters.grade) {
+    query += ' AND grade_min <= ? AND grade_max >= ?';
+    params.push(filters.grade, filters.grade);
+  }
+  if (filters.board && filters.board !== 'ALL') {
+    query += ' AND (board = ? OR board = \'ALL\')';
+    params.push(filters.board);
+  }
+
+  query += ' ORDER BY created_at DESC';
+  return db.prepare(query).all(...params);
+}
+
+export function getVisualAssetById(id: string) {
+  return db.prepare('SELECT * FROM visual_asset_library WHERE image_id = ?').get(id) as any;
+}
+
+export function insertVisualAsset(asset: {
+  image_id: string;
+  topic: string;
+  subtopic: string;
+  subject: string;
+  grade_min?: number;
+  grade_max?: number;
+  board?: string;
+  visual_category: string;
+  source_type?: string;
+  license_type?: string;
+  attribution?: string;
+  provider?: string;
+  prompt: string;
+  verification_status?: string;
+  accuracy_status?: string;
+  svg_xml?: string;
+  preview_url: string;
+  labels_json?: string;
+}) {
+  const now = new Date().toISOString();
+  db.prepare(`
+    INSERT OR REPLACE INTO visual_asset_library (
+      image_id, topic, subtopic, subject, grade_min, grade_max, board, visual_category,
+      source_type, license_type, attribution, provider, prompt, verification_status,
+      accuracy_status, svg_xml, preview_url, labels_json, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    asset.image_id,
+    asset.topic,
+    asset.subtopic,
+    asset.subject,
+    asset.grade_min ?? 1,
+    asset.grade_max ?? 10,
+    asset.board ?? 'ALL',
+    asset.visual_category,
+    asset.source_type ?? 'vector_svg',
+    asset.license_type ?? 'CC-BY-4.0',
+    asset.attribution ?? 'STUDYAI Visual Intelligence Engine',
+    asset.provider ?? 'studyai_vector',
+    asset.prompt,
+    asset.verification_status ?? 'verified',
+    asset.accuracy_status ?? 'accurate',
+    asset.svg_xml || null,
+    asset.preview_url,
+    asset.labels_json || '[]',
+    now
+  );
+  return getVisualAssetById(asset.image_id);
+}
+
+export function getResearchJobs(status?: string, limit: number = 50) {
+  if (status) {
+    return db.prepare('SELECT * FROM research_jobs WHERE status = ? ORDER BY priority ASC, created_at DESC LIMIT ?').all(status, limit);
+  }
+  return db.prepare('SELECT * FROM research_jobs ORDER BY priority ASC, created_at DESC LIMIT ?').all(limit);
+}
+
+export function createResearchJob(job: {
+  id: string;
+  job_type: string;
+  priority?: number;
+  status?: string;
+  topic: string;
+  subject: string;
+  grade: number;
+  board: string;
+  source_references_json?: string;
+}) {
+  const now = new Date().toISOString();
+  db.prepare(`
+    INSERT INTO research_jobs (
+      id, job_type, priority, status, topic, subject, grade, board,
+      source_references_json, result_json, retry_count, max_retries, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 3, ?)
+  `).run(
+    job.id,
+    job.job_type,
+    job.priority ?? 2,
+    job.status ?? 'queued',
+    job.topic,
+    job.subject,
+    job.grade,
+    job.board,
+    job.source_references_json ?? '[]',
+    '{}',
+    now
+  );
+  return db.prepare('SELECT * FROM research_jobs WHERE id = ?').get(job.id);
+}
+
+export function updateResearchJobStatus(id: string, status: string, result?: any, failureReason?: string) {
+  const now = new Date().toISOString();
+  const startedAt = status === 'running' ? now : undefined;
+  const completedAt = (status === 'completed' || status === 'failed') ? now : undefined;
+
+  let query = 'UPDATE research_jobs SET status = ?';
+  const params: any[] = [status];
+
+  if (result !== undefined) {
+    query += ', result_json = ?';
+    params.push(JSON.stringify(result));
+  }
+  if (failureReason !== undefined) {
+    query += ', failure_reason = ?, retry_count = retry_count + 1';
+    params.push(failureReason);
+  }
+  if (startedAt) {
+    query += ', started_at = ?';
+    params.push(startedAt);
+  }
+  if (completedAt) {
+    query += ', completed_at = ?';
+    params.push(completedAt);
+  }
+
+  query += ' WHERE id = ?';
+  params.push(id);
+
+  db.prepare(query).run(...params);
+  return db.prepare('SELECT * FROM research_jobs WHERE id = ?').get(id);
+}
+
+export function getSyllabusChangeLogs(board?: string, academicYear?: string) {
+  let query = 'SELECT * FROM syllabus_change_logs WHERE 1=1';
+  const params: any[] = [];
+  if (board) {
+    query += ' AND board = ?';
+    params.push(board);
+  }
+  if (academicYear) {
+    query += ' AND academic_year = ?';
+    params.push(academicYear);
+  }
+  query += ' ORDER BY created_at DESC';
+  return db.prepare(query).all(...params);
+}
+
+export function insertSyllabusChangeLog(log: {
+  id: string;
+  board: string;
+  academic_year: string;
+  change_type: string;
+  affected_subject: string;
+  affected_chapter: string;
+  details_json?: string;
+  verified_source_url: string;
+}) {
+  const now = new Date().toISOString();
+  db.prepare(`
+    INSERT INTO syllabus_change_logs (
+      id, board, academic_year, change_type, affected_subject, affected_chapter, details_json, verified_source_url, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    log.id,
+    log.board,
+    log.academic_year,
+    log.change_type,
+    log.affected_subject,
+    log.affected_chapter,
+    log.details_json ?? '{}',
+    log.verified_source_url,
+    now
+  );
+  return db.prepare('SELECT * FROM syllabus_change_logs WHERE id = ?').get(log.id);
+}
+
 
 

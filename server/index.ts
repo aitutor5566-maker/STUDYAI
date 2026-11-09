@@ -109,6 +109,9 @@ import { unifiedKnowledgeRetrieval } from './unifiedKnowledgeRetrieval.ts';
 import { responseValidationLayer } from './responseValidationLayer.ts';
 import { knowledgeIntelligenceAdmin } from './knowledgeIntelligenceAdmin.ts';
 import { multiBoardKnowledgeEngine, SUPPORTED_CURRICULA } from './multiBoardKnowledgeEngine.ts';
+import { ResearchIntelligenceEngine } from './researchIntelligenceEngine.ts';
+import { UnifiedVisualIntelligenceEngine } from './visualIntelligenceEngineUnified.ts';
+import { getVisualAssets, getVisualAssetById, getResearchJobs, getSyllabusChangeLogs } from './db.ts';
 
 initDatabase();
 
@@ -699,6 +702,154 @@ export function createAppServer() {
         });
 
         sendJson(res, 200, diff);
+        return;
+      }
+
+      // =========================================================
+      // STUDYAI Phase 3: Research & Visual Intelligence Endpoints
+      // =========================================================
+
+      // Research Scheduler Jobs Queue
+      if ((pathname === '/api/v1/research/jobs' || pathname === '/api/research/jobs') && req.method === 'GET') {
+        const status = parsedUrl.searchParams.get('status') || undefined;
+        const limit = Number(parsedUrl.searchParams.get('limit')) || 50;
+        const jobs = getResearchJobs(status, limit);
+        sendJson(res, 200, {
+          total: jobs.length,
+          isPaused: ResearchIntelligenceEngine.isResearchPaused(),
+          jobs
+        });
+        return;
+      }
+
+      // On-Demand Research Trigger
+      if ((pathname === '/api/v1/research/trigger' || pathname === '/api/research/trigger') && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        if (!body.topic || !body.subject) {
+          sendJson(res, 400, { error: 'Topic and subject are required.' });
+          return;
+        }
+
+        const result = await ResearchIntelligenceEngine.executeResearchPipeline({
+          topic: sanitizeText(body.topic, 100),
+          subject: sanitizeText(body.subject, 50),
+          grade: typeof body.grade === 'number' ? body.grade : 10,
+          board: sanitizeText(body.board || 'CBSE', 30),
+          priority: typeof body.priority === 'number' ? body.priority : 1
+        });
+
+        sendJson(res, 200, { success: true, result });
+        return;
+      }
+
+      // Admin Pause / Resume Research Engine
+      if (pathname === '/api/v1/research/pause' && req.method === 'POST') {
+        ResearchIntelligenceEngine.pauseResearch();
+        sendJson(res, 200, { success: true, isPaused: true, message: 'Research scheduler paused by administrator.' });
+        return;
+      }
+
+      if (pathname === '/api/v1/research/resume' && req.method === 'POST') {
+        ResearchIntelligenceEngine.resumeResearch();
+        sendJson(res, 200, { success: true, isPaused: false, message: 'Research scheduler resumed.' });
+        return;
+      }
+
+      // Syllabus Change Logs & Diff Scanning
+      if ((pathname === '/api/v1/research/syllabus-changes' || pathname === '/api/research/syllabus-changes') && req.method === 'GET') {
+        const board = parsedUrl.searchParams.get('board') || undefined;
+        const academicYear = parsedUrl.searchParams.get('academicYear') || undefined;
+        const logs = getSyllabusChangeLogs(board, academicYear);
+        sendJson(res, 200, { total: logs.length, logs });
+        return;
+      }
+
+      if ((pathname === '/api/v1/research/syllabus-changes/scan' || pathname === '/api/research/syllabus-changes/scan') && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const board = body.board || 'ALL';
+        const academicYear = body.academicYear || '2025-2026';
+        const detected = ResearchIntelligenceEngine.monitorSyllabusChanges(board, academicYear);
+        sendJson(res, 200, { success: true, count: detected.length, detectedChanges: detected });
+        return;
+      }
+
+      // Educational Visual Planning & Prompt Construction
+      if ((pathname === '/api/v1/visuals/plan' || pathname === '/api/visuals/plan') && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        if (!body.topic) {
+          sendJson(res, 400, { error: 'Topic is required.' });
+          return;
+        }
+
+        const plan = UnifiedVisualIntelligenceEngine.planEducationalVisual({
+          topic: sanitizeText(body.topic, 100),
+          subtopic: body.subtopic ? sanitizeText(body.subtopic, 100) : undefined,
+          subject: sanitizeText(body.subject || inferSubjectFromTopic(body.topic), 50),
+          grade: typeof body.grade === 'number' ? body.grade : 10,
+          board: sanitizeText(body.board || 'CBSE', 30),
+          language: body.language === 'te' || body.language === 'hi' ? body.language : 'en'
+        });
+
+        sendJson(res, 200, { success: true, plan });
+        return;
+      }
+
+      // Central Searchable Educational Image Library
+      if ((pathname === '/api/v1/visuals/library' || pathname === '/api/visuals/library') && req.method === 'GET') {
+        const topic = parsedUrl.searchParams.get('topic') || undefined;
+        const subject = parsedUrl.searchParams.get('subject') || undefined;
+        const grade = parsedUrl.searchParams.get('grade') ? Number(parsedUrl.searchParams.get('grade')) : undefined;
+        const board = parsedUrl.searchParams.get('board') || undefined;
+
+        const assets = getVisualAssets({ topic, subject, grade, board });
+        sendJson(res, 200, {
+          total: assets.length,
+          assets: assets.map((a: any) => ({
+            ...a,
+            labels: JSON.parse(a.labels_json || '[]')
+          }))
+        });
+        return;
+      }
+
+      // Direct Visual SVG / Asset Preview
+      if (pathname.startsWith('/api/visuals/preview/')) {
+        const imageId = pathname.replace('/api/visuals/preview/', '');
+        const asset = getVisualAssetById(imageId);
+        if (!asset) {
+          // If not in database, check if it's a procedural preview
+          sendJson(res, 404, { error: 'Visual asset not found', imageId });
+          return;
+        }
+        if (asset.svg_xml) {
+          res.writeHead(200, {
+            'Content-Type': 'image/svg+xml; charset=utf-8',
+            'Cache-Control': 'public, max-age=86400',
+            'Access-Control-Allow-Origin': '*'
+          });
+          res.end(asset.svg_xml);
+          return;
+        }
+        sendJson(res, 200, asset);
+        return;
+      }
+
+      // Scientific Visual Verification Pipeline
+      if ((pathname === '/api/v1/visuals/verify' || pathname === '/api/visuals/verify') && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        if (!body.topic || !body.candidateDescription) {
+          sendJson(res, 400, { error: 'topic and candidateDescription are required.' });
+          return;
+        }
+
+        const verification = UnifiedVisualIntelligenceEngine.verifyVisualAccuracy({
+          topic: sanitizeText(body.topic, 100),
+          subject: sanitizeText(body.subject || inferSubjectFromTopic(body.topic), 50),
+          candidateDescription: sanitizeText(body.candidateDescription, 500),
+          detectedObjects: Array.isArray(body.detectedObjects) ? body.detectedObjects : []
+        });
+
+        sendJson(res, 200, verification);
         return;
       }
 
@@ -1388,6 +1539,21 @@ export function createAppServer() {
           rawLesson: structured
         });
         structured.universalTeachingWorkflow = workflow;
+
+        // Phase 3: Visual Intelligence Engine Planning & Localized Visuals
+        try {
+          const visualLang = language.toLowerCase().startsWith('te') ? 'te' : (language.toLowerCase().startsWith('hi') ? 'hi' : 'en');
+          const visualPlan = UnifiedVisualIntelligenceEngine.planEducationalVisual({
+            topic: effectiveTopic,
+            subject,
+            grade,
+            board: resolvedBoard,
+            language: visualLang
+          });
+          structured.educationalVisualPlan = visualPlan;
+        } catch (visErr) {
+          console.warn('[AI_TUTOR] Visual planning non-blocking error:', visErr);
+        }
 
         if (body.simulateFailure === 'primary_provider') {
           structured.failureRecoveryLog = {

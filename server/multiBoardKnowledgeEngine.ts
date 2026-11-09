@@ -532,12 +532,21 @@ export class MultiBoardKnowledgeEngine {
   getEquivalentTopics(topic: string): EquivalentTopicMapping | null {
     const clean = topic.trim().toLowerCase();
 
-    // Query universal node
-    const node = db.prepare(`
+    // Query universal node (exact match first, then shortest partial match)
+    let node = db.prepare(`
       SELECT * FROM universal_knowledge_nodes
-      WHERE LOWER(topic) = ? OR LOWER(topic) LIKE ?
+      WHERE LOWER(topic) = ?
       LIMIT 1
-    `).get(clean, `%${clean}%`) as any;
+    `).get(clean) as any;
+
+    if (!node) {
+      node = db.prepare(`
+        SELECT * FROM universal_knowledge_nodes
+        WHERE LOWER(topic) LIKE ?
+        ORDER BY LENGTH(topic) ASC
+        LIMIT 1
+      `).get(`%${clean}%`) as any;
+    }
 
     if (!node) return null;
 
