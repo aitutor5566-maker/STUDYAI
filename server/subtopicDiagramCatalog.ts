@@ -47,7 +47,7 @@ export interface SubtopicDiagramItem {
   isVerified: boolean;
 }
 
-function svgToDataUrl(svg: string): string {
+export function svgToDataUrl(svg: string): string {
   return `data:image/svg+xml;base64,${Buffer.from(svg, 'utf-8').toString('base64')}`;
 }
 
@@ -2360,6 +2360,14 @@ function inferSubjectFromTopic(topic: string): string {
   return 'Science';
 }
 
+import {
+  getDnaSubtopicDiagrams,
+  getElectricitySubtopicDiagrams,
+  getGeometrySubtopicDiagrams,
+  getFrenchRevolutionSubtopicDiagrams,
+  getEarthStructureSubtopicDiagrams
+} from './extendedSubtopicDiagrams.ts';
+
 // ============================================================================
 // 9. UNIVERSAL MULTI-DIAGRAM RETRIEVER (Expanded for All Subjects)
 // ============================================================================
@@ -2373,6 +2381,26 @@ export function getSubtopicDiagramsForTopic(topic: string, subject?: string): Su
 
   if (lower.includes('heart') || lower.includes('cardiac') || lower.includes('circulation') || lower.includes('ventricle')) {
     return getHumanHeartSubtopicDiagrams();
+  }
+
+  if (lower.includes('dna') || lower.includes('genetics') || lower.includes('nucleotide') || lower.includes('double helix') || lower.includes('replication')) {
+    return getDnaSubtopicDiagrams();
+  }
+
+  if (lower.includes('electricity') || lower.includes('circuit') || lower.includes('ohm') || lower.includes('resistor') || lower.includes('current')) {
+    return getElectricitySubtopicDiagrams();
+  }
+
+  if (lower.includes('geometry') || lower.includes('pythagor') || lower.includes('triangle') || lower.includes('circle theorem') || lower.includes('euclidean')) {
+    return getGeometrySubtopicDiagrams();
+  }
+
+  if (lower.includes('french revolution') || lower.includes('bastille') || lower.includes('third estate') || lower.includes('estates general')) {
+    return getFrenchRevolutionSubtopicDiagrams();
+  }
+
+  if (lower.includes('earth') && (lower.includes('structure') || lower.includes('core') || lower.includes('crust') || lower.includes('mantle') || lower.includes('tectonic'))) {
+    return getEarthStructureSubtopicDiagrams();
   }
 
   if (lower.includes('mitosis') || lower.includes('cell division') || lower.includes('interphase') || lower.includes('metaphase') || lower.includes('anaphase')) {
