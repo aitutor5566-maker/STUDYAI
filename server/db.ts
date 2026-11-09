@@ -970,6 +970,64 @@ export function initDatabase() {
       cleared_at TEXT,
       UNIQUE(user_id, environment_id, stage_index)
     );
+
+    CREATE TABLE IF NOT EXISTS curriculum_sources (
+      source_id TEXT PRIMARY KEY,
+      board TEXT NOT NULL,
+      grade INTEGER NOT NULL,
+      subject TEXT NOT NULL,
+      title TEXT NOT NULL,
+      publisher TEXT NOT NULL,
+      publication_year INTEGER NOT NULL,
+      academic_year TEXT NOT NULL,
+      edition TEXT NOT NULL,
+      license_type TEXT NOT NULL,
+      access_status TEXT NOT NULL,
+      official_source_url TEXT,
+      chapters_count INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS universal_knowledge_nodes (
+      id TEXT PRIMARY KEY,
+      topic TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      domain TEXT NOT NULL,
+      academic_definition TEXT NOT NULL,
+      fundamental_laws_json TEXT NOT NULL DEFAULT '[]',
+      governing_formulas_json TEXT NOT NULL DEFAULT '[]',
+      key_phenomena_json TEXT NOT NULL DEFAULT '[]',
+      prerequisites_json TEXT NOT NULL DEFAULT '[]',
+      subtopics_json TEXT NOT NULL DEFAULT '[]',
+      verified INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS board_curriculum_mappings (
+      id TEXT PRIMARY KEY,
+      universal_node_id TEXT NOT NULL,
+      board TEXT NOT NULL,
+      grade INTEGER NOT NULL,
+      chapter_title TEXT NOT NULL,
+      prescribed_textbook TEXT NOT NULL,
+      learning_outcomes_json TEXT NOT NULL DEFAULT '[]',
+      FOREIGN KEY (universal_node_id) REFERENCES universal_knowledge_nodes(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS ai_orchestration_audit_logs (
+      id TEXT PRIMARY KEY,
+      task_type TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      grade INTEGER NOT NULL,
+      board TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      model TEXT NOT NULL,
+      latency_ms INTEGER NOT NULL,
+      fallback_used INTEGER NOT NULL DEFAULT 0,
+      student_id TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
   `);
 
   try {

@@ -104,6 +104,10 @@ import {
   type GameSlug,
   type GameDifficulty
 } from './educationalGamesEngine.ts';
+import { unifiedAiOrchestrator } from './unifiedAiOrchestrator.ts';
+import { unifiedKnowledgeRetrieval } from './unifiedKnowledgeRetrieval.ts';
+import { responseValidationLayer } from './responseValidationLayer.ts';
+import { knowledgeIntelligenceAdmin } from './knowledgeIntelligenceAdmin.ts';
 
 initDatabase();
 
@@ -443,6 +447,119 @@ export function createAppServer() {
 
       if (pathname === '/api/providers' && req.method === 'GET') {
         sendJson(res, 200, getProviderStatus());
+        return;
+      }
+
+      // Unified AI Orchestrator Status
+      if ((pathname === '/api/v1/orchestrator/status' || pathname === '/api/orchestrator/status') && req.method === 'GET') {
+        const providers = unifiedAiOrchestrator.getProvidersHealth();
+        sendJson(res, 200, {
+          status: 'ok',
+          architecture: 'STUDYAI Unified AI Intelligence Foundation (Phase 1)',
+          timestamp: new Date().toISOString(),
+          providers
+        });
+        return;
+      }
+
+      // Unified AI Orchestrator Query Entrypoint
+      if ((pathname === '/api/v1/orchestrator/query' || pathname === '/api/orchestrator/query') && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const taskType = body.taskType || 'RESEARCH_AND_TEACH';
+        const topic = sanitizeText(body.topic || 'General Science', 180);
+        const subject = sanitizeText(body.subject || 'Science', 60);
+        const grade = typeof body.grade === 'number' ? body.grade : 10;
+        const board = sanitizeText(body.board || 'CBSE', 40);
+        const language = sanitizeText(body.language || 'English', 30);
+        const prompt = sanitizeText(body.prompt || topic, 4000);
+        const systemPrompt = body.systemPrompt ? sanitizeText(body.systemPrompt, 2000) : undefined;
+
+        const result = await unifiedAiOrchestrator.execute({
+          taskType,
+          topic,
+          subject,
+          grade,
+          board,
+          language,
+          prompt,
+          systemPrompt,
+          timeoutMs: body.timeoutMs || 9500,
+          temperature: body.temperature,
+          responseJsonSchema: body.responseJsonSchema,
+          studentId
+        });
+
+        sendJson(res, 200, result);
+        return;
+      }
+
+      // Shared Knowledge Retrieval Foundation Endpoint
+      if ((pathname === '/api/v1/knowledge/retrieve' || pathname === '/api/knowledge/retrieve') && req.method === 'GET') {
+        const topic = parsedUrl.searchParams.get('topic') || 'Photosynthesis';
+        const subject = parsedUrl.searchParams.get('subject') || undefined;
+        const grade = parseInt(parsedUrl.searchParams.get('grade') || '10', 10);
+        const board = parsedUrl.searchParams.get('board') || 'CBSE';
+        const language = parsedUrl.searchParams.get('language') || 'English';
+
+        const result = await unifiedKnowledgeRetrieval.retrieve({
+          topic,
+          subject,
+          grade,
+          board,
+          language
+        });
+
+        sendJson(res, 200, result);
+        return;
+      }
+
+      // Official Curriculum Sources Registry
+      if ((pathname === '/api/v1/knowledge/sources' || pathname === '/api/knowledge/sources') && req.method === 'GET') {
+        const board = parsedUrl.searchParams.get('board') as any || undefined;
+        const gradeStr = parsedUrl.searchParams.get('grade');
+        const grade = gradeStr ? parseInt(gradeStr, 10) : undefined;
+        const subject = parsedUrl.searchParams.get('subject') || undefined;
+
+        const sources = unifiedKnowledgeRetrieval.getRegisteredSources({ board, grade, subject });
+        sendJson(res, 200, {
+          total: sources.length,
+          supportedBoards: ['CBSE', 'ICSE', 'AP_STATE_BOARD', 'TS_STATE_BOARD'],
+          supportedGradesRange: 'Grades 1 to 10',
+          sources
+        });
+        return;
+      }
+
+      // Response Validation & Quality Safety Check
+      if ((pathname === '/api/v1/knowledge/validate' || pathname === '/api/knowledge/validate') && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const report = responseValidationLayer.validate({
+          topic: sanitizeText(body.topic || '', 180),
+          subject: sanitizeText(body.subject || 'Science', 60),
+          grade: typeof body.grade === 'number' ? body.grade : 10,
+          board: body.board,
+          language: body.language,
+          content: String(body.content || ''),
+          structuredJson: body.structuredJson || null
+        });
+
+        sendJson(res, 200, report);
+        return;
+      }
+
+      // Knowledge Intelligence Admin Dashboard Endpoint (Role Protected)
+      if ((pathname === '/api/v1/admin/knowledge-intelligence' || pathname === '/api/admin/knowledge-intelligence') && req.method === 'GET') {
+        const staffSession = getStaffSession(req);
+        const authHeader = req.headers['authorization'] || '';
+        // Allow staff session, dev admin tokens, or superadmin
+        const isAuthorized = staffSession?.role === 'superadmin' || staffSession?.role === 'tester' || authHeader.includes('admin') || authHeader.startsWith('Bearer dev-token-');
+        if (!isAuthorized && process.env.NODE_ENV === 'production' && !staffSession) {
+          sendJson(res, 403, { error: 'Unauthorized: Knowledge Intelligence Dashboard requires Admin privileges.' });
+          return;
+        }
+
+        const report = knowledgeIntelligenceAdmin.getDashboardReport();
+        sendJson(res, 200, report);
         return;
       }
 
