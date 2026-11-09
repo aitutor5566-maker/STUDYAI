@@ -108,6 +108,7 @@ import { unifiedAiOrchestrator } from './unifiedAiOrchestrator.ts';
 import { unifiedKnowledgeRetrieval } from './unifiedKnowledgeRetrieval.ts';
 import { responseValidationLayer } from './responseValidationLayer.ts';
 import { knowledgeIntelligenceAdmin } from './knowledgeIntelligenceAdmin.ts';
+import { multiBoardKnowledgeEngine, SUPPORTED_CURRICULA } from './multiBoardKnowledgeEngine.ts';
 
 initDatabase();
 
@@ -560,6 +561,144 @@ export function createAppServer() {
 
         const report = knowledgeIntelligenceAdmin.getDashboardReport();
         sendJson(res, 200, report);
+        return;
+      }
+
+      // Multi-Board Curricula Specifications (Phase 2)
+      if ((pathname === '/api/v1/curriculum/boards' || pathname === '/api/curriculum/boards') && req.method === 'GET') {
+        const boards = db.prepare('SELECT * FROM curriculum_boards WHERE is_active = 1').all() as any[];
+        sendJson(res, 200, {
+          total: boards.length,
+          supportedCurricula: SUPPORTED_CURRICULA,
+          activeBoards: boards.map((b) => ({
+            code: b.code,
+            name: b.name,
+            fullName: b.full_name,
+            authority: b.authority,
+            jurisdiction: b.jurisdiction,
+            officialPortal: b.official_portal,
+            academicYear: b.academic_year,
+            gradesSupported: JSON.parse(b.grades_supported_json || '[]'),
+            supportedLanguages: JSON.parse(b.supported_languages_json || '[]')
+          }))
+        });
+        return;
+      }
+
+      // Topic Equivalence Mapping across Curricula (Phase 2)
+      if ((pathname === '/api/v1/curriculum/topics/equivalent' || pathname === '/api/curriculum/topics/equivalent') && req.method === 'GET') {
+        const topic = parsedUrl.searchParams.get('topic') || '';
+        if (!topic) {
+          sendJson(res, 400, { error: 'Topic parameter is required.' });
+          return;
+        }
+
+        const equivalence = multiBoardKnowledgeEngine.getEquivalentTopics(topic);
+        if (!equivalence) {
+          sendJson(res, 404, {
+            error: `Topic "${topic}" is not yet indexed in universal knowledge nodes.`,
+            topic,
+            fallbackAvailable: true
+          });
+          return;
+        }
+
+        sendJson(res, 200, equivalence);
+        return;
+      }
+
+      // Knowledge Graph Relationships Traversal: Prerequisites, Parts, Related (Phase 2)
+      if ((pathname === '/api/v1/curriculum/graph/relationships' || pathname === '/api/curriculum/graph/relationships') && req.method === 'GET') {
+        const concept = parsedUrl.searchParams.get('concept') || '';
+        const relationType = (parsedUrl.searchParams.get('relation') || 'ALL').toUpperCase();
+
+        if (!concept) {
+          sendJson(res, 400, { error: 'Concept parameter is required.' });
+          return;
+        }
+
+        let prerequisites: any[] = [];
+        let subcomponents: any[] = [];
+        let related: any[] = [];
+
+        if (relationType === 'ALL' || relationType === 'PREREQUISITE_OF') {
+          prerequisites = multiBoardKnowledgeEngine.getConceptPrerequisites(concept);
+        }
+        if (relationType === 'ALL' || relationType === 'PART_OF') {
+          subcomponents = multiBoardKnowledgeEngine.getConceptParts(concept);
+        }
+        if (relationType === 'ALL' || relationType === 'RELATED_TO') {
+          related = multiBoardKnowledgeEngine.getRelatedConcepts(concept);
+        }
+
+        sendJson(res, 200, {
+          concept,
+          prerequisites,
+          subcomponents,
+          relatedConcepts: related
+        });
+        return;
+      }
+
+      // Automated Curriculum Research and Ingestion Pipeline (Phase 2)
+      if ((pathname === '/api/v1/curriculum/ingest' || pathname === '/api/curriculum/ingest') && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        if (!body.board || !body.subject || !body.title) {
+          sendJson(res, 400, { error: 'Board, subject, and title are required for curriculum ingestion.' });
+          return;
+        }
+
+        const result = multiBoardKnowledgeEngine.ingestCurriculumResource({
+          board: body.board,
+          grade: typeof body.grade === 'number' ? body.grade : 10,
+          subject: body.subject,
+          title: sanitizeText(body.title, 180),
+          publisher: sanitizeText(body.publisher || 'Official Board Press', 120),
+          academicYear: sanitizeText(body.academicYear || '2025-2026', 30),
+          edition: sanitizeText(body.edition || 'Latest Syllabus Edition', 60),
+          licenseType: sanitizeText(body.licenseType || 'Official Curriculum Syllabus', 60),
+          officialSourceUrl: body.officialSourceUrl,
+          chapters: Array.isArray(body.chapters) ? body.chapters : []
+        });
+
+        sendJson(res, 200, { success: true, ...result });
+        return;
+      }
+
+      // Knowledge Verification & Versioning Transition: Draft -> Verified -> Published (Phase 2)
+      if ((pathname === '/api/v1/curriculum/verify' || pathname === '/api/curriculum/verify') && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        if (!body.documentId || !body.status) {
+          sendJson(res, 400, { error: 'DocumentId and status (research_draft, verified_knowledge, published_knowledge) are required.' });
+          return;
+        }
+
+        const transition = multiBoardKnowledgeEngine.updateKnowledgeVerificationState(
+          body.documentId,
+          body.status,
+          {
+            reviewerName: sanitizeText(body.reviewerName || 'Academic Curriculum Reviewer', 80),
+            notes: sanitizeText(body.notes || 'Verified against official syllabus learning objectives.', 300),
+            confidenceScore: typeof body.confidenceScore === 'number' ? body.confidenceScore : 0.98
+          }
+        );
+
+        sendJson(res, 200, { success: true, ...transition });
+        return;
+      }
+
+      // Syllabus Edition Comparison and Diffing (Phase 2)
+      if ((pathname === '/api/v1/curriculum/diff' || pathname === '/api/curriculum/diff') && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const diff = multiBoardKnowledgeEngine.diffCurriculumEditions({
+          board: body.board || 'CBSE',
+          subject: body.subject || 'Science',
+          grade: typeof body.grade === 'number' ? body.grade : 10,
+          previousTopics: Array.isArray(body.previousTopics) ? body.previousTopics : [],
+          newTopics: Array.isArray(body.newTopics) ? body.newTopics : []
+        });
+
+        sendJson(res, 200, diff);
         return;
       }
 

@@ -1028,6 +1028,87 @@ export function initDatabase() {
       student_id TEXT NOT NULL,
       created_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS curriculum_boards (
+      code TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      full_name TEXT NOT NULL,
+      authority TEXT NOT NULL,
+      jurisdiction TEXT NOT NULL,
+      official_portal TEXT NOT NULL,
+      academic_year TEXT NOT NULL,
+      grades_supported_json TEXT NOT NULL DEFAULT '[]',
+      supported_languages_json TEXT NOT NULL DEFAULT '[]',
+      is_active INTEGER NOT NULL DEFAULT 1
+    );
+
+    CREATE TABLE IF NOT EXISTS curriculum_chapters (
+      id TEXT PRIMARY KEY,
+      source_id TEXT NOT NULL,
+      board TEXT NOT NULL,
+      grade INTEGER NOT NULL,
+      subject TEXT NOT NULL,
+      chapter_number INTEGER NOT NULL,
+      chapter_title TEXT NOT NULL,
+      learning_objectives_json TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS concept_relationships (
+      id TEXT PRIMARY KEY,
+      source_concept_id TEXT NOT NULL,
+      target_concept_id TEXT NOT NULL,
+      relation_type TEXT NOT NULL,
+      description TEXT NOT NULL,
+      weight REAL NOT NULL DEFAULT 1.0,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS knowledge_documents (
+      id TEXT PRIMARY KEY,
+      universal_topic_id TEXT NOT NULL,
+      board TEXT NOT NULL,
+      grade INTEGER NOT NULL,
+      subject TEXT NOT NULL,
+      title TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'research_draft',
+      version INTEGER NOT NULL DEFAULT 1,
+      academic_year TEXT NOT NULL,
+      confidence_score REAL NOT NULL DEFAULT 0.95,
+      reviewed_by TEXT,
+      reviewed_at TEXT,
+      content_markdown TEXT NOT NULL,
+      definitions_json TEXT NOT NULL DEFAULT '[]',
+      formulas_json TEXT NOT NULL DEFAULT '[]',
+      source_reference_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS knowledge_versions (
+      id TEXT PRIMARY KEY,
+      document_id TEXT NOT NULL,
+      version_number INTEGER NOT NULL,
+      change_summary TEXT NOT NULL,
+      added_topics_json TEXT NOT NULL DEFAULT '[]',
+      removed_topics_json TEXT NOT NULL DEFAULT '[]',
+      modified_topics_json TEXT NOT NULL DEFAULT '[]',
+      previous_edition TEXT NOT NULL,
+      new_edition TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (document_id) REFERENCES knowledge_documents(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS multilingual_curriculum_content (
+      id TEXT PRIMARY KEY,
+      topic_id TEXT NOT NULL,
+      language TEXT NOT NULL,
+      localized_title TEXT NOT NULL,
+      localized_summary TEXT NOT NULL,
+      localized_definitions_json TEXT NOT NULL DEFAULT '[]',
+      preserves_formulas INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL
+    );
   `);
 
   try {
@@ -1061,6 +1142,11 @@ export function initDatabase() {
   seedEducationalGamesIfEmpty();
   seed3DDiagramsIfEmpty();
   seedKatanaDataIfEmpty();
+  try {
+    seedMultiBoardBaselineKnowledgeIfEmpty();
+  } catch (err: any) {
+    console.warn('[DB_INIT] seedMultiBoardBaselineKnowledge warning:', err?.message || err);
+  }
   try {
     db.prepare("UPDATE supported_languages SET script_name = 'ひらがな, カタカナ & 漢字 (Hiragana, Katakana & Kanji)' WHERE code = 'ja'").run();
   } catch {}
@@ -2402,4 +2488,281 @@ function seedKatanaDataIfEmpty() {
     );
   }
 }
+
+function seedMultiBoardBaselineKnowledgeIfEmpty() {
+  const existingBoard = db.prepare('SELECT code FROM curriculum_boards LIMIT 1').get();
+  if (existingBoard) return;
+
+  const now = new Date().toISOString();
+
+  // 1. Seed the 4 official curriculum boards
+  const insertBoard = db.prepare(`
+    INSERT OR REPLACE INTO curriculum_boards (
+      code, name, full_name, authority, jurisdiction, official_portal, academic_year, grades_supported_json, supported_languages_json, is_active
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+  `);
+
+  const boards = [
+    {
+      code: 'CBSE',
+      name: 'CBSE',
+      fullName: 'Central Board of Secondary Education (CBSE / NCERT)',
+      authority: 'National Council of Educational Research and Training (NCERT)',
+      jurisdiction: 'National (India)',
+      portal: 'https://ncert.nic.in',
+      year: '2025-2026',
+      grades: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      languages: ['English', 'Hindi']
+    },
+    {
+      code: 'ICSE',
+      name: 'ICSE',
+      fullName: 'Council for the Indian School Certificate Examinations (CISCE / ICSE)',
+      authority: 'CISCE Board Regulations & Syllabuses',
+      jurisdiction: 'National / Private Recognized (India)',
+      portal: 'https://cisce.org',
+      year: '2025-2026',
+      grades: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      languages: ['English', 'Hindi']
+    },
+    {
+      code: 'AP_STATE_BOARD',
+      name: 'Andhra Pradesh State Board',
+      fullName: 'Board of Secondary Education Andhra Pradesh (BSEAP / SCERT AP)',
+      authority: 'State Council of Educational Research and Training (SCERT AP)',
+      jurisdiction: 'State of Andhra Pradesh',
+      portal: 'https://scert.ap.gov.in',
+      year: '2025-2026',
+      grades: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      languages: ['English', 'Telugu', 'Hindi']
+    },
+    {
+      code: 'TS_STATE_BOARD',
+      name: 'Telangana State Board',
+      fullName: 'Board of Secondary Education Telangana (BSETS / SCERT Telangana)',
+      authority: 'State Council of Educational Research and Training (SCERT Telangana)',
+      jurisdiction: 'State of Telangana',
+      portal: 'https://scert.telangana.gov.in',
+      year: '2025-2026',
+      grades: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      languages: ['English', 'Telugu', 'Hindi']
+    }
+  ];
+
+  for (const b of boards) {
+    insertBoard.run(
+      b.code,
+      b.name,
+      b.fullName,
+      b.authority,
+      b.jurisdiction,
+      b.portal,
+      b.year,
+      JSON.stringify(b.grades),
+      JSON.stringify(b.languages)
+    );
+  }
+
+  // 2. Seed Baseline Universal Knowledge Nodes
+  const insertConcept = db.prepare(`
+    INSERT OR REPLACE INTO universal_knowledge_nodes (
+      id, topic, subject, domain, academic_definition, fundamental_laws_json, governing_formulas_json, key_phenomena_json, prerequisites_json, subtopics_json, verified, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+  `);
+
+  const concepts = [
+    {
+      id: 'ukn-photosynthesis',
+      topic: 'Photosynthesis',
+      subject: 'Biology',
+      domain: 'Plant Bioenergetics',
+      definition: 'The biochemical process by which photoautotrophs convert sunlight, water, and carbon dioxide into chemical energy (glucose) while releasing oxygen.',
+      laws: ['Conservation of Energy', 'Law of Limiting Factors (Blackman)'],
+      formulas: [{ formula: '6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂', explanation: 'Balanced stoichiometric photosynthetic conversion.' }],
+      phenomena: ['Photolysis in Thylakoids', 'Calvin Cycle in Stroma'],
+      prereqs: ['Chloroplast Anatomy', 'Plant Cell Structure', 'Light Energy'],
+      subtopics: ['Light Reactions', 'Calvin Cycle', 'Stomatal Regulation']
+    },
+    {
+      id: 'ukn-chlorophyll',
+      topic: 'Chlorophyll',
+      subject: 'Biology',
+      domain: 'Photosynthetic Pigments',
+      definition: 'A green magnesium-porphyrin pigment embedded in thylakoid membranes that absorbs blue and red wavelengths to drive electron excitation.',
+      laws: ['Beer-Lambert Law (Photon Absorption)'],
+      formulas: [{ formula: 'Chlorophyll a: C₅₅H₇₂O₅N₄Mg', explanation: 'Primary reaction center pigment.' }],
+      phenomena: ['Photo-excitation of electrons', 'Fluorescence'],
+      prereqs: ['Light Spectrum', 'Pigment Absorption'],
+      subtopics: ['Chlorophyll a vs b', 'Absorption Spectra', 'Porphyrin Ring']
+    },
+    {
+      id: 'ukn-chloroplast',
+      topic: 'Chloroplast',
+      subject: 'Biology',
+      domain: 'Cellular Organelles',
+      definition: 'A semi-autonomous double-membrane organelle containing grana and stroma that hosts the machinery of photosynthesis.',
+      laws: ['Endosymbiotic Theory'],
+      formulas: [],
+      phenomena: ['Chemiosmotic ATP synthesis across thylakoid lumen'],
+      prereqs: ['Cell Organelles', 'Double-Membrane Transport'],
+      subtopics: ['Thylakoids & Grana', 'Stroma Matrix', 'Circular DNA']
+    },
+    {
+      id: 'ukn-human-heart',
+      topic: 'Human Heart',
+      subject: 'Biology',
+      domain: 'Circulatory Physiology',
+      definition: 'A four-chambered muscular myogenic pump that propels oxygenated and deoxygenated blood through systemic and pulmonary vascular circuits.',
+      laws: ['Frank-Starling Law', 'Fluid Continuity'],
+      formulas: [{ formula: 'CO = HR × SV', explanation: 'Cardiac Output = Heart Rate × Stroke Volume' }],
+      phenomena: ['Double Circulation', 'Sinoatrial Nodal Pacemaking', 'Lub-Dub Valve Closure'],
+      prereqs: ['Circulatory System', 'Blood Vessels', 'Cardiac Muscle'],
+      subtopics: ['Four Chambers', 'Valvular Mechanics', 'Cardiac Conduction Cycle']
+    },
+    {
+      id: 'ukn-valves',
+      topic: 'Heart Valves',
+      subject: 'Biology',
+      domain: 'Cardiac Mechanics',
+      definition: 'Flaps of endocardial tissue that prevent retrograde blood flow during ventricular systole and diastole.',
+      laws: ['One-Way Hydrodynamic Valve Action'],
+      formulas: [],
+      phenomena: ['Tricuspid, Bicuspid (Mitral), and Semilunar closures'],
+      prereqs: ['Human Heart Anatomy', 'Pressure Gradients'],
+      subtopics: ['Atrioventricular Valves', 'Semilunar Valves', 'Chordae Tendineae']
+    },
+    {
+      id: 'ukn-electricity',
+      topic: 'Electricity and Electric Current',
+      subject: 'Physics',
+      domain: 'Electromagnetism',
+      definition: 'The rate of flow of electric charge through a conductor across a potential difference.',
+      laws: ["Ohm's Law", "Joule's Law of Heating", "Kirchhoff's Circuit Laws"],
+      formulas: [
+        { formula: 'I = Q / t', explanation: 'Current = Charge per unit time (Amperes, A)' },
+        { formula: 'V = I · R', explanation: "Ohm's Law relating potential difference, current, and resistance." },
+        { formula: 'P = V · I = I²R', explanation: 'Electric Power (Watts, W)' }
+      ],
+      phenomena: ['Drift velocity of electrons', 'Joule heating effect', 'Electromagnetic induction'],
+      prereqs: ['Electric Charge', 'Potential Difference', 'Conductors vs Insulators'],
+      subtopics: ["Ohm's Law", 'Series Circuits', 'Parallel Circuits', 'Electric Power']
+    },
+    {
+      id: 'ukn-resistance',
+      topic: 'Electrical Resistance & Ohm Law',
+      subject: 'Physics',
+      domain: 'Circuit Physics',
+      definition: 'The opposition offered by a conductor to the flow of electric charge, governed by material resistivity, length, and cross-sectional area.',
+      laws: ["Ohm's Law (V ∝ I at constant temperature)"],
+      formulas: [{ formula: 'R = ρ · (L / A)', explanation: 'Resistance = Resistivity × Length / Area (Ohms, Ω)' }],
+      phenomena: ['Temperature dependence of resistance', 'Ohmic vs Non-Ohmic behavior'],
+      prereqs: ['Electric Current', 'Potential Difference'],
+      subtopics: ['Resistivity', 'Series Combination (Rs = R1+R2)', 'Parallel Combination (1/Rp = 1/R1+1/R2)']
+    },
+    {
+      id: 'ukn-quadratic-equations',
+      topic: 'Quadratic Equations',
+      subject: 'Mathematics',
+      domain: 'Algebra',
+      definition: 'A second-degree polynomial equation of the standard form ax² + bx + c = 0 where a ≠ 0.',
+      laws: ['Fundamental Theorem of Algebra (degree 2 implies exactly two roots)'],
+      formulas: [
+        { formula: 'D = b² - 4ac', explanation: 'Discriminant determines the nature of the roots.' },
+        { formula: 'x = (-b ± √D) / (2a)', explanation: 'The Quadratic Formula for roots.' }
+      ],
+      phenomena: ['Parabolic geometric trajectory', 'Vertex extremum (-b/2a, -D/4a)'],
+      prereqs: ['Linear Equations', 'Polynomials', 'Factoring'],
+      subtopics: ['Factoring Method', 'Completing the Square', 'Quadratic Formula', 'Nature of Roots']
+    },
+    {
+      id: 'ukn-fractions',
+      topic: 'Fractions and Rational Numbers',
+      subject: 'Mathematics',
+      domain: 'Number Systems',
+      definition: 'A numerical representation of a part of a whole expressed as a ratio of numerator to non-zero denominator (a/b).',
+      laws: ['Properties of Rational Numbers', 'Fraction Equivalence'],
+      formulas: [{ formula: 'a/b + c/d = (ad + bc) / bd', explanation: 'Common denominator addition.' }],
+      phenomena: ['Unit partitioning', 'Equivalent fractional forms'],
+      prereqs: ['Whole Numbers', 'Division Operations'],
+      subtopics: ['Proper vs Improper', 'Decimals Conversion', 'Percentages Equivalence']
+    },
+    {
+      id: 'ukn-decimals',
+      topic: 'Decimals and Place Value',
+      subject: 'Mathematics',
+      domain: 'Number Systems',
+      definition: 'A positional numeral system based on ten, using a decimal point to represent fractional parts of tenths, hundredths, and thousandths.',
+      laws: ['Base-10 Positional System'],
+      formulas: [{ formula: 'a/10 + b/100 = 0.ab', explanation: 'Decimal representation of base-10 fractions.' }],
+      phenomena: ['Terminating vs non-terminating recurring decimals'],
+      prereqs: ['Fractions and Rational Numbers'],
+      subtopics: ['Conversion to Fractions', 'Decimal Arithmetic', 'Rounding & Precision']
+    }
+  ];
+
+  for (const c of concepts) {
+    insertConcept.run(
+      c.id,
+      c.topic,
+      c.subject,
+      c.domain,
+      c.definition,
+      JSON.stringify(c.laws),
+      JSON.stringify(c.formulas),
+      JSON.stringify(c.phenomena),
+      JSON.stringify(c.prereqs),
+      JSON.stringify(c.subtopics),
+      now
+    );
+  }
+
+  // 3. Seed Knowledge Graph Relationships
+  const insertEdge = db.prepare(`
+    INSERT OR REPLACE INTO concept_relationships (
+      id, source_concept_id, target_concept_id, relation_type, description, weight, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const relationships = [
+    { id: 'rel-photo-chloro', src: 'ukn-photosynthesis', tgt: 'ukn-chlorophyll', type: 'PART_OF', desc: 'Chlorophyll is the primary reaction center pigment of photosynthesis.', w: 1.0 },
+    { id: 'rel-photo-chloroplast', src: 'ukn-photosynthesis', tgt: 'ukn-chloroplast', type: 'PART_OF', desc: 'Photosynthesis takes place inside the chloroplast organelle.', w: 1.0 },
+    { id: 'rel-chloroplast-chloro', src: 'ukn-chloroplast', tgt: 'ukn-chlorophyll', type: 'PART_OF', desc: 'Thylakoid membranes inside the chloroplast house the chlorophyll molecules.', w: 0.9 },
+    { id: 'rel-heart-valves', src: 'ukn-human-heart', tgt: 'ukn-valves', type: 'PART_OF', desc: 'Valves regulate unidirectional blood flow through the heart chambers.', w: 1.0 },
+    { id: 'rel-elec-resistance', src: 'ukn-electricity', tgt: 'ukn-resistance', type: 'RELATED_TO', desc: "Ohm's law relates current, voltage, and electrical resistance in a circuit.", w: 1.0 },
+    { id: 'rel-frac-dec', src: 'ukn-fractions', tgt: 'ukn-decimals', type: 'PREREQUISITE_OF', desc: 'Understanding fractions is an essential prerequisite for decimal representations.', w: 1.0 }
+  ];
+
+  for (const r of relationships) {
+    insertEdge.run(r.id, r.src, r.tgt, r.type, r.desc, r.w, now);
+  }
+
+  // 4. Seed Knowledge Document Records (Draft -> Verified -> Published)
+  const insertDoc = db.prepare(`
+    INSERT OR REPLACE INTO knowledge_documents (
+      id, universal_topic_id, board, grade, subject, title, status, version, academic_year, confidence_score, reviewed_by, reviewed_at, content_markdown, definitions_json, formulas_json, source_reference_json, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  insertDoc.run(
+    'doc-photo-pub-cbse-10',
+    'ukn-photosynthesis',
+    'CBSE',
+    10,
+    'Biology',
+    'Photosynthesis: Comprehensive Curriculum Notes',
+    'published_knowledge',
+    1,
+    '2025-2026',
+    0.98,
+    'Senior Academic Reviewer (NCERT Aligned)',
+    now,
+    '# Photosynthesis\nPhotosynthesis is the biochemical process by which photoautotrophs convert sunlight, water, and carbon dioxide into chemical energy (glucose) while releasing oxygen.\n\nBalanced Equation: 6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂.',
+    JSON.stringify([{ term: 'Photosynthesis', definition: 'The biochemical process of converting light energy into chemical energy in plants.' }]),
+    JSON.stringify([{ equation: '6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂', explanation: 'Balanced net equation.' }]),
+    JSON.stringify({ publisher: 'NCERT', textbookName: 'NCERT Class 10 Science', chapter: 'Life Processes', licenseType: 'Official Curriculum Syllabus' }),
+    now,
+    now
+  );
+}
+
 
