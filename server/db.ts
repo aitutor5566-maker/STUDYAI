@@ -714,6 +714,40 @@ export function initDatabase() {
       created_at TEXT NOT NULL
     );
 
+    -- QUESTION MANAGEMENT & NON-REPETITION ATTEMPT TRACKING
+    CREATE TABLE IF NOT EXISTS student_language_question_attempts (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      language_code TEXT NOT NULL,
+      curriculum_level INTEGER NOT NULL,
+      lesson_id TEXT NOT NULL,
+      question_id TEXT NOT NULL,
+      exercise_type TEXT NOT NULL,
+      is_correct INTEGER NOT NULL,
+      student_answer TEXT,
+      mastery_score INTEGER DEFAULT 0,
+      attempt_count INTEGER DEFAULT 1,
+      last_attempted_at TEXT NOT NULL,
+      next_revision_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS language_question_bank (
+      id TEXT PRIMARY KEY,
+      language_code TEXT NOT NULL,
+      curriculum_level INTEGER NOT NULL,
+      lesson_id TEXT NOT NULL,
+      skill_category TEXT NOT NULL,
+      difficulty TEXT NOT NULL,
+      exercise_type TEXT NOT NULL,
+      question_payload_json TEXT NOT NULL,
+      correct_answer TEXT NOT NULL,
+      explanation_json TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_lang_attempts_user_lang ON student_language_question_attempts(user_id, language_code, question_id);
+    CREATE INDEX IF NOT EXISTS idx_lang_qbank_lang_level ON language_question_bank(language_code, curriculum_level, exercise_type);
+
     -- ==============================================================================
     -- EDUCATIONAL GAMES LIBRARY (7 GAMES MODULE) TABLES
     -- ==============================================================================
@@ -946,6 +980,18 @@ export function initDatabase() {
 
   try {
     db.prepare("ALTER TABLE users ADD COLUMN xp INTEGER DEFAULT 1450").run();
+  } catch {
+    // column already exists
+  }
+
+  try {
+    db.prepare("ALTER TABLE cached_educational_images ADD COLUMN main_topic_id TEXT").run();
+  } catch {
+    // column already exists
+  }
+
+  try {
+    db.prepare("ALTER TABLE cached_educational_images ADD COLUMN subtopic_id TEXT").run();
   } catch {
     // column already exists
   }

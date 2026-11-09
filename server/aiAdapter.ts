@@ -1012,6 +1012,7 @@ export interface TutorRequestInput {
     role?: string;
     context?: string;
   };
+  forceOfflineCurriculum?: boolean;
 }
 
 const COMMON_ACADEMIC_SPELLINGS: Record<string, string> = {
@@ -1058,7 +1059,13 @@ export function detectSpellingGuidance(query: string): { original: string; corre
 }
 
 export async function generateTutorExplanation(input: TutorRequestInput): Promise<any> {
-  const baseLesson = await generateTutorExplanationInner(input);
+  let baseLesson: any;
+  try {
+    baseLesson = await generateTutorExplanationInner(input);
+  } catch (err: any) {
+    console.warn(`[AI_TUTOR_DIAGNOSTIC] generateTutorExplanationInner caught error: ${err?.message || err}. Falling back to offline curriculum engine.`);
+    baseLesson = await generateTutorExplanationInner({ ...input, forceOfflineCurriculum: true });
+  }
   if (input.studentName) {
     (baseLesson as any).studentName = input.studentName;
   }
@@ -1171,7 +1178,14 @@ ${visualComponentContext}${
     : ''
 }${input.attachmentSummary ? `Attached Student File Summary: ${input.attachmentSummary}\n` : ''}Student Question: ${cleanQuestion}`;
 
-  const llmResponse = await callConfiguredLlmJson(systemPrompt, userPrompt, 9500);
+  let llmResponse = null;
+  if (!input.forceOfflineCurriculum) {
+    try {
+      llmResponse = await callConfiguredLlmJson(systemPrompt, userPrompt, 9500);
+    } catch (err: any) {
+      console.warn(`[AI_TUTOR_DIAGNOSTIC] LLM invocation error: ${err?.message || err}`);
+    }
+  }
 
   if (llmResponse && llmResponse.parsed && llmResponse.parsed.introduction) {
     const p = llmResponse.parsed;

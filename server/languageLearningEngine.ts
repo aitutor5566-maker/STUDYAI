@@ -999,3 +999,12 @@ export function evaluatePlacementTest(answers: Array<{ questionId: string; selec
     diagnosticSummary: summary
   };
 }
+
+// Re-export Question Management and Sentence Formation System
+export {
+  MASTER_LANGUAGE_QUESTION_BANK,
+  SENTENCE_CONSTRUCTION_LESSONS,
+  recordStudentQuestionAttempt,
+  getAdaptiveQuestionsForStudent,
+  synthesizeDynamicCurriculumQuestions
+} from './languageQuestionManager.ts';

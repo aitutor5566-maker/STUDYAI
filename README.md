@@ -14,21 +14,23 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Auth_%26_RLS-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests Passing](https://img.shields.io/badge/Tests-152%2F152%20Passing-brightgreen)](tests/)
+[![Tests Passing](https://img.shields.io/badge/Tests-177%2F177%20Passing-brightgreen)](tests/)
 
 **Core Product Principle:** `One Topic → One Complete Learning Journey`
 
-*An enterprise-grade, distraction-free educational ecosystem featuring an adaptive **Personalised AI Tutor**, cross-platform **Flutter (Android, iOS & Web)** client apps, interactive 60fps Three.js 3D spatial simulations, meaning-preserving concise explanations, educational games, 40-mark weekly examination engines, and transparent parental oversight.*
+*An enterprise-grade, distraction-free educational ecosystem featuring an adaptive **Personalised AI Tutor**, cross-platform **Flutter (Android, iOS & Web)** client apps, Visual Intelligence Engine with dedicated subtopic diagrams, 8-Level Adaptive Language Learning with SOV/SVO sentence construction, non-repeating exercise banks, interactive 60fps Three.js 3D spatial simulations, meaning-preserving concise explanations, educational games, 40-mark weekly examination engines, and transparent parental oversight.*
 
 </div>
 
 ---
 
-# 🌟 NEW FLAGSHIP FEATURE: SPEAK ENGLISH & SPOKEN ENGLISH FLUENCY STUDIO
+# 🌟 FLAGSHIP FEATURES: SPEAK ENGLISH & SPOKEN FLUENCY STUDIO
 
 <div align="center">
 
 ![Speak English Fluency Studio](docs/assets/speak_english_fluency_studio.svg)
+<br/>
+![AI Speaking Multilingual Library](docs/assets/ai_speaking_multilingual_library.svg)
 
 </div>
 
@@ -39,15 +41,43 @@ The **Speak English Fluency Studio** transforms language learning from passive g
 #### 🎙️ 1. Real-Time Phonetic Analysis & Waveform Feedback
 - **IPA Phoneme Accuracy:** Evaluates each spoken word phoneme-by-phoneme using the International Phonetic Alphabet (e.g., distinguishing short lax `[ɪ]` in *ship* from long tense `[iː]` in *sheep*).
 - **Pitch & Intonation Contours:** Visualizes student vocal energy and pitch curves directly against native speaker reference waveforms to correct robotic cadence and unnatural rising intonation.
-- **3-Metric Fluency Breakdown:**
-  1. *Pronunciation Accuracy (%):* Measures consonant articulation, vowel length, and phoneme precision.
-  2. *Rhythm & Natural Stress (%):* Checks syllable stress placement (e.g., `sched-ule`, `pho-tog-ra-phy`) and connector pauses.
-  3. *Speaking Pace (Words Per Minute):* Calibrates speech rate against natural conversational fluency (120–150 WPM).
+- **3-Metric Fluency Breakdown (No False Praise):**
+  1. *Phonetic Accuracy (%):* Measures consonant articulation, vowel length, and phoneme precision.
+  2. *Fluency & Cadence (%):* Syllable stress placement, connector pauses, and natural intonation.
+  3. *Completeness & Pace (%):* Calibrates speech rate against natural conversational fluency (120–150 WPM) and detects missing/truncated phonemes.
 
-#### 💼 2. Dynamic Real-World Conversation Scenarios (8 Interactive Simulations)
-Students engage in turn-based, spoken English roleplay with **AI Coach Nova**:
-1. **Technical & Corporate Job Interview:** Practicing the STAR method (Situation, Task, Action, Result) with real-time vocabulary upgrades (e.g., changing *"I talked to them"* to *"facilitated constructive team consensus"*).
-2. **Everyday Coffee Shop & Restaurant Ordering:** Natural conversational English, politeness markers, dietary preferences, and billing.
+#### 🔤 2. 8-Level Progressive Language Curriculum
+1. **Level 1 — Alphabets, Scripts & Phonics:** Character-by-character animated stroke order (Hiragana/Katakana for Japanese, Achulu/Hallulu for Telugu, Varnamala for Hindi, Phonics for English).
+2. **Level 2 — Core Vocabulary:** 15 picture-based vocabulary categories with audio pronunciation.
+3. **Level 3 — Essential Grammar:** Verb conjugations, tense forms, particle usage.
+4. **Level 4 — Sentence Formation Studio:** Mandatory Subject-Object-Verb (SOV) vs Subject-Verb-Object (SVO) visual token breakdowns and syntax ordering rules.
+5. **Level 5 — Reading & Comprehension:** Graded passages with dual-language contextual vocabulary tooltips.
+6. **Level 6 — Listening & Spoken Production:** Minimal-pair ear training, audio dictation, speech mimicry.
+7. **Level 7 — Real-Life Conversation Scenarios:** Turn-based dialogues for restaurant ordering, technical job interviews, doctor visits, airport check-ins.
+8. **Level 8 — Advanced Fluency:** Idiomatic expressions, formal debate, complex contextual nuances.
+
+#### 🔄 3. Non-Repeating Adaptive Question Engine
+- **Attempt Tracking:** Records every question prompt, answer choice, and student outcome in SQLite `student_language_question_attempts`.
+- **Dynamic Curriculum Synthesis:** Slices question pools using dynamic student offset and stage filters, preventing repetitive questions.
+- **Diverse Exercise Types:** Multiple Choice, Fill-in-the-Blanks, Sentence Token Reconstruction, Word-Meaning Matching, and Speech Production.
+
+---
+
+# 🔬 VISUAL INTELLIGENCE ENGINE: TOPIC-WIDE SUBTOPIC DIAGRAMS
+
+<div align="center">
+
+![Single Page Digital Textbook Architecture](docs/assets/single_page_digital_textbook_architecture.svg)
+
+</div>
+
+### Dedicated Subtopic Diagrams for Every Academic Subject
+Never generates only one generic image for an entire chapter. The engine decomposes topics into structured subtopic visual breakdowns:
+- **Photosynthesis:** Light Reactions (Thylakoid), Calvin Cycle (Stroma), Chloroplast Structure, Stomata Gas Exchange.
+- **Human Heart:** 4 Internal Chambers & Valves, Systemic vs Pulmonary Circulation, Cardiac Conduction System.
+- **DNA & Genetics:** Double Helix & Base Pairing, DNA Replication Fork, Transcription & Translation (Central Dogma).
+- **Electricity & Magnetism:** Series & Parallel Circuits, Ohm's Law Triangle, Electromagnetic Induction.
+- **French Revolution:** Three Estates Social Hierarchy, Storming of the Bastille, Declaration of the Rights of Man.
 3. **Airport & Customs Navigation:** Terminal directions, boarding protocols, visa inquiries, and baggage claim communication.
 4. **Doctor & Healthcare Consultation:** Expressing symptoms accurately, describing pain frequency, and comprehending medical prescriptions.
 5. **Academic Presentations & University Seminars:** Formulating thesis statements, presenting empirical evidence, defending research, and fielding questions.

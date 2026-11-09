@@ -1872,11 +1872,28 @@ export const LANGUAGE_SCRIPT_DECKS: Record<string, ScriptDeckGroup[]> = {
 // 4. SEVEN INTERACTIVE LANGUAGE GAMES ENGINE (Games A to G)
 // ============================================================================
 
-export function generateInteractiveLanguageGamesSuite(targetLang: string, supportLang: string) {
+export function generateInteractiveLanguageGamesSuite(
+  targetLang: string,
+  supportLang: string,
+  userId?: string,
+  stage?: number,
+  offset = 0
+) {
   const vocab = getPictureVocabularyForLanguage(targetLang, supportLang);
+  const total = vocab.length;
+  const effectiveStage = stage && stage >= 1 ? stage : 1;
+  const startIndex = (offset + (effectiveStage - 1) * 3) % Math.max(1, total - 6);
+
+  const windowA = vocab.slice(startIndex, startIndex + 6).length >= 4
+    ? vocab.slice(startIndex, startIndex + 6)
+    : vocab.slice(0, 6);
+
+  const windowB = vocab.slice((startIndex + 2) % total, ((startIndex + 2) % total) + 6).length >= 4
+    ? vocab.slice((startIndex + 2) % total, ((startIndex + 2) % total) + 6)
+    : vocab.slice(2, 8);
 
   // Game A: Picture to Word
-  const pictureToWord = vocab.slice(0, 6).map((v) => ({
+  const pictureToWord = windowA.map((v) => ({
     id: `ptw-${v.id}`,
     englishWord: v.englishWord,
     illustrationSvgDataUrl: v.illustrationSvgDataUrl,
@@ -1889,7 +1906,7 @@ export function generateInteractiveLanguageGamesSuite(targetLang: string, suppor
   }));
 
   // Game B: Listen and Select
-  const listenAndSelect = vocab.slice(2, 8).map((v) => ({
+  const listenAndSelect = windowB.map((v) => ({
     id: `las-${v.id}`,
     audioText: v.targetWord.split(' ')[0],
     romanization: v.romanization,
@@ -1908,7 +1925,7 @@ export function generateInteractiveLanguageGamesSuite(targetLang: string, suppor
   }));
 
   // Game C: Speak the Word
-  const speakTheWord = vocab.slice(0, 6).map((v) => ({
+  const speakTheWord = windowA.map((v) => ({
     id: `stw-${v.id}`,
     englishWord: v.englishWord,
     targetWord: v.targetWord.split(' ')[0],
@@ -1920,7 +1937,7 @@ export function generateInteractiveLanguageGamesSuite(targetLang: string, suppor
   }));
 
   // Game D: Missing Letters
-  const missingLetters = vocab.slice(0, 6).map((v) => {
+  const missingLetters = windowA.map((v) => {
     const cleanRoman = (v.romanization || v.englishWord).replace(/[^a-zA-Z]/g, '').toUpperCase();
     const wordToMask = cleanRoman.length >= 3 ? cleanRoman : 'MIZU';
     const midIndex = Math.floor(wordToMask.length / 2);
@@ -1946,7 +1963,7 @@ export function generateInteractiveLanguageGamesSuite(targetLang: string, suppor
   });
 
   // Game E: Word Matching
-  const wordMatching = vocab.slice(0, 6).map((v) => ({
+  const wordMatching = windowA.map((v) => ({
     id: `wm-${v.id}`,
     word: v.targetWord,
     romanization: v.romanization,
@@ -1955,11 +1972,17 @@ export function generateInteractiveLanguageGamesSuite(targetLang: string, suppor
   }));
 
   // Game F: Sentence Builder
-  const sentenceBuilder = vocab.slice(0, 5).map((v) => {
+  const sentenceBuilder = windowA.slice(0, 5).map((v) => {
     const rawSentence = v.sentenceRomanization || v.targetSentence;
     const cleanTokens = rawSentence.replace(/[.!?。]/g, '').trim().split(/\s+/);
     const tokens = cleanTokens.length >= 3 ? cleanTokens : [v.targetWord.split(' ')[0], 'wa', 'ii', 'desu'];
     const scrambled = [...tokens].sort((a, b) => a.localeCompare(b));
+
+    const wordOrderRule = targetLang === 'ja'
+      ? 'Japanese S-O-V rule: Subject (は) + Direct Object (を) + Action Verb (ます/です)。'
+      : targetLang === 'te'
+      ? 'Telugu S-O-V rule: కర్త + కర్మ + క్రియ.'
+      : 'Standard S-V-O rule: Subject + Action Verb + Direct Object.';
 
     return {
       id: `sb-${v.id}`,
@@ -1968,7 +1991,8 @@ export function generateInteractiveLanguageGamesSuite(targetLang: string, suppor
       tokens,
       scrambled_tokens: scrambled,
       meaning: v.sentenceMeaning,
-      grammarTip: v.pronunciationTip
+      grammarTip: v.pronunciationTip,
+      wordOrderRule
     };
   });
 

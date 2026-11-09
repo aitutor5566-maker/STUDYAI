@@ -67,7 +67,11 @@ import {
   getLanguageMeta,
   generateCurriculumForLanguage,
   evaluateStudentPronunciation,
-  evaluatePlacementTest
+  evaluatePlacementTest,
+  getAdaptiveQuestionsForStudent,
+  recordStudentQuestionAttempt,
+  SENTENCE_CONSTRUCTION_LESSONS,
+  MASTER_LANGUAGE_QUESTION_BANK
 } from './languageLearningEngine.ts';
 import {
   buildUniversalTeachingWorkflow,
@@ -477,9 +481,30 @@ export function createAppServer() {
           res.write('data: [DONE]\n\n');
           res.end();
         } catch (err: any) {
-          res.write(`data: ${JSON.stringify({ token: `Error: ${err?.message || 'Unable to stream response'}` })}\n\n`);
-          res.write('data: [DONE]\n\n');
-          res.end();
+          console.warn(`[AI_TUTOR_STREAM_DIAGNOSTIC] Stream error: ${err?.message || err}. Streaming guaranteed curriculum explanation.`);
+          try {
+            const fallbackStructured = await generateTutorExplanation({
+              topic,
+              question: question || `Explain ${topic}`,
+              mode: 'detailed',
+              subject,
+              level: `Grade ${grade}`,
+              grade,
+              language,
+              history: Array.isArray(body.history) ? body.history : [],
+              forceOfflineCurriculum: true
+            });
+            const fullText = `${fallbackStructured.introduction}\n\nKey Steps:\n${(fallbackStructured.keySteps || []).map((s: string, i: number) => `${i + 1}. ${s}`).join('\n')}`;
+            const words = fullText.split(/(?=\s)/);
+            for (const w of words) {
+              res.write(`data: ${JSON.stringify({ token: w })}\n\n`);
+            }
+            res.write('data: [DONE]\n\n');
+            res.end();
+          } catch {
+            res.write(`event: error\ndata: ${JSON.stringify({ error: 'Temporary connection glitch. Please retry.' })}\n\n`);
+            res.end();
+          }
         }
         return;
       }
@@ -878,7 +903,7 @@ export function createAppServer() {
         return;
       }
 
-      if (pathname === '/api/tutor/ask' && req.method === 'POST') {
+      if ((pathname === '/api/tutor/ask' || pathname === '/api/v1/tutor/ask') && req.method === 'POST') {
         const body = await readJsonBody(req);
         const question = sanitizeText(body.question, 2000);
         const topic = sanitizeText(body.topic || question, 180);
@@ -971,22 +996,51 @@ export function createAppServer() {
         const adaptiveProfile = getStudentAdaptiveProfile(studentId);
         const explanationLength = body.explanationLength || (adaptiveProfile.explanation_style as 'concise' | 'balanced' | 'detailed') || 'balanced';
 
-        // Generate structured AI Tutor teaching response
-        const structured = await generateTutorExplanation({
-          topic: effectiveTopic,
-          question,
-          mode,
-          subject,
-          level,
-          grade,
-          language,
-          studentName,
-          history: historyRows,
-          attachmentSummary,
-          selectedVisualComponent: body.selectedVisualComponent || undefined,
-          adaptiveProfile,
-          explanationLength
-        });
+        // Generate structured AI Tutor teaching response with controlled retry and guaranteed offline fallback
+        let structured: any = null;
+        let attempt = 0;
+        while (attempt < 2 && !structured) {
+          try {
+            attempt++;
+            structured = await generateTutorExplanation({
+              topic: effectiveTopic,
+              question,
+              mode,
+              subject,
+              level,
+              grade,
+              language,
+              studentName,
+              history: historyRows,
+              attachmentSummary,
+              selectedVisualComponent: body.selectedVisualComponent || undefined,
+              adaptiveProfile,
+              explanationLength
+            });
+          } catch (err: any) {
+            console.warn(`[AI_TUTOR_DIAGNOSTIC] Generation attempt ${attempt} failed for "${effectiveTopic}": ${err?.message || err}`);
+          }
+        }
+
+        // Guaranteed fallback to offline curriculum engine if live attempts returned null/empty
+        if (!structured || !structured.introduction) {
+          console.warn(`[AI_TUTOR_DIAGNOSTIC] Utilizing offline curriculum engine for "${effectiveTopic}"`);
+          structured = await generateTutorExplanation({
+            topic: effectiveTopic,
+            question,
+            mode,
+            subject,
+            level,
+            grade,
+            language,
+            studentName,
+            history: historyRows,
+            attachmentSummary,
+            forceOfflineCurriculum: true,
+            adaptiveProfile,
+            explanationLength
+          });
+        }
 
         const workflow = buildUniversalTeachingWorkflow({
           topic: effectiveTopic,
@@ -1012,7 +1066,7 @@ export function createAppServer() {
           db.prepare('UPDATE tutor_conversations SET topic = ?, subject = ? WHERE id = ?').run(structured.topic, structured.subject || subject, convId);
         }
 
-        const assistantContent = `${structured.simpleIntroduction ? `${structured.simpleIntroduction}\n\n` : ''}${structured.introduction}\n\n### Key Steps:\n${structured.keySteps
+        const assistantContent = `${structured.simpleIntroduction ? `${structured.simpleIntroduction}\n\n` : ''}${structured.introduction}\n\n### Key Steps:\n${(structured.keySteps || [])
           .map((s: string, idx: number) => `${idx + 1}. ${s}`)
           .join('\n')}${structured.formula ? `\n\n**Equation:** \`${structured.formula.equation}\`` : ''}`;
 
@@ -1067,12 +1121,123 @@ export function createAppServer() {
           };
         });
 
-        sendJson(res, 200, {
-          conversationId: convId,
+        // Combined payload satisfying BOTH Web and Flutter client models
+        const flutterPayload = {
+          lesson_id: convId,
           topic: structured.topic,
           subject: structured.subject,
+          grade,
+          level,
+          mode,
+          mode_label: mode === 'detailed' ? 'Exam Preparation Mastery' : 'Normal Learning Mode',
+          topic_overview: structured.simpleIntroduction || structured.introduction,
+          learning_objectives: structured.keySteps || [],
+          prerequisites: structured.prerequisites || [],
+          detailed_explanation: assistantContent,
+          explanation: assistantContent,
+          subtopics: structured.subtopics || structured.conceptSections || [],
+          definitions: structured.definitions || [],
+          terminology_and_abbreviations: (structured.abbreviations || []).map((a: any) => ({
+            term: a.abbr,
+            full_form: a.fullForm,
+            meaning: a.simpleDefinition,
+            example: a.example
+          })),
+          step_by_step_processes: structured.keySteps || [],
+          key_points: structured.keySteps || [],
+          common_misconceptions: structured.misconceptions || [],
+          topic_summary: structured.recap || structured.introduction,
+          understanding_questions: structured.examQuestions || [],
+          three_js_model: {
+            model_id: structured.model3dType || 'human_heart',
+            title: `3D ${structured.topic} Simulation`,
+            has_3d_support: Boolean(structured.model3dType)
+          },
+          visual_representations: (structured.lessonImages || []).map((img: any) => ({
+            title: img.title,
+            caption: img.caption,
+            image_url: img.imageUrl,
+            explanation: img.explanation
+          }))
+        };
+
+        sendJson(res, 200, {
+          conversationId: convId,
           lesson: structured,
-          messages
+          messages,
+          ...flutterPayload
+        });
+        return;
+      }
+
+      // 4.B AI Tutor Interactive Follow-up (Supporting Flutter and Web)
+      if ((pathname === '/api/tutor/follow-up' || pathname === '/api/v1/tutor/follow-up') && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const action = String(body.action_type || body.action || 'simpler').toLowerCase().trim();
+        const topic = sanitizeText(body.topic || 'Science Concept', 180);
+        const subtopic = sanitizeText(body.subtopic || topic, 180);
+        const part = sanitizeText(body.selected_part || body.part || 'primary component', 100);
+
+        let responseText = '';
+        if (action === 'simpler') {
+          responseText = `Let's break down **${topic}** with a simple everyday analogy: Think of ${topic} like a coordinated team where every part has one dedicated job. Rather than memorizing long formulas, focus on the big picture: what enters the system, what happens in the middle, and what comes out.`;
+        } else if (action === 'step_by_step') {
+          responseText = `Step-by-Step Breakdown for **${subtopic}**:\n1. Initial Trigger: Known inputs or driving boundary conditions initiate the process.\n2. Active Transformation: Intermediate physical or chemical conversions proceed step by step.\n3. Stable Equilibrium: Output products and verified steady-state outcomes are attained for ${topic}.`;
+        } else if (action === 'explain_part' || action === 'explain_image' || action === 'explain_diagram') {
+          responseText = `Deep Explanation of **${part}** in **${topic}**:\nThe "${part}" plays an essential role in coordinating with neighboring layers to regulate energy flux and maintain structural stability. For your board examination, always highlight its anatomical orientation and rate-limiting function.`;
+        } else if (action === 'another_example') {
+          responseText = `Alternative Everyday Example for **${topic}**:\nConsider modern technological systems and environmental cycles: engineers design real-world devices using the exact principles of ${topic} to maximize efficiency and prevent system failure.`;
+        } else {
+          responseText = `Here is more insight into **${topic}**: In ${subtopic}, all components operate in harmony under conservation laws. Feel free to explore any specific label or step!`;
+        }
+
+        sendJson(res, 200, {
+          status: 'success',
+          topic,
+          action_type: action,
+          response_text: responseText,
+          message: responseText,
+          detailed_explanation: responseText
+        });
+        return;
+      }
+
+      // 4.C AI Tutor Save Lesson to Notes (Supporting Flutter and Web)
+      if ((pathname === '/api/tutor/save-to-notes' || pathname === '/api/v1/tutor/save-to-notes') && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const topic = sanitizeText(body.topic || 'Study Lesson', 180);
+        const title = sanitizeText(body.title || `${topic} Master Study Guide`, 200);
+        const subject = sanitizeText(body.subject || inferSubjectFromTopic(topic), 60);
+        const notebookName = sanitizeText(body.notebook_name || body.notebook || subject, 60);
+        const contentMarkdown = typeof body.content_markdown === 'string' && body.content_markdown.length > 0
+          ? body.content_markdown
+          : `# ${title}\n\nComprehensive study guide for ${topic} in ${subject}.`;
+        const noteId = `note-${crypto.randomUUID().slice(0, 8)}`;
+        const now = new Date().toISOString();
+
+        db.prepare(`
+          INSERT INTO notes (id, user_id, title, topic, subject, notebook, content, structured_json, flashcards_json, quiz_json, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          noteId,
+          studentId,
+          title,
+          topic,
+          subject,
+          notebookName,
+          contentMarkdown,
+          JSON.stringify({ summary: contentMarkdown.slice(0, 300), topic, subject }),
+          JSON.stringify(body.flashcards || []),
+          JSON.stringify(body.quiz || []),
+          now,
+          now
+        );
+
+        sendJson(res, 200, {
+          status: 'saved',
+          note_id: noteId,
+          id: noteId,
+          message: `Lesson "${title}" successfully saved to AI Notes.`
         });
         return;
       }
@@ -4174,14 +4339,22 @@ export function createAppServer() {
         return;
       }
 
-      // 12E. Interactive Language Games Suite (All 7 Games A to G)
+      // 12E. Interactive Language Games Suite (Rotated by Student Progress & Offset)
       if (pathname.startsWith('/api/languages/') && pathname.endsWith('/games') && req.method === 'GET') {
         const parts = pathname.split('/');
         const langCode = parts[3]?.toLowerCase() || 'en';
         const supportLang = (parsedUrl.searchParams.get('support') || 'te').toLowerCase();
         const meta = getLanguageMeta(langCode);
 
-        const fullSuite = generateInteractiveLanguageGamesSuite(langCode, supportLang);
+        // Resolve student's stage to avoid repeating beginner questions when at higher levels
+        let stageNum = 1;
+        try {
+          const enrolment = db.prepare('SELECT current_stage FROM student_language_enrolments WHERE user_id = ? AND language_code = ?').get(studentId, langCode) as any;
+          if (enrolment?.current_stage) stageNum = enrolment.current_stage;
+        } catch {}
+
+        const offset = Math.floor(Date.now() / (1000 * 3600 * 4)) % 10;
+        const fullSuite = generateInteractiveLanguageGamesSuite(langCode, supportLang, studentId, stageNum, offset);
 
         const wordMatch = fullSuite.wordMatching.map((w) => ({
           word: `${w.word} (${w.romanization})`,
@@ -4192,7 +4365,8 @@ export function createAppServer() {
         const sentenceScramble = {
           meaning: fullSuite.sentenceBuilder[0]?.meaning || 'నేను విద్యార్థిని (I am a student)',
           correct_sentence: fullSuite.sentenceBuilder[0]?.correctSentence || (langCode === 'ja' ? 'わたし は がくせい です' : 'I am a student'),
-          scrambled_tokens: fullSuite.sentenceBuilder[0]?.scrambled_tokens || (langCode === 'ja' ? ['です', 'わたし', 'がくせい', 'は'] : ['student', 'I', 'a', 'am'])
+          scrambled_tokens: fullSuite.sentenceBuilder[0]?.scrambled_tokens || (langCode === 'ja' ? ['です', 'わたし', 'がくせい', 'は'] : ['student', 'I', 'a', 'am']),
+          wordOrderRule: fullSuite.sentenceBuilder[0]?.wordOrderRule || 'Subject + Object + Verb'
         };
 
         const spellingQuiz = fullSuite.missingLetters.map((m) => ({
@@ -4213,6 +4387,78 @@ export function createAppServer() {
           wordMatch,
           sentenceScramble,
           spellingQuiz
+        });
+        return;
+      }
+
+      // 12F. Adaptive Non-Repeating Question Bank Endpoint (Phase 3 Core Requirement)
+      if (pathname.startsWith('/api/languages/') && pathname.endsWith('/questions') && req.method === 'GET') {
+        const parts = pathname.split('/');
+        const langCode = parts[3]?.toLowerCase() || 'ja';
+        const stageParam = parseInt(parsedUrl.searchParams.get('stage') || '1', 10);
+        const limitParam = parseInt(parsedUrl.searchParams.get('limit') || '5', 10);
+        const exerciseType = (parsedUrl.searchParams.get('type') || '') as any;
+
+        const questions = getAdaptiveQuestionsForStudent({
+          userId: studentId,
+          languageCode: langCode,
+          stageNumber: stageParam,
+          exerciseType: exerciseType || undefined,
+          limit: limitParam
+        });
+
+        sendJson(res, 200, {
+          languageCode: langCode,
+          stage: stageParam,
+          total: questions.length,
+          questions
+        });
+        return;
+      }
+
+      // 12G. Submit Question Attempt & Record Mastery
+      if (pathname === '/api/languages/questions/submit' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const langCode = sanitizeText(body.language_code || body.languageCode || 'ja', 10).toLowerCase();
+        const questionId = sanitizeText(body.question_id || body.questionId || 'q1', 80);
+        const curriculumLevel = Math.max(1, Math.min(8, Number(body.curriculum_level || body.stage) || 1));
+        const lessonId = sanitizeText(body.lesson_id || body.lessonId || `${langCode}-${curriculumLevel}-1`, 80);
+        const exerciseType = sanitizeText(body.exercise_type || body.exerciseType || 'mcq', 40);
+        const isCorrect = Boolean(body.is_correct ?? true);
+        const studentAnswer = sanitizeText(body.student_answer || body.studentAnswer || '', 500);
+
+        const attemptResult = recordStudentQuestionAttempt({
+          userId: studentId,
+          languageCode: langCode,
+          curriculumLevel,
+          lessonId,
+          questionId,
+          exerciseType,
+          isCorrect,
+          studentAnswer
+        });
+
+        sendJson(res, 200, {
+          success: true,
+          questionId,
+          isCorrect,
+          masteryScore: attemptResult.masteryScore,
+          isMastered: attemptResult.isMastered,
+          encouragement: isCorrect ? 'Excellent understanding! Concept mastered.' : 'Good try! Review the rule explanation and try again with a fresh exercise.'
+        });
+        return;
+      }
+
+      // 12H. Sentence Construction Master Class Endpoint (Level 4 Mandatory Requirement)
+      if (pathname.startsWith('/api/languages/') && pathname.endsWith('/sentence-construction') && req.method === 'GET') {
+        const parts = pathname.split('/');
+        const langCode = parts[3]?.toLowerCase() || 'ja';
+        const lessons = SENTENCE_CONSTRUCTION_LESSONS.filter((l) => l.languageCode === langCode);
+
+        sendJson(res, 200, {
+          languageCode: langCode,
+          totalLessons: lessons.length,
+          lessons: lessons.length > 0 ? lessons : SENTENCE_CONSTRUCTION_LESSONS
         });
         return;
       }
