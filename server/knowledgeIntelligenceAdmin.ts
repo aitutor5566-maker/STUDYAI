@@ -82,6 +82,15 @@ export interface KnowledgeIntelligenceDashboardReport {
       mastered: number;
     };
   };
+  notesIntelligence?: {
+    totalNotesGenerated: number;
+    subjectBreakdown: Array<{ subject: string; count: number }>;
+    depthBreakdown: Array<{ depth: string; count: number }>;
+    recentNotes: any[];
+    antiHallucinationEnforced: boolean;
+    multilingualSupported: string[];
+    depthOptions: string[];
+  };
   discoveredOfficialResources: Array<{
     sourceId: string;
     title: string;
@@ -325,6 +334,33 @@ export class KnowledgeIntelligenceAdminService {
             resolvedMisconceptionsCount: 0,
             masteredTopicsCount: 0,
             topicStageBreakdown: { viewed: 0, explained: 0, practice_attempted: 0, understanding_demonstrated: 0, mastered: 0 }
+          };
+        }
+      })(),
+      notesIntelligence: (() => {
+        try {
+          const notesCountRow = db.prepare('SELECT COUNT(*) as c FROM notes').get() as any;
+          const subjects = db.prepare('SELECT subject, COUNT(*) as count FROM notes GROUP BY subject').all() as any[];
+          const depths = db.prepare('SELECT depth, COUNT(*) as count FROM notes GROUP BY depth').all() as any[];
+          const recentNotes = db.prepare('SELECT id, title, subject, topic, level, depth, created_at FROM notes ORDER BY created_at DESC LIMIT 5').all() as any[];
+          return {
+            totalNotesGenerated: notesCountRow?.c || 0,
+            subjectBreakdown: subjects,
+            depthBreakdown: depths,
+            recentNotes,
+            antiHallucinationEnforced: true,
+            multilingualSupported: ['English', 'Telugu', 'Hindi'],
+            depthOptions: ['standard', 'comprehensive_exam']
+          };
+        } catch {
+          return {
+            totalNotesGenerated: 0,
+            subjectBreakdown: [],
+            depthBreakdown: [],
+            recentNotes: [],
+            antiHallucinationEnforced: true,
+            multilingualSupported: ['English', 'Telugu', 'Hindi'],
+            depthOptions: ['standard', 'comprehensive_exam']
           };
         }
       })(),

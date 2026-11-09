@@ -112,6 +112,7 @@ import { multiBoardKnowledgeEngine, SUPPORTED_CURRICULA } from './multiBoardKnow
 import { ResearchIntelligenceEngine } from './researchIntelligenceEngine.ts';
 import { UnifiedVisualIntelligenceEngine } from './visualIntelligenceEngineUnified.ts';
 import { StudyAiPersonalTeacherEngine } from './studyAiPersonalTeacherEngine.ts';
+import { AdvancedNotesGenerationEngine } from './advancedNotesGenerationEngine.ts';
 import {
   getVisualAssets,
   getVisualAssetById,
@@ -2868,110 +2869,54 @@ export function createAppServer() {
 
         let generated: any;
         try {
-          const hasUploadedSources = Boolean(body.sourceText || (Array.isArray(body.sources) && body.sources.length > 0) || body.youtubeUrl || body.webUrl || (Array.isArray(body.pdfPages) && body.pdfPages.length > 0));
-
-          if (!hasUploadedSources) {
-            const noteTempId = `note-${crypto.randomUUID().slice(0, 8)}`;
-            const orchestratorContext = notebookGenerationOrchestrator.getStudentContext(studentId, resolvedSubject, studentContext.explanationDepth);
-            const orchestratorRoadmap = notebookGenerationOrchestrator.generateTopicRoadmap(topic, orchestratorContext, classification);
-
-            const generatedSections = await Promise.all(
-              orchestratorRoadmap.subtopics.map(async (st, idx) => {
-                const vReq = orchestratorRoadmap.visualRequirements[idx];
-                const sec = notebookGenerationOrchestrator.generateDetailedSectionContent(
-                  topic,
-                  idx,
-                  st,
-                  orchestratorContext,
-                  orchestratorRoadmap,
-                  vReq
-                );
-                try {
-                  const { visual, walkthrough } = await notebookGenerationOrchestrator.retrieveOrGenerateSectionVisual(
-                    topic,
-                    sec,
-                    vReq,
-                    orchestratorContext
-                  );
-                  sec.visual = visual;
-                  sec.imageWalkthrough = walkthrough;
-                } catch {}
-                return sec;
-              })
-            );
-
-            const revision = notebookGenerationOrchestrator.generateSeparateRevisionNotebook(
-              noteTempId,
-              topic,
-              orchestratorContext,
-              orchestratorRoadmap,
-              generatedSections
-            );
-
-            const assembled = notebookGenerationOrchestrator.assembleCompleteLearningNotebook(
-              noteTempId,
-              topic,
-              orchestratorContext,
-              orchestratorRoadmap,
-              generatedSections,
-              revision
-            );
-
-            generated = {
-              id: noteTempId,
-              title: assembled.title,
-              subject: resolvedSubject,
-              topic,
-              level: `Grade ${orchestratorContext.grade} (${orchestratorContext.board})`,
-              depth: orchestratorContext.explanationDepth,
-              notebook: resolvedSubject,
-              content_markdown: assembled.markdown,
-              structured: {
-                ...assembled.structured,
-                finalRevisionPage: buildComprehensiveRevisionPage(classification, assembled.markdown),
-                revisionNotebook: revision
-              },
-              flashcards: assembled.structured.flashcards,
-              quiz: assembled.structured.quiz
-            };
-          } else {
-            generated = await generateStructuredNote({
-              topic,
-              subject: resolvedSubject,
-              level: sanitizeText(body.level || `Grade ${studentContext.grade} (${studentContext.board})`, 40),
-              depth: studentContext.explanationDepth === 'concise' || studentContext.explanationDepth === 'exam-prep' ? studentContext.explanationDepth : 'detailed',
-              sourceText: sanitizeText(body.sourceText || '', 120000),
-              sourceType: sanitizeText(body.sourceType || 'topic', 40),
-              notebook: sanitizeText(body.notebook || resolvedSubject, 60),
-              sources: Array.isArray(body.sources) ? body.sources : undefined,
-              youtubeUrl: body.youtubeUrl ? sanitizeText(body.youtubeUrl, 500) : undefined,
-              webUrl: body.webUrl ? sanitizeText(body.webUrl, 500) : undefined,
-              pdfPages: Array.isArray(body.pdfPages) ? body.pdfPages : undefined
-            });
-
-            if (generated && generated.structured && !generated.structured.finalRevisionPage) {
-              generated.structured.finalRevisionPage = buildComprehensiveRevisionPage(classification, generated.content_markdown || '');
-              generated.structured.classification = classification;
-              generated.structured.designMode = designMode;
-            }
-          }
-
-          // Unify with Universal Teaching Workflow & Single-Page Digital Textbook
-          const workflow = buildUniversalTeachingWorkflow({
+          const depthOption = (body.depth === 'comprehensive_exam' || body.depth === 'exam-prep') ? 'comprehensive_exam' : 'standard';
+          const academicNote = await AdvancedNotesGenerationEngine.generateNotebook({
             topic,
             subject: resolvedSubject,
             grade: studentContext.grade,
             board: studentContext.board,
-            studentName
+            language: (body.language === 'te' || body.language === 'hi' || body.language === 'en') ? body.language : 'en',
+            depth: depthOption,
+            studentId,
+            studentName,
+            sourceText: sanitizeText(body.sourceText || '', 120000),
+            sourceType: sanitizeText(body.sourceType || 'topic', 40),
+            sources: Array.isArray(body.sources) ? body.sources : undefined
           });
-          const textbookMarkdown = buildSinglePageDigitalTextbookMarkdown(workflow);
 
-          if (generated) {
-            generated.content_markdown = textbookMarkdown;
-            if (!generated.structured) generated.structured = {};
-            generated.structured.universalTeachingWorkflow = workflow;
-            generated.structured.textbookMarkdown = textbookMarkdown;
-          }
+          generated = {
+            id: academicNote.id,
+            title: academicNote.title,
+            subject: academicNote.subject,
+            topic: academicNote.topic,
+            level: `Grade ${academicNote.grade} (${academicNote.board})`,
+            depth: academicNote.depth,
+            notebook: academicNote.notebook,
+            content_markdown: academicNote.contentMarkdown,
+            structured: {
+              tableOfContents: academicNote.tableOfContents,
+              sections: academicNote.sections,
+              visualPlan: academicNote.visualPlan,
+              images: academicNote.visualPlan ? [
+                {
+                  id: academicNote.visualPlan.existingAssetId || academicNote.visualPlan.planId,
+                  title: `${academicNote.topic} Diagram`,
+                  imageUrl: academicNote.visualPlan.svgXml
+                    ? `data:image/svg+xml;utf8,${encodeURIComponent(academicNote.visualPlan.svgXml)}`
+                    : academicNote.visualPlan.previewUrl || ''
+                }
+              ] : [],
+              evidenceSources: academicNote.evidenceSources,
+              finalRevisionSummary: academicNote.finalRevisionSummary,
+              flashcards: academicNote.flashcards,
+              quiz: academicNote.quiz,
+              classification,
+              designMode,
+              summary: academicNote.title
+            },
+            flashcards: academicNote.flashcards,
+            quiz: academicNote.quiz
+          };
         } catch (err: any) {
           sendJson(res, err?.statusCode || 422, {
             error: err?.message || 'Universal note generation failed.',

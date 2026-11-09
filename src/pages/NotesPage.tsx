@@ -334,8 +334,8 @@ export const NotesPage: React.FC = () => {
           setDashboardMode('notebook');
           setNotebookSubTab('full');
           setReaderViewMode('continuous');
-        } else if (searchParams.get('auto') === 'true' && !generating) {
-          // Auto-trigger generation so clicking from Home generates note immediately
+        } else if (!generating) {
+          // Auto-trigger generation so clicking from Home or navigation generates note immediately
           handleGenerateNotebook(undefined, requestedTopic.trim());
         }
       } else if (activeNote) {
