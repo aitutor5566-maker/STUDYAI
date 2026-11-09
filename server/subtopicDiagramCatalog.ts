@@ -2365,7 +2365,10 @@ import {
   getElectricitySubtopicDiagrams,
   getGeometrySubtopicDiagrams,
   getFrenchRevolutionSubtopicDiagrams,
-  getEarthStructureSubtopicDiagrams
+  getEarthStructureSubtopicDiagrams,
+  getChemicalReactionsSubtopicDiagrams,
+  getQuadraticEquationsSubtopicDiagrams,
+  getWaterResourcesSubtopicDiagrams
 } from './extendedSubtopicDiagrams.ts';
 
 // ============================================================================
@@ -2421,6 +2424,18 @@ export function getSubtopicDiagramsForTopic(topic: string, subject?: string): Su
 
   if (lower.includes('water cycle') || lower.includes('hydrological') || lower.includes('evapotranspiration') || (lower.includes('precipitation') && lower.includes('evaporation'))) {
     return getWaterCycleSubtopicDiagrams();
+  }
+
+  if (lower.includes('chemical reaction') || lower.includes('reactions and equation') || (lower.includes('equation') && lower.includes('chemical')) || lower.includes('combination reaction') || lower.includes('displacement reaction') || lower.includes('precipitation reaction')) {
+    return getChemicalReactionsSubtopicDiagrams();
+  }
+
+  if (lower.includes('quadratic') || lower.includes('quadratic equation') || (lower.includes('parabola') && lower.includes('equation')) || lower.includes('discriminant') || (lower.includes('nature of roots') && !lower.includes('plant'))) {
+    return getQuadraticEquationsSubtopicDiagrams();
+  }
+
+  if (lower.includes('water resource') || lower.includes('water scarcity') || (lower.includes('rainwater') && lower.includes('harvest')) || lower.includes('multipurpose river') || (lower.includes('dam') && lower.includes('water'))) {
+    return getWaterResourcesSubtopicDiagrams();
   }
 
   // Generate fallback structured subtopic diagrams for any curriculum topic

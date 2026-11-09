@@ -1177,3 +1177,697 @@ export function getEarthStructureSubtopicDiagrams(): SubtopicDiagramItem[] {
     }
   ];
 }
+
+
+// ============================================================================
+// 6. CHEMICAL REACTIONS & EQUATIONS — 4 DEDICATED SUBTOPIC DIAGRAMS
+// ============================================================================
+
+export function getChemicalReactionsSubtopicDiagrams(): SubtopicDiagramItem[] {
+  // Diagram 1: Combination Reaction (Magnesium Ribbon Burning)
+  const svg1 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480">
+    <rect width="800" height="480" rx="20" fill="#0F172A"/>
+    <text x="400" y="36" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Combination Reaction: Magnesium Burning in Oxygen</text>
+    <text x="400" y="58" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">2Mg(s) + O₂(g) → 2MgO(s) + Heat + Intense Dazzling White Light</text>
+
+    <!-- Bunsen Burner & Tongs -->
+    <rect x="220" y="320" width="80" height="80" rx="8" fill="#334155" stroke="#64748B" stroke-width="2"/>
+    <path d="M 260 320 Q 240 240 260 210 Q 280 240 260 320" fill="#38BDF8" opacity="0.8"/>
+    <path d="M 260 320 Q 250 260 260 230 Q 270 260 260 320" fill="#FDE047"/>
+
+    <!-- Pair of Tongs holding Magnesium Ribbon -->
+    <line x1="380" y1="180" x2="260" y2="230" stroke="#94A3B8" stroke-width="6" stroke-linecap="round"/>
+    <line x1="390" y1="190" x2="265" y2="235" stroke="#64748B" stroke-width="6" stroke-linecap="round"/>
+    <rect x="245" y="222" width="25" height="8" rx="2" fill="#E2E8F0" stroke="#FFFFFF" stroke-width="1.5"/>
+
+    <!-- Dazzling White Flame Burst -->
+    <circle cx="260" cy="225" r="28" fill="#FFFFFF" opacity="0.9"/>
+    <circle cx="260" cy="225" r="45" fill="#FEF08A" opacity="0.35"/>
+
+    <!-- Watch Glass with Magnesium Oxide Powder -->
+    <path d="M 440 370 Q 530 400 620 370 Z" fill="#1E293B" stroke="#64748B" stroke-width="2"/>
+    <ellipse cx="530" cy="376" rx="55" ry="10" fill="#FFFFFF" opacity="0.95"/>
+    <text x="530" y="415" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#F8FAFC" text-anchor="middle">White Powder (MgO)</text>
+
+    <!-- Reaction Equation & Key Points Card -->
+    <rect x="440" y="110" width="300" height="230" rx="14" fill="#1E293B" stroke="#38BDF8" stroke-width="2"/>
+    <text x="590" y="142" font-family="Inter, sans-serif" font-size="15" font-weight="800" fill="#38BDF8" text-anchor="middle">Key Laboratory Observations</text>
+    <text x="460" y="180" font-family="Inter, sans-serif" font-size="12.5" font-weight="600" fill="#CBD5E1">1. Dazzling white flame observed.</text>
+    <text x="460" y="215" font-family="Inter, sans-serif" font-size="12.5" font-weight="600" fill="#CBD5E1">2. White solid powder formed (MgO).</text>
+    <text x="460" y="250" font-family="Inter, sans-serif" font-size="12.5" font-weight="600" fill="#CBD5E1">3. Two reactants combine into 1 product.</text>
+    <text x="460" y="285" font-family="Inter, sans-serif" font-size="12.5" font-weight="600" fill="#FDE047">4. Ribbon cleaned with sandpaper first.</text>
+    <text x="460" y="318" font-family="Inter, sans-serif" font-size="12.5" font-weight="600" fill="#34D399">5. MgO turns red litmus paper blue (basic).</text>
+
+    <rect x="80" y="430" width="640" height="38" rx="8" fill="#1E293B" stroke="#334155" stroke-width="1.5"/>
+    <text x="400" y="454" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#F8FAFC" text-anchor="middle">Combination Reaction: A reaction in which a single product is formed from two or more reactants.</text>
+  </svg>`;
+
+  // Diagram 2: Single Displacement Reaction (Iron Nail in Copper Sulphate)
+  const svg2 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480">
+    <rect width="800" height="480" rx="20" fill="#0F172A"/>
+    <text x="400" y="36" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Displacement Reaction: Iron Nail in Copper Sulphate Solution</text>
+    <text x="400" y="58" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">Fe(s) + CuSO₄(aq) [Blue] → FeSO₄(aq) [Pale Green] + Cu(s) [Reddish-Brown Deposit]</text>
+
+    <!-- Test Tube 1: Initial State -->
+    <g transform="translate(140, 100)">
+      <rect width="130" height="270" rx="14" fill="#1E293B" stroke="#38BDF8" stroke-width="2"/>
+      <text x="65" y="30" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#38BDF8" text-anchor="middle">Initial Test Tube</text>
+      <!-- Tube shape -->
+      <path d="M 35 60 L 35 220 Q 65 250 95 220 L 95 60" fill="none" stroke="#64748B" stroke-width="3"/>
+      <!-- Blue CuSO4 Solution -->
+      <path d="M 37 120 L 37 220 Q 65 248 93 220 L 93 120 Z" fill="#0284C7" opacity="0.85"/>
+      <!-- Clean Grey Iron Nail -->
+      <line x1="65" y1="80" x2="65" y2="210" stroke="#94A3B8" stroke-width="7" stroke-linecap="round"/>
+      <text x="65" y="170" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#FFFFFF" text-anchor="middle">Blue Solution</text>
+    </g>
+
+    <!-- Reaction Arrow -->
+    <g transform="translate(350, 220)">
+      <line x1="0" y1="0" x2="90" y2="0" stroke="#F59E0B" stroke-width="5"/>
+      <polygon points="95,0 80,-8 80,8" fill="#F59E0B"/>
+      <text x="45" y="-14" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FBBF24" text-anchor="middle">After 20 mins</text>
+      <text x="45" y="24" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#94A3B8" text-anchor="middle">Fe displaces Cu</text>
+    </g>
+
+    <!-- Test Tube 2: Final State -->
+    <g transform="translate(520, 100)">
+      <rect width="130" height="270" rx="14" fill="#1E293B" stroke="#10B981" stroke-width="2"/>
+      <text x="65" y="30" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#34D399" text-anchor="middle">Final Test Tube</text>
+      <!-- Tube shape -->
+      <path d="M 35 60 L 35 220 Q 65 250 95 220 L 95 60" fill="none" stroke="#64748B" stroke-width="3"/>
+      <!-- Pale Green FeSO4 Solution -->
+      <path d="M 37 120 L 37 220 Q 65 248 93 220 L 93 120 Z" fill="#10B981" opacity="0.55"/>
+      <!-- Brown Cu-coated Iron Nail -->
+      <line x1="65" y1="80" x2="65" y2="210" stroke="#B45309" stroke-width="8" stroke-linecap="round"/>
+      <text x="65" y="170" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#FFFFFF" text-anchor="middle">Pale Green</text>
+      <text x="65" y="255" font-family="Inter, sans-serif" font-size="10.5" font-weight="700" fill="#FBBF24" text-anchor="middle">Brown Cu Coating</text>
+    </g>
+
+    <rect x="80" y="405" width="640" height="48" rx="8" fill="#1E293B" stroke="#334155" stroke-width="1.5"/>
+    <text x="400" y="428" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#F8FAFC" text-anchor="middle">Reactivity Series Rule: Iron (Fe) is more reactive than Copper (Cu), hence displaces it from CuSO₄.</text>
+    <text x="400" y="445" font-family="Inter, sans-serif" font-size="11.5" font-weight="600" fill="#94A3B8" text-anchor="middle">Blue copper sulphate turns light green (iron sulphate) and reddish-brown copper deposits on the iron nail.</text>
+  </svg>`;
+
+  // Diagram 3: Double Displacement & Precipitation Reaction
+  const svg3 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480">
+    <rect width="800" height="480" rx="20" fill="#0F172A"/>
+    <text x="400" y="36" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Double Displacement &amp; Precipitation Reaction</text>
+    <text x="400" y="58" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">Na₂SO₄(aq) + BaCl₂(aq) → BaSO₄(s) [White Insoluble Precipitate ↓] + 2NaCl(aq)</text>
+
+    <!-- Test Tube Mixing Graphic -->
+    <g transform="translate(100, 110)">
+      <rect width="260" height="260" rx="14" fill="#1E293B" stroke="#818CF8" stroke-width="2"/>
+      <text x="130" y="32" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#818CF8" text-anchor="middle">Ionic Exchange Mechanism</text>
+
+      <!-- Ion Bubbles -->
+      <circle cx="70" cy="100" r="28" fill="#3B82F6"/>
+      <text x="70" y="105" font-family="Inter, sans-serif" font-size="13" font-weight="900" fill="#FFFFFF" text-anchor="middle">2Na⁺</text>
+
+      <circle cx="190" cy="100" r="28" fill="#EF4444"/>
+      <text x="190" y="105" font-family="Inter, sans-serif" font-size="13" font-weight="900" fill="#FFFFFF" text-anchor="middle">SO₄²⁻</text>
+
+      <circle cx="70" cy="190" r="28" fill="#10B981"/>
+      <text x="70" y="195" font-family="Inter, sans-serif" font-size="13" font-weight="900" fill="#FFFFFF" text-anchor="middle">Ba²⁺</text>
+
+      <circle cx="190" cy="190" r="28" fill="#F59E0B"/>
+      <text x="190" y="195" font-family="Inter, sans-serif" font-size="13" font-weight="900" fill="#FFFFFF" text-anchor="middle">2Cl⁻</text>
+
+      <!-- Exchange Arrows -->
+      <path d="M 70 160 L 190 130" stroke="#FDE047" stroke-width="3" stroke-dasharray="4,4"/>
+      <path d="M 70 130 L 190 160" stroke="#FDE047" stroke-width="3" stroke-dasharray="4,4"/>
+    </g>
+
+    <!-- Beaker showing White Precipitate -->
+    <g transform="translate(440, 110)">
+      <rect width="260" height="260" rx="14" fill="#1E293B" stroke="#38BDF8" stroke-width="2"/>
+      <text x="130" y="32" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#38BDF8" text-anchor="middle">Formation of BaSO₄ Precipitate</text>
+
+      <!-- Glass Beaker -->
+      <path d="M 60 70 L 60 210 Q 130 230 200 210 L 200 70" fill="none" stroke="#64748B" stroke-width="3"/>
+      <!-- Clear NaCl Solution -->
+      <path d="M 62 120 L 62 210 Q 130 228 198 210 L 198 120 Z" fill="#38BDF8" opacity="0.25"/>
+      <!-- White BaSO4 Precipitate at bottom -->
+      <path d="M 62 185 L 62 210 Q 130 228 198 210 L 198 185 Z" fill="#FFFFFF" opacity="0.95"/>
+      <text x="130" y="160" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#94A3B8" text-anchor="middle">Aqueous NaCl Solution</text>
+      <text x="130" y="202" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#1E293B" text-anchor="middle">White Precipitate (BaSO₄ ↓)</text>
+    </g>
+
+    <rect x="80" y="405" width="640" height="48" rx="8" fill="#1E293B" stroke="#334155" stroke-width="1.5"/>
+    <text x="400" y="428" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#F8FAFC" text-anchor="middle">Precipitation Reaction: Any reaction that produces an insoluble solid precipitate is called a precipitation reaction.</text>
+    <text x="400" y="445" font-family="Inter, sans-serif" font-size="11.5" font-weight="600" fill="#94A3B8" text-anchor="middle">Double displacement involves an exchange of ions between reactants (Ba²⁺ binds with SO₄²⁻).</text>
+  </svg>`;
+
+  return [
+    {
+      diagramId: 'chem-rxn-sub-01',
+      subtopicKey: 'combination_magnesium_burning',
+      subtopicTitle: 'Combination Reactions & Magnesium Oxidation',
+      diagramTitle: 'Burning of Magnesium Ribbon: Synthesis of Magnesium Oxide',
+      diagramType: 'Chemical Synthesis Lab Experiment Schematic',
+      caption: 'Two reactants (Mg and O₂) combine to yield single product (MgO) with intense white light and heat.',
+      svgXml: svg1,
+      dataUrl: svgToDataUrl(svg1),
+      point1_whatItRepresents: 'Laboratory setup demonstrating a classic synthesis (combination) chemical reaction.',
+      point2_labelledParts: [
+        { label: 'Magnesium Ribbon (Mg)', description: 'Silvery metal strip cleaned with sandpaper to remove protective oxide layer' },
+        { label: 'Tongs', description: 'Apparatus used to hold ribbon safely in flame' },
+        { label: 'Dazzling White Light', description: 'Intense exothermic photon emission during rapid oxidation' },
+        { label: 'Watch Glass', description: 'Receiver collecting white basic Magnesium Oxide (MgO) powder' }
+      ],
+      point3_componentFunctions: 'Demonstrates elemental synthesis, exothermic energy release, and basic oxide formation.',
+      point4_componentRelationships: '2Mg atoms react with 1 O₂ molecule to yield 2 units of ionic MgO solid crystal lattice.',
+      point5_directionOfMovementOrProcess: 'Solid magnesium absorbs thermal excitation energy, oxidizes vigorously with atmospheric O₂.',
+      point6_stepByStepInterpretation: [
+        '1. Clean 2 cm magnesium ribbon with sandpaper to remove dull oxide film.',
+        '2. Hold with tongs and heat over Bunsen burner flame.',
+        '3. Ribbon ignites with a dazzling white flame.',
+        '4. Collect white ash of magnesium oxide in watch glass.'
+      ],
+      point7_learningOutcome: 'Understand that a combination reaction unites two or more reactants into a single product.',
+      point8_whatToRemember: '2Mg + O₂ → 2MgO (Combination, Exothermic, Basic Oxide).',
+      isVerified: true
+    },
+    {
+      diagramId: 'chem-rxn-sub-02',
+      subtopicKey: 'single_displacement_iron_copper',
+      subtopicTitle: 'Single Displacement Reactions & Reactivity Series',
+      diagramTitle: 'Iron Nail in Copper Sulphate: Color Transition & Metal Deposition',
+      diagramType: 'Redox Displacement Colorimetric Experiment',
+      caption: 'More reactive iron displaces less reactive copper from copper sulphate, changing blue solution to pale green.',
+      svgXml: svg2,
+      dataUrl: svgToDataUrl(svg2),
+      point1_whatItRepresents: 'The mechanism of single displacement governed by the chemical reactivity series.',
+      point2_labelledParts: [
+        { label: 'Blue CuSO₄ Solution', description: 'Cu²⁺ ions in aqueous hydration providing intense blue color' },
+        { label: 'Clean Iron Nail (Fe)', description: 'Zero-valent elemental iron ready to donate electrons' },
+        { label: 'Pale Green FeSO₄ Solution', description: 'Fe²⁺ ferrous ions imparting pale green coloration' },
+        { label: 'Reddish-Brown Deposit', description: 'Reduced zero-valent copper metal plating onto the nail surface' }
+      ],
+      point3_componentFunctions: 'Fe oxidizes (loses 2e⁻ to Fe²⁺) while Cu²⁺ reduces (gains 2e⁻ to form elemental Cu solid).',
+      point4_componentRelationships: 'Iron occupies a higher position than copper in the activity series, enabling spontaneous displacement.',
+      point5_directionOfMovementOrProcess: 'Electrons transfer from Fe atom directly to Cu²⁺ cation at the metal-solution interface.',
+      point6_stepByStepInterpretation: [
+        '1. Take test tube with 10 mL blue CuSO₄ solution.',
+        '2. Immerse clean iron nail tied with thread.',
+        '3. Wait 20 minutes for ion displacement.',
+        '4. Observe pale green solution (FeSO₄) and brown copper coat on nail.'
+      ],
+      point7_learningOutcome: 'Apply the reactivity series to predict when one metal can displace another from its salt solution.',
+      point8_whatToRemember: 'Fe + CuSO₄ → FeSO₄ + Cu (Blue to green, iron displaces copper because Fe > Cu).',
+      isVerified: true
+    },
+    {
+      diagramId: 'chem-rxn-sub-03',
+      subtopicKey: 'double_displacement_precipitation',
+      subtopicTitle: 'Double Displacement & Precipitation Chemistry',
+      diagramTitle: 'Precipitation of Barium Sulphate (BaSO₄) via Mutual Ion Exchange',
+      diagramType: 'Aqueous Ionic Exchange & Solubility Diagram',
+      caption: 'Sodium sulphate reacts with barium chloride to produce insoluble white barium sulphate precipitate.',
+      svgXml: svg3,
+      dataUrl: svgToDataUrl(svg3),
+      point1_whatItRepresents: 'Double displacement reaction where positive and negative ions swap partners, yielding an insoluble solid precipitate.',
+      point2_labelledParts: [
+        { label: 'Sodium Sulphate (Na₂SO₄)', description: 'Source of free Na⁺ cations and SO₄²⁻ anions in aqueous solution' },
+        { label: 'Barium Chloride (BaCl₂)', description: 'Source of free Ba²⁺ cations and Cl⁻ anions in aqueous solution' },
+        { label: 'Barium Sulphate (BaSO₄ ↓)', description: 'Insoluble white ionic lattice with high lattice energy that precipitates out' },
+        { label: 'Sodium Chloride (NaCl)', description: 'Spectator ions remaining dissolved in the clear supernatant solution' }
+      ],
+      point3_componentFunctions: 'Causes precipitation due to strong electrostatic attraction between divalent Ba²⁺ and SO₄²⁻ ions.',
+      point4_componentRelationships: 'Na⁺ pairs with Cl⁻ (soluble) while Ba²⁺ pairs with SO₄²⁻ (insoluble precipitate).',
+      point5_directionOfMovementOrProcess: 'Rapid aqueous diffusion followed by nucleation and gravity sedimentation of white solid particles.',
+      point6_stepByStepInterpretation: [
+        '1. Mix 3 mL Na₂SO₄ solution with 3 mL BaCl₂ solution in test tube.',
+        '2. Instantaneous white turbidity appears without requiring heating.',
+        '3. Insoluble white precipitate settles to bottom on standing.',
+        '4. Reaction demonstrates double displacement and precipitation simultaneously.'
+      ],
+      point7_learningOutcome: 'Define double displacement and identify precipitation reactions in aqueous media.',
+      point8_whatToRemember: 'Na₂SO₄ + BaCl₂ → BaSO₄↓ + 2NaCl (White precipitate formed by ion exchange).',
+      isVerified: true
+    }
+  ];
+}
+
+// ============================================================================
+// 7. QUADRATIC EQUATIONS — 3 DEDICATED SUBTOPIC DIAGRAMS
+// ============================================================================
+
+export function getQuadraticEquationsSubtopicDiagrams(): SubtopicDiagramItem[] {
+  // Diagram 1: Parabola Geometry & Standard Form
+  const svg1 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480">
+    <rect width="800" height="480" rx="20" fill="#0F172A"/>
+    <text x="400" y="36" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Quadratic Function Geometry: Parabola &amp; Roots</text>
+    <text x="400" y="58" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">Standard Form: ax² + bx + c = 0 (a ≠ 0) • Symmetrical Curve with Vertex at x = -b/(2a)</text>
+
+    <!-- Coordinate Axes -->
+    <line x1="80" y1="280" x2="720" y2="280" stroke="#475569" stroke-width="2.5"/>
+    <line x1="400" y1="80" x2="400" y2="420" stroke="#475569" stroke-width="2.5"/>
+    <polygon points="725,280 715,274 715,286" fill="#475569"/>
+    <polygon points="400,75 394,85 406,85" fill="#475569"/>
+    <text x="730" y="285" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#94A3B8">x</text>
+    <text x="405" y="70" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#94A3B8">y</text>
+
+    <!-- Axis of Symmetry (Dashed Line) -->
+    <line x1="320" y1="90" x2="320" y2="400" stroke="#FDE047" stroke-width="2" stroke-dasharray="6,6"/>
+    <text x="320" y="420" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#FDE047" text-anchor="middle">Axis of Symmetry: x = -b/(2a)</text>
+
+    <!-- Parabola Curve y = a(x-h)^2 + k opening upward (a > 0) -->
+    <path d="M 120 120 Q 320 460 520 120" fill="none" stroke="#38BDF8" stroke-width="5"/>
+
+    <!-- Vertex Point (h, k) -->
+    <circle cx="320" cy="375" r="7" fill="#EF4444" stroke="#FFFFFF" stroke-width="2"/>
+    <text x="320" y="360" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#F87171" text-anchor="middle">Vertex: (-b/2a, -D/4a)</text>
+
+    <!-- Real Roots (x-intercepts where y = 0) -->
+    <circle cx="210" cy="280" r="7" fill="#10B981" stroke="#FFFFFF" stroke-width="2"/>
+    <text x="185" y="270" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#34D399">Root α</text>
+
+    <circle cx="430" cy="280" r="7" fill="#10B981" stroke="#FFFFFF" stroke-width="2"/>
+    <text x="455" y="270" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#34D399">Root β</text>
+
+    <!-- Y-intercept (0, c) -->
+    <circle cx="400" cy="330" r="6" fill="#F59E0B" stroke="#FFFFFF" stroke-width="2"/>
+    <text x="430" y="335" font-family="Inter, sans-serif" font-size="11.5" font-weight="700" fill="#FBBF24">y-intercept (0, c)</text>
+
+    <!-- Math Summary Box -->
+    <rect x="560" y="100" width="200" height="150" rx="12" fill="#1E293B" stroke="#38BDF8" stroke-width="2"/>
+    <text x="660" y="125" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#38BDF8" text-anchor="middle">Algebraic Relations</text>
+    <text x="575" y="155" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#FFFFFF">Sum: α + β = -b/a</text>
+    <text x="575" y="185" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#FFFFFF">Product: α·β = c/a</text>
+    <text x="575" y="215" font-family="Inter, sans-serif" font-size="11.5" font-weight="700" fill="#FBBF24">Opening: a > 0 (Upward)</text>
+    <text x="575" y="235" font-family="Inter, sans-serif" font-size="11.5" font-weight="700" fill="#94A3B8">Opening: a &lt; 0 (Downward)</text>
+  </svg>`;
+
+  // Diagram 2: The Discriminant Triad (Nature of Roots)
+  const svg2 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480">
+    <rect width="800" height="480" rx="20" fill="#0F172A"/>
+    <text x="400" y="36" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Nature of Roots: The Discriminant Triad Δ = b² - 4ac</text>
+    <text x="400" y="58" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">Discriminant Sign Determines the Number of Real Solutions and X-Axis Intersections</text>
+
+    <!-- Panel 1: D > 0 (Two Distinct Real Roots) -->
+    <g transform="translate(40, 90)">
+      <rect width="220" height="320" rx="14" fill="#1E293B" stroke="#10B981" stroke-width="2.5"/>
+      <text x="110" y="32" font-family="Inter, sans-serif" font-size="16" font-weight="900" fill="#34D399" text-anchor="middle">D &gt; 0</text>
+      <text x="110" y="55" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#A7F3D0" text-anchor="middle">2 Distinct Real Roots</text>
+
+      <!-- Mini axis & curve crossing twice -->
+      <line x1="20" y1="160" x2="200" y2="160" stroke="#64748B" stroke-width="2"/>
+      <path d="M 40 100 Q 110 240 180 100" fill="none" stroke="#10B981" stroke-width="4"/>
+      <circle cx="68" cy="160" r="5" fill="#FDE047"/>
+      <circle cx="152" cy="160" r="5" fill="#FDE047"/>
+
+      <text x="110" y="240" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#CBD5E1" text-anchor="middle">• Curve cuts x-axis twice</text>
+      <text x="110" y="265" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#CBD5E1" text-anchor="middle">• Roots: (-b ± √D)/(2a)</text>
+      <text x="110" y="295" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#34D399" text-anchor="middle">Real &amp; Unequal</text>
+    </g>
+
+    <!-- Panel 2: D = 0 (Two Equal Real Roots) -->
+    <g transform="translate(290, 90)">
+      <rect width="220" height="320" rx="14" fill="#1E293B" stroke="#F59E0B" stroke-width="2.5"/>
+      <text x="110" y="32" font-family="Inter, sans-serif" font-size="16" font-weight="900" fill="#FBBF24" text-anchor="middle">D = 0</text>
+      <text x="110" y="55" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#FDE68A" text-anchor="middle">2 Equal Real Roots</text>
+
+      <!-- Mini axis & curve tangent at vertex -->
+      <line x1="20" y1="160" x2="200" y2="160" stroke="#64748B" stroke-width="2"/>
+      <path d="M 40 100 Q 110 220 180 100" fill="none" stroke="#F59E0B" stroke-width="4"/>
+      <circle cx="110" cy="160" r="5" fill="#FDE047"/>
+
+      <text x="110" y="240" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#CBD5E1" text-anchor="middle">• Curve touches x-axis</text>
+      <text x="110" y="265" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#CBD5E1" text-anchor="middle">• Perfect square trinomial</text>
+      <text x="110" y="295" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FBBF24" text-anchor="middle">Roots: x = -b/(2a)</text>
+    </g>
+
+    <!-- Panel 3: D < 0 (No Real Roots) -->
+    <g transform="translate(540, 90)">
+      <rect width="220" height="320" rx="14" fill="#1E293B" stroke="#EF4444" stroke-width="2.5"/>
+      <text x="110" y="32" font-family="Inter, sans-serif" font-size="16" font-weight="900" fill="#F87171" text-anchor="middle">D &lt; 0</text>
+      <text x="110" y="55" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#FECACA" text-anchor="middle">No Real Roots (Complex)</text>
+
+      <!-- Mini axis & curve hovering completely above -->
+      <line x1="20" y1="180" x2="200" y2="180" stroke="#64748B" stroke-width="2"/>
+      <path d="M 40 100 Q 110 190 180 100" fill="none" stroke="#EF4444" stroke-width="4"/>
+
+      <text x="110" y="240" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#CBD5E1" text-anchor="middle">• Never intersects x-axis</text>
+      <text x="110" y="265" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#CBD5E1" text-anchor="middle">• √D is not a real number</text>
+      <text x="110" y="295" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#F87171" text-anchor="middle">Complex Conjugate</text>
+    </g>
+
+    <rect x="80" y="430" width="640" height="38" rx="8" fill="#1E293B" stroke="#334155" stroke-width="1.5"/>
+    <text x="400" y="454" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#F8FAFC" text-anchor="middle">Discriminant Theorem: D = b² - 4ac determines whether roots are real &amp; unequal (D &gt; 0), real &amp; equal (D = 0), or non-real (D &lt; 0).</text>
+  </svg>`;
+
+  // Diagram 3: Projectile Trajectory (Real-World Quadratic Modeling)
+  const svg3 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480">
+    <rect width="800" height="480" rx="20" fill="#0F172A"/>
+    <text x="400" y="36" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Real-World Application: Projectile Motion Trajectory</text>
+    <text x="400" y="58" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">Height Function: h(t) = -½gt² + u·sin(θ)·t + h₀ • Inverted Parabola (a &lt; 0)</text>
+
+    <!-- Ground Line -->
+    <line x1="80" y1="360" x2="720" y2="360" stroke="#22C55E" stroke-width="4"/>
+    <text x="730" y="365" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#4ADE80">Ground</text>
+
+    <!-- Trajectory Path -->
+    <path d="M 120 360 Q 360 80 600 360" fill="none" stroke="#F59E0B" stroke-width="5" stroke-dasharray="6,4"/>
+
+    <!-- Launch Point -->
+    <circle cx="120" cy="360" r="7" fill="#38BDF8"/>
+    <text x="120" y="390" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#38BDF8" text-anchor="middle">Launch: t = 0</text>
+
+    <!-- Maximum Height (Vertex) -->
+    <circle cx="360" cy="150" r="8" fill="#EF4444" stroke="#FFFFFF" stroke-width="2"/>
+    <line x1="360" y1="150" x2="360" y2="360" stroke="#FDE047" stroke-width="2" stroke-dasharray="4,4"/>
+    <text x="360" y="130" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#F87171" text-anchor="middle">Peak Height H_max (Vertex)</text>
+    <text x="360" y="260" font-family="Inter, sans-serif" font-size="11.5" font-weight="800" fill="#FDE047" text-anchor="middle">t = u·sin(θ)/g</text>
+
+    <!-- Landing Point (Positive Root) -->
+    <circle cx="600" cy="360" r="7" fill="#38BDF8"/>
+    <text x="600" y="390" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#38BDF8" text-anchor="middle">Impact: h(t) = 0</text>
+
+    <!-- Card with Quadratic Formula -->
+    <rect x="520" y="100" width="240" height="150" rx="14" fill="#1E293B" stroke="#38BDF8" stroke-width="2"/>
+    <text x="640" y="125" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#38BDF8" text-anchor="middle">Quadratic Formula</text>
+    <text x="640" y="160" font-family="Inter, sans-serif" font-size="16" font-weight="900" fill="#FDE047" text-anchor="middle">x = [-b ± √(b² - 4ac)] / 2a</text>
+    <text x="640" y="195" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#CBD5E1" text-anchor="middle">Gives the exact flight time</text>
+    <text x="640" y="215" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#CBD5E1" text-anchor="middle">when height returns to 0.</text>
+  </svg>`;
+
+  return [
+    {
+      diagramId: 'quad-eq-sub-01',
+      subtopicKey: 'parabola_geometry_standard_form',
+      subtopicTitle: 'Standard Form & Parabola Anatomy',
+      diagramTitle: 'Quadratic Curve Geometry: Vertex, Axis of Symmetry and Roots',
+      diagramType: 'Algebraic Parabola Coordinate Geometry',
+      caption: 'Symmetrical U-shaped parabola showing axis of symmetry, vertex extremum, and x-intercept solutions.',
+      svgXml: svg1,
+      dataUrl: svgToDataUrl(svg1),
+      point1_whatItRepresents: 'Geometric representation of a second-degree polynomial equation on the Cartesian plane.',
+      point2_labelledParts: [
+        { label: 'Standard Form (ax² + bx + c = 0)', description: 'Quadratic polynomial where coefficient a determines width and concavity' },
+        { label: 'Vertex (-b/2a, -D/4a)', description: 'The absolute minimum (if a > 0) or maximum (if a < 0) turning point' },
+        { label: 'Axis of Symmetry (x = -b/2a)', description: 'Vertical line dividing the parabola into two mirror-image halves' },
+        { label: 'Roots α and β', description: 'Points where curve intersects x-axis (y = 0), representing real solutions' }
+      ],
+      point3_componentFunctions: 'Translates abstract quadratic algebra into visual curve behavior, root finding, and optimization.',
+      point4_componentRelationships: 'The roots α and β are equidistant from the central axis of symmetry at x = -b/(2a).',
+      point5_directionOfMovementOrProcess: 'Values of x progress along the horizontal axis while y values trace quadratic acceleration.',
+      point6_stepByStepInterpretation: [
+        '1. Identify coefficients a, b, and c from standard form.',
+        '2. Compute axis of symmetry x = -b/(2a).',
+        '3. Substitute x into equation to find vertex y-coordinate.',
+        '4. Set y = 0 to calculate x-intercept roots α and β.'
+      ],
+      point7_learningOutcome: 'Connect algebraic quadratic equations to parabola symmetry, vertex extrema, and x-intercept roots.',
+      point8_whatToRemember: 'Roots are x-intercepts; vertex is at x = -b/(2a); sum of roots = -b/a; product = c/a.',
+      isVerified: true
+    },
+    {
+      diagramId: 'quad-eq-sub-02',
+      subtopicKey: 'discriminant_triad_nature_of_roots',
+      subtopicTitle: 'The Discriminant Triad (Nature of Roots)',
+      diagramTitle: 'Discriminant Behavior: D > 0, D = 0, and D < 0 Root Regimes',
+      diagramType: 'Algebraic Discriminant Comparison Triad',
+      caption: 'Three distinct geometric cases illustrating how the sign of D = b² - 4ac determines real solutions.',
+      svgXml: svg2,
+      dataUrl: svgToDataUrl(svg2),
+      point1_whatItRepresents: 'The relationship between discriminant value and the number of real roots in a quadratic equation.',
+      point2_labelledParts: [
+        { label: 'Case 1: D > 0', description: 'Two distinct real roots; parabola crosses x-axis at two separate points' },
+        { label: 'Case 2: D = 0', description: 'Two equal real roots (one unique solution); parabola touches x-axis tangentially' },
+        { label: 'Case 3: D < 0', description: 'No real roots (complex roots); parabola hovers completely above or below x-axis' }
+      ],
+      point3_componentFunctions: 'Enables instant prediction of solution types without completing tedious calculations.',
+      point4_componentRelationships: 'Under the square root in the quadratic formula: if D is negative, square root is non-real in ℝ.',
+      point5_directionOfMovementOrProcess: 'Calculate D = b² - 4ac first before choosing quadratic formula or factoring method.',
+      point6_stepByStepInterpretation: [
+        '1. Compute discriminant D = b² - 4ac.',
+        '2. If D > 0: write two distinct real roots x = (-b ± √D)/(2a).',
+        '3. If D = 0: write two identical roots x = -b/(2a).',
+        '4. If D < 0: conclude no real solutions exist in the real number system.'
+      ],
+      point7_learningOutcome: 'Determine root nature and number of x-intercepts using the discriminant formula D = b² - 4ac.',
+      point8_whatToRemember: 'D > 0 = 2 distinct roots; D = 0 = 1 double root; D < 0 = 0 real roots.',
+      isVerified: true
+    },
+    {
+      diagramId: 'quad-eq-sub-03',
+      subtopicKey: 'projectile_motion_trajectory',
+      subtopicTitle: 'Quadratic Applications: Projectile Motion',
+      diagramTitle: 'Projectile Flight Modeling: Maximum Height and Impact Range',
+      diagramType: 'Kinematic Trajectory Parabola Modeling',
+      caption: 'Real-world trajectory demonstrating negative quadratic term (gravity) producing parabolic flight.',
+      svgXml: svg3,
+      dataUrl: svgToDataUrl(svg3),
+      point1_whatItRepresents: 'Physical application of quadratic equations to gravitational projectile motion.',
+      point2_labelledParts: [
+        { label: 'Initial Velocity Vector u', description: 'Launch velocity vector resolved into horizontal and vertical components' },
+        { label: 'Quadratic Term (-½gt²)', description: 'Downwards gravitational acceleration giving the equation its negative leading coefficient' },
+        { label: 'Maximum Height Peak', description: 'Vertex of the parabola where vertical velocity vy = 0' },
+        { label: 'Impact Root (h = 0)', description: 'Positive real root indicating total time of flight before hitting ground' }
+      ],
+      point3_componentFunctions: 'Predicts maximum height, flight duration, and landing point for thrown objects, rockets, and sports balls.',
+      point4_componentRelationships: 'Solving h(t) = 0 yields the launch time (t = 0) and landing time via quadratic formula.',
+      point5_directionOfMovementOrProcess: 'Projectile ascends with decelerating vertical speed, peaks at vertex, and accelerates downward.',
+      point6_stepByStepInterpretation: [
+        '1. Formulate quadratic height function h(t) = -4.9t² + ut + h₀.',
+        '2. Find peak height time using vertex formula t = -b/(2a).',
+        '3. Substitute t to obtain maximum elevation.',
+        '4. Set h(t) = 0 and solve quadratic formula to find flight duration.'
+      ],
+      point7_learningOutcome: 'Model real-world ballistic and optimization problems using quadratic algebra.',
+      point8_whatToRemember: 'Inverted parabola with a < 0 models projectile flight; vertex gives max height; positive root gives flight time.',
+      isVerified: true
+    }
+  ];
+}
+
+// ============================================================================
+// 8. WATER RESOURCES & HYDROLOGY — 3 DEDICATED SUBTOPIC DIAGRAMS
+// ============================================================================
+
+export function getWaterResourcesSubtopicDiagrams(): SubtopicDiagramItem[] {
+  // Diagram 1: Global Hydrological Cycle & Water Budget
+  const svg1 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480">
+    <rect width="800" height="480" rx="20" fill="#0F172A"/>
+    <text x="400" y="36" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Hydrological Cycle &amp; Freshwater Distribution</text>
+    <text x="400" y="58" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">Global Water Budget: 97.5% Saline Oceans • 2.5% Freshwater (68.7% Glaciers, 30.1% Groundwater, 1.2% Surface)</text>
+
+    <!-- Sun (Source of Solar Energy) -->
+    <circle cx="120" cy="120" r="35" fill="#FBBF24"/>
+    <circle cx="120" cy="120" r="48" fill="#FDE047" opacity="0.3"/>
+    <text x="120" y="125" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#78350F" text-anchor="middle">Solar Heat</text>
+
+    <!-- Cloud & Precipitation -->
+    <g transform="translate(420, 100)">
+      <path d="M 20 40 Q 40 10 70 30 Q 100 10 120 40 Q 150 40 140 70 Q 140 100 110 100 L 30 100 Q 0 100 10 70 Z" fill="#E2E8F0"/>
+      <!-- Raindrops -->
+      <line x1="40" y1="120" x2="30" y2="150" stroke="#38BDF8" stroke-width="3" stroke-dasharray="4,6"/>
+      <line x1="70" y1="120" x2="60" y2="150" stroke="#38BDF8" stroke-width="3" stroke-dasharray="4,6"/>
+      <line x1="100" y1="120" x2="90" y2="150" stroke="#38BDF8" stroke-width="3" stroke-dasharray="4,6"/>
+      <text x="75" y="175" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#38BDF8" text-anchor="middle">Precipitation</text>
+    </g>
+
+    <!-- Mountains & Surface Topography -->
+    <polygon points="260,380 400,200 520,380" fill="#334155"/>
+    <polygon points="360,250 400,200 440,250" fill="#FFFFFF"/>
+    <!-- Vegetation & Transpiration -->
+    <path d="M 320 330 C 310 300 350 300 340 330 Z" fill="#22C55E"/>
+    <line x1="330" y1="290" x2="330" y2="260" stroke="#4ADE80" stroke-width="3"/>
+    <polygon points="330,255 325,265 335,265" fill="#4ADE80"/>
+    <text x="330" y="245" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#4ADE80" text-anchor="middle">Transpiration</text>
+
+    <!-- Ocean Reservoir -->
+    <rect x="520" y="320" width="220" height="80" fill="#0284C7"/>
+    <text x="630" y="365" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#FFFFFF" text-anchor="middle">Ocean (97.5%)</text>
+
+    <!-- Evaporation Arrows -->
+    <line x1="630" y1="300" x2="630" y2="180" stroke="#FDE047" stroke-width="3"/>
+    <polygon points="630,175 625,185 635,185" fill="#FDE047"/>
+    <text x="650" y="240" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FDE047">Evaporation</text>
+
+    <!-- Groundwater Infiltration -->
+    <rect x="80" y="380" width="640" height="30" fill="#1E293B" stroke="#475569" stroke-width="1.5"/>
+    <text x="400" y="400" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#94A3B8" text-anchor="middle">Infiltration &amp; Groundwater Recharge (30.1% of Freshwater)</text>
+  </svg>`;
+
+  // Diagram 2: Multipurpose River Valley Project (Dam Cross-Section)
+  const svg2 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480">
+    <rect width="800" height="480" rx="20" fill="#0F172A"/>
+    <text x="400" y="36" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Multipurpose River Valley Project: Dam Architecture</text>
+    <text x="400" y="58" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">Jawaharlal Nehru called Dams "Temples of Modern India" • Hydroelectricity, Irrigation &amp; Flood Control</text>
+
+    <!-- Deep Reservoir (Water Body) -->
+    <rect x="80" y="140" width="220" height="230" fill="#0284C7" opacity="0.85"/>
+    <text x="190" y="240" font-family="Inter, sans-serif" font-size="15" font-weight="900" fill="#FFFFFF" text-anchor="middle">Reservoir Lake</text>
+    <text x="190" y="265" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#BAE6FD" text-anchor="middle">High Potential Energy</text>
+
+    <!-- Concrete Gravity Dam Wall -->
+    <polygon points="300,120 370,120 480,370 300,370" fill="#475569" stroke="#64748B" stroke-width="3"/>
+    <text x="360" y="200" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#F8FAFC" text-anchor="middle" transform="rotate(-45 360 200)">Dam Barrier</text>
+
+    <!-- Penstock Conduit Pipe -->
+    <path d="M 280 280 L 490 330" stroke="#0F172A" stroke-width="22" stroke-linecap="round"/>
+    <path d="M 280 280 L 490 330" stroke="#38BDF8" stroke-width="12" stroke-linecap="round"/>
+    <text x="380" y="305" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#38BDF8">Penstock Pipe</text>
+
+    <!-- Powerhouse with Turbine & Generator -->
+    <rect x="490" y="290" width="130" height="80" rx="8" fill="#1E293B" stroke="#F59E0B" stroke-width="2"/>
+    <circle cx="530" cy="335" r="16" fill="#FDE047"/>
+    <text x="530" y="340" font-family="Inter, sans-serif" font-size="10" font-weight="900" fill="#78350F" text-anchor="middle">Turbine</text>
+    <rect x="560" y="315" width="40" height="40" rx="4" fill="#3B82F6"/>
+    <text x="580" y="340" font-family="Inter, sans-serif" font-size="10" font-weight="900" fill="#FFFFFF" text-anchor="middle">Gen</text>
+
+    <!-- River Tailrace -->
+    <rect x="620" y="340" width="120" height="30" fill="#0284C7" opacity="0.6"/>
+    <text x="680" y="360" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">Tailrace Canal</text>
+
+    <!-- Transmission Powerlines -->
+    <line x1="580" y1="315" x2="680" y2="170" stroke="#EF4444" stroke-width="2"/>
+    <polygon points="680,170 660,220 700,220" fill="none" stroke="#EF4444" stroke-width="2"/>
+    <text x="680" y="150" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#F87171" text-anchor="middle">Electricity Grid</text>
+
+    <rect x="80" y="405" width="640" height="48" rx="8" fill="#1E293B" stroke="#334155" stroke-width="1.5"/>
+    <text x="400" y="428" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#F8FAFC" text-anchor="middle">Multipurpose Benefits: Hydro-power, canal irrigation, drinking water supply, inland navigation, and recreation.</text>
+    <text x="400" y="445" font-family="Inter, sans-serif" font-size="11.5" font-weight="600" fill="#94A3B8" text-anchor="middle">Ecological concerns: Displacement of local communities, submergence of forests, and riverbed siltation.</text>
+  </svg>`;
+
+  // Diagram 3: Rooftop Rainwater Harvesting System
+  const svg3 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480">
+    <rect width="800" height="480" rx="20" fill="#0F172A"/>
+    <text x="400" y="36" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Rooftop Rainwater Harvesting &amp; Artificial Aquifer Recharge</text>
+    <text x="400" y="58" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">Traditional Wisdom (Guls, Kuls, Johads, Tankas) Meets Modern Sustainable Water Conservation</text>
+
+    <!-- House with Sloping Roof -->
+    <polygon points="120,180 240,110 360,180" fill="#B45309" stroke="#D97706" stroke-width="2"/>
+    <rect x="140" y="180" width="200" height="150" fill="#F8FAFC" stroke="#94A3B8" stroke-width="2"/>
+    <rect x="210" y="230" width="60" height="100" fill="#78350F"/>
+    <text x="240" y="160" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#FFFFFF" text-anchor="middle">Catchment Roof</text>
+
+    <!-- Gutter & Conduit Pipe -->
+    <rect x="110" y="175" width="260" height="10" rx="4" fill="#64748B"/>
+    <path d="M 360 185 L 420 185 L 420 280 L 460 280" fill="none" stroke="#38BDF8" stroke-width="6"/>
+
+    <!-- First Flush Valve -->
+    <circle cx="420" cy="240" r="10" fill="#EF4444"/>
+    <text x="400" y="245" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#F87171" text-anchor="end">First Flush</text>
+
+    <!-- Filtration Tank with Layers -->
+    <g transform="translate(460, 240)">
+      <rect width="110" height="110" rx="8" fill="#1E293B" stroke="#38BDF8" stroke-width="2"/>
+      <text x="55" y="22" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#38BDF8" text-anchor="middle">Filter Pit</text>
+      <rect x="10" y="32" width="90" height="18" fill="#E2E8F0"/>
+      <text x="55" y="45" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="#1E293B" text-anchor="middle">Fine Sand</text>
+      <rect x="10" y="52" width="90" height="20" fill="#94A3B8"/>
+      <text x="55" y="66" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="#1E293B" text-anchor="middle">Gravel</text>
+      <rect x="10" y="74" width="90" height="26" fill="#475569"/>
+      <text x="55" y="90" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="#FFFFFF" text-anchor="middle">Boulders</text>
+    </g>
+
+    <!-- Storage Tank & Recharge Well -->
+    <g transform="translate(620, 240)">
+      <rect width="100" height="110" rx="8" fill="#0284C7" stroke="#38BDF8" stroke-width="2"/>
+      <text x="50" y="35" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#FFFFFF" text-anchor="middle">Storage Tank</text>
+      <text x="50" y="55" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#FFFFFF" text-anchor="middle">&amp; Aquifer</text>
+      <text x="50" y="75" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#FFFFFF" text-anchor="middle">Recharge Well</text>
+      <path d="M 50 85 L 50 100" stroke="#FDE047" stroke-width="3"/>
+      <polygon points="50,105 45,98 55,98" fill="#FDE047"/>
+    </g>
+
+    <line x1="570" y1="300" x2="620" y2="300" stroke="#38BDF8" stroke-width="5"/>
+
+    <rect x="80" y="405" width="640" height="48" rx="8" fill="#1E293B" stroke="#334155" stroke-width="1.5"/>
+    <text x="400" y="428" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#F8FAFC" text-anchor="middle">Sustainable Conservation: Capturing rain where it falls prevents urban runoff, raises the water table, and combats water scarcity.</text>
+    <text x="400" y="445" font-family="Inter, sans-serif" font-size="11.5" font-weight="600" fill="#94A3B8" text-anchor="middle">Mandatory in states like Tamil Nadu; widely practiced in arid Rajasthan (Tankas of Bikaner, Phalodi, and Barmer).</text>
+  </svg>`;
+
+  return [
+    {
+      diagramId: 'water-res-sub-01',
+      subtopicKey: 'hydrological_cycle_freshwater_budget',
+      subtopicTitle: 'The Hydrological Cycle & Global Water Budget',
+      diagramTitle: 'Freshwater Allocation: Planetary Water Cycle & Scarcity Dynamics',
+      diagramType: 'Geographical Hydrological Cycle Diagram',
+      caption: 'Continuous planetary circulation of water powered by solar energy, showing ocean reservoir, atmospheric transport, and groundwater.',
+      svgXml: svg1,
+      dataUrl: svgToDataUrl(svg1),
+      point1_whatItRepresents: 'Global water cycle driving renewable freshwater distribution and atmospheric balance.',
+      point2_labelledParts: [
+        { label: 'Solar Evaporation', description: 'Thermal energy vaporizes water from oceans (97.5% of total water volume)' },
+        { label: 'Plant Transpiration', description: 'Biotic water vapor release from vegetation canopy into atmosphere' },
+        { label: 'Precipitation', description: 'Condensed cloud droplets falling as rain, snow, or hail' },
+        { label: 'Groundwater Infiltration', description: 'Surface runoff soaking through permeable strata into underlying aquifers' }
+      ],
+      point3_componentFunctions: 'Replenishes terrestrial freshwater reservoirs essential for agriculture, ecosystems, and human civilization.',
+      point4_componentRelationships: 'Only 2.5% of global water is freshwater, with over 68% trapped in polar ice caps and glaciers.',
+      point5_directionOfMovementOrProcess: 'Closed cyclical loop: oceans → atmosphere → land surface → rivers and aquifers → oceans.',
+      point6_stepByStepInterpretation: [
+        '1. Solar heat vaporizes oceanic and surface water.',
+        '2. Rising vapor cools and condenses into cloud formations.',
+        '3. Clouds precipitate water over landforms and mountains.',
+        '4. Runoff drains into rivers and percolates into groundwater aquifers.'
+      ],
+      point7_learningOutcome: 'Understand why water is a renewable resource yet vulnerable to overexploitation and pollution.',
+      point8_whatToRemember: 'Freshwater is only 2.5% of total water; water cycle renews it, but over-extraction causes water stress.',
+      isVerified: true
+    },
+    {
+      diagramId: 'water-res-sub-02',
+      subtopicKey: 'multipurpose_river_valley_dams',
+      subtopicTitle: 'Multipurpose River Valley Projects & Dams',
+      diagramTitle: 'Hydraulic Dam Architecture: Storage Reservoir, Penstock and Hydroelectricity',
+      diagramType: 'Civil Hydraulic Engineering Cross-Section',
+      caption: 'Engineered concrete barrier capturing river potential energy for flood control, canal irrigation, and hydroelectric generation.',
+      svgXml: svg2,
+      dataUrl: svgToDataUrl(svg2),
+      point1_whatItRepresents: 'Cross-section of a multipurpose river project integrating water storage and clean energy conversion.',
+      point2_labelledParts: [
+        { label: 'Reservoir', description: 'Large artificial lake impounding monsoon river volume for dry-season distribution' },
+        { label: 'Concrete Dam Wall', description: 'Massive hydraulic structure engineered to withstand immense hydrostatic pressure' },
+        { label: 'Penstock Conduit', description: 'Pressurized steel or concrete pipe delivering water to turbine runner blades' },
+        { label: 'Turbine & Generator', description: 'Kinetic energy converter driving electromagnetic electricity generation' },
+        { label: 'Tailrace Canal', description: 'Discharge channel returning de-energized water back to river or irrigation canals' }
+      ],
+      point3_componentFunctions: 'Controls seasonal flooding, generates non-fossil electrical power, and sustains intensive agriculture.',
+      point4_componentRelationships: 'High head height in the reservoir maximizes gravitational potential energy convertibility.',
+      point5_directionOfMovementOrProcess: 'Water flows down penstock under gravity, rotates turbine runners, and exits downstream.',
+      point6_stepByStepInterpretation: [
+        '1. River flow impounded behind concrete gravity dam wall.',
+        '2. Controlled sluice gates admit water into steep penstock pipes.',
+        '3. High-velocity water spins turbine runner connected to alternator.',
+        '4. Generated electrical current stepped up for national grid transmission.'
+      ],
+      point7_learningOutcome: 'Evaluate the dual economic benefits and ecological challenges of major multipurpose dams.',
+      point8_whatToRemember: 'Dams serve flood control, irrigation, and power; but cause displacement, siltation, and ecological disruption.',
+      isVerified: true
+    },
+    {
+      diagramId: 'water-res-sub-03',
+      subtopicKey: 'rooftop_rainwater_harvesting_aquifer',
+      subtopicTitle: 'Rooftop Rainwater Harvesting & Sustainable Aquifer Recharge',
+      diagramTitle: 'Decentralized Rainwater Harvesting: Catchment, Filtration and Aquifer Recharge',
+      diagramType: 'Sustainable Environmental Water Conservation Schematic',
+      caption: 'Decentralized community system capturing clean rooftop rainfall, filtering through sand and gravel, and recharging local wells.',
+      svgXml: svg3,
+      dataUrl: svgToDataUrl(svg3),
+      point1_whatItRepresents: 'Community-scale sustainable rainwater harvesting combining rooftop catchment with natural multi-layer filtration.',
+      point2_labelledParts: [
+        { label: 'Rooftop Catchment', description: 'Sloping or flat building roof serving as primary clean rainwater collection surface' },
+        { label: 'First Flush Separator', description: 'Valve diverting initial dirty runoff carrying atmospheric dust away from storage' },
+        { label: 'Filter Pit (Sand, Gravel, Boulders)', description: 'Multi-tiered natural media removing suspended silt and particulate contaminants' },
+        { label: 'Recharge Well / Storage Tanka', description: 'Underground chamber storing potable water or directly recharging depleted aquifers' }
+      ],
+      point3_componentFunctions: 'Arrests declining water tables, prevents urban flash flooding, and secures drought resilience.',
+      point4_componentRelationships: 'Recharging aquifers raises the static water level in surrounding community borewells.',
+      point5_directionOfMovementOrProcess: 'Rainfall moves from roof → gutters → filter pit → underground storage / groundwater aquifer.',
+      point6_stepByStepInterpretation: [
+        '1. Rain collects on clean roof and flows into perimeter conduit gutters.',
+        '2. First flush device diverts initial 15-minute debris-laden runoff.',
+        '3. Water enters multi-layer filter bed (fine sand, gravel, and stone boulders).',
+        '4. Filtered water drains into storage sump or percolation well recharging the water table.'
+      ],
+      point7_learningOutcome: 'Design and explain decentralized rainwater harvesting techniques for domestic and rural water security.',
+      point8_whatToRemember: 'Rooftop harvesting catches rain where it falls; filter pit uses sand and gravel; recharges groundwater aquifers.',
+      isVerified: true
+    }
+  ];
+}

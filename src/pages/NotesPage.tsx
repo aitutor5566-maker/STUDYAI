@@ -62,6 +62,7 @@ import {
 import { TopBrandBar } from '../components/GlassNav';
 import { FuturisticIcon } from '../components/FuturisticIcons';
 import { StudyAiAssistantCharacter } from '../components/StudyAiAssistantCharacter';
+import { EducationalMarkdownRenderer } from '../components/EducationalMarkdownRenderer';
 import { useLearning } from '../context/LearningContext';
 
 interface PendingSourceItem {
@@ -118,6 +119,7 @@ export const NotesPage: React.FC = () => {
 
   // Full-Screen Digital Textbook & PDF Reader State (Prompt Requirement)
   const [readerViewMode, setReaderViewMode] = useState<'paged' | 'continuous'>('continuous');
+  const [continuousRenderStyle, setContinuousRenderStyle] = useState<'textbook' | 'sections'>('textbook');
   const [currentPageIdx, setCurrentPageIdx] = useState<number>(0);
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [isFullScreenReader, setIsFullScreenReader] = useState<boolean>(false);
@@ -310,11 +312,31 @@ export const NotesPage: React.FC = () => {
       setNotes(list);
 
       const requestedId = searchParams.get('id');
+      const requestedTopic = searchParams.get('topic');
       if (requestedId) {
         const found = list.find((n) => n.id === requestedId);
         if (found) {
           selectNoteForEditing(found);
           setDashboardMode('notebook');
+          setNotebookSubTab('full');
+          setReaderViewMode('continuous');
+        }
+      } else if (requestedTopic) {
+        const cleanReqTopic = requestedTopic.trim().toLowerCase();
+        const found = list.find(
+          (n) =>
+            (n.topic || '').toLowerCase() === cleanReqTopic ||
+            (n.title || '').toLowerCase() === cleanReqTopic ||
+            (n.topic || '').toLowerCase().includes(cleanReqTopic)
+        );
+        if (found) {
+          selectNoteForEditing(found);
+          setDashboardMode('notebook');
+          setNotebookSubTab('full');
+          setReaderViewMode('continuous');
+        } else if (searchParams.get('auto') === 'true' && !generating) {
+          // Auto-trigger generation so clicking from Home generates note immediately
+          handleGenerateNotebook(undefined, requestedTopic.trim());
         }
       } else if (activeNote) {
         const refreshed = list.find((n) => n.id === activeNote.id);
@@ -543,9 +565,10 @@ export const NotesPage: React.FC = () => {
   };
 
   // Main Generator Form Submission (Section 7, 8 & 15)
-  const handleGenerateNotebook = async (e?: React.FormEvent) => {
+  const handleGenerateNotebook = async (e?: React.FormEvent, overrideTopic?: string) => {
     if (e) e.preventDefault();
     const effectiveTopic =
+      overrideTopic?.trim() ||
       heroPrompt.trim() ||
       pendingSources[0]?.title ||
       'Comprehensive Study Notebook';
@@ -2745,6 +2768,37 @@ export const NotesPage: React.FC = () => {
                 </p>
               </header>
 
+              {/* View Mode Toggle: Formatted Digital Textbook vs Interactive Section Cards */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, padding: '10px 14px', background: '#F8FAFC', borderRadius: 14, border: '1px solid #E2E8F0', flexWrap: 'wrap', gap: 10 }}>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setContinuousRenderStyle('textbook')}
+                    className={`filter-pill ${continuousRenderStyle === 'textbook' ? 'active' : ''}`}
+                    style={{ padding: '7px 16px', fontSize: '0.8rem', fontWeight: 800 }}
+                  >
+                    📜 Full Formatted Textbook
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setContinuousRenderStyle('sections')}
+                    className={`filter-pill ${continuousRenderStyle === 'sections' ? 'active' : ''}`}
+                    style={{ padding: '7px 16px', fontSize: '0.8rem', fontWeight: 800 }}
+                  >
+                    🗂️ Interactive Section Cards
+                  </button>
+                </div>
+                <span style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 700 }}>
+                  {continuousRenderStyle === 'textbook' ? 'Rich parsed textbook • LaTeX equations • Verified diagrams' : 'Interactive syllabus section cards'}
+                </span>
+              </div>
+
+              {continuousRenderStyle === 'textbook' && activeNote.content_markdown ? (
+                <div style={{ padding: '8px 2px' }}>
+                  <EducationalMarkdownRenderer content={activeNote.content_markdown} />
+                </div>
+              ) : (
+                <>
               {/* 1. Interactive Table of Contents (Single-Page Continuous Study Guide) */}
               <nav
                 style={{
@@ -3355,8 +3409,10 @@ export const NotesPage: React.FC = () => {
                   </section>
                 )}
               </div>
-            </div>
+            </>
           )}
+        </div>
+      )}
 
               {/* Synchronized Notes Audio Narration Player Bar (Docked Floating Player) */}
               {notesAudioOpen && (

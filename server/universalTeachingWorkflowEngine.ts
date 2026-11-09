@@ -1585,6 +1585,81 @@ function buildMainDefinitionForTopic(topic: string, subject: string) {
     };
   }
 
+  if (l.includes('chemical reaction') || (l.includes('equation') && l.includes('chemical'))) {
+    return {
+      academicDefinition: 'A chemical reaction is a process in which one or more substances (reactants) undergo chemical bond breaking and reforming to yield one or more new substances (products) with entirely distinct chemical identities, governed strictly by the Law of Conservation of Mass.',
+      simpleLanguageExplanation: 'In simple everyday words, a chemical reaction is a permanent change where starting substances transform into new substances with new properties, like when iron rusts or milk turns into curd.',
+      keyWordMeanings: [
+        { word: 'Reactant', meaning: 'Substances that participate and undergo chemical change during a reaction.' },
+        { word: 'Product', meaning: 'The new chemical substances formed as a result of the chemical transformation.' },
+        { word: 'Balanced Equation', meaning: 'An equation where the total number of atoms of each element is identical on reactant and product sides.' },
+        { word: 'Precipitate', meaning: 'An insoluble solid that separates out from a liquid solution during a double displacement reaction.' }
+      ],
+      coreExample: 'Burning a magnesium ribbon in air to produce a white powder of basic magnesium oxide (2Mg + O₂ → 2MgO).',
+      practicalInterpretation: 'Balancing chemical equations ensures chemical engineers and pharmacists synthesize exact dosages without wasting raw materials.'
+    };
+  }
+
+  if (l.includes('quadratic')) {
+    return {
+      academicDefinition: 'A quadratic equation in variable x is a second-degree polynomial equation of the canonical form ax² + bx + c = 0, where a, b, c are real coefficients and a ≠ 0, possessing exactly two roots (real or complex) determined by the quadratic formula x = (-b ± √(b² - 4ac)) / (2a).',
+      simpleLanguageExplanation: 'In simple everyday words, a quadratic equation is any math equation where the highest power of x is squared (x²), which produces a symmetrical U-shaped curved graph called a parabola.',
+      keyWordMeanings: [
+        { word: 'Degree of Polynomial', meaning: 'The highest exponent of the variable present in the polynomial equation (degree = 2 for quadratics).' },
+        { word: 'Discriminant (D)', meaning: 'The algebraic quantity b² - 4ac that determines whether roots are real, equal, or non-real.' },
+        { word: 'Vertex', meaning: 'The peak maximum or lowest minimum turning point on a parabola located at x = -b/(2a).' },
+        { word: 'Zeroes / Roots', meaning: 'The x-values that make the quadratic polynomial evaluate to zero (the x-intercepts of the graph).' }
+      ],
+      coreExample: 'Calculating how high a kicked football flies and when it lands on the ground using the height function h(t) = -4.9t² + 20t.',
+      practicalInterpretation: 'Civil engineers use quadratic parabolas to design suspension bridge cables and satellite dish focal points.'
+    };
+  }
+
+  if (l.includes('electricity') || l.includes('circuit')) {
+    return {
+      academicDefinition: 'Electricity is the physical phenomenon associated with the presence and macroscopic flow of electric charges, characterized by electric current (I = Q/t), potential difference (V = W/Q), and electrical resistance (R = ρ·L/A) obeying Ohm\'s Law V = I·R under constant physical temperature.',
+      simpleLanguageExplanation: 'In simple everyday words, electricity is the flow of millions of tiny invisible electrons through metal wires that carries power to lights, fans, computers, and electric cars.',
+      keyWordMeanings: [
+        { word: 'Electric Current (I)', meaning: 'The rate of flow of electric charge through a cross-section of conductor, measured in Amperes (A).' },
+        { word: 'Potential Difference (V)', meaning: 'The work done per unit charge in moving a unit positive charge between two points, measured in Volts (V).' },
+        { word: 'Resistance (R)', meaning: 'The opposition offered by a conductor to the passage of electric current, measured in Ohms (Ω).' },
+        { word: 'Ohm\'s Law', meaning: 'Current is directly proportional to potential difference across a conductor, provided temperature remains constant.' }
+      ],
+      coreExample: 'Plugging in a toaster where current flowing through nichrome resistance wire converts electrical energy into heat.',
+      practicalInterpretation: 'Ohm\'s Law and circuit topologies allow engineers to safely distribute electric power across cities and silicon microchips.'
+    };
+  }
+
+  if (l.includes('french revolution') || l.includes('bastille')) {
+    return {
+      academicDefinition: 'The French Revolution (1789–1799) was a period of revolutionary social and political transformation in France that dismantled the feudal Ancien Régime, eliminated royal absolutism, proclaimed the Declaration of the Rights of Man, and established modern secular democratic nationalism based on Liberté, Égalité, Fraternité.',
+      simpleLanguageExplanation: 'In simple everyday words, the French Revolution was when ordinary citizens and peasants in France rose up against heavy taxes and an unfair king, storming the Bastille prison and giving birth to modern human rights.',
+      keyWordMeanings: [
+        { word: 'Third Estate', meaning: 'The 98% of the French population (peasants, workers, and bourgeoisie) who bore almost the entire tax burden.' },
+        { word: 'Storming of the Bastille', meaning: 'On 14 July 1789, citizens stormed the medieval royal fortress-prison, symbol of despotic royal tyranny.' },
+        { word: 'Tithe & Taille', meaning: 'Tithe was a religious tax of one-tenth of agricultural produce levied by the church; Taille was a direct tax to the state.' },
+        { word: 'Estates General', meaning: 'The ancient French representative assembly of the three estates summoned by King Louis XVI in May 1789.' }
+      ],
+      coreExample: 'The creation of the National Assembly on the Tennis Court of Versailles pledging not to disband until drafting a constitution.',
+      practicalInterpretation: 'The French Revolution gave the world the modern metric system, democratic voting rights, and the idea of universal human rights.'
+    };
+  }
+
+  if (l.includes('water resource')) {
+    return {
+      academicDefinition: 'Water resources encompass the aggregate terrestrial volume of freshwater (surface runoff, inland lakes, rivers, and underground aquifers) accessible for agrarian cultivation, industrial manufacture, municipal consumption, and ecological sustenance, renewed continuously by the planetary hydrological cycle.',
+      simpleLanguageExplanation: 'In simple everyday words, water resources are the freshwater from rivers, rain, lakes, and underground wells that we must preserve carefully because only 2.5% of all water on Earth is fresh and drinkable.',
+      keyWordMeanings: [
+        { word: 'Hydrological Cycle', meaning: 'The solar-powered planetary circulation of water between oceans, atmosphere, and land via evaporation and rain.' },
+        { word: 'Water Scarcity', meaning: 'A deficiency in water quantity or quality when demand exceeds available renewable resources in a geographic region.' },
+        { word: 'Multipurpose Dam', meaning: 'A major river barrier designed simultaneously for flood mitigation, hydroelectricity generation, and canal irrigation.' },
+        { word: 'Rainwater Harvesting', meaning: 'The sustainable technique of collecting and storing rainwater from rooftops and land to recharge depleted groundwater.' }
+      ],
+      coreExample: 'Rooftop rainwater harvesting in Rajasthan using underground tankas to store clean drinking water through dry summer months.',
+      practicalInterpretation: 'Water conservation prevents agricultural collapse and ensures future generations have clean drinking water.'
+    };
+  }
+
   return {
     academicDefinition: `${topic} is scientifically defined as the governing mechanism wherein specific structural inputs undergo controlled interaction or transformation to produce verified outcomes under conservation laws.`,
     simpleLanguageExplanation: `In simple everyday words, ${topic} explains how different parts work together step by step to produce a measurable, predictable result in the natural world.`,
@@ -1920,6 +1995,104 @@ function buildComparisonsForTopic(topic: string, subject: string) {
         'Veins must have one-way pocket valves because venous pressure is too low to overcome gravity on its own.'
       ],
       summaryTakeaway: 'Arteries carry blood Away (thick, no valves); Veins Visit the heart (thin, with valves).'
+    };
+  }
+
+  if (l.includes('chemical reaction') || (l.includes('equation') && l.includes('chemical'))) {
+    return {
+      title: 'Combination vs. Decomposition Reactions Comparison Matrix',
+      conceptA: 'Combination Reaction (Synthesis)',
+      conceptB: 'Decomposition Reaction (Analysis)',
+      rows: [
+        { aspect: 'Number of Reactants', itemA: 'Two or more elements/compounds combine (A + B → AB)', itemB: 'A single compound reactant breaks down (AB → A + B)' },
+        { aspect: 'Number of Products', itemA: 'Always exactly ONE single product formed', itemB: 'Two or more simpler products formed' },
+        { aspect: 'Thermal Nature', itemA: 'Predominantly exothermic (releases energy as heat/light)', itemB: 'Predominantly endothermic (absorbs heat, light, or electricity)' },
+        { aspect: 'Energy Requirement', itemA: 'Spontaneous once activation energy is supplied', itemB: 'Requires continuous energy input (Thermal, Photolytic, Electrolytic)' },
+        { aspect: 'NCERT Textbook Example', itemA: '2Mg(s) + O₂(g) → 2MgO(s)', itemB: '2Pb(NO₃)₂(s) → 2PbO(s) + 4NO₂(g) + O₂(g)' }
+      ],
+      causeAndEffectNotes: [
+        'Decomposition is the exact chemical reverse of combination synthesis.',
+        'Thermal decomposition of lead nitrate releases characteristic brown fumes of nitrogen dioxide (NO₂) gas.'
+      ],
+      summaryTakeaway: 'Combination PUTS TOGETHER into 1 product; Decomposition BREAKS DOWN into multiple products.'
+    };
+  }
+
+  if (l.includes('quadratic')) {
+    return {
+      title: 'Factoring Method vs. Quadratic Formula Comparison Matrix',
+      conceptA: 'Factoring / Splitting Middle Term',
+      conceptB: 'Quadratic Formula x = (-b ± √D) / 2a',
+      rows: [
+        { aspect: 'Applicability', itemA: 'Fastest when roots are rational and factors are obvious', itemB: 'Universal; works for all quadratic equations without exception' },
+        { aspect: 'Prerequisite Condition', itemA: 'Discriminant D = b² - 4ac must be a perfect square', itemB: 'Applicable whether D is square, non-square, zero, or negative' },
+        { aspect: 'Calculation Complexity', itemA: 'Simple mental math for integer coefficients', itemB: 'Requires systematic radical computation and fractions' },
+        { aspect: 'Nature of Output', itemA: 'Direct linear binomial factors (x - α)(x - β) = 0', itemB: 'Explicit algebraic values for both roots directly' }
+      ],
+      causeAndEffectNotes: [
+        'If splitting the middle term fails within 30 seconds, immediately apply the Quadratic Formula.',
+        'Checking the discriminant D first prevents wasting time searching for non-existent rational factors.'
+      ],
+      summaryTakeaway: 'Use factoring when D is a perfect square; use Quadratic Formula for all difficult or irrational roots.'
+    };
+  }
+
+  if (l.includes('electricity') || l.includes('circuit')) {
+    return {
+      title: 'Series Circuit vs. Parallel Circuit Comparison Matrix',
+      conceptA: 'Series Connection (Single Pathway)',
+      conceptB: 'Parallel Connection (Branched Pathways)',
+      rows: [
+        { aspect: 'Current Flow (I)', itemA: 'Same current flows through all components (I = I₁ = I₂)', itemB: 'Current divides across branches (I = I₁ + I₂ + I₃)' },
+        { aspect: 'Potential Difference (V)', itemA: 'Voltage divides across resistors (V = V₁ + V₂)', itemB: 'Same voltage across every branch (V = V₁ = V₂)' },
+        { aspect: 'Equivalent Resistance', itemA: 'Rs = R₁ + R₂ + ... (Always greater than largest R)', itemB: '1/Rp = 1/R₁ + 1/R₂ + ... (Always smaller than smallest R)' },
+        { aspect: 'Fault Consequence', itemA: 'If one bulb fuses, entire circuit breaks and turns off', itemB: 'If one appliance fuses, all other branches continue working' },
+        { aspect: 'Practical Application', itemA: 'Decorative fairy lights, safety fuses', itemB: 'Domestic household wiring' }
+      ],
+      causeAndEffectNotes: [
+        'Household appliances are connected in parallel so each operates at the full 220V mains supply with independent switches.',
+        'Series wiring would cause excessive total resistance and diminish light output in all bulbs.'
+      ],
+      summaryTakeaway: 'Series: Same Current, shared Voltage; Parallel: Same Voltage, shared Current.'
+    };
+  }
+
+  if (l.includes('french revolution') || l.includes('bastille')) {
+    return {
+      title: 'Ancien Régime Absolute Monarchy vs. Constitutional Republic',
+      conceptA: 'Ancien Régime (Pre-1789)',
+      conceptB: 'Constitutional Republic (Post-1789)',
+      rows: [
+        { aspect: 'Sovereignty Source', itemA: 'Divine Right of Kings (Monarch answerable only to God)', itemB: 'Popular Sovereignty (Power resides in the citizenry)' },
+        { aspect: 'Social Hierarchy', itemA: 'Rigid Three Estates with birth-based feudal privileges', itemB: 'Universal civic equality before the law (Égalité)' },
+        { aspect: 'Taxation Structure', itemA: 'Third Estate bore almost 100% of taxes (Tithe & Taille)', itemB: 'Equitable taxation proportional to income and property' },
+        { aspect: 'Legislative Authority', itemA: 'King had absolute unchecked veto power', itemB: 'Elected National Assembly framing constitutional law' }
+      ],
+      causeAndEffectNotes: [
+        'The bankruptcy of the French treasury under King Louis XVI forced the summoning of the Estates General, triggering the revolution.',
+        'The Fall of the Bastille on 14 July 1789 symbolized the irrevocable destruction of royal tyranny.'
+      ],
+      summaryTakeaway: 'The Revolution transformed French subjects into participating democratic citizens.'
+    };
+  }
+
+  if (l.includes('water resource')) {
+    return {
+      title: 'Traditional Rainwater Harvesting vs. Large Multipurpose Dams',
+      conceptA: 'Traditional Rainwater Harvesting',
+      conceptB: 'Large Multipurpose River Dams',
+      rows: [
+        { aspect: 'Scale & Ownership', itemA: 'Decentralized community-owned or individual household', itemB: 'Centralized mega-infrastructure funded by government' },
+        { aspect: 'Ecological Impact', itemA: 'Negligible environmental disturbance; recharges aquifers', itemB: 'Large-scale submergence of forests and soil erosion' },
+        { aspect: 'Human Displacement', itemA: 'Zero displacement of indigenous local populations', itemB: 'Mass displacement of tribal and farming communities' },
+        { aspect: 'Capital & Maintenance', itemA: 'Low capital expenditure; easy local maintenance', itemB: 'Massive capital outlay; prone to reservoir siltation' },
+        { aspect: 'Regional Examples', itemA: 'Guls/Kuls in Himalayas, Tankas/Johads in Rajasthan', itemB: 'Bhakra Nangal, Hirakud, Sardar Sarovar Project' }
+      ],
+      causeAndEffectNotes: [
+        'Rainwater harvesting captures monsoon rain where it falls, raising groundwater tables sustainably without submerging valleys.',
+        'While dams provide vital hydroelectric energy, localized harvesting ensures drought resilience for small farmers.'
+      ],
+      summaryTakeaway: 'Dams deliver concentrated industrial power; Rainwater harvesting delivers decentralized, sustainable water security.'
     };
   }
 

@@ -147,7 +147,7 @@ export const HomePage: React.FC = () => {
       subtitle: 'Deep Textbook & Revision',
       tag: 'Progressive Notes',
       iconName: 'notes',
-      onClick: () => navigate(`/notes?topic=${encodeURIComponent(heroTopicInput || activeTopic)}`)
+      onClick: () => navigate(`/notes?topic=${encodeURIComponent(heroTopicInput || activeTopic)}&auto=true`)
     },
     {
       label: 'Academic Games',
@@ -413,7 +413,7 @@ export const HomePage: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => navigate(`/notes?topic=${encodeURIComponent(heroTopicInput || activeTopic)}`)}
+                onClick={() => navigate(`/notes?topic=${encodeURIComponent(heroTopicInput || activeTopic)}&auto=true`)}
                 className="btn-glass"
                 style={{ padding: '10px 18px', fontSize: '0.88rem' }}
               >
@@ -771,7 +771,7 @@ export const HomePage: React.FC = () => {
                   <div
                     key={act.id}
                     onClick={() => {
-                      if (act.activity_type === 'note') navigate(`/notes?topic=${encodeURIComponent(act.topic)}`);
+                      if (act.activity_type === 'note') navigate(`/notes?topic=${encodeURIComponent(act.topic)}&auto=true`);
                       else navigate(`/tutor?topic=${encodeURIComponent(act.topic)}`);
                     }}
                     style={{
