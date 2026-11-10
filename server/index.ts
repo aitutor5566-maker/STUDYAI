@@ -2449,6 +2449,44 @@ export function createAppServer() {
         };
       };
 
+      // Lightweight Note Summary for Gallery / Dashboard list view (prevents memory spikes)
+      const enrichNoteRowSummary = (r: any) => {
+        let parsedStructured: any = {};
+        try {
+          parsedStructured = JSON.parse(r.structured_json || '{}');
+        } catch {
+          parsedStructured = {};
+        }
+
+        const images = Array.isArray(parsedStructured.images) && parsedStructured.images.length > 0
+          ? parsedStructured.images
+          : (parsedStructured.imageUrl ? [{ imageUrl: parsedStructured.imageUrl, caption: r.title }] : []);
+
+        const sectionsCount = Array.isArray(parsedStructured.sections) && parsedStructured.sections.length > 0
+          ? parsedStructured.sections.length
+          : (Array.isArray(parsedStructured.subtopics) ? parsedStructured.subtopics.length : 5);
+
+        return {
+          id: r.id,
+          user_id: r.user_id,
+          title: r.title,
+          topic: r.topic,
+          subject: r.subject,
+          notebook: r.notebook,
+          source_type: r.source_type,
+          created_at: r.created_at,
+          updated_at: r.updated_at,
+          designMode: r.design_mode || parsedStructured.designMode || 'handwritten',
+          thumbnail_url: images[0]?.imageUrl || parsedStructured.imageUrl || null,
+          structured: {
+            summary: parsedStructured.summary || r.title,
+            imageUrl: parsedStructured.imageUrl || (images[0]?.imageUrl || null),
+            images,
+            sections: new Array(sectionsCount).fill(null).map((_, i) => ({ id: `s-${i+1}` }))
+          }
+        };
+      };
+
       // ==============================================================================
       // UNIVERSAL TEACHING WORKFLOW API (14-STAGE CANONICAL ENGINE)
       // ==============================================================================
@@ -2630,20 +2668,24 @@ export function createAppServer() {
       if ((pathname === '/api/notes' || effectivePathname === '/api/notes') && req.method === 'GET') {
         const subjectFilter = parsedUrl.searchParams.get('subject');
         const q = (parsedUrl.searchParams.get('q') || '').trim().toLowerCase();
-        let rows = db.prepare('SELECT * FROM notes WHERE user_id = ? ORDER BY updated_at DESC').all(studentId) as any[];
+
+        let sql = 'SELECT id, user_id, title, topic, subject, notebook, source_type, created_at, updated_at, structured_json FROM notes WHERE user_id = ?';
+        const params: any[] = [studentId];
+
         if (subjectFilter && subjectFilter !== 'All') {
-          rows = rows.filter((r) => r.subject.toLowerCase() === subjectFilter.toLowerCase() || r.notebook.toLowerCase() === subjectFilter.toLowerCase());
+          sql += ' AND (LOWER(subject) = ? OR LOWER(notebook) = ?)';
+          params.push(subjectFilter.toLowerCase(), subjectFilter.toLowerCase());
         }
+
         if (q) {
-          rows = rows.filter(
-            (r) =>
-              r.title.toLowerCase().includes(q) ||
-              r.topic.toLowerCase().includes(q) ||
-              r.subject.toLowerCase().includes(q) ||
-              r.content_markdown.toLowerCase().includes(q)
-          );
+          sql += ' AND (LOWER(title) LIKE ? OR LOWER(topic) LIKE ? OR LOWER(subject) LIKE ?)';
+          const wild = `%${q}%`;
+          params.push(wild, wild, wild);
         }
-        const notes = rows.map(enrichExistingNoteRow);
+
+        sql += ' ORDER BY updated_at DESC LIMIT 80';
+        const rows = db.prepare(sql).all(...params) as any[];
+        const notes = rows.map(enrichNoteRowSummary);
         sendJson(res, 200, notes);
         return;
       }
@@ -4662,34 +4704,50 @@ export function createAppServer() {
       if (pathname === '/api/library' && req.method === 'GET') {
         const typeFilter = parsedUrl.searchParams.get('type');
         const q = (parsedUrl.searchParams.get('q') || '').trim().toLowerCase();
-        let rows = db.prepare('SELECT * FROM library_resources WHERE user_id = ? ORDER BY created_at DESC').all(studentId) as any[];
+
+        // Optimized: compute category counts in SQLite without loading full rows
+        const typeCounts = db.prepare('SELECT resource_type, COUNT(*) as c FROM library_resources WHERE user_id = ? GROUP BY resource_type').all(studentId) as Array<{ resource_type: string; c: number }>;
+        const countMap: Record<string, number> = {};
+        let totalCount = 0;
+        for (const tc of typeCounts) {
+          countMap[tc.resource_type] = tc.c;
+          totalCount += tc.c;
+        }
 
         const counts = {
-          all: rows.length,
-          note: rows.filter((r) => r.resource_type === 'note').length,
-          image: rows.filter((r) => r.resource_type === 'image').length,
-          video: rows.filter((r) => r.resource_type === 'video').length,
-          model3d: rows.filter((r) => r.resource_type === 'model3d').length,
-          audio: rows.filter((r) => r.resource_type === 'audio').length,
-          quiz: rows.filter((r) => r.resource_type === 'quiz').length,
-          game: rows.filter((r) => r.resource_type === 'game').length
+          all: totalCount,
+          note: countMap['note'] || 0,
+          image: countMap['image'] || 0,
+          video: countMap['video'] || 0,
+          model3d: countMap['model3d'] || 0,
+          audio: countMap['audio'] || 0,
+          quiz: countMap['quiz'] || 0,
+          game: countMap['game'] || 0
         };
 
+        let sql = 'SELECT id, user_id, title, topic, subject, resource_type, summary, media_url, created_at, content_json FROM library_resources WHERE user_id = ?';
+        const params: any[] = [studentId];
+
         if (typeFilter && typeFilter !== 'all') {
-          rows = rows.filter((r) => r.resource_type === typeFilter);
+          sql += ' AND resource_type = ?';
+          params.push(typeFilter);
         }
         if (q) {
-          rows = rows.filter(
-            (r) =>
-              r.title.toLowerCase().includes(q) ||
-              r.topic.toLowerCase().includes(q) ||
-              r.subject.toLowerCase().includes(q) ||
-              r.summary.toLowerCase().includes(q)
-          );
+          sql += ' AND (LOWER(title) LIKE ? OR LOWER(topic) LIKE ? OR LOWER(subject) LIKE ? OR LOWER(summary) LIKE ?)';
+          const wild = `%${q}%`;
+          params.push(wild, wild, wild, wild);
         }
 
+        sql += ' ORDER BY created_at DESC LIMIT 80';
+        const rows = db.prepare(sql).all(...params) as any[];
+
         const items = rows.map((r) => {
-          const parsedContent = JSON.parse(r.content_json || '{}');
+          let parsedContent: any = {};
+          try {
+            parsedContent = JSON.parse(r.content_json || '{}');
+          } catch {
+            parsedContent = {};
+          }
           let thumbnailUrl = r.media_url && r.media_url.startsWith('data:image/') ? r.media_url : null;
           if (!thumbnailUrl && parsedContent.imageUrl) {
             thumbnailUrl = parsedContent.imageUrl;
@@ -4698,8 +4756,7 @@ export function createAppServer() {
             thumbnailUrl = parsedContent.scenes[0].sceneImageUrl;
           }
           if (!thumbnailUrl) {
-            const generatedSvg = generateScientificSvgDataUrl(r.topic || r.title, r.summary || r.title);
-            thumbnailUrl = generatedSvg.dataUrl;
+            thumbnailUrl = `/api/images/diagram?topic=${encodeURIComponent(r.topic || r.title)}&subject=${encodeURIComponent(r.subject || 'Science')}`;
           }
           return {
             ...r,
