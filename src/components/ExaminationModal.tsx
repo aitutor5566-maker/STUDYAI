@@ -367,6 +367,28 @@ export const ExaminationModal: React.FC<ExaminationModalProps> = ({
     setShowConfirmSubmit(false);
     setLoading(true);
 
+    try {
+      const res = await apiFetch<any>('/api/examinations/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          exam_id: activeExam?.id,
+          exam: activeExam,
+          answers,
+          duration_seconds: Math.max(10, ((activeExam?.duration_minutes || 45) * 60) - timeRemaining)
+        })
+      });
+
+      if (res?.submission) {
+        setExamResult(res.submission);
+        setExamSubmitted(true);
+        setLoading(false);
+        return;
+      }
+    } catch (err) {
+      console.warn('Backend authoritative exam evaluation fallback:', err);
+    }
+
     const questions = activeExam?.questions || [];
     let scoreObtained = 0;
     const evaluatedQuestions: any[] = [];

@@ -1193,6 +1193,70 @@ export function initDatabase() {
       updated_at TEXT NOT NULL,
       UNIQUE(user_id, subject, topic)
     );
+
+    CREATE TABLE IF NOT EXISTS mock_examinations (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      grade TEXT NOT NULL,
+      board TEXT NOT NULL,
+      exam_type TEXT NOT NULL DEFAULT 'weekly',
+      total_marks REAL NOT NULL DEFAULT 40.0,
+      duration_minutes INTEGER NOT NULL DEFAULT 45,
+      covered_topics_json TEXT NOT NULL DEFAULT '[]',
+      instructions TEXT NOT NULL,
+      questions_json TEXT NOT NULL DEFAULT '[]',
+      is_published INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS mock_test_submissions (
+      id TEXT PRIMARY KEY,
+      exam_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      exam_title TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      total_marks REAL NOT NULL,
+      score_obtained REAL NOT NULL,
+      percentage REAL NOT NULL,
+      passed INTEGER NOT NULL,
+      correct_count INTEGER NOT NULL,
+      incorrect_count INTEGER NOT NULL,
+      unanswered_count INTEGER NOT NULL,
+      evaluated_questions_json TEXT NOT NULL DEFAULT '[]',
+      topic_breakdown_json TEXT NOT NULL DEFAULT '{}',
+      weak_topics_json TEXT NOT NULL DEFAULT '[]',
+      duration_seconds INTEGER NOT NULL DEFAULT 0,
+      submitted_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS practice_sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      difficulty TEXT NOT NULL DEFAULT 'moderate',
+      total_questions INTEGER NOT NULL DEFAULT 0,
+      correct_count INTEGER NOT NULL DEFAULT 0,
+      score REAL NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS practice_attempts (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      question_id TEXT NOT NULL,
+      student_answer TEXT,
+      is_correct INTEGER NOT NULL,
+      marks_awarded REAL NOT NULL,
+      feedback_json TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
   `);
 
   try {

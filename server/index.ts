@@ -113,6 +113,7 @@ import { ResearchIntelligenceEngine } from './researchIntelligenceEngine.ts';
 import { UnifiedVisualIntelligenceEngine } from './visualIntelligenceEngineUnified.ts';
 import { StudyAiPersonalTeacherEngine } from './studyAiPersonalTeacherEngine.ts';
 import { AdvancedNotesGenerationEngine } from './advancedNotesGenerationEngine.ts';
+import { StudentLearningIntelligenceEngine } from './studentLearningIntelligenceEngine.ts';
 import {
   getVisualAssets,
   getVisualAssetById,
@@ -1177,6 +1178,8 @@ export function createAppServer() {
             : 0;
 
         const sharedContext = db.prepare('SELECT * FROM shared_topic_context WHERE user_id = ?').get(studentId);
+        const learningProfile = StudentLearningIntelligenceEngine.getStudentLearningProfile(studentId);
+        const academicContext = StudentLearningIntelligenceEngine.getStudentAcademicContext(studentId);
 
         sendJson(res, 200, {
           user,
@@ -1195,7 +1198,9 @@ export function createAppServer() {
           subjectPerformance,
           goals,
           recentActivity: activities,
-          sharedContext
+          sharedContext,
+          learningProfile,
+          academicContext
         });
         return;
       }
@@ -1224,31 +1229,338 @@ export function createAppServer() {
         return;
       }
 
-      // Curriculum Examinations API
+      // Phase 7: Unified Personal AI Learning Intelligence Endpoints
+      if (pathname === '/api/student/learning-profile' && req.method === 'GET') {
+        const profile = StudentLearningIntelligenceEngine.getStudentLearningProfile(studentId);
+        sendJson(res, 200, profile);
+        return;
+      }
+
+      if (pathname === '/api/student/recommendations' && req.method === 'GET') {
+        const profile = StudentLearningIntelligenceEngine.getStudentLearningProfile(studentId);
+        sendJson(res, 200, { recommendations: profile.recommendations });
+        return;
+      }
+
+      if (pathname === '/api/student/revision-queue' && req.method === 'GET') {
+        const profile = StudentLearningIntelligenceEngine.getStudentLearningProfile(studentId);
+        sendJson(res, 200, { revisionQueue: profile.revisionQueue });
+        return;
+      }
+
+      // 40-Mark Mock Test Generation Endpoint
+      if (pathname === '/api/examinations/generate-40mark-test' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const subject = sanitizeText(body.subject || 'Science', 60);
+        const topic = sanitizeText(body.topic || 'Photosynthesis', 180);
+        const grade = body.academic_level || body.grade || 'Grade 10';
+        const optionType = ['OPTION_A', 'OPTION_B', 'OPTION_C'].includes(body.option_type)
+          ? body.option_type
+          : 'OPTION_B';
+
+        const exam = StudentLearningIntelligenceEngine.generate40MarkMockExam({
+          subject,
+          topic,
+          grade,
+          optionType
+        });
+
+        const now = new Date().toISOString();
+        db.prepare(`
+          INSERT OR REPLACE INTO mock_examinations (
+            id, title, subject, grade, board, exam_type, total_marks, duration_minutes, covered_topics_json, instructions, questions_json, is_published, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+        `).run(
+          exam.id,
+          exam.title,
+          exam.subject,
+          exam.grade,
+          exam.board,
+          exam.exam_type,
+          exam.total_marks,
+          exam.duration_minutes,
+          JSON.stringify(exam.covered_topics),
+          exam.instructions,
+          JSON.stringify(exam.questions),
+          now
+        );
+
+        sendJson(res, 201, { exam });
+        return;
+      }
+
+      // Mock Test Submission & Authoritative Evaluation Endpoint
+      if (pathname === '/api/examinations/submit' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const examId = body.exam_id || body.examId;
+        const answers = body.answers || {};
+        const durationSeconds = Number(body.duration_seconds) || 1800;
+
+        let examRow = db.prepare('SELECT * FROM mock_examinations WHERE id = ?').get(examId) as any;
+        let examDef: any;
+
+        if (examRow) {
+          examDef = {
+            id: examRow.id,
+            title: examRow.title,
+            subject: examRow.subject,
+            grade: examRow.grade,
+            board: examRow.board,
+            exam_type: examRow.exam_type,
+            total_marks: examRow.total_marks,
+            duration_minutes: examRow.duration_minutes,
+            covered_topics: JSON.parse(examRow.covered_topics_json || '[]'),
+            instructions: examRow.instructions,
+            questions: JSON.parse(examRow.questions_json || '[]'),
+            is_published: Boolean(examRow.is_published)
+          };
+        } else if (body.exam) {
+          examDef = body.exam;
+        } else {
+          // Generate deterministic standard exam for the topic
+          examDef = StudentLearningIntelligenceEngine.generate40MarkMockExam({
+            subject: body.subject || 'Science',
+            topic: body.topic || 'Photosynthesis'
+          });
+        }
+
+        const evaluation = StudentLearningIntelligenceEngine.evaluateMockExamSubmission({
+          exam: examDef,
+          userId: studentId,
+          answers,
+          durationSeconds
+        });
+
+        // Store authoritative submission in DB
+        db.prepare(`
+          INSERT INTO mock_test_submissions (
+            id, exam_id, user_id, exam_title, subject, total_marks, score_obtained, percentage,
+            passed, correct_count, incorrect_count, unanswered_count, evaluated_questions_json,
+            topic_breakdown_json, weak_topics_json, duration_seconds, submitted_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          evaluation.submissionId,
+          evaluation.examId,
+          studentId,
+          evaluation.examTitle,
+          evaluation.subject,
+          evaluation.totalMarks,
+          evaluation.scoreObtained,
+          evaluation.percentage,
+          evaluation.passed ? 1 : 0,
+          evaluation.correctCount,
+          evaluation.incorrectCount,
+          evaluation.unansweredCount,
+          JSON.stringify(evaluation.evaluatedQuestions),
+          JSON.stringify(evaluation.topicBreakdown),
+          JSON.stringify(evaluation.weakTopics),
+          durationSeconds,
+          evaluation.submittedAt
+        );
+
+        // Record in learning activity
+        db.prepare(`
+          INSERT INTO learning_activity (id, user_id, activity_type, title, subject, topic, duration_minutes, score_percent, resource_id, created_at)
+          VALUES (?, ?, 'mock_exam', ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          `act-${crypto.randomUUID().slice(0, 8)}`,
+          studentId,
+          evaluation.examTitle,
+          evaluation.subject,
+          examDef.covered_topics?.[0] || evaluation.examTitle,
+          Math.round(durationSeconds / 60),
+          evaluation.percentage,
+          evaluation.submissionId,
+          evaluation.submittedAt
+        );
+
+        sendJson(res, 200, { submission: evaluation });
+        return;
+      }
+
+      // Curriculum Examinations API (GET single exam details)
+      if (pathname.startsWith('/api/examinations/') && req.method === 'GET') {
+        const examId = pathname.split('/')[3];
+        const examRow = db.prepare('SELECT * FROM mock_examinations WHERE id = ?').get(examId) as any;
+        if (examRow) {
+          sendJson(res, 200, {
+            ...examRow,
+            covered_topics: JSON.parse(examRow.covered_topics_json || '[]'),
+            questions: JSON.parse(examRow.questions_json || '[]')
+          });
+          return;
+        }
+        // Fallback sample exam
+        const fallback = StudentLearningIntelligenceEngine.generate40MarkMockExam({
+          subject: 'Science',
+          topic: 'Photosynthesis'
+        });
+        sendJson(res, 200, fallback);
+        return;
+      }
+
+      // Curriculum Examinations API (GET listing)
       if ((pathname === '/api/examinations' || effectivePathname === '/api/examinations') && req.method === 'GET') {
-        const exams = [
-          {
-            id: 'exam-001',
-            title: 'Cellular Energy & Plant Respiration',
+        let exams = db.prepare('SELECT * FROM mock_examinations ORDER BY created_at DESC').all() as any[];
+        if (exams.length === 0) {
+          // Pre-seed two standard 40-mark exams
+          const exam1 = StudentLearningIntelligenceEngine.generate40MarkMockExam({
             subject: 'Science',
+            topic: 'Photosynthesis',
             grade: 'Grade 10',
-            exam_type: 'weekly',
-            total_marks: 20,
-            duration_minutes: 30,
-            is_published: true
-          },
-          {
-            id: 'exam-002',
-            title: 'Quadratic Equations & Roots Mastery',
-            subject: 'Mathematics',
+            optionType: 'OPTION_B'
+          });
+          const exam2 = StudentLearningIntelligenceEngine.generate40MarkMockExam({
+            subject: 'Physics',
+            topic: "Newton's Laws",
             grade: 'Grade 10',
-            exam_type: 'weekly',
-            total_marks: 25,
-            duration_minutes: 35,
-            is_published: true
+            optionType: 'OPTION_B'
+          });
+          const now = new Date().toISOString();
+          for (const ex of [exam1, exam2]) {
+            db.prepare(`
+              INSERT OR REPLACE INTO mock_examinations (
+                id, title, subject, grade, board, exam_type, total_marks, duration_minutes, covered_topics_json, instructions, questions_json, is_published, created_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+            `).run(
+              ex.id, ex.title, ex.subject, ex.grade, ex.board, ex.exam_type, ex.total_marks, ex.duration_minutes,
+              JSON.stringify(ex.covered_topics), ex.instructions, JSON.stringify(ex.questions), now
+            );
           }
-        ];
-        sendJson(res, 200, exams);
+          exams = db.prepare('SELECT * FROM mock_examinations ORDER BY created_at DESC').all() as any[];
+        }
+
+        sendJson(
+          res,
+          200,
+          exams.map((e) => ({
+            ...e,
+            covered_topics: JSON.parse(e.covered_topics_json || '[]'),
+            questions: JSON.parse(e.questions_json || '[]')
+          }))
+        );
+        return;
+      }
+
+      // Adaptive Practice Session Endpoints
+      if (pathname === '/api/practice/start' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const subject = sanitizeText(body.subject || 'Science', 60);
+        const topic = sanitizeText(body.topic || 'Photosynthesis', 180);
+        const difficulty = body.difficulty || 'moderate';
+        const adaptive = body.adaptive !== false;
+
+        const session = StudentLearningIntelligenceEngine.startAdaptivePracticeSession({
+          userId: studentId,
+          subject,
+          topic,
+          difficulty,
+          adaptive
+        });
+
+        const now = new Date().toISOString();
+        db.prepare(`
+          INSERT INTO practice_sessions (id, user_id, subject, topic, difficulty, total_questions, correct_count, score, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?, ?)
+        `).run(session.sessionId, studentId, subject, topic, difficulty, session.totalQuestions, now, now);
+
+        sendJson(res, 201, { session });
+        return;
+      }
+
+      if (pathname === '/api/practice/submit-answer' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const sessionId = body.session_id;
+        const qId = body.question_id;
+        const studentAns = body.student_answer;
+        const question = body.question || {};
+        const maxMarks = question.marks || 2.0;
+
+        let isCorrect = false;
+        let awarded = 0;
+        const cleanStudent = String(studentAns || '').trim().toLowerCase();
+        const cleanCorrect = String(question.correct_answer || '').trim().toLowerCase();
+
+        if (question.question_type === 'mcq' || question.question_type === 'true_false') {
+          isCorrect = cleanStudent === cleanCorrect || cleanStudent.includes(cleanCorrect);
+          awarded = isCorrect ? maxMarks : 0;
+        } else if (question.question_type === 'fill_blank') {
+          isCorrect = cleanStudent.includes(cleanCorrect) || cleanCorrect.includes(cleanStudent);
+          awarded = isCorrect ? maxMarks : 0;
+        } else {
+          // Descriptive / numerical
+          if (cleanStudent.length >= 25) {
+            isCorrect = true;
+            awarded = maxMarks;
+          } else {
+            isCorrect = false;
+            awarded = 0;
+          }
+        }
+
+        const now = new Date().toISOString();
+        const attemptId = `att-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        db.prepare(`
+          INSERT INTO practice_attempts (id, session_id, user_id, question_id, student_answer, is_correct, marks_awarded, feedback_json, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(attemptId, sessionId, studentId, qId, String(studentAns), isCorrect ? 1 : 0, awarded, JSON.stringify({ explanation: question.explanation }), now);
+
+        if (isCorrect) {
+          db.prepare('UPDATE practice_sessions SET correct_count = correct_count + 1, score = score + ?, updated_at = ? WHERE id = ?').run(awarded, now, sessionId);
+        }
+
+        sendJson(res, 200, {
+          isCorrect,
+          marksAwarded: awarded,
+          maxMarks,
+          explanation: question.explanation || 'Verified curriculum concept.',
+          correctAnswer: question.correct_answer
+        });
+        return;
+      }
+
+      if (pathname === '/api/practice/complete' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const sessionId = body.session_id;
+        const sess = db.prepare('SELECT * FROM practice_sessions WHERE id = ? AND user_id = ?').get(sessionId, studentId) as any;
+        if (!sess) {
+          sendJson(res, 404, { error: 'Practice session not found.' });
+          return;
+        }
+
+        const totalQ = sess.total_questions || 1;
+        const correctQ = sess.correct_count || 0;
+        const accuracy = Math.round((correctQ / totalQ) * 100);
+
+        // Update topic progress
+        updateStudentTopicProgress({
+          userId: studentId,
+          subject: sess.subject,
+          topic: sess.topic,
+          stage: accuracy >= 80 ? 'understanding_demonstrated' : 'practice_attempted',
+          practiceScore: accuracy
+        });
+
+        // Record in learning activity
+        const now = new Date().toISOString();
+        db.prepare(`
+          INSERT INTO learning_activity (id, user_id, activity_type, title, subject, topic, duration_minutes, score_percent, resource_id, created_at)
+          VALUES (?, ?, 'practice', ?, ?, ?, 10, ?, ?, ?)
+        `).run(`act-${crypto.randomUUID().slice(0, 8)}`, studentId, `Practice: ${sess.topic}`, sess.subject, sess.topic, accuracy, sessionId, now);
+
+        sendJson(res, 200, {
+          sessionId,
+          accuracy,
+          correctCount: correctQ,
+          totalQuestions: totalQ,
+          stageUpdated: accuracy >= 80 ? 'understanding_demonstrated' : 'practice_attempted'
+        });
+        return;
+      }
+
+      if (pathname === '/api/practice/history' && req.method === 'GET') {
+        const history = db.prepare('SELECT * FROM practice_sessions WHERE user_id = ? ORDER BY created_at DESC LIMIT 20').all(studentId) as any[];
+        sendJson(res, 200, { history });
         return;
       }
 
@@ -5874,7 +6186,10 @@ export function createAppServer() {
             mistakes: JSON.parse(q.mistakes_json || '[]'),
             completedAt: q.completed_at
           })),
-          upcomingGoals: goals.filter((g) => !g.completed)
+          upcomingGoals: goals.filter((g) => !g.completed),
+          learningProfile: StudentLearningIntelligenceEngine.getStudentLearningProfile(studentId),
+          misconceptions: getStudentMisconceptions(studentId, undefined, 'active'),
+          topicProgress: getStudentTopicProgress(studentId)
         });
         return;
       }

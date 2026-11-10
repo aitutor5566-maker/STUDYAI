@@ -365,6 +365,87 @@ export const HomePage: React.FC = () => {
         </form>
       </section>
 
+      {/* Phase 7: Unified Personal AI Learning Intelligence Recommendations */}
+      {dashboard?.learningProfile?.recommendations?.[0] && (
+        <section
+          style={{
+            marginBottom: 20,
+            padding: '16px 20px',
+            borderRadius: 18,
+            background: 'linear-gradient(135deg, #FFF7EE 0%, #FFFFFF 100%)',
+            border: '1.5px solid rgba(255, 106, 0, 0.28)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 16,
+            flexWrap: 'wrap'
+          }}
+        >
+          <div style={{ flex: '1 1 300px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <Sparkles size={14} color="#FF6A00" />
+              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#E85D00', textTransform: 'uppercase' }}>
+                AI Next-Step Recommendation • {dashboard.learningProfile.recommendations[0].priority.toUpperCase()} PRIORITY
+              </span>
+            </div>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#202124', margin: '0 0 3px 0' }}>
+              {dashboard.learningProfile.recommendations[0].title}
+            </h3>
+            <p style={{ fontSize: '0.82rem', color: '#6B7280', margin: 0, lineHeight: 1.4 }}>
+              {dashboard.learningProfile.recommendations[0].reason}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate(dashboard.learningProfile.recommendations[0].targetUrl)}
+            className="btn-orange"
+            style={{ padding: '8px 18px', fontSize: '0.82rem', whiteSpace: 'nowrap' }}
+          >
+            <span>Start Activity →</span>
+          </button>
+        </section>
+      )}
+
+      {/* Spaced Revision Alert if topics are due for review */}
+      {dashboard?.learningProfile?.revisionQueue?.length > 0 && (
+        <div
+          style={{
+            marginBottom: 16,
+            padding: '10px 16px',
+            borderRadius: 14,
+            background: '#F0FDF4',
+            border: '1px solid rgba(34, 197, 94, 0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            fontSize: '0.82rem'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#166534', fontWeight: 700 }}>
+            <RotateCcw size={15} color="#16A34A" />
+            <span>
+              Spaced Revision: {dashboard.learningProfile.revisionQueue.length} topic(s) recommended for review ({dashboard.learningProfile.revisionQueue.slice(0, 2).map((r: any) => r.topic).join(', ')}).
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate(`/tutor?topic=${encodeURIComponent(dashboard.learningProfile.revisionQueue[0].topic)}`)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#15803D',
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              textDecoration: 'underline'
+            }}
+          >
+            Review Now
+          </button>
+        </div>
+      )}
+
       {/* 4. Active Learning Journey Command Panel (Part 4.D) */}
       <section className="hero-glass-banner" style={{ marginBottom: 24, padding: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
