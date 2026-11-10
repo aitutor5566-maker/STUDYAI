@@ -20,14 +20,19 @@ import {
   BookOpen,
   Copy,
   Check,
-  PlusCircle
+  PlusCircle,
+  Sun,
+  Moon,
+  Laptop
 } from 'lucide-react';
 import { TopBrandBar } from '../components/GlassNav';
 import { useLearning } from '../context/LearningContext';
+import { useTheme } from '../context/ThemeContext';
 import { AdaptiveProfileModal } from '../components/AdaptiveProfileModal';
 
 export const ProfilePage: React.FC = () => {
   const { apiFetch, studentId, setStudentId, studentProfiles, refreshProfiles, refreshTick, triggerRefresh } = useLearning();
+  const { theme, resolvedTheme, setTheme } = useTheme();
 
   const [parentTab, setParentTab] = useState<'analytics' | 'family' | 'academic'>('analytics');
   const [familyData, setFamilyData] = useState<any | null>(null);
@@ -511,6 +516,7 @@ export const ProfilePage: React.FC = () => {
         <div style={{ display: 'grid', gap: 16, alignContent: 'start' }}>
           <section className="glass-card" style={{ padding: 16, display: 'grid', gap: 8 }}>
             {[
+              { id: 'theme', label: 'Theme & Appearance', icon: resolvedTheme === 'dark' ? Moon : Sun },
               { id: 'prefs', label: 'Learning Preferences', icon: Settings },
               { id: 'goals', label: 'Study Goals', icon: Target },
               { id: 'achievements', label: 'Achievements', icon: Award },
@@ -530,17 +536,88 @@ export const ProfilePage: React.FC = () => {
                       justifyContent: 'space-between',
                       padding: '12px 14px',
                       borderRadius: 14,
-                      border: 'none',
-                      background: isOpen ? '#FFF3E8' : '#FFFFFF',
-                      cursor: 'pointer'
+                      border: '1px solid var(--glass-border, rgba(0,0,0,0.06))',
+                      background: isOpen ? 'var(--badge-orange-bg, #FFF3E8)' : 'var(--glass-card-bg, #FFFFFF)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 700, fontSize: '0.9rem', color: '#202124' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary, #202124)' }}>
                       <Icon size={18} color="#FF6A00" />
                       <span>{item.label}</span>
                     </div>
                     <ChevronRight size={16} color="#9CA3AF" style={{ transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
                   </button>
+
+                  {isOpen && item.id === 'theme' && (
+                    <div style={{ padding: 14, display: 'grid', gap: 10, fontSize: '0.85rem' }}>
+                      <p style={{ margin: '0 0 6px 0', color: 'var(--text-secondary, #6B7280)', fontSize: '0.82rem' }}>
+                        Choose your interface appearance. STUDYAI orange branding is preserved across both modes.
+                      </p>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                        <button
+                          type="button"
+                          onClick={() => setTheme('light')}
+                          style={{
+                            padding: '10px 8px',
+                            borderRadius: 12,
+                            border: theme === 'light' ? '2px solid #FF6A00' : '1px solid var(--glass-border, #E5E7EB)',
+                            background: theme === 'light' ? 'var(--badge-orange-bg, #FFF3E8)' : 'var(--glass-card-bg, #FFFFFF)',
+                            color: 'var(--text-primary, #202124)',
+                            fontWeight: theme === 'light' ? 700 : 500,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 6,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <Sun size={20} color={theme === 'light' ? '#FF6A00' : '#6B7280'} />
+                          <span style={{ fontSize: '0.78rem' }}>Pure Light</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTheme('dark')}
+                          style={{
+                            padding: '10px 8px',
+                            borderRadius: 12,
+                            border: theme === 'dark' ? '2px solid #FF6A00' : '1px solid var(--glass-border, #E5E7EB)',
+                            background: theme === 'dark' ? 'var(--badge-orange-bg, rgba(255,106,0,0.15))' : 'var(--glass-card-bg, #FFFFFF)',
+                            color: 'var(--text-primary, #202124)',
+                            fontWeight: theme === 'dark' ? 700 : 500,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 6,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <Moon size={20} color={theme === 'dark' ? '#FF6A00' : '#6B7280'} />
+                          <span style={{ fontSize: '0.78rem' }}>Pure Dark</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTheme('system')}
+                          style={{
+                            padding: '10px 8px',
+                            borderRadius: 12,
+                            border: theme === 'system' ? '2px solid #FF6A00' : '1px solid var(--glass-border, #E5E7EB)',
+                            background: theme === 'system' ? 'var(--badge-orange-bg, #FFF3E8)' : 'var(--glass-card-bg, #FFFFFF)',
+                            color: 'var(--text-primary, #202124)',
+                            fontWeight: theme === 'system' ? 700 : 500,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 6,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <Laptop size={20} color={theme === 'system' ? '#FF6A00' : '#6B7280'} />
+                          <span style={{ fontSize: '0.78rem' }}>System ({resolvedTheme})</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {isOpen && item.id === 'prefs' && (
                     <div style={{ padding: 14, display: 'grid', gap: 10, fontSize: '0.85rem' }}>

@@ -111,6 +111,7 @@ export const NotesPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
+  const [fetchError, setFetchError] = useState<string>('');
 
   // Active Note & Workspace State
   const [activeNote, setActiveNote] = useState<any | null>(null);
@@ -378,6 +379,7 @@ export const NotesPage: React.FC = () => {
   // Load Notebooks from SQLite Backend
   const fetchNotes = async () => {
     setLoading(true);
+    setFetchError('');
     try {
       const params = new URLSearchParams();
       if (selectedCategory !== 'All') params.set('subject', selectedCategory);
@@ -418,6 +420,12 @@ export const NotesPage: React.FC = () => {
           setActiveNote(refreshed);
         }
       }
+    } catch (err: any) {
+      const isNetwork = !err?.status && (err?.message?.includes('fetch') || err?.message?.includes('Network') || err?.name === 'TypeError');
+      const msg = isNetwork
+        ? 'Could not connect to the StudyAI notebook service. Please check your network connection and click Retry.'
+        : (err?.message || 'Failed to load notebooks.');
+      setFetchError(msg);
     } finally {
       setLoading(false);
     }
@@ -697,12 +705,14 @@ export const NotesPage: React.FC = () => {
       setWebUrlInput('');
       setPendingSources([]);
       setShowAttachmentModal(false);
-      triggerRefresh();
+      setNotes((prev) => [created, ...prev.filter((n) => n.id !== created.id)]);
       selectNoteForEditing(created);
+      setActiveNote(created);
       setDashboardMode('notebook');
       setNotebookSubTab('full');
       setReaderViewMode('continuous');
       setSearchParams({ id: created.id });
+      triggerRefresh();
     } catch (err: any) {
       setUploadStatus({ type: 'err', message: err?.message || 'Failed to generate notebook.' });
     } finally {
@@ -1113,93 +1123,72 @@ export const NotesPage: React.FC = () => {
               <Sparkles size={14} />
               <span>AI-Powered Guided Roadmaps</span>
             </div>
-            <h2 style={{ fontSize: '2.1rem', fontWeight: 900, color: '#202124', letterSpacing: '-0.5px', marginBottom: 8 }}>
+            <h2 style={{ fontSize: '2.1rem', fontWeight: 900, color: 'var(--text-primary, #202124)', letterSpacing: '-0.5px', marginBottom: 8 }}>
               What would you like to learn?
             </h2>
-            <p style={{ fontSize: '0.94rem', color: '#6B7280', maxWidth: 620, margin: '0 auto 24px auto' }}>
+            <p style={{ fontSize: '0.94rem', color: 'var(--text-secondary, #6B7280)', maxWidth: 620, margin: '0 auto 24px auto' }}>
               Enter any topic, question or instructions. Tap the plus (<span style={{ color: '#FF6A00', fontWeight: 800 }}>+</span>) button to import PDFs, textbook photos, Word docs or YouTube lectures.
             </p>
 
             {/* Large Intelligent Input Bar with Plus (+) and Voice Input */}
-            <form onSubmit={handleGenerateNotebook} style={{ maxWidth: 740, margin: '0 auto' }}>
-              <div
-                className="glass-input-wrap-futuristic"
-                style={{
-                  background: '#FFFFFF',
-                  borderRadius: 20,
-                  border: '2px solid #FF6A00',
-                  boxShadow: '0 10px 30px rgba(255, 106, 0, 0.14)',
-                  padding: '6px 8px 6px 14px'
-                }}
-              >
-                <div className="futuristic-input-row">
-                  {/* Prominent Plus (+) Attachment Button */}
-                  <button
-                    type="button"
-                    onClick={() => setShowAttachmentModal(true)}
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 12,
-                      background: pendingSources.length > 0 ? '#10B981' : '#FFF3E8',
-                      border: 'none',
-                      color: pendingSources.length > 0 ? '#FFFFFF' : '#FF6A00',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      flexShrink: 0,
-                      transition: 'transform 0.18s ease'
-                    }}
-                    title="Attach PDF, Textbook Photo, Images, Word doc, or Links"
-                    aria-label="Add Attachments"
-                  >
-                    <Plus size={20} strokeWidth={2.8} />
-                  </button>
+            <form onSubmit={handleGenerateNotebook} className="notes-topic-input-container">
+              <div className="notes-topic-input-card">
+                {/* Prominent Plus (+) Attachment Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowAttachmentModal(true)}
+                  style={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: 14,
+                    background: pendingSources.length > 0 ? '#10B981' : 'var(--badge-orange-bg, #FFF3E8)',
+                    border: '1px solid var(--glass-border, rgba(255, 106, 0, 0.2))',
+                    color: pendingSources.length > 0 ? '#FFFFFF' : '#FF6A00',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    transition: 'all 0.18s ease'
+                  }}
+                  title="Attach PDF, Textbook Photo, Images, Word doc, or Links"
+                  aria-label="Add Attachments"
+                >
+                  <Plus size={22} strokeWidth={2.8} />
+                </button>
 
-                  {/* Main Input Field */}
-                  <input
-                    value={heroPrompt}
-                    onChange={(e) => setHeroPrompt(e.target.value)}
-                    placeholder="e.g. Human Heart, Photosynthesis, Quadratic Equations..."
-                    style={{
-                      flex: 1,
-                      border: 'none',
-                      outline: 'none',
-                      fontSize: '0.98rem',
-                      fontWeight: 600,
-                      color: '#202124',
-                      background: 'transparent',
-                      padding: '8px 4px',
-                      minWidth: 0
-                    }}
-                    aria-label="What would you like to learn?"
-                  />
+                {/* Main Input Field */}
+                <input
+                  className="notes-topic-input-field"
+                  value={heroPrompt}
+                  onChange={(e) => setHeroPrompt(e.target.value)}
+                  placeholder="e.g. Human Heart, Photosynthesis, Quadratic Equations..."
+                  aria-label="What would you like to learn?"
+                />
 
-                  {/* Voice Input Microphone Button */}
-                  <button
-                    type="button"
-                    onClick={handleToggleVoiceInput}
-                    style={{
-                      width: 38,
-                      height: 38,
-                      borderRadius: 10,
-                      background: isListeningVoice ? '#DC2626' : '#F3F4F6',
-                      color: isListeningVoice ? '#FFFFFF' : '#4B5563',
-                      border: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      flexShrink: 0,
-                      animation: isListeningVoice ? 'pulse 1.2s infinite' : 'none'
-                    }}
-                    title={isListeningVoice ? 'Listening... click to stop' : 'Click to speak your topic'}
-                    aria-label="Voice input"
-                  >
-                    <Mic size={16} />
-                  </button>
-                </div>
+                {/* Voice Input Microphone Button */}
+                <button
+                  type="button"
+                  onClick={handleToggleVoiceInput}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    background: isListeningVoice ? '#DC2626' : 'var(--surface-neutral, #F3F4F6)',
+                    color: isListeningVoice ? '#FFFFFF' : 'var(--text-secondary, #4B5563)',
+                    border: '1px solid var(--glass-border, transparent)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    animation: isListeningVoice ? 'pulse 1.2s infinite' : 'none'
+                  }}
+                  title={isListeningVoice ? 'Listening... click to stop' : 'Click to speak your topic'}
+                  aria-label="Voice input"
+                >
+                  <Mic size={18} />
+                </button>
 
                 {/* Generate Notes Button */}
                 <button
@@ -1207,14 +1196,15 @@ export const NotesPage: React.FC = () => {
                   disabled={generating}
                   className="btn-orange"
                   style={{
-                    padding: '10px 20px',
+                    height: 42,
+                    padding: '0 22px',
                     borderRadius: 14,
-                    fontSize: '0.9rem',
+                    fontSize: '0.92rem',
                     fontWeight: 800,
-                    display: 'flex',
+                    display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: 6,
+                    gap: 8,
                     flexShrink: 0
                   }}
                 >
@@ -1433,28 +1423,71 @@ export const NotesPage: React.FC = () => {
           {/* Recent Notebooks Grid with Visual Thumbnails (Section 3) */}
           <section>
             {loading ? (
-              <div style={{ padding: 40, textAlign: 'center', color: '#6B7280' }}>
+              <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-secondary, #6B7280)' }}>
                 Loading saved notebooks...
+              </div>
+            ) : fetchError ? (
+              <div
+                style={{
+                  padding: '36px 24px',
+                  textAlign: 'center',
+                  background: 'var(--error-bg, rgba(239, 68, 68, 0.08))',
+                  borderRadius: 24,
+                  border: '1.5px solid rgba(239, 68, 68, 0.28)',
+                  maxWidth: 600,
+                  margin: '0 auto'
+                }}
+              >
+                <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(239, 68, 68, 0.15)', color: '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px auto' }}>
+                  <AlertCircle size={28} />
+                </div>
+                <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary, #202124)', marginBottom: 6 }}>
+                  Unable to load notebooks
+                </h4>
+                <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary, #6B7280)', maxWidth: 440, margin: '0 auto 18px auto' }}>
+                  {fetchError}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => fetchNotes()}
+                  className="btn-orange"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, margin: '0 auto' }}
+                >
+                  <RotateCcw size={15} /> Retry Loading
+                </button>
               </div>
             ) : notes.length === 0 ? (
               <div
                 style={{
                   padding: '48px 24px',
                   textAlign: 'center',
-                  background: '#FFFFFF',
+                  background: 'var(--glass-card-bg, #FFFFFF)',
                   borderRadius: 24,
-                  border: '1.5px dashed #E5E7EB'
+                  border: '1.5px dashed var(--glass-border, #E5E7EB)'
                 }}
               >
-                <div style={{ width: 56, height: 56, borderRadius: 16, background: '#FFF3E8', color: '#FF6A00', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px auto' }}>
+                <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--badge-orange-bg, #FFF3E8)', color: '#FF6A00', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px auto' }}>
                   <BookOpen size={28} />
                 </div>
-                <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#202124', marginBottom: 6 }}>
+                <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary, #202124)', marginBottom: 6 }}>
                   No notebooks found
                 </h4>
-                <p style={{ fontSize: '0.88rem', color: '#6B7280', maxWidth: 440, margin: '0 auto 18px auto' }}>
+                <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary, #6B7280)', maxWidth: 440, margin: '0 auto 18px auto' }}>
                   Type any topic above or click "+" to upload your textbook and generate your first guided learning notebook.
                 </p>
+                <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 8, maxWidth: 540, margin: '0 auto 18px auto' }}>
+                  {['Photosynthesis', 'Human Heart', "Newton's Laws", 'Chemical Bonding', 'Electric Current'].map((topic) => (
+                    <button
+                      key={topic}
+                      type="button"
+                      onClick={() => handleGenerateNotebook(undefined, topic)}
+                      className="btn-glass"
+                      style={{ fontSize: '0.82rem', padding: '6px 12px', borderRadius: 10, background: 'var(--glass-card-bg, #FFFFFF)', color: 'var(--text-primary, #202124)' }}
+                    >
+                      ✦ {topic}
+                    </button>
+                  ))}
+                </div>
                 <button
                   type="button"
                   onClick={() => setShowAttachmentModal(true)}

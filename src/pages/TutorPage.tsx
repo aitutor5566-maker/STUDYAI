@@ -338,6 +338,7 @@ export const TutorPage: React.FC = () => {
   const [messages, setMessages] = useState<any[]>([]);
   const [questionInput, setQuestionInput] = useState<string>('');
   const [attachmentNote, setAttachmentNote] = useState<string>('');
+  const [lastSubmittedQuestion, setLastSubmittedQuestion] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [inline3DMsgId, setInline3DMsgId] = useState<string | null>(null);
@@ -775,6 +776,7 @@ export const TutorPage: React.FC = () => {
       setErrorMsg('Please type a topic or question before sending.');
       return;
     }
+    setLastSubmittedQuestion(cleanQ);
     setLoading(true);
     setErrorMsg('');
     setStreamingText('');
@@ -789,7 +791,7 @@ export const TutorPage: React.FC = () => {
 
       try {
         const historyPayload = messages.slice(-4).map((m) => ({ role: m.role, content: m.content }));
-        const chatUrl = typeof window !== 'undefined' && window.location.port === '5173' ? 'http://localhost:3001/api/tutor/chat' : '/api/tutor/chat';
+        const chatUrl = '/api/tutor/chat';
         const res = await fetch(chatUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -858,7 +860,11 @@ export const TutorPage: React.FC = () => {
         await setTopicContext(topicOverride || cleanQ, subject, mode);
         return;
       } catch (err: any) {
-        setErrorMsg(err?.message || 'Streaming failed. Retrying in Structured Studio Mode...');
+        const isNetworkErr = !err?.status && (err?.message?.includes('fetch') || err?.message?.includes('Network') || err?.name === 'TypeError');
+        const userFacingErr = isNetworkErr
+          ? 'Unable to connect to AI Tutor. Please check your network connection and tap Retry.'
+          : (err?.message || 'Streaming failed. Retrying in Structured Studio Mode...');
+        setErrorMsg(userFacingErr);
         // Fall back gracefully to structured endpoint below
       } finally {
         setLoading(false);
@@ -901,7 +907,11 @@ export const TutorPage: React.FC = () => {
       setConversations(updatedConvs);
       triggerRefresh();
     } catch (err: any) {
-      setErrorMsg(err?.message || 'Unable to reach AI Tutor. Your question has been preserved — click Retry.');
+      const isNetworkErr = !err?.status && (err?.message?.includes('fetch') || err?.message?.includes('Network') || err?.name === 'TypeError');
+      const userFacingErr = isNetworkErr
+        ? 'Unable to connect to AI Tutor service. Please check your network connection and click Retry to continue learning.'
+        : (err?.message || 'Unable to reach AI Tutor. Your question has been preserved — click Retry.');
+      setErrorMsg(userFacingErr);
     } finally {
       setLoading(false);
     }
@@ -1454,7 +1464,7 @@ export const TutorPage: React.FC = () => {
 
       {/* Conversation Thread */}
       <section style={{ display: 'grid', gap: 18, marginBottom: 22 }}>
-        {messages.length === 0 && !loading && (
+        {messages.length === 0 && !loading && !errorMsg && (
           <div
             className="glass-card"
             style={{
@@ -1463,9 +1473,9 @@ export const TutorPage: React.FC = () => {
               maxWidth: 720,
               margin: '0 auto',
               borderRadius: 24,
-              border: '2px solid rgba(255, 106, 0, 0.2)',
-              background: 'linear-gradient(180deg, #FFFFFF 0%, #FDFBF7 100%)',
-              boxShadow: '0 12px 36px rgba(255, 106, 0, 0.08)'
+              border: '1px solid var(--glass-border, rgba(255, 106, 0, 0.2))',
+              background: 'var(--glass-card-bg, #FFFFFF)',
+              boxShadow: 'var(--glass-shadow, 0 12px 36px rgba(255, 106, 0, 0.08))'
             }}
           >
             <div
@@ -1510,7 +1520,7 @@ export const TutorPage: React.FC = () => {
               style={{
                 fontSize: '1.45rem',
                 fontWeight: 800,
-                color: '#1E293B',
+                color: 'var(--text-primary, #1E293B)',
                 margin: '0 0 10px 0',
                 lineHeight: 1.3
               }}
@@ -1521,7 +1531,7 @@ export const TutorPage: React.FC = () => {
             <p
               style={{
                 fontSize: '0.92rem',
-                color: '#64748B',
+                color: 'var(--text-secondary, #64748B)',
                 maxWidth: 580,
                 margin: '0 auto 22px auto',
                 lineHeight: 1.5
@@ -1535,7 +1545,7 @@ export const TutorPage: React.FC = () => {
                 style={{
                   fontSize: '0.78rem',
                   fontWeight: 700,
-                  color: '#94A3B8',
+                  color: 'var(--text-secondary, #94A3B8)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
                   marginBottom: 10
@@ -1561,10 +1571,11 @@ export const TutorPage: React.FC = () => {
                     style={{
                       fontSize: '0.82rem',
                       fontWeight: 600,
-                      borderColor: 'rgba(255, 106, 0, 0.28)',
+                      borderColor: 'var(--glass-border, rgba(255, 106, 0, 0.28))',
                       padding: '8px 14px',
                       borderRadius: 12,
-                      background: '#FFFFFF',
+                      background: 'var(--glass-card-bg, #FFFFFF)',
+                      color: 'var(--text-primary, #202124)',
                       boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
                     }}
                   >
@@ -2940,16 +2951,30 @@ export const TutorPage: React.FC = () => {
         )}
 
         {errorMsg && (
-          <div style={{ padding: 14, borderRadius: 16, background: '#FEF2F2', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.86rem', fontWeight: 600 }}>
-              <AlertCircle size={18} />
+          <div
+            style={{
+              padding: '12px 16px',
+              borderRadius: 16,
+              background: 'var(--error-bg, rgba(239, 68, 68, 0.1))',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: 'var(--error-text, #DC2626)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              backdropFilter: 'blur(10px)',
+              margin: '8px 0'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.88rem', fontWeight: 600 }}>
+              <AlertCircle size={18} style={{ flexShrink: 0 }} />
               <span>{errorMsg}</span>
             </div>
             <button
               type="button"
-              onClick={() => submitQuestion(questionInput || 'Explain photosynthesis')}
+              onClick={() => submitQuestion(lastSubmittedQuestion || questionInput || 'Explain photosynthesis')}
               className="btn-orange"
-              style={{ padding: '6px 14px', fontSize: '0.8rem' }}
+              style={{ padding: '6px 14px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}
             >
               <RotateCcw size={14} /> Retry
             </button>
@@ -2968,7 +2993,8 @@ export const TutorPage: React.FC = () => {
             width: 38,
             height: 38,
             borderRadius: '50%',
-            background: '#FFF3E8',
+            background: 'var(--badge-orange-bg, #FFF3E8)',
+            border: '1px solid var(--glass-border, rgba(255,106,0,0.2))',
             color: '#FF6A00',
             display: 'flex',
             alignItems: 'center',
@@ -2990,8 +3016,8 @@ export const TutorPage: React.FC = () => {
             width: 38,
             height: 38,
             borderRadius: '50%',
-            border: 'none',
-            background: isListening ? '#EF4444' : '#FFF3E8',
+            border: '1px solid var(--glass-border, rgba(255,106,0,0.2))',
+            background: isListening ? '#EF4444' : 'var(--badge-orange-bg, #FFF3E8)',
             color: isListening ? '#FFFFFF' : '#FF6A00',
             display: 'flex',
             alignItems: 'center',

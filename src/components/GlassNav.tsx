@@ -1,8 +1,9 @@
 import React from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Bell, Flame } from 'lucide-react';
+import { Bell, Flame, Sun, Moon, Laptop } from 'lucide-react';
 import { FuturisticIcon, FuturisticIconName } from './FuturisticIcons';
 import { useLearning } from '../context/LearningContext';
+import { useTheme } from '../context/ThemeContext';
 
 export const GlassNav: React.FC = () => {
   const location = useLocation();
@@ -53,6 +54,7 @@ export const TopBrandBar: React.FC<{
 }> = ({ showBack = false, onBack, streakDays = 7 }) => {
   const navigate = useNavigate();
   const { studentId, setStudentId, studentProfiles, activeTopic } = useLearning();
+  const { theme, resolvedTheme, toggleTheme } = useTheme();
 
   return (
     <header className="glass-panel top-brand-bar-header">
@@ -211,6 +213,32 @@ export const TopBrandBar: React.FC<{
                 boxShadow: '0 0 0 2px #FFFFFF'
               }}
             />
+          </button>
+
+          {/* Theme Toggle Button (Pure Light / Dark / System) */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={`Toggle theme (currently ${theme})`}
+            title={`Theme: ${theme === 'system' ? 'System (' + resolvedTheme + ')' : theme}. Click to toggle.`}
+            style={{
+              position: 'relative',
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              border: '1.5px solid rgba(255, 106, 0, 0.25)',
+              background: 'var(--bg-card)',
+              color: '#FF6A00',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              flexShrink: 0,
+              boxShadow: '0 4px 12px rgba(255, 106, 0, 0.08)',
+              transition: 'transform 0.18s ease'
+            }}
+          >
+            {resolvedTheme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
           </button>
 
           <div

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LearningProvider } from './context/LearningContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { GlassNav } from './components/GlassNav';
 import { AudioLessonBar } from './components/AudioLessonBar';
 import { Interactive3DLabModal } from './components/Interactive3DLab';
@@ -76,37 +77,39 @@ class AppErrorBoundary extends React.Component<
 export const App: React.FC = () => {
   return (
     <AppErrorBoundary>
-      <BrowserRouter>
-        <LearningProvider>
-          <div className="studyai-shell">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/notes" element={<NotesPage />} />
-              <Route path="/tutor" element={<TutorPage />} />
-              <Route path="/library" element={<LibraryPage />} />
-              <Route path="/languages" element={<LanguageLearningPage />} />
-              <Route path="/diagrams3d" element={<Diagrams3DPage />} />
-              <Route path="/3d-lab" element={<Navigate to="/diagrams3d" replace />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/admin" element={<AdminPage />} />
-              <Route path="/superadmin" element={<SuperAdminPage />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+      <ThemeProvider>
+        <BrowserRouter>
+          <LearningProvider>
+            <div className="studyai-shell">
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/notes" element={<NotesPage />} />
+                <Route path="/tutor" element={<TutorPage />} />
+                <Route path="/library" element={<LibraryPage />} />
+                <Route path="/languages" element={<LanguageLearningPage />} />
+                <Route path="/diagrams3d" element={<Diagrams3DPage />} />
+                <Route path="/3d-lab" element={<Navigate to="/diagrams3d" replace />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/admin" element={<AdminPage />} />
+                <Route path="/superadmin" element={<SuperAdminPage />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
 
-            {/* Persistent Cross-Route Audio Player & Connected Ecosystem Modals */}
-            <AudioLessonBar />
-            <Interactive3DLabModal />
-            <ImageGenerationModal />
-            <VideoGenerationModal />
-            <EducationalGamesModal />
-            <QuizModal />
-            <GlobalExaminationModal />
+              {/* Persistent Cross-Route Audio Player & Connected Ecosystem Modals */}
+              <AudioLessonBar />
+              <Interactive3DLabModal />
+              <ImageGenerationModal />
+              <VideoGenerationModal />
+              <EducationalGamesModal />
+              <QuizModal />
+              <GlobalExaminationModal />
 
-            {/* Shared 5-Destination Floating Pill Glass Navigation */}
-            <GlassNav />
-          </div>
-        </LearningProvider>
-      </BrowserRouter>
+              {/* Shared 5-Destination Floating Pill Glass Navigation */}
+              <GlassNav />
+            </div>
+          </LearningProvider>
+        </BrowserRouter>
+      </ThemeProvider>
     </AppErrorBoundary>
   );
 };

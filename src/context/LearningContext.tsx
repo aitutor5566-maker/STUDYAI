@@ -127,25 +127,64 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     async <T = any>(path: string, options: RequestInit = {}): Promise<T> => {
       const headers = new Headers(options.headers || {});
       headers.set('X-Student-Id', studentId);
-      if (!headers.has('Content-Type') && options.body) {
+      if (!headers.has('Content-Type') && options.body && typeof options.body === 'string') {
         headers.set('Content-Type', 'application/json');
       }
 
-      // Direct browser-to-backend call on :3001 when running on Vite dev server (:5173)
-      const isViteDev = typeof window !== 'undefined' && window.location.port === '5173';
-      const primaryUrl = isViteDev && path.startsWith('/api') ? `http://localhost:3001${path}` : path;
+      // Check if browser is strictly offline
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        throw new Error('You appear to be offline. Please check your internet connection.');
+      }
 
-      let res: Response;
-      try {
-        res = await fetch(primaryUrl, { ...options, headers });
-      } catch {
-        // Fallback to relative path if direct port isn't used
-        res = await fetch(path, { ...options, headers });
+      // Robust URL resolution:
+      // When accessed from mobile devices, tunnels, or external IPs, always use relative path so it routes through proxy/tunnel.
+      // Only attempt direct localhost:3001 if the browser itself is on desktop localhost.
+      const isLocalDesktop =
+        typeof window !== 'undefined' &&
+        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') &&
+        window.location.port === '5173';
+
+      const candidateUrls: string[] = [path];
+      if (isLocalDesktop && path.startsWith('/api')) {
+        candidateUrls.push(`http://localhost:3001${path}`);
+      }
+
+      let lastError: Error | null = null;
+      let res: Response | null = null;
+
+      for (const targetUrl of candidateUrls) {
+        try {
+          // Timeout protection: abort after 45 seconds if request hangs
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 45000);
+          const signal = options.signal || controller.signal;
+
+          res = await fetch(targetUrl, {
+            ...options,
+            headers,
+            signal
+          });
+          clearTimeout(timeoutId);
+
+          if (res) break;
+        } catch (fetchErr: any) {
+          lastError = fetchErr;
+        }
+      }
+
+      if (!res) {
+        const errorMsg = lastError?.name === 'AbortError'
+          ? 'Request timed out after 45 seconds. Please try again.'
+          : (lastError?.message === 'Failed to fetch'
+              ? 'Unable to connect to STUDYAI service. Please verify the backend server is reachable.'
+              : (lastError?.message || 'Network request failed. Please check your connection.')) ;
+        throw new Error(errorMsg);
       }
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data.error || `Request failed with status ${res.status}`);
+        const serverError = data.error || data.message || `Request failed with status ${res.status}`;
+        throw new Error(serverError);
       }
       return data as T;
     },
