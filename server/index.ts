@@ -3,7 +3,9 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { URL } from 'node:url';
-import { db, initDatabase, hashSecret } from './db.ts';
+import { db, initDatabase, hashSecret, softDeleteTutorMessage, updateTutorMessageContent, updateTutorMessageStructuredJson } from './db.ts';
+import { EducationalVisualPlanningEngine } from './educationalVisualPlanningEngine.ts';
+import { SavedNotesVisualUpgradeEngine } from './savedNotesVisualUpgradeEngine.ts';
 import {
   getProviderStatus,
   generateTutorExplanation,
@@ -1613,7 +1615,7 @@ export function createAppServer() {
           sendJson(res, 404, { error: 'Conversation not found.' });
           return;
         }
-        const rawMessages = db.prepare('SELECT * FROM tutor_messages WHERE conversation_id = ? ORDER BY created_at ASC').all(convId) as any[];
+        const rawMessages = db.prepare('SELECT * FROM tutor_messages WHERE conversation_id = ? AND (is_deleted IS NULL OR is_deleted = 0) ORDER BY created_at ASC').all(convId) as any[];
         const messages = rawMessages.map((m) => {
           let structured = m.structured_json ? JSON.parse(m.structured_json) : null;
           if (structured) {
@@ -1633,6 +1635,182 @@ export function createAppServer() {
           };
         });
         sendJson(res, 200, { conversation: conv, messages });
+        return;
+      }
+
+      // ChatGPT-Style Tutor Message Controls: Edit, Resubmit, Delete, Regenerate
+      if (pathname.startsWith('/api/tutor/messages/') && pathname.endsWith('/diagram') && req.method === 'PUT') {
+        const messageId = pathname.split('/')[4];
+        const body = await readJsonBody(req);
+        const msg = db.prepare('SELECT * FROM tutor_messages WHERE id = ?').get(messageId) as any;
+        if (!msg) {
+          sendJson(res, 404, { error: 'Message not found.' });
+          return;
+        }
+        const structured = msg.structured_json ? JSON.parse(msg.structured_json) : {};
+        if (structured.lessonImages && structured.lessonImages.length > 0) {
+          if (body.title) structured.lessonImages[0].title = body.title;
+          if (body.labels && Array.isArray(body.labels)) {
+            structured.lessonImages[0].explanation.keyComponents = body.labels;
+            structured.lessonImages[0].explanation.importantParts = body.labels.map((l: any) => ({ label: l.label, description: l.description }));
+          }
+        }
+        updateTutorMessageStructuredJson(messageId, JSON.stringify(structured));
+        sendJson(res, 200, { success: true, updatedStructured: structured });
+        return;
+      }
+
+      if (pathname.startsWith('/api/tutor/messages/') && pathname.endsWith('/regenerate-diagram') && req.method === 'POST') {
+        const messageId = pathname.split('/')[4];
+        const body = await readJsonBody(req);
+        const msg = db.prepare('SELECT * FROM tutor_messages WHERE id = ?').get(messageId) as any;
+        if (!msg) {
+          sendJson(res, 404, { error: 'Message not found.' });
+          return;
+        }
+        const structured = msg.structured_json ? JSON.parse(msg.structured_json) : {};
+        const topic = structured.topic || 'Science Concept';
+        const modification = body.promptModification || 'Make labels bigger';
+
+        const visualPlan = EducationalVisualPlanningEngine.planVisual({
+          topic,
+          subtopic: body.subtopic || structured.topic,
+          subject: structured.subject || 'Science',
+          grade: structured.grade || 10,
+          userModification: modification
+        });
+
+        if (structured.lessonImages && structured.lessonImages.length > 0) {
+          structured.lessonImages[0].title = visualPlan.explanation.visualTitle;
+          structured.lessonImages[0].svgXml = visualPlan.svgXml;
+          structured.lessonImages[0].imageUrl = visualPlan.dataUrl;
+          structured.lessonImages[0].caption = visualPlan.caption;
+          structured.lessonImages[0].explanation = {
+            whatItShows: visualPlan.explanation.visualTitle,
+            stepByStepProcess: visualPlan.explanation.stepByStepProcess,
+            keyComponents: visualPlan.explanation.keyComponents,
+            whyItHappens: visualPlan.explanation.whyItHappens,
+            importantTakeaway: visualPlan.explanation.importantTakeaway,
+            examTip: visualPlan.explanation.examTip
+          };
+        }
+
+        updateTutorMessageStructuredJson(messageId, JSON.stringify(structured));
+        sendJson(res, 200, { success: true, visualPlan, updatedStructured: structured });
+        return;
+      }
+
+      if (pathname.startsWith('/api/tutor/messages/') && pathname.endsWith('/regenerate') && req.method === 'POST') {
+        const messageId = pathname.split('/')[4];
+        const body = await readJsonBody(req);
+        const msg = db.prepare('SELECT * FROM tutor_messages WHERE id = ?').get(messageId) as any;
+        if (!msg) {
+          sendJson(res, 404, { error: 'Message not found.' });
+          return;
+        }
+
+        const conv = db.prepare('SELECT * FROM tutor_conversations WHERE id = ?').get(msg.conversation_id) as any;
+        const studentProfile = db.prepare('SELECT current_grade, current_board FROM student_profiles WHERE id = ?').get(studentId) as any;
+        const grade = studentProfile?.current_grade || 10;
+        const board = studentProfile?.current_board || 'CBSE';
+
+        const prevUserMsg = db.prepare('SELECT * FROM tutor_messages WHERE conversation_id = ? AND role = "user" AND created_at <= ? ORDER BY created_at DESC LIMIT 1').get(msg.conversation_id, msg.created_at) as any;
+        const promptText = prevUserMsg?.content || conv?.topic || 'Academic explanation';
+
+        const explanation = await generateTutorExplanation({
+          topic: conv?.topic || promptText,
+          subject: conv?.subject || 'Science',
+          question: promptText,
+          grade,
+          teachingMode: body.teachingMode || 'normal',
+          selectedBoard: board
+        });
+
+        const now = new Date().toISOString();
+        db.prepare('UPDATE tutor_messages SET content = ?, structured_json = ?, edited_at = ? WHERE id = ?').run(
+          explanation.answer || explanation.introduction || promptText,
+          JSON.stringify(explanation),
+          now,
+          messageId
+        );
+
+        sendJson(res, 200, {
+          success: true,
+          regeneratedMessage: {
+            ...msg,
+            content: explanation.answer || explanation.introduction || promptText,
+            structured: explanation
+          }
+        });
+        return;
+      }
+
+      if (pathname.startsWith('/api/tutor/messages/') && req.method === 'PUT') {
+        const messageId = pathname.split('/')[4];
+        const body = await readJsonBody(req);
+        const newContent = sanitizeText(body.content || '', 4000);
+        if (!newContent) {
+          sendJson(res, 400, { error: 'Message content cannot be empty.' });
+          return;
+        }
+
+        const msg = db.prepare('SELECT * FROM tutor_messages WHERE id = ?').get(messageId) as any;
+        if (!msg) {
+          sendJson(res, 404, { error: 'Message not found.' });
+          return;
+        }
+
+        updateTutorMessageContent(messageId, newContent);
+
+        if (body.resubmit) {
+          // Soft-delete subsequent messages in this conversation to prevent contradictory later turns
+          db.prepare('UPDATE tutor_messages SET is_deleted = 1 WHERE conversation_id = ? AND created_at > ?').run(msg.conversation_id, msg.created_at);
+
+          const conv = db.prepare('SELECT * FROM tutor_conversations WHERE id = ?').get(msg.conversation_id) as any;
+          const studentProfile = db.prepare('SELECT current_grade, current_board FROM student_profiles WHERE id = ?').get(studentId) as any;
+          const grade = studentProfile?.current_grade || 10;
+          const board = studentProfile?.current_board || 'CBSE';
+
+          const explanation = await generateTutorExplanation({
+            topic: conv?.topic || newContent,
+            subject: conv?.subject || 'Science',
+            question: newContent,
+            grade,
+            teachingMode: body.teachingMode || 'normal',
+            selectedBoard: board
+          });
+
+          const assistantMsgId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+          const now = new Date().toISOString();
+          db.prepare(`
+            INSERT INTO tutor_messages (id, conversation_id, role, content, structured_json, created_at, is_deleted)
+            VALUES (?, ?, 'assistant', ?, ?, ?, 0)
+          `).run(
+            assistantMsgId,
+            msg.conversation_id,
+            explanation.answer || explanation.introduction || newContent,
+            JSON.stringify(explanation),
+            now
+          );
+
+          const rawMessages = db.prepare('SELECT * FROM tutor_messages WHERE conversation_id = ? AND (is_deleted IS NULL OR is_deleted = 0) ORDER BY created_at ASC').all(msg.conversation_id) as any[];
+          const messages = rawMessages.map(m => ({
+            ...m,
+            structured: m.structured_json ? JSON.parse(m.structured_json) : null
+          }));
+
+          sendJson(res, 200, { success: true, resubmitted: true, messages });
+          return;
+        }
+
+        sendJson(res, 200, { success: true, messageId, content: newContent });
+        return;
+      }
+
+      if (pathname.startsWith('/api/tutor/messages/') && req.method === 'DELETE') {
+        const messageId = pathname.split('/')[4];
+        softDeleteTutorMessage(messageId);
+        sendJson(res, 200, { success: true, deleted: true, messageId });
         return;
       }
 
@@ -3371,6 +3549,88 @@ export function createAppServer() {
         db.prepare('DELETE FROM notes WHERE id = ? AND user_id = ?').run(noteId, studentId);
         db.prepare('DELETE FROM library_resources WHERE id = ? AND user_id = ?').run(`res-${noteId}`, studentId);
         sendJson(res, 200, { deleted: true, id: noteId });
+        return;
+      }
+
+      // Educational Visual Upgrade & Audit Endpoints (Master Upgrade)
+      if (pathname.startsWith('/api/notes/') && pathname.endsWith('/visual-audit') && req.method === 'GET') {
+        const noteId = pathname.split('/')[3];
+        try {
+          const report = SavedNotesVisualUpgradeEngine.auditNoteVisuals(noteId);
+          sendJson(res, 200, report);
+        } catch (e: any) {
+          sendJson(res, 404, { error: e.message });
+        }
+        return;
+      }
+
+      if (pathname.startsWith('/api/notes/') && pathname.endsWith('/upgrade-visuals') && req.method === 'POST') {
+        const noteId = pathname.split('/')[3];
+        const body = await readJsonBody(req);
+        try {
+          const result = SavedNotesVisualUpgradeEngine.upgradeNoteVisuals(noteId, { previewOnly: Boolean(body.previewOnly) });
+          sendJson(res, 200, result);
+        } catch (e: any) {
+          sendJson(res, 400, { error: e.message });
+        }
+        return;
+      }
+
+      if (pathname.startsWith('/api/notes/') && pathname.endsWith('/rollback-version') && req.method === 'POST') {
+        const noteId = pathname.split('/')[3];
+        const body = await readJsonBody(req);
+        if (!body.versionId) {
+          sendJson(res, 400, { error: 'Please provide versionId to rollback.' });
+          return;
+        }
+        try {
+          const result = SavedNotesVisualUpgradeEngine.rollbackNoteVersion(noteId, body.versionId);
+          sendJson(res, 200, result);
+        } catch (e: any) {
+          sendJson(res, 400, { error: e.message });
+        }
+        return;
+      }
+
+      if (pathname.startsWith('/api/notes/') && pathname.endsWith('/version-history') && req.method === 'GET') {
+        const noteId = pathname.split('/')[3];
+        const history = SavedNotesVisualUpgradeEngine.getNoteHistory(noteId);
+        sendJson(res, 200, history);
+        return;
+      }
+
+      if (pathname === '/api/notes/batch-upgrade-visuals' && req.method === 'POST') {
+        const userNotes = db.prepare('SELECT id FROM notes WHERE user_id = ?').all(studentId) as any[];
+        const results = [];
+        for (const n of userNotes) {
+          try {
+            const up = SavedNotesVisualUpgradeEngine.upgradeNoteVisuals(n.id);
+            results.push({ noteId: n.id, success: true, newVersion: up.newVersionNumber });
+          } catch (e: any) {
+            results.push({ noteId: n.id, success: false, error: e.message });
+          }
+        }
+        sendJson(res, 200, { success: true, upgradedCount: results.filter(r => r.success).length, results });
+        return;
+      }
+
+      if (pathname === '/api/visuals/plan' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const plan = EducationalVisualPlanningEngine.planVisual(body);
+        sendJson(res, 200, plan);
+        return;
+      }
+
+      if (pathname === '/api/visuals/modify' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const plan = EducationalVisualPlanningEngine.planVisual({
+          topic: body.topic || 'Science Concept',
+          subtopic: body.subtopic,
+          subject: body.subject || 'Science',
+          grade: body.grade || 10,
+          userModification: body.userModification || 'Make labels bigger'
+        });
+        sendJson(res, 200, plan);
         return;
       }
 

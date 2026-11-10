@@ -21,8 +21,8 @@ test('STUDYAI Topic-Accurate Educational Image Generation & Clean AI Tutor Initi
     assert.equal(plan.step1_studentRequest.mainTopic, 'Photosynthesis');
     assert.equal(plan.step1_studentRequest.subject, 'Biology');
     assert.equal(plan.step1_studentRequest.grade, 10);
-    assert.equal(plan.step3_visualPlan.diagramCount, 5);
-    assert.equal(plan.step5_diagrams.length, 5);
+    assert.ok(plan.step3_visualPlan.diagramCount >= 5);
+    assert.ok(plan.step5_diagrams.length >= 5);
     assert.equal(plan.step6_validation.isValid, true);
     assert.equal(plan.step6_validation.allLabelsAccurate, true);
 

@@ -56,7 +56,7 @@ export function svgToDataUrl(svg: string): string {
 // ============================================================================
 
 export function getPhotosynthesisSubtopicDiagrams(): SubtopicDiagramItem[] {
-  // Diagram 1: Overall Photosynthesis Overview
+  // Diagram 1: Overall Photosynthesis Organismal Overview
   const svg1 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480">
     <rect width="800" height="480" rx="20" fill="#0F172A"/>
     <text x="400" y="36" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Photosynthesis — Overall Organismal Overview</text>
@@ -111,7 +111,92 @@ export function getPhotosynthesisSubtopicDiagrams(): SubtopicDiagramItem[] {
     <polygon points="525,234 510,230 514,242" fill="#F59E0B"/>
   </svg>`;
 
-  // Diagram 2: Chloroplast Structure
+  // Diagram 2: Leaf Internal Cross-Section Structure
+  const svgLeaf = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480">
+    <rect width="800" height="480" rx="20" fill="#0F172A"/>
+    <text x="400" y="34" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Leaf Internal Cross-Section — Tissue Anatomy for Photosynthesis</text>
+    <text x="400" y="54" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">Upper Epidermis • Palisade Mesophyll • Spongy Layer • Leaf Vein • Guard Cells &amp; Stomata</text>
+
+    <!-- Waxy Cuticle & Upper Epidermis Layer -->
+    <rect x="50" y="75" width="700" height="12" rx="4" fill="#6EE7B7" opacity="0.85"/>
+    <rect x="50" y="90" width="700" height="34" rx="6" fill="#065F46" stroke="#34D399" stroke-width="2"/>
+    <text x="70" y="112" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#A7F3D0">1. Upper Epidermis &amp; Cuticle (Light transmission, water barrier)</text>
+
+    <!-- Sunlight Beams entering leaf -->
+    <line x1="200" y1="62" x2="200" y2="88" stroke="#FDE047" stroke-width="3" stroke-dasharray="4 2"/>
+    <line x1="400" y1="62" x2="400" y2="88" stroke="#FDE047" stroke-width="3" stroke-dasharray="4 2"/>
+    <line x1="600" y1="62" x2="600" y2="88" stroke="#FDE047" stroke-width="3" stroke-dasharray="4 2"/>
+
+    <!-- Palisade Mesophyll Cells (Columnar, tightly packed with chloroplasts) -->
+    <g transform="translate(50, 130)">
+      <rect width="700" height="110" rx="10" fill="#064E3B" stroke="#10B981" stroke-width="2.5"/>
+      <!-- Columnar Cells -->
+      <rect x="15" y="10" width="60" height="90" rx="8" fill="#047857" stroke="#34D399" stroke-width="1.5"/>
+      <rect x="85" y="10" width="60" height="90" rx="8" fill="#047857" stroke="#34D399" stroke-width="1.5"/>
+      <rect x="155" y="10" width="60" height="90" rx="8" fill="#047857" stroke="#34D399" stroke-width="1.5"/>
+      <rect x="225" y="10" width="60" height="90" rx="8" fill="#047857" stroke="#34D399" stroke-width="1.5"/>
+      <rect x="295" y="10" width="60" height="90" rx="8" fill="#047857" stroke="#34D399" stroke-width="1.5"/>
+      <rect x="365" y="10" width="60" height="90" rx="8" fill="#047857" stroke="#34D399" stroke-width="1.5"/>
+      <rect x="435" y="10" width="60" height="90" rx="8" fill="#047857" stroke="#34D399" stroke-width="1.5"/>
+      <rect x="505" y="10" width="60" height="90" rx="8" fill="#047857" stroke="#34D399" stroke-width="1.5"/>
+      <rect x="575" y="10" width="60" height="90" rx="8" fill="#047857" stroke="#34D399" stroke-width="1.5"/>
+      <rect x="645" y="10" width="40" height="90" rx="8" fill="#047857" stroke="#34D399" stroke-width="1.5"/>
+
+      <!-- Chloroplast dots inside palisade cells -->
+      <circle cx="45" cy="35" r="5" fill="#4ADE80"/><circle cx="45" cy="55" r="5" fill="#4ADE80"/><circle cx="45" cy="75" r="5" fill="#4ADE80"/>
+      <circle cx="115" cy="35" r="5" fill="#4ADE80"/><circle cx="115" cy="55" r="5" fill="#4ADE80"/><circle cx="115" cy="75" r="5" fill="#4ADE80"/>
+      <circle cx="185" cy="35" r="5" fill="#4ADE80"/><circle cx="185" cy="55" r="5" fill="#4ADE80"/><circle cx="185" cy="75" r="5" fill="#4ADE80"/>
+      <text x="350" y="32" font-family="Inter, sans-serif" font-size="14" font-weight="900" fill="#FFFFFF" text-anchor="middle">2. Palisade Mesophyll (Dense Chloroplasts — Primary Light Absorption)</text>
+      <text x="350" y="52" font-family="Inter, sans-serif" font-size="11.5" font-weight="700" fill="#DCFCE7" text-anchor="middle">Receives ~80% of absorbed light • Columnar cells minimize shading</text>
+    </g>
+
+    <!-- Spongy Mesophyll Layer with Large Air Spaces -->
+    <g transform="translate(50, 248)">
+      <rect width="460" height="120" rx="10" fill="#065F46" stroke="#059669" stroke-width="2"/>
+      <!-- Loosely arranged cells -->
+      <circle cx="60" cy="40" r="24" fill="#047857" stroke="#34D399" stroke-width="1.5"/>
+      <circle cx="150" cy="70" r="22" fill="#047857" stroke="#34D399" stroke-width="1.5"/>
+      <circle cx="240" cy="35" r="25" fill="#047857" stroke="#34D399" stroke-width="1.5"/>
+      <circle cx="340" cy="75" r="24" fill="#047857" stroke="#34D399" stroke-width="1.5"/>
+      <circle cx="410" cy="38" r="22" fill="#047857" stroke="#34D399" stroke-width="1.5"/>
+      <text x="230" y="105" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#A7F3D0" text-anchor="middle">3. Spongy Mesophyll (Air Cavities for Gas Exchange)</text>
+      <text x="140" y="28" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#38BDF8">CO₂ &amp; O₂ Intercellular Diffusion Space</text>
+    </g>
+
+    <!-- Vascular Bundle (Leaf Vein: Xylem & Phloem) -->
+    <g transform="translate(520, 248)">
+      <rect width="230" height="120" rx="12" fill="#1E293B" stroke="#F59E0B" stroke-width="2.5"/>
+      <text x="115" y="26" font-family="Inter, sans-serif" font-size="13" font-weight="900" fill="#FBBF24" text-anchor="middle">4. Leaf Vein (Vascular Bundle)</text>
+      <!-- Xylem -->
+      <circle cx="60" cy="65" r="22" fill="#0284C7" stroke="#38BDF8" stroke-width="2"/>
+      <text x="60" y="69" font-family="Inter, sans-serif" font-size="11" font-weight="900" fill="#FFFFFF" text-anchor="middle">Xylem</text>
+      <text x="60" y="102" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#7DD3FC" text-anchor="middle">H₂O Inflow</text>
+      <!-- Phloem -->
+      <circle cx="160" cy="65" r="22" fill="#D97706" stroke="#FDE68A" stroke-width="2"/>
+      <text x="160" y="69" font-family="Inter, sans-serif" font-size="11" font-weight="900" fill="#FFFFFF" text-anchor="middle">Phloem</text>
+      <text x="160" y="102" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#FDE68A" text-anchor="middle">Sugar Translocation</text>
+    </g>
+
+    <!-- Lower Epidermis with Stomata & Guard Cells -->
+    <rect x="50" y="375" width="700" height="34" rx="6" fill="#065F46" stroke="#34D399" stroke-width="2"/>
+    <text x="120" y="397" font-family="Inter, sans-serif" font-size="12.5" font-weight="800" fill="#A7F3D0">5. Lower Epidermis</text>
+    
+    <!-- Stomatal Pore & Guard Cells -->
+    <g transform="translate(380, 368)">
+      <ellipse cx="20" cy="24" rx="14" ry="18" fill="#15803D" stroke="#86EFAC" stroke-width="2"/>
+      <ellipse cx="50" cy="24" rx="14" ry="18" fill="#15803D" stroke="#86EFAC" stroke-width="2"/>
+      <ellipse cx="35" cy="24" rx="5" ry="12" fill="#0F172A"/>
+      <text x="35" y="62" font-family="Inter, sans-serif" font-size="12" font-weight="900" fill="#38BDF8" text-anchor="middle">Stomatal Pore &amp; Guard Cells</text>
+      <path d="M 35 440 L 35 420" stroke="#38BDF8" stroke-width="3"/>
+      <polygon points="35,412 28,424 42,424" fill="#38BDF8"/>
+      <text x="35" y="458" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#38BDF8" text-anchor="middle">CO₂ Inflow / O₂ Outflow</text>
+    </g>
+
+    <!-- Waxy Cuticle Lower -->
+    <rect x="50" y="412" width="700" height="8" rx="3" fill="#6EE7B7" opacity="0.7"/>
+  </svg>`;
+
+  // Diagram 3: Chloroplast Ultrastructure
   const svg2 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480">
     <rect width="800" height="480" rx="20" fill="#0F172A"/>
     <text x="400" y="36" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Chloroplast Ultrastructure — Organelle of Photosynthesis</text>
@@ -171,7 +256,7 @@ export function getPhotosynthesisSubtopicDiagrams(): SubtopicDiagramItem[] {
     <text x="670" y="178" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#FEF08A" text-anchor="middle">Chlorophyll + Light Reactions</text>
   </svg>`;
 
-  // Diagram 3: Light-Dependent Reactions
+  // Diagram 4: Light-Dependent Reactions
   const svg3 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480">
     <rect width="800" height="480" rx="20" fill="#0F172A"/>
     <text x="400" y="36" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Light-Dependent Reactions — Thylakoid Membrane &amp; Z-Scheme</text>
@@ -230,7 +315,7 @@ export function getPhotosynthesisSubtopicDiagrams(): SubtopicDiagramItem[] {
     <text x="655" y="426" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FDE047" text-anchor="middle">ADP + Pᵢ → ATP</text>
   </svg>`;
 
-  // Diagram 4: Calvin Cycle / Dark Reactions
+  // Diagram 5: Calvin Cycle / Dark Reactions
   const svg4 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480">
     <rect width="800" height="480" rx="20" fill="#0F172A"/>
     <text x="400" y="36" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Calvin Cycle (Dark Reactions) — Carbon Fixation in Stroma</text>
@@ -275,7 +360,85 @@ export function getPhotosynthesisSubtopicDiagrams(): SubtopicDiagramItem[] {
     <polygon points="304,149 292,159 299,145" fill="#38BDF8"/>
   </svg>`;
 
-  // Diagram 5: Overall Chemical Equation & Energy Balance
+  // Diagram 6: Comparison of Light-Dependent vs Calvin Cycle
+  const svgComparison = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480">
+    <rect width="800" height="480" rx="20" fill="#0F172A"/>
+    <text x="400" y="34" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Photosynthesis Stages Comparison — Light Reactions vs Calvin Cycle</text>
+    <text x="400" y="54" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">Coordinated Energy Coupling across Thylakoid Membrane and Aqueous Stroma Matrix</text>
+
+    <!-- Stage 1 Card: Light-Dependent Reactions -->
+    <g transform="translate(40, 75)">
+      <rect width="330" height="340" rx="16" fill="#1E293B" stroke="#10B981" stroke-width="2.5"/>
+      <rect width="330" height="48" rx="16" fill="#065F46"/>
+      <text x="165" y="30" font-family="Inter, sans-serif" font-size="15" font-weight="900" fill="#A7F3D0" text-anchor="middle">1. Light-Dependent Reactions</text>
+      
+      <!-- Key Dimensions -->
+      <g transform="translate(18, 62)">
+        <text x="0" y="16" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#38BDF8">📍 Location:</text>
+        <text x="80" y="16" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#FFFFFF">Thylakoid Membrane &amp; Lumen</text>
+
+        <text x="0" y="44" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FBBF24">☀️ Light Need:</text>
+        <text x="90" y="44" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#FFFFFF">Direct Sunlight Required (Photons)</text>
+
+        <text x="0" y="72" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#4ADE80">📥 Main Inputs:</text>
+        <text x="95" y="72" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#FFFFFF">H₂O, Photons, NADP⁺, ADP + Pᵢ</text>
+
+        <text x="0" y="100" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#F87171">📤 Main Outputs:</text>
+        <text x="100" y="100" font-family="Inter, sans-serif" font-size="12" font-weight="900" fill="#FDE047">ATP, NADPH, O₂ Gas (byproduct)</text>
+
+        <text x="0" y="132" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#C084FC">⚙️ Core Function:</text>
+        <rect x="0" y="142" width="294" height="60" rx="8" fill="#0F172A" stroke="#334155"/>
+        <text x="12" y="164" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#CBD5E1">• Photolysis of water (2H₂O → 4H⁺ + 4e⁻ + O₂)</text>
+        <text x="12" y="184" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#CBD5E1">• Photophosphorylation generating ATP</text>
+      </g>
+    </g>
+
+    <!-- Center Coupling Connectors -->
+    <g transform="translate(378, 160)">
+      <!-- Top Arrow: ATP + NADPH to Calvin Cycle -->
+      <path d="M 0 30 L 40 30" stroke="#FDE047" stroke-width="4" stroke-linecap="round"/>
+      <polygon points="44,30 32,24 32,36" fill="#FDE047"/>
+      <text x="22" y="20" font-family="Inter, sans-serif" font-size="10.5" font-weight="900" fill="#FDE047" text-anchor="middle">ATP + NADPH</text>
+      
+      <!-- Bottom Arrow: ADP + NADP+ back to Light Reactions -->
+      <path d="M 40 110 L 0 110" stroke="#38BDF8" stroke-width="4" stroke-linecap="round"/>
+      <polygon points="-4,110 8,104 8,116" fill="#38BDF8"/>
+      <text x="22" y="132" font-family="Inter, sans-serif" font-size="10.5" font-weight="900" fill="#38BDF8" text-anchor="middle">ADP + NADP⁺</text>
+    </g>
+
+    <!-- Stage 2 Card: Calvin Cycle (Dark Reactions) -->
+    <g transform="translate(430, 75)">
+      <rect width="330" height="340" rx="16" fill="#1E293B" stroke="#3B82F6" stroke-width="2.5"/>
+      <rect width="330" height="48" rx="16" fill="#1E3A8A"/>
+      <text x="165" y="30" font-family="Inter, sans-serif" font-size="15" font-weight="900" fill="#BAE6FD" text-anchor="middle">2. Calvin Cycle (Dark Reactions)</text>
+
+      <!-- Key Dimensions -->
+      <g transform="translate(18, 62)">
+        <text x="0" y="16" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#38BDF8">📍 Location:</text>
+        <text x="80" y="16" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#FFFFFF">Stroma Aqueous Fluid</text>
+
+        <text x="0" y="44" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FBBF24">☀️ Light Need:</text>
+        <text x="90" y="44" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#FFFFFF">Light-Independent (Needs ATP/NADPH)</text>
+
+        <text x="0" y="72" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#4ADE80">📥 Main Inputs:</text>
+        <text x="95" y="72" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#FFFFFF">CO₂, RuBP, ATP, NADPH</text>
+
+        <text x="0" y="100" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#F87171">📤 Main Outputs:</text>
+        <text x="100" y="100" font-family="Inter, sans-serif" font-size="12" font-weight="900" fill="#FDE047">G3P Triose Sugar → Glucose, ADP, NADP⁺</text>
+
+        <text x="0" y="132" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#C084FC">⚙️ Core Function:</text>
+        <rect x="0" y="142" width="294" height="60" rx="8" fill="#0F172A" stroke="#334155"/>
+        <text x="12" y="164" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#CBD5E1">• RuBisCO fixes CO₂ with RuBP into 3-PGA</text>
+        <text x="12" y="184" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#CBD5E1">• Reduction produces G3P sugar for glucose</text>
+      </g>
+    </g>
+
+    <!-- Bottom Takeaway Alert Bar -->
+    <rect x="40" y="430" width="720" height="36" rx="10" fill="#1E293B" stroke="#F59E0B" stroke-width="1.5"/>
+    <text x="400" y="453" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FDE68A" text-anchor="middle">Key Takeaway: The Calvin cycle does NOT make glucose in one step; 2 G3P molecules exit to form one hexose glucose.</text>
+  </svg>`;
+
+  // Diagram 7: Overall Chemical Equation & Energy Balance
   const svg5 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480">
     <rect width="800" height="480" rx="20" fill="#0F172A"/>
     <text x="400" y="36" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Photosynthesis — Balanced Chemical Reaction &amp; Stoichiometry</text>
@@ -328,23 +491,54 @@ export function getPhotosynthesisSubtopicDiagrams(): SubtopicDiagramItem[] {
         { label: 'O₂ Outflow', description: 'Molecular oxygen released as a gas through stomata following water photolysis.' },
         { label: 'Glucose (C₆H₁₂O₆)', description: 'Synthesized high-energy carbohydrate translocated through phloem to storage tissues.' }
       ],
-      point3_componentFunctions: 'Leaves act as solar collection solar panels; stomata regulate gas diffusion; roots supply required electron donors (H₂O).',
+      point3_componentFunctions: 'Leaves act as solar collection panels; stomata regulate gas diffusion; roots supply required electron donors (H₂O).',
       point4_componentRelationships: 'Roots supply water up to leaves; leaves combine H₂O with captured CO₂ using solar energy to feed the whole plant.',
       point5_directionOfMovementOrProcess: 'Water moves upward through xylem; CO₂ enters leaves; O₂ exits into air; synthesized glucose flows downward to roots and fruits.',
       point6_stepByStepInterpretation: [
-        '1. Soil water is absorbed by root osmolarity and pulled upward by transpiration pull.',
+        '1. Soil water is absorbed by root osmolarity and pulled upward by transpiration pull through xylem.',
         '2. Sunlight strikes chlorophyll in the leaf mesophyll, energizing electrons.',
-        '3. Stomata open to absorb CO₂ while releasing the O₂ produced by water breakdown.'
+        '3. Stomata open to absorb CO₂ while releasing the O₂ produced by water breakdown.',
+        '4. Synthesized sugars are transported via phloem throughout the plant.'
       ],
       point7_learningOutcome: 'Students understand the plant as an open thermodynamic system converting abiotic inputs into biological food and oxygen.',
-      point8_whatToRemember: 'Inputs = 6CO₂ + 6H₂O + Sunlight; Outputs = C₆H₁₂O₆ + 6O₂. O₂ comes from water, not CO₂!',
+      point8_whatToRemember: 'Inputs = 6CO₂ + 6H₂O + Sunlight; Outputs = C₆H₁₂O₆ + 6O₂. O₂ comes from water, not CO₂! Plants do not get food from soil.',
       isVerified: true
     },
     {
       diagramId: 'photo-diag-2',
+      subtopicKey: 'leaf_anatomy',
+      subtopicTitle: 'Leaf Internal Structure and Tissue Anatomy',
+      diagramTitle: 'Diagram 2: Leaf Internal Structure (Epidermis, Mesophyll & Stomata)',
+      diagramType: 'tissue_anatomy',
+      caption: 'Transverse section of a dicot leaf detailing upper cuticle, palisade mesophyll, spongy mesophyll with air spaces, vascular bundle (xylem and phloem), and stomata.',
+      svgXml: svgLeaf,
+      dataUrl: svgToDataUrl(svgLeaf),
+      point1_whatItRepresents: 'Microscopic cross-sectional tissue anatomy of a photosynthetic leaf showing spatial arrangement for gas exchange and light capture.',
+      point2_labelledParts: [
+        { label: 'Upper Epidermis & Cuticle', description: 'Transparent protective outer cell layer with waxy cuticle preventing desiccation.' },
+        { label: 'Palisade Mesophyll', description: 'Tightly packed columnar cells containing over 80% of the leaf chloroplasts for light harvesting.' },
+        { label: 'Spongy Mesophyll', description: 'Loosely packed irregular cells with prominent air cavities facilitating rapid gas diffusion.' },
+        { label: 'Leaf Vein (Xylem & Phloem)', description: 'Vascular bundle delivering water via xylem and transporting sugars via phloem.' },
+        { label: 'Stomata & Guard Cells', description: 'Microscopic pores bordered by turgor-sensitive guard cells regulating gas exchange and transpiration.' }
+      ],
+      point3_componentFunctions: 'Palisade cells absorb sunlight; spongy air cavities diffuse CO₂ directly to chloroplasts; xylem supplies continuous water; guard cells open when turgid.',
+      point4_componentRelationships: 'Light penetrates the transparent upper epidermis into palisade cells; CO₂ entering through lower stomata diffuses through spongy spaces to reach palisade chloroplasts.',
+      point5_directionOfMovementOrProcess: 'Sunlight enters from above; water arrives via xylem; CO₂ diffuses inward from stomata; O₂ diffuses outward.',
+      point6_stepByStepInterpretation: [
+        '1. Light passes through the clear waxy cuticle into columnar palisade mesophyll cells.',
+        '2. Stomata open when guard cells become turgid, allowing CO₂ to diffuse into spongy air cavities.',
+        '3. Xylem vessels bring continuous water supply from roots to mesophyll cells.',
+        '4. Phloem translocates synthesized sugars out of the leaf to growing buds and roots.'
+      ],
+      point7_learningOutcome: 'Identify the exact internal leaf tissues and explain how structure directly facilitates photosynthesis and gas exchange.',
+      point8_whatToRemember: 'Palisade mesophyll = maximum light absorption. Spongy mesophyll = gas exchange air spaces. Guard cells control stomata.',
+      isVerified: true
+    },
+    {
+      diagramId: 'photo-diag-3',
       subtopicKey: 'chloroplast_structure',
       subtopicTitle: 'Chloroplast Ultrastructure and Compartmentalization',
-      diagramTitle: 'Diagram 2: Chloroplast Ultrastructure (Membranes, Stroma & Grana)',
+      diagramTitle: 'Diagram 3: Chloroplast Ultrastructure (Membranes, Stroma & Grana)',
       diagramType: 'organelle_anatomy',
       caption: 'Cross-sectional ultrastructure of the chloroplast detailing the double envelope, aqueous stroma, thylakoid grana stacks, and stroma lamellae.',
       svgXml: svg2,
@@ -370,10 +564,10 @@ export function getPhotosynthesisSubtopicDiagrams(): SubtopicDiagramItem[] {
       isVerified: true
     },
     {
-      diagramId: 'photo-diag-3',
+      diagramId: 'photo-diag-4',
       subtopicKey: 'light_reactions',
       subtopicTitle: 'Light-Dependent Reactions and Photolysis',
-      diagramTitle: 'Diagram 3: Light-Dependent Reactions (Photosystems II & I, Z-Scheme, ATP Synthase)',
+      diagramTitle: 'Diagram 4: Light-Dependent Reactions (Photosystems II & I, Z-Scheme, ATP Synthase)',
       diagramType: 'biochemical_pathway',
       caption: 'Detailed membrane-bound mechanism of light reactions showing PS II, water photolysis, Cytochrome b6f, PS I, NADP+ reductase, and ATP synthase.',
       svgXml: svg3,
@@ -391,20 +585,20 @@ export function getPhotosynthesisSubtopicDiagrams(): SubtopicDiagramItem[] {
       point5_directionOfMovementOrProcess: 'Electrons flow along the membrane chain; protons (H⁺) are pumped into the lumen and exit through ATP synthase into the stroma.',
       point6_stepByStepInterpretation: [
         '1. PS II absorbs sunlight, exciting electrons that leave the reaction center.',
-        '2. Water is photolyzed to replace the lost electrons, producing oxygen gas.',
-        '3. Electron flow pumps H⁺, building a proton-motive force.',
+        '2. Water is photolyzed to replace the lost electrons, producing oxygen gas: 2H₂O → 4H⁺ + 4e⁻ + O₂↑.',
+        '3. Electron flow pumps H⁺, building a proton-motive force across the thylakoid membrane.',
         '4. PS I re-excites electrons to reduce NADP⁺ into NADPH.',
-        '5. H⁺ rushes through ATP synthase, generating ATP from ADP and Pᵢ.'
+        '5. H⁺ rushes through ATP synthase, generating ATP from ADP and inorganic phosphate.'
       ],
       point7_learningOutcome: 'Master the Z-scheme and understand that light reactions generate the "assimilatory power" (ATP + NADPH) needed for sugar synthesis.',
       point8_whatToRemember: 'Light reactions produce ATP, NADPH, and O₂. Water photolysis occurs at PS II and is the true source of atmospheric oxygen.',
       isVerified: true
     },
     {
-      diagramId: 'photo-diag-4',
+      diagramId: 'photo-diag-5',
       subtopicKey: 'calvin_cycle',
       subtopicTitle: 'Calvin Cycle and Enzymatic Carbon Fixation',
-      diagramTitle: 'Diagram 4: Calvin Cycle (RuBisCO, Reduction & RuBP Regeneration)',
+      diagramTitle: 'Diagram 5: Calvin Cycle (RuBisCO, Reduction & RuBP Regeneration)',
       diagramType: 'metabolic_cycle',
       caption: 'The three cyclic phases of the Calvin cycle in the stroma: carbon fixation by RuBisCO, reduction to G3P sugar, and regeneration of the RuBP acceptor.',
       svgXml: svg4,
@@ -412,7 +606,7 @@ export function getPhotosynthesisSubtopicDiagrams(): SubtopicDiagramItem[] {
       point1_whatItRepresents: 'The light-independent cyclic enzymatic pathway that fixes atmospheric CO₂ into stable organic carbohydrates.',
       point2_labelledParts: [
         { label: 'Phase 1: Carbon Fixation', description: 'RuBisCO enzyme attaches inorganic CO₂ onto 5-carbon RuBP, forming 3-PGA.' },
-        { label: 'RuBisCO Enzyme', description: 'Ribulose-1,5-bisphosphate carboxylase-oxygenase, the most abundant enzyme on Earth.' },
+        { label: 'RuBisCO Enzyme', description: 'Ribulose-1,5-bisphosphate carboxylase-oxygenase, the catalytic enzyme of carbon fixation.' },
         { label: 'Phase 2: Reduction', description: 'ATP and NADPH donate phosphate and electrons to convert 3-PGA into glyceraldehyde-3-phosphate (G3P).' },
         { label: 'G3P Output', description: '1 out of every 6 G3P molecules exits the cycle to synthesize glucose and starch.' },
         { label: 'Phase 3: RuBP Regeneration', description: 'Remaining 5 G3P molecules use ATP to regenerate three 5-carbon RuBP acceptors.' }
@@ -422,19 +616,49 @@ export function getPhotosynthesisSubtopicDiagrams(): SubtopicDiagramItem[] {
       point5_directionOfMovementOrProcess: 'Continuous cyclic transformation: RuBP + CO₂ → 3-PGA → G3P → RuBP.',
       point6_stepByStepInterpretation: [
         '1. 3 CO₂ molecules enter and are combined with 3 RuBP (5C) by RuBisCO.',
-        '2. 6 ATP and 6 NADPH convert the 6 3-PGA molecules into 6 G3P.',
-        '3. 1 G3P molecule leaves the cycle as net carbohydrate profit.',
-        '4. 3 ATP molecules power the rearrangement of 5 G3P back into 3 RuBP.'
+        '2. 6 ATP and 6 NADPH convert the 6 3-PGA molecules into 6 G3P (triose sugars).',
+        '3. 1 G3P molecule leaves the cycle as net carbohydrate profit to form glucose.',
+        '4. 3 ATP molecules power the rearrangement of 5 G3P back into 3 RuBP acceptors.'
       ],
-      point7_learningOutcome: 'Understand why the dark reactions are light-independent in mechanism but light-dependent in operation.',
-      point8_whatToRemember: '3 phases: Fixation (RuBisCO) → Reduction (uses ATP + NADPH) → Regeneration of RuBP (uses ATP). Net product = G3P sugar.',
+      point7_learningOutcome: 'Understand why dark reactions are light-independent in mechanism but depend on light-reaction products (ATP & NADPH).',
+      point8_whatToRemember: '3 phases: Fixation (RuBisCO) → Reduction (uses ATP + NADPH) → Regeneration of RuBP (uses ATP). Net product = G3P sugar (not instant glucose!).',
       isVerified: true
     },
     {
-      diagramId: 'photo-diag-5',
+      diagramId: 'photo-diag-6',
+      subtopicKey: 'comparison_stages',
+      subtopicTitle: 'Light-Dependent vs Calvin Cycle Comparison',
+      diagramTitle: 'Diagram 6: Light Reactions vs Calvin Cycle Comparative Matrix',
+      diagramType: 'comparative_chart',
+      caption: 'Side-by-side comparison of location, energy inputs, chemical outputs, light dependency, and metabolic coupling between the two stages of photosynthesis.',
+      svgXml: svgComparison,
+      dataUrl: svgToDataUrl(svgComparison),
+      point1_whatItRepresents: 'Comprehensive comparative breakdown showing the metabolic interdependence of Light-Dependent and Light-Independent stages.',
+      point2_labelledParts: [
+        { label: 'Thylakoid Membrane vs Stroma', description: 'Spatial compartmentalization separating light harvesting from enzymatic carbon fixation.' },
+        { label: 'Photons vs ATP/NADPH', description: 'Direct electromagnetic energy input versus chemical energy currency.' },
+        { label: 'Water Photolysis vs CO₂ Fixation', description: 'Water splitting yielding oxygen gas versus CO₂ reduction yielding carbohydrates.' },
+        { label: 'ATP & NADPH Energy Bridge', description: 'Assimilatory power flowing from thylakoid into stroma.' },
+        { label: 'ADP & NADP⁺ Return Loop', description: 'Recycled chemical cofactors returning to thylakoid for re-phosphorylation.' }
+      ],
+      point3_componentFunctions: 'Light reactions convert solar energy to chemical currency; dark reactions invest that currency into enduring organic matter.',
+      point4_componentRelationships: 'Light reactions cannot run if NADP⁺/ADP are depleted; Calvin cycle cannot run without ATP/NADPH from light reactions.',
+      point5_directionOfMovementOrProcess: 'Energy flows from Photons → ATP/NADPH → Glucose; Cofactors cycle continuously between thylakoid and stroma.',
+      point6_stepByStepInterpretation: [
+        '1. Thylakoids absorb light, split H₂O, produce ATP, NADPH, and vent O₂.',
+        '2. Stroma receives ATP and NADPH, using RuBisCO to fix CO₂ into G3P sugar.',
+        '3. Spent ADP and NADP⁺ return to thylakoids to be recharged by sunlight.',
+        '4. G3P molecules are condensed into glucose (C₆H₁₂O₆) and stored as starch.'
+      ],
+      point7_learningOutcome: 'Clear distinction between the two stages for exam differentiation tables and multi-mark questions.',
+      point8_whatToRemember: 'Light stage = Thylakoids, produces O₂ + ATP + NADPH. Dark stage = Stroma, uses ATP + NADPH to fix CO₂ into sugar.',
+      isVerified: true
+    },
+    {
+      diagramId: 'photo-diag-7',
       subtopicKey: 'chemical_equation',
       subtopicTitle: 'Balanced Chemical Equation & Stoichiometry',
-      diagramTitle: 'Diagram 5: Balanced Chemical Equation & Atomic Conservation',
+      diagramTitle: 'Diagram 7: Balanced Chemical Equation & Atomic Conservation',
       diagramType: 'stoichiometric_chart',
       caption: 'Mathematical and atomic balance chart proving conservation of mass across 6CO2 + 6H2O -> C6H12O6 + 6O2.',
       svgXml: svg5,
@@ -456,7 +680,7 @@ export function getPhotosynthesisSubtopicDiagrams(): SubtopicDiagramItem[] {
         '3. 12 Oxygens released as 6O₂ gas originate solely from water, verified by heavy oxygen-18 isotope tracing.'
       ],
       point7_learningOutcome: 'Confidently write, balance, and explain the chemical equation in board exams without losing marks on coefficients.',
-      point8_whatToRemember: '6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂ (ΔG° = +2870 kJ/mol). Always balance with coefficient 6 for CO₂, H₂O, and O₂!',
+      point8_whatToRemember: '6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂ (ΔG° = +2870 kJ/mol). Oxygen released originates strictly from water, not carbon dioxide!',
       isVerified: true
     }
   ];
@@ -2378,7 +2602,7 @@ import {
 export function getSubtopicDiagramsForTopic(topic: string, subject?: string): SubtopicDiagramItem[] {
   const lower = (topic || '').toLowerCase();
 
-  if (lower.includes('photosynthesis')) {
+  if (lower.includes('photosynthesis') || lower.includes('chloroplast') || lower.includes('calvin cycle') || lower.includes('thylakoid') || lower.includes('leaf anatomy') || (lower.includes('leaf') && (lower.includes('stomata') || lower.includes('mesophyll')))) {
     return getPhotosynthesisSubtopicDiagrams();
   }
 

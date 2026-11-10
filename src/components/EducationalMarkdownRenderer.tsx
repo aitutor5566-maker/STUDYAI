@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BookOpen, Sparkles, AlertCircle, Info, CheckCircle2, ZoomIn, X, ExternalLink } from 'lucide-react';
+import { EducationalVisualLayout } from './EducationalVisualLayout';
 import {
   parseMarkdownBlocks,
   slugify,
@@ -206,6 +207,21 @@ export const EducationalMarkdownRenderer: React.FC<EducationalMarkdownRendererPr
                   </tbody>
                 </table>
               </div>
+            );
+
+          case 'svg-diagram':
+            return (
+              <EducationalVisualLayout
+                key={idx}
+                visual={{
+                  id: `svg-${idx}`,
+                  title: block.title || 'Verified Scientific Diagram',
+                  caption: block.caption || 'Academic curriculum vector schematic with verified labels.',
+                  svgXml: block.svgXml,
+                  dataUrl: `data:image/svg+xml;utf8,${encodeURIComponent(block.svgXml || '')}`
+                }}
+                readOnly
+              />
             );
 
           case 'image': {

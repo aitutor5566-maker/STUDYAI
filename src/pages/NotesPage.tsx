@@ -63,6 +63,7 @@ import { TopBrandBar } from '../components/GlassNav';
 import { FuturisticIcon } from '../components/FuturisticIcons';
 import { StudyAiAssistantCharacter } from '../components/StudyAiAssistantCharacter';
 import { EducationalMarkdownRenderer } from '../components/EducationalMarkdownRenderer';
+import { EducationalVisualLayout } from '../components/EducationalVisualLayout';
 import { useLearning } from '../context/LearningContext';
 
 interface PendingSourceItem {
@@ -182,6 +183,79 @@ export const NotesPage: React.FC = () => {
   // Lightbox Zoom Modal for Diagrams (Section 11)
   const [lightboxImage, setLightboxImage] = useState<{ url: string; title: string; caption?: string } | null>(null);
   const [lightboxZoom, setLightboxZoom] = useState<number>(1);
+
+  // Visual Quality Audit & Upgrade State (Master Upgrade)
+  const [visualAuditReport, setVisualAuditReport] = useState<any | null>(null);
+  const [visualAuditLoading, setVisualAuditLoading] = useState<boolean>(false);
+  const [visualUpgradeLoading, setVisualUpgradeLoading] = useState<boolean>(false);
+  const [versionHistory, setVersionHistory] = useState<any[]>([]);
+  const [showVisualUpgradeModal, setShowVisualUpgradeModal] = useState<boolean>(false);
+
+  const handleOpenVisualAudit = async (noteId: string) => {
+    setShowVisualUpgradeModal(true);
+    setVisualAuditLoading(true);
+    try {
+      const [audit, history] = await Promise.all([
+        apiFetch<any>(`/api/notes/${noteId}/visual-audit`),
+        apiFetch<any[]>(`/api/notes/${noteId}/version-history`)
+      ]);
+      setVisualAuditReport(audit);
+      setVersionHistory(history || []);
+    } catch (e: any) {
+      setActionToast(`Visual audit error: ${e.message}`);
+    } finally {
+      setVisualAuditLoading(false);
+    }
+  };
+
+  const handleExecuteVisualUpgrade = async (noteId: string) => {
+    setVisualUpgradeLoading(true);
+    try {
+      const res = await apiFetch<any>(`/api/notes/${noteId}/upgrade-visuals`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ previewOnly: false })
+      });
+      if (res.success) {
+        setActionToast(`Visuals upgraded to version ${res.newVersionNumber}!`);
+        const updated = await apiFetch<any>(`/api/notes/${noteId}`);
+        setActiveNote(updated);
+        const [audit, history] = await Promise.all([
+          apiFetch<any>(`/api/notes/${noteId}/visual-audit`),
+          apiFetch<any[]>(`/api/notes/${noteId}/version-history`)
+        ]);
+        setVisualAuditReport(audit);
+        setVersionHistory(history || []);
+      }
+    } catch (e: any) {
+      setActionToast(`Upgrade failed: ${e.message}`);
+    } finally {
+      setVisualUpgradeLoading(false);
+    }
+  };
+
+  const handleRollbackVisualVersion = async (noteId: string, versionId: string) => {
+    try {
+      const res = await apiFetch<any>(`/api/notes/${noteId}/rollback-version`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ versionId })
+      });
+      if (res.success) {
+        setActionToast('Note successfully restored to previous version!');
+        const updated = await apiFetch<any>(`/api/notes/${noteId}`);
+        setActiveNote(updated);
+        const [audit, history] = await Promise.all([
+          apiFetch<any>(`/api/notes/${noteId}/visual-audit`),
+          apiFetch<any[]>(`/api/notes/${noteId}/version-history`)
+        ]);
+        setVisualAuditReport(audit);
+        setVersionHistory(history || []);
+      }
+    } catch (e: any) {
+      setActionToast(`Rollback failed: ${e.message}`);
+    }
+  };
 
   // Studio Tools State (Audio, Quiz, Mind Map, Slides, Infographics)
   const [studyToolsData, setStudyToolsData] = useState<any | null>(null);
@@ -1532,6 +1606,23 @@ export const NotesPage: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
               <button
                 type="button"
+                onClick={() => handleOpenVisualAudit(activeNote.id)}
+                className="btn-glass"
+                style={{
+                  padding: '6px 14px',
+                  fontSize: '0.78rem',
+                  background: 'linear-gradient(135deg, #FFF7ED 0%, #FFE4CC 100%)',
+                  border: '1.5px solid rgba(255,106,0,0.3)',
+                  color: '#C2410C',
+                  fontWeight: 800
+                }}
+                title="Audit and upgrade visual diagrams to verified educational standards with rollback"
+              >
+                <Sparkles size={14} style={{ marginRight: 4 }} color="#FF6A00" />
+                <span>✨ Visual Quality Upgrade</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => {
                   setNotebookSubTab('full');
                   setReaderViewMode('continuous');
@@ -1994,229 +2085,35 @@ export const NotesPage: React.FC = () => {
                   </div>
                 </article>
 
-                {/* Right Column: High-Resolution Labeled Educational Diagram (Section 11) */}
+                {/* Right Column: High-Resolution Labeled Educational Diagram with Mandatory Explanation */}
                 {currentPairedImage && (
                   <aside style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    <div
-                      className="glass-card"
-                      style={{
-                        padding: 16,
-                        borderRadius: 22,
-                        background: '#FFFFFF',
-                        border: '1.5px solid #EEEEEE',
-                        boxShadow: '0 8px 24px rgba(32, 33, 36, 0.05)'
+                    <EducationalVisualLayout
+                      visual={{
+                        id: currentPairedImage.id || `paired-${activeSectionIdx}`,
+                        title: currentPairedImage.title || currentSection?.heading || 'Scientific Diagram',
+                        caption: currentPairedImage.caption,
+                        svgXml: currentPairedImage.svgXml,
+                        dataUrl: currentPairedImage.imageUrl,
+                        imageUrl: currentPairedImage.imageUrl,
+                        labels: currentPairedImage.explanation?.keyComponents || currentPairedImage.explanation?.importantParts || []
                       }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                        <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#FF6A00', textTransform: 'uppercase' }}>
-                          Scientific Diagram
-                        </span>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setLightboxImage({
-                                url: currentPairedImage.imageUrl,
-                                title: currentPairedImage.title,
-                                caption: currentPairedImage.caption
-                              })
-                            }
-                            className="btn-glass"
-                            style={{ padding: '5px 10px', fontSize: '0.74rem', display: 'flex', alignItems: 'center', gap: 4 }}
-                            title="Open Fullscreen Lightbox Zoom"
-                          >
-                            <Maximize2 size={13} />
-                            <span>Zoom</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => open3DLab(activeNote.topic || editTitle)}
-                            className="btn-glass"
-                            style={{ padding: '5px 10px', fontSize: '0.74rem', display: 'flex', alignItems: 'center', gap: 4 }}
-                            title="Open in 3D Interactive Lab"
-                          >
-                            <ExternalLink size={13} />
-                            <span>3D Lab</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Large Readable Diagram Container */}
-                      <div
-                        onClick={() =>
-                          setLightboxImage({
-                            url: currentPairedImage.imageUrl,
-                            title: currentPairedImage.title,
-                            caption: currentPairedImage.caption
-                          })
-                        }
-                        style={{
-                          borderRadius: 14,
-                          overflow: 'hidden',
-                          border: '1px solid #EEEEEE',
-                          background: '#FFFFFF',
-                          cursor: 'zoom-in',
-                          marginBottom: 10
-                        }}
-                      >
-                        <img
-                          src={currentPairedImage.imageUrl}
-                          alt={currentPairedImage.title}
-                          style={{
-                            width: '100%',
-                            maxHeight: 340,
-                            objectFit: 'contain',
-                            display: 'block'
-                          }}
-                        />
-                      </div>
-
-                      <h4 style={{ fontSize: '0.94rem', fontWeight: 800, color: '#202124', margin: '0 0 4px 0' }}>
-                        {currentPairedImage.title}
-                      </h4>
-                      <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '0 0 12px 0', lineHeight: 1.45 }}>
-                        {currentPairedImage.caption}
-                      </p>
-
-                      {/* Interactive "Understand This Image" AI Action */}
-                      <div style={{ marginBottom: 12 }}>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setUnderstandImageModal({
-                              open: true,
-                              imageTitle: currentPairedImage.title,
-                              sectionTitle: currentSection?.heading || activeNote?.title || 'Diagram Overview',
-                              imageUrl: currentPairedImage.imageUrl,
-                              walkthrough: currentPairedImage.walkthrough || currentSection?.imageWalkthrough || currentPairedImage.explanation,
-                              question: '',
-                              answer: '',
-                              groundedComponents: currentPairedImage.explanation?.majorParts || [],
-                              loading: false
-                            })
-                          }
-                          className="btn-orange"
-                          style={{
-                            width: '100%',
-                            padding: '8px 14px',
-                            fontSize: '0.82rem',
-                            fontWeight: 800,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 6
-                          }}
-                        >
-                          <Sparkles size={14} />
-                          <span>Understand This Image (Ask AI)</span>
-                        </button>
-                      </div>
-
-                      {/* 8-Point Scientific Image Walkthrough Breakdown */}
-                      {(currentPairedImage.walkthrough || currentSection?.imageWalkthrough || currentPairedImage.explanation) && (
-                        <div style={{ padding: 12, borderRadius: 12, background: '#FFFDF9', border: '1px solid #FED7AA', marginBottom: 12 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                            <Compass size={14} color="#EA580C" />
-                            <span style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: '#EA580C' }}>
-                              8-Point Image Walkthrough
-                            </span>
-                          </div>
-
-                          {/* 1. What it represents */}
-                          {(currentPairedImage.walkthrough?.whatItRepresents || currentPairedImage.explanation?.mechanismOverview) && (
-                            <div style={{ marginBottom: 6 }}>
-                              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#374151' }}>1. What It Represents: </span>
-                              <span style={{ fontSize: '0.74rem', color: '#4B5563' }}>
-                                {currentPairedImage.walkthrough?.whatItRepresents || currentPairedImage.explanation?.mechanismOverview}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* 2. What student is looking at */}
-                          {currentPairedImage.walkthrough?.whatStudentIsLookingAt && (
-                            <div style={{ marginBottom: 6 }}>
-                              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#374151' }}>2. Viewing Perspective: </span>
-                              <span style={{ fontSize: '0.74rem', color: '#4B5563' }}>
-                                {currentPairedImage.walkthrough.whatStudentIsLookingAt}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* 3. Arrow indications / Process sequence */}
-                          {(currentPairedImage.walkthrough?.arrowIndications || currentPairedImage.walkthrough?.processSequence) && (
-                            <div style={{ marginBottom: 6 }}>
-                              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#374151' }}>3. Directional Flow: </span>
-                              <span style={{ fontSize: '0.74rem', color: '#4B5563' }}>
-                                {currentPairedImage.walkthrough?.arrowIndications || currentPairedImage.walkthrough?.processSequence}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* 4. Important Conclusion */}
-                          {currentPairedImage.walkthrough?.importantConclusion && (
-                            <div style={{ marginBottom: 6 }}>
-                              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#374151' }}>4. Core Takeaway: </span>
-                              <span style={{ fontSize: '0.74rem', color: '#4B5563' }}>
-                                {currentPairedImage.walkthrough.importantConclusion}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* 5. Exam Tip */}
-                          {currentPairedImage.walkthrough?.examTip && (
-                            <div style={{ padding: '6px 8px', borderRadius: 6, background: '#FFF7ED', border: '1px solid #FFEDD5', marginTop: 6 }}>
-                              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#C2410C' }}>💡 Exam Tip: </span>
-                              <span style={{ fontSize: '0.72rem', color: '#9A3412' }}>
-                                {currentPairedImage.walkthrough.examTip}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Labeled Parts / Walkthrough Preview */}
-                      {currentPairedImage.explanation?.majorParts?.length > 0 && (
-                        <div style={{ padding: 10, borderRadius: 10, background: '#FAFAFA', border: '1px solid #EEEEEE', marginBottom: 12 }}>
-                          <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: '#4B5563', display: 'block', marginBottom: 4 }}>
-                            Key Labeled Components:
-                          </span>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                            {currentPairedImage.explanation.majorParts.map((p: string, pIdx: number) => (
-                              <span key={pIdx} style={{ padding: '2px 8px', borderRadius: 9999, background: '#FFFFFF', border: '1px solid #E5E7EB', fontSize: '0.72rem', color: '#1F2937', fontWeight: 600 }}>
-                                {p}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Educational Image Discovery & Legal Reuse Badges */}
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid #F3F4F6' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#9CA3AF' }}>
-                          Source: {currentPairedImage.source || 'Verified Educational Asset'}
-                        </span>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <a
-                            href={`https://www.google.com/search?tbm=isch&tbs=sur:cl&q=${encodeURIComponent(activeNote?.topic || currentPairedImage.title || 'diagram')}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{ fontSize: '0.7rem', color: '#FF6A00', textDecoration: 'none', fontWeight: 700 }}
-                            title="Discover permitted Creative Commons diagrams on Google"
-                          >
-                            Google CC ↗
-                          </a>
-                          <a
-                            href={`https://www.pinterest.com/search/pins/?q=${encodeURIComponent((activeNote?.topic || currentPairedImage.title) + ' educational diagram')}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{ fontSize: '0.7rem', color: '#E60023', textDecoration: 'none', fontWeight: 700 }}
-                            title="Explore educational pin collections on Pinterest"
-                          >
-                            Pinterest ↗
-                          </a>
-                        </div>
-                      </div>
-                    </div>
+                      explanation={{
+                        visualTitle: currentPairedImage.title,
+                        stepByStepProcess: currentPairedImage.explanation?.stepByStepProcess || (currentPairedImage.walkthrough?.arrowIndications ? [currentPairedImage.walkthrough.arrowIndications] : []),
+                        keyComponents: (currentPairedImage.explanation?.keyComponents || currentPairedImage.explanation?.importantParts || []).map((p: any, idx: number) => ({
+                          key: `comp_${idx + 1}`,
+                          label: typeof p === 'string' ? p : p.label,
+                          description: typeof p === 'object' ? (p.description || p.role) : ''
+                        })),
+                        whyItHappens: currentPairedImage.explanation?.whyItHappens || currentPairedImage.walkthrough?.importantConclusion,
+                        importantTakeaway: currentPairedImage.explanation?.importantTakeaway || currentPairedImage.walkthrough?.examTip,
+                        examTip: currentPairedImage.walkthrough?.examTip
+                      }}
+                      onRegenerateDiagram={() => {
+                        handleOpenVisualAudit(activeNote.id);
+                      }}
+                    />
 
                     {/* Quick Audio Walkthrough launcher */}
                     <div
@@ -4878,6 +4775,221 @@ export const NotesPage: React.FC = () => {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Visual Quality Audit & Upgrade Modal (Master Upgrade) */}
+      {showVisualUpgradeModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16
+          }}
+        >
+          <div
+            style={{
+              background: '#FFFFFF',
+              borderRadius: 24,
+              padding: 24,
+              maxWidth: 720,
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 24px 48px rgba(0,0,0,0.25)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 16
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ margin: '0 0 4px 0', fontWeight: 900, fontSize: '1.2rem', color: '#1E293B', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span>✨</span> Visual Intelligence Audit &amp; Quality Upgrade
+                </h3>
+                <p style={{ margin: 0, fontSize: '0.84rem', color: '#64748B' }}>
+                  Audits previously saved visuals, detects poor/irrelevant images, and upgrades to verified publication vectors.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowVisualUpgradeModal(false)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748B' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {visualAuditLoading ? (
+              <div style={{ padding: 40, textAlign: 'center', color: '#FF6A00', fontWeight: 700 }}>
+                Auditing note visual assets and verifying curriculum alignment...
+              </div>
+            ) : visualAuditReport ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {/* Visual Quality Health Banner */}
+                <div
+                  style={{
+                    padding: 14,
+                    borderRadius: 14,
+                    background: visualAuditReport.requiresUpgrade ? '#FFF7ED' : '#F0FDF4',
+                    border: visualAuditReport.requiresUpgrade ? '1.5px solid #FDBA74' : '1.5px solid #86EFAC',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 10
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.9rem', color: visualAuditReport.requiresUpgrade ? '#C2410C' : '#166534' }}>
+                      {visualAuditReport.requiresUpgrade ? '⚠️ Visual Upgrades Available' : '✅ Publication Quality Standard Verified'}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: visualAuditReport.requiresUpgrade ? '#9A3412' : '#15803D', marginTop: 2 }}>
+                      {visualAuditReport.summaryRecommendation}
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '0.74rem', fontWeight: 800, padding: '4px 10px', borderRadius: 999, background: '#FFFFFF', color: '#C2410C', border: '1px solid #FED7AA' }}>
+                    Version {visualAuditReport.currentVisualVersion}
+                  </span>
+                </div>
+
+                {/* Audit Breakdown Cards */}
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#334155', marginBottom: 8 }}>
+                    Audited Image Assets ({visualAuditReport.totalImagesFound} found):
+                  </div>
+                  <div style={{ display: 'grid', gap: 8, maxHeight: 180, overflowY: 'auto' }}>
+                    {visualAuditReport.auditedImages.map((img: any, idx: number) => {
+                      const isGood = img.classification === 'valid_useful';
+                      return (
+                        <div
+                          key={idx}
+                          style={{
+                            padding: '8px 12px',
+                            borderRadius: 10,
+                            background: isGood ? '#F8FAFC' : '#FEF2F2',
+                            border: isGood ? '1px solid #E2E8F0' : '1px solid #FCA5A5',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#1E293B' }}>{img.title}</div>
+                            <div style={{ fontSize: '0.74rem', color: '#64748B' }}>{img.reason}</div>
+                          </div>
+                          <span
+                            style={{
+                              fontSize: '0.7rem',
+                              fontWeight: 800,
+                              padding: '2px 8px',
+                              borderRadius: 999,
+                              background: isGood ? '#DCFCE7' : '#FEE2E2',
+                              color: isGood ? '#166534' : '#DC2626'
+                            }}
+                          >
+                            {img.classification.replace(/_/g, ' ')}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Missing Process Diagrams list */}
+                {visualAuditReport.missingProcessVisuals?.length > 0 && (
+                  <div style={{ padding: 12, borderRadius: 12, background: '#F8FAFC', border: '1px solid #CBD5E1' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.8rem', color: '#0F172A', marginBottom: 6 }}>
+                      High-Yield Diagrams Available to Add:
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {visualAuditReport.missingProcessVisuals.map((diag: string, dIdx: number) => (
+                        <span key={dIdx} style={{ fontSize: '0.72rem', fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: '#FFFFFF', border: '1px solid #94A3B8', color: '#334155' }}>
+                          + {diag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Primary Action Upgrade Button */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 6 }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowVisualUpgradeModal(false)}
+                    style={{ padding: '8px 16px', borderRadius: 10, background: '#F1F5F9', border: 'none', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    disabled={visualUpgradeLoading}
+                    onClick={() => handleExecuteVisualUpgrade(activeNote.id)}
+                    className="btn-orange"
+                    style={{ padding: '10px 20px', borderRadius: 12, fontWeight: 800, fontSize: '0.88rem' }}
+                  >
+                    {visualUpgradeLoading ? 'Upgrading Note Visuals...' : '🚀 Upgrade All Visuals (Safe with Rollback)'}
+                  </button>
+                </div>
+
+                {/* Version History & Rollback Section */}
+                {versionHistory.length > 0 && (
+                  <div style={{ marginTop: 10, paddingTop: 12, borderTop: '1px dashed #CBD5E1' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#475569', marginBottom: 8 }}>
+                      ↺ Previous Versions &amp; Rollback History:
+                    </div>
+                    <div style={{ display: 'grid', gap: 6, maxHeight: 130, overflowY: 'auto' }}>
+                      {versionHistory.map((v: any, vIdx: number) => (
+                        <div
+                          key={v.id || vIdx}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: 8,
+                            background: '#F8FAFC',
+                            border: '1px solid #E2E8F0',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <div>
+                            <span style={{ fontWeight: 800, fontSize: '0.78rem', color: '#1E293B', marginRight: 8 }}>
+                              Version {v.version_number}
+                            </span>
+                            <span style={{ fontSize: '0.72rem', color: '#64748B' }}>
+                              {v.change_summary} ({new Date(v.created_at).toLocaleDateString()})
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRollbackVisualVersion(activeNote.id, v.id)}
+                            style={{
+                              padding: '3px 8px',
+                              borderRadius: 6,
+                              background: '#FFFFFF',
+                              border: '1px solid #CBD5E1',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              color: '#C2410C',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Rollback
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : null}
           </div>
         </div>
       )}

@@ -31,7 +31,13 @@ import {
   MessageSquare,
   Plus,
   X,
-  Clock
+  Clock,
+  Edit3,
+  Copy,
+  Check,
+  ThumbsUp,
+  ThumbsDown,
+  RefreshCw
 } from 'lucide-react';
 import { TopBrandBar } from '../components/GlassNav';
 import { Interactive3DViewer } from '../components/Interactive3DLab';
@@ -40,6 +46,7 @@ import { StudyAiAssistantCharacter } from '../components/StudyAiAssistantCharact
 import { useLearning } from '../context/LearningContext';
 import { AdaptiveProfileModal } from '../components/AdaptiveProfileModal';
 import { VoiceTeacherModal } from '../components/VoiceTeacherModal';
+import { EducationalVisualLayout } from '../components/EducationalVisualLayout';
 
 type LanguageType = 'English' | 'Telugu' | 'Hindi';
 type ModeType = 'simple' | 'detailed';
@@ -355,6 +362,87 @@ export const TutorPage: React.FC = () => {
   const [voiceLessonQuestion, setVoiceLessonQuestion] = useState<string>('');
   const [evaluations, setEvaluations] = useState<Record<string, { selectedOption: string; evaluated: boolean; isCorrect?: boolean; feedback?: string; score?: number; loading?: boolean }>>({});
   const [feedbacks, setFeedbacks] = useState<Record<string, string>>({});
+  const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
+  const [editingMsgText, setEditingMsgText] = useState<string>('');
+  const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
+  const [feedbackRatings, setFeedbackRatings] = useState<Record<string, 'up' | 'down'>>({});
+
+  const handleCopyMessageText = (msgId: string, text: string) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopiedMsgId(msgId);
+      setActionToast('Message copied to clipboard!');
+      setTimeout(() => setCopiedMsgId(null), 2000);
+    }
+  };
+
+  const handleDeleteMessage = async (msgId: string) => {
+    try {
+      await apiFetch(`/api/tutor/messages/${msgId}`, { method: 'DELETE' });
+      setMessages((prev) => prev.filter((m) => m.id !== msgId));
+      setActionToast('Message removed from chat.');
+    } catch (e: any) {
+      setActionToast(`Failed to delete message: ${e.message}`);
+    }
+  };
+
+  const handleStartEditMessage = (msg: any) => {
+    setEditingMsgId(msg.id);
+    setEditingMsgText(msg.content);
+  };
+
+  const handleSaveAndResubmitMessage = async (msgId: string) => {
+    if (!editingMsgText.trim()) return;
+    setLoading(true);
+    setEditingMsgId(null);
+    try {
+      const res = await apiFetch<any>(`/api/tutor/messages/${msgId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: editingMsgText,
+          resubmit: true,
+          teachingMode
+        })
+      });
+      if (res.messages) {
+        setMessages(res.messages);
+      } else {
+        setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, content: editingMsgText } : m)));
+      }
+      setActionToast('Question resubmitted and explanation updated!');
+    } catch (e: any) {
+      setActionToast(`Resubmit error: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegenerateResponse = async (assistantMsgId: string) => {
+    setLoading(true);
+    try {
+      const res = await apiFetch<any>(`/api/tutor/messages/${assistantMsgId}/regenerate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teachingMode })
+      });
+      if (res.regeneratedMessage) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === assistantMsgId ? res.regeneratedMessage : m))
+        );
+        setActionToast('Assistant response refreshed with latest curriculum analysis!');
+      }
+    } catch (e: any) {
+      setActionToast(`Regeneration failed: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFeedback = (msgId: string, rating: 'up' | 'down') => {
+    setFeedbackRatings((prev) => ({ ...prev, [msgId]: rating }));
+    setActionToast(rating === 'up' ? 'Thanks for the positive feedback! 👍' : 'Feedback recorded. Tutor will adapt explanations. 🎯');
+  };
 
   useEffect(() => {
     apiFetch<any>('/api/tutor/adaptive-profile')
@@ -1490,23 +1578,90 @@ export const TutorPage: React.FC = () => {
 
         {messages.map((msg) => {
           if (msg.role === 'user') {
+            const isEditing = editingMsgId === msg.id;
             return (
-              <div key={msg.id} style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 10 }}>
-                <div
-                  style={{
-                    background: 'linear-gradient(135deg, #FFF3E8 0%, #FFE4CC 100%)',
-                    border: '1px solid rgba(255, 106, 0, 0.25)',
-                    padding: '12px 18px',
-                    borderRadius: '20px 20px 6px 20px',
-                    fontWeight: 700,
-                    fontSize: '0.94rem',
-                    color: '#202124',
-                    maxWidth: 560,
-                    boxShadow: '0 4px 14px rgba(255, 106, 0, 0.08)'
-                  }}
-                >
-                  {msg.content}
-                </div>
+              <div key={msg.id} style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start', gap: 10 }}>
+                {isEditing ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 560, width: '100%' }}>
+                    <textarea
+                      rows={3}
+                      value={editingMsgText}
+                      onChange={(e) => setEditingMsgText(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 14,
+                        border: '2px solid #FF6A00',
+                        fontSize: '0.92rem',
+                        fontFamily: 'inherit'
+                      }}
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => setEditingMsgId(null)}
+                        style={{ padding: '4px 10px', borderRadius: 8, background: '#F1F5F9', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSaveAndResubmitMessage(msg.id)}
+                        style={{ padding: '4px 12px', borderRadius: 8, background: '#FF6A00', color: '#FFFFFF', border: 'none', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
+                      >
+                        Save &amp; Resubmit 🚀
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                    <div
+                      style={{
+                        background: 'linear-gradient(135deg, #FFF3E8 0%, #FFE4CC 100%)',
+                        border: '1px solid rgba(255, 106, 0, 0.25)',
+                        padding: '12px 18px',
+                        borderRadius: '20px 20px 6px 20px',
+                        fontWeight: 700,
+                        fontSize: '0.94rem',
+                        color: '#202124',
+                        maxWidth: 560,
+                        boxShadow: '0 4px 14px rgba(255, 106, 0, 0.08)'
+                      }}
+                    >
+                      {msg.content}
+                    </div>
+                    {/* Action Controls for User Message: Edit, Copy, Delete */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginRight: 4 }}>
+                      <button
+                        type="button"
+                        onClick={() => handleStartEditMessage(msg)}
+                        title="Edit this question"
+                        style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: '2px 4px', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: 3 }}
+                      >
+                        <Edit3 size={12} />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyMessageText(msg.id, msg.content)}
+                        title="Copy question"
+                        style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: '2px 4px', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: 3 }}
+                      >
+                        {copiedMsgId === msg.id ? <Check size={12} color="#16A34A" /> : <Copy size={12} />}
+                        <span>{copiedMsgId === msg.id ? 'Copied' : 'Copy'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteMessage(msg.id)}
+                        title="Delete question"
+                        style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: '2px 4px', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: 3 }}
+                      >
+                        <Trash2 size={12} />
+                        <span>Delete</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div
                   style={{
                     width: 36,
@@ -1943,151 +2098,70 @@ export const TutorPage: React.FC = () => {
 
                           {/* DIRECTLY CONNECTED VISUAL / 3D MODEL FOR THIS CONCEPT */}
                           {matchingImg && (
-                            <div
-                              style={{
-                                marginTop: 10,
-                                borderRadius: 16,
-                                overflow: 'hidden',
-                                border: '1.5px solid rgba(255,106,0,0.3)',
-                                background: '#FFFDFB'
-                              }}
-                            >
-                              <div
-                                style={{
-                                  padding: '7px 12px',
-                                  background: 'linear-gradient(90deg, #FF6A00 0%, #FF8533 100%)',
-                                  color: '#FFFFFF',
-                                  fontSize: '0.75rem',
-                                  fontWeight: 800,
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center'
+                            <div style={{ marginTop: 10 }}>
+                              <EducationalVisualLayout
+                                visual={{
+                                  id: matchingImg.id || `vis-${idx}`,
+                                  title: matchingImg.title || sec.title,
+                                  caption: matchingImg.caption || `${sec.title} Educational Visual`,
+                                  svgXml: matchingImg.svgXml,
+                                  dataUrl: matchingImg.imageUrl,
+                                  imageUrl: matchingImg.imageUrl,
+                                  labels: matchingImg.explanation?.importantParts || []
                                 }}
-                              >
-                                <span>🖼️ Diagram for Concept {idx + 1}: {matchingImg.title || sec.title}</span>
-                                <span>Validated Educational Visual</span>
-                              </div>
-                              <img
-                                src={matchingImg.imageUrl}
-                                alt={matchingImg.caption || sec.title}
-                                style={{
-                                  width: '100%',
-                                  maxHeight: 320,
-                                  objectFit: 'contain',
-                                  display: 'block',
-                                  padding: 6
+                                explanation={{
+                                  visualTitle: matchingImg.title || sec.title,
+                                  stepByStepProcess: matchingImg.explanation?.processStages || (matchingImg.explanation?.howPartsConnect ? [matchingImg.explanation.howPartsConnect] : []),
+                                  keyComponents: (matchingImg.explanation?.importantParts || []).map((p: any, pIdx: number) => ({
+                                    key: `k_${pIdx}`,
+                                    label: typeof p === 'string' ? p : p.label,
+                                    description: typeof p === 'object' ? (p.description || p.role) : ''
+                                  })),
+                                  whyItHappens: matchingImg.explanation?.whyItMatters || sec.whyItMatters,
+                                  importantTakeaway: matchingImg.explanation?.whatToRemember || sec.examTip,
+                                  examTip: sec.examTip
+                                }}
+                                onEditDiagram={async (updated) => {
+                                  try {
+                                    await apiFetch(`/api/tutor/messages/${msg.id}/diagram`, {
+                                      method: 'PUT',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                        title: updated.title,
+                                        labels: updated.labels
+                                      })
+                                    });
+                                    setActionToast('Diagram annotations updated!');
+                                  } catch (e: any) {
+                                    setActionToast(`Failed to update diagram: ${e.message}`);
+                                  }
+                                }}
+                                onRegenerateDiagram={async (promptMod) => {
+                                  setLoading(true);
+                                  try {
+                                    const res = await apiFetch<any>(`/api/tutor/messages/${msg.id}/regenerate-diagram`, {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                        promptModification: promptMod,
+                                        subtopic: sec.title
+                                      })
+                                    });
+                                    if (res.updatedStructured) {
+                                      setMessages((prev) =>
+                                        prev.map((m) =>
+                                          m.id === msg.id ? { ...m, structured: res.updatedStructured } : m
+                                        )
+                                      );
+                                      setActionToast(`Diagram updated: "${promptMod}"!`);
+                                    }
+                                  } catch (e: any) {
+                                    setActionToast(`Diagram adjustment failed: ${e.message}`);
+                                  } finally {
+                                    setLoading(false);
+                                  }
                                 }}
                               />
-
-                              {/* 7-Part Visual Walkthrough directly below the diagram */}
-                              {matchingImg.explanation && (
-                                <div style={{ padding: 12, background: '#F8FAFC', borderTop: '1px solid #E2E8F0', fontSize: '0.82rem', color: '#334155' }}>
-                                  <div style={{ fontWeight: 800, color: '#0F172A', fontSize: '0.84rem', marginBottom: 6 }}>
-                                    🔍 7-Part Visual Walkthrough for This Concept:
-                                  </div>
-                                  <div style={{ marginBottom: 5 }}>
-                                    <strong>1. What this image shows:</strong> {matchingImg.explanation.whatItShows}
-                                  </div>
-                                  {matchingImg.explanation.importantParts?.length > 0 && (
-                                    <div style={{ marginBottom: 5 }}>
-                                      <strong>2. Important labeled parts (Click to investigate):</strong>{' '}
-                                      {matchingImg.explanation.importantParts.map((pt: any, pIdx: number) => {
-                                        const lbl = typeof pt === 'string' ? pt : pt.label;
-                                        const r = typeof pt === 'object' ? pt.description || pt.role : '';
-                                        const isSelected = selectedVisualComponent?.label === lbl;
-                                        return (
-                                          <button
-                                            key={pIdx}
-                                            type="button"
-                                            onClick={() => setSelectedVisualComponent({
-                                              id: lbl.toLowerCase().replace(/[^a-z0-9]/g, '_'),
-                                              label: lbl,
-                                              role: r
-                                            })}
-                                            style={{
-                                              display: 'inline-flex',
-                                              alignItems: 'center',
-                                              margin: '2px 4px 2px 0',
-                                              padding: '2px 8px',
-                                              borderRadius: 999,
-                                              background: isSelected ? '#FF6A00' : '#FFF3E8',
-                                              color: isSelected ? '#FFFFFF' : '#C2410C',
-                                              border: isSelected ? '1.5px solid #EA580C' : '1px solid rgba(255,106,0,0.3)',
-                                              fontSize: '0.72rem',
-                                              fontWeight: 700,
-                                              cursor: 'pointer'
-                                            }}
-                                          >
-                                            🏷️ {lbl}
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  )}
-
-                                  {/* Interactive Component Focus Prompt Chips */}
-                                  {selectedVisualComponent && (
-                                    <div style={{
-                                      margin: '6px 0 8px',
-                                      padding: '8px 12px',
-                                      borderRadius: 12,
-                                      background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
-                                      border: '1.5px solid #3B82F6',
-                                      display: 'flex',
-                                      flexDirection: 'column',
-                                      gap: 6
-                                    }}>
-                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontWeight: 800, color: '#1E40AF', fontSize: '0.8rem' }}>
-                                          🎯 Selected Part: {selectedVisualComponent.label}
-                                        </span>
-                                        <button
-                                          type="button"
-                                          onClick={() => setSelectedVisualComponent(null)}
-                                          style={{ border: 'none', background: 'transparent', color: '#64748B', cursor: 'pointer', fontSize: '0.74rem', fontWeight: 700 }}
-                                        >
-                                          ✕ Deselect
-                                        </button>
-                                      </div>
-                                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                                        <button
-                                          type="button"
-                                          onClick={() => askTargetedQuestion(`Explain the role and mechanism of ${selectedVisualComponent.label} in ${s?.topic || activeTopic}`)}
-                                          className="btn-glass"
-                                          style={{ fontSize: '0.72rem', padding: '3px 8px', background: '#FFFFFF', color: '#1D4ED8', fontWeight: 700 }}
-                                        >
-                                          ❓ Explain Role
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => askTargetedQuestion(`What happens if ${selectedVisualComponent.label} is damaged or fails?`)}
-                                          className="btn-glass"
-                                          style={{ fontSize: '0.72rem', padding: '3px 8px', background: '#FFFFFF', color: '#DC2626', fontWeight: 700 }}
-                                        >
-                                          ⚠️ If This Fails?
-                                        </button>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {matchingImg.explanation.partFunctions && (
-                                    <div style={{ marginBottom: 5 }}>
-                                      <strong>3. What each part does:</strong>{' '}
-                                      {Array.isArray(matchingImg.explanation.partFunctions)
-                                        ? matchingImg.explanation.partFunctions.slice(0, 3).map((pf: any) => `${pf.part || pf.label}: ${pf.role || pf.description}`).join(' • ')
-                                        : String(matchingImg.explanation.partFunctions)}
-                                    </div>
-                                  )}
-                                  {matchingImg.explanation.processStages?.length > 0 && (
-                                    <div style={{ marginBottom: 5 }}>
-                                      <strong>4. Process flow across visual:</strong> {matchingImg.explanation.processStages.join(' → ')}
-                                    </div>
-                                  )}
-                                  <div style={{ padding: '5px 8px', borderRadius: 8, background: '#ECFDF5', color: '#047857', fontWeight: 700 }}>
-                                    💡 <strong>5. Exam memory hook:</strong> {matchingImg.explanation.whatToRemember || 'Remember the sequence and labeled arrows.'}
-                                  </div>
-                                </div>
-                              )}
                             </div>
                           )}
                         </div>
@@ -2766,6 +2840,81 @@ export const TutorPage: React.FC = () => {
                     ))}
                   </div>
                 )}
+                {/* Assistant Message Actions: Copy, Regenerate, Thumbs, Delete */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginTop: 14,
+                    paddingTop: 10,
+                    borderTop: '1px solid #F1F5F9',
+                    flexWrap: 'wrap',
+                    gap: 8
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyMessageText(msg.id, msg.content)}
+                      title="Copy full explanation"
+                      className="btn-glass"
+                      style={{ padding: '4px 10px', fontSize: '0.74rem', display: 'flex', alignItems: 'center', gap: 4 }}
+                    >
+                      {copiedMsgId === msg.id ? <Check size={13} color="#16A34A" /> : <Copy size={13} />}
+                      <span>{copiedMsgId === msg.id ? 'Copied' : 'Copy'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleRegenerateResponse(msg.id)}
+                      title="Regenerate this explanation"
+                      className="btn-glass"
+                      style={{ padding: '4px 10px', fontSize: '0.74rem', display: 'flex', alignItems: 'center', gap: 4 }}
+                    >
+                      <RefreshCw size={13} color="#FF6A00" />
+                      <span>Regenerate</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleFeedback(msg.id, 'up')}
+                      title="Good explanation"
+                      className="btn-glass"
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '0.74rem',
+                        background: feedbackRatings[msg.id] === 'up' ? '#DCFCE7' : undefined
+                      }}
+                    >
+                      <ThumbsUp size={13} color={feedbackRatings[msg.id] === 'up' ? '#16A34A' : '#64748B'} />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleFeedback(msg.id, 'down')}
+                      title="Needs improvement"
+                      className="btn-glass"
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '0.74rem',
+                        background: feedbackRatings[msg.id] === 'down' ? '#FEE2E2' : undefined
+                      }}
+                    >
+                      <ThumbsDown size={13} color={feedbackRatings[msg.id] === 'down' ? '#DC2626' : '#64748B'} />
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteMessage(msg.id)}
+                    title="Remove response from chat"
+                    className="btn-glass"
+                    style={{ padding: '4px 8px', fontSize: '0.74rem', color: '#DC2626' }}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               </div>
             </div>
           );

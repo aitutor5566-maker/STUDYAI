@@ -1257,10 +1257,45 @@ export function initDatabase() {
       created_at TEXT NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS note_version_history (
+      id TEXT PRIMARY KEY,
+      note_id TEXT NOT NULL,
+      version_number INTEGER NOT NULL,
+      content_markdown TEXT NOT NULL,
+      structured_json TEXT NOT NULL,
+      change_summary TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
+    );
   `);
 
   try {
     db.prepare("ALTER TABLE notes ADD COLUMN design_mode TEXT DEFAULT 'handwritten'").run();
+  } catch {
+    // column already exists
+  }
+
+  try {
+    db.prepare("ALTER TABLE notes ADD COLUMN visual_upgrade_status TEXT DEFAULT 'pending'").run();
+  } catch {
+    // column already exists
+  }
+
+  try {
+    db.prepare("ALTER TABLE notes ADD COLUMN visual_version INTEGER DEFAULT 1").run();
+  } catch {
+    // column already exists
+  }
+
+  try {
+    db.prepare("ALTER TABLE tutor_messages ADD COLUMN is_deleted INTEGER DEFAULT 0").run();
+  } catch {
+    // column already exists
+  }
+
+  try {
+    db.prepare("ALTER TABLE tutor_messages ADD COLUMN edited_at TEXT").run();
   } catch {
     // column already exists
   }
@@ -3524,6 +3559,75 @@ export function updateStudentTopicProgress(data: {
 
   return db.prepare('SELECT * FROM student_topic_progress WHERE id = ?').get(id);
 }
+
+// ============================================================================
+// Note Version History & Visual Upgrade Accessors
+// ============================================================================
+
+export interface NoteVersionRecord {
+  id: string;
+  note_id: string;
+  version_number: number;
+  content_markdown: string;
+  structured_json: string;
+  change_summary: string;
+  created_at: string;
+}
+
+export function insertNoteVersionHistory(params: {
+  noteId: string;
+  versionNumber: number;
+  contentMarkdown: string;
+  structuredJson: string;
+  changeSummary: string;
+}): NoteVersionRecord {
+  const id = `nv-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const now = new Date().toISOString();
+  db.prepare(`
+    INSERT INTO note_version_history (
+      id, note_id, version_number, content_markdown, structured_json, change_summary, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id,
+    params.noteId,
+    params.versionNumber,
+    params.contentMarkdown,
+    params.structuredJson,
+    params.changeSummary,
+    now
+  );
+  return db.prepare('SELECT * FROM note_version_history WHERE id = ?').get(id) as NoteVersionRecord;
+}
+
+export function getNoteVersionHistory(noteId: string): NoteVersionRecord[] {
+  return db.prepare('SELECT * FROM note_version_history WHERE note_id = ? ORDER BY version_number DESC').all(noteId) as NoteVersionRecord[];
+}
+
+export function getNoteVersionById(versionId: string): NoteVersionRecord | null {
+  const row = db.prepare('SELECT * FROM note_version_history WHERE id = ?').get(versionId);
+  return (row as NoteVersionRecord) || null;
+}
+
+// ============================================================================
+// Tutor Message Editing & Soft Deletion Accessors
+// ============================================================================
+
+export function softDeleteTutorMessage(messageId: string): boolean {
+  const res = db.prepare('UPDATE tutor_messages SET is_deleted = 1 WHERE id = ?').run(messageId);
+  return res.changes > 0;
+}
+
+export function updateTutorMessageContent(messageId: string, newContent: string): boolean {
+  const now = new Date().toISOString();
+  const res = db.prepare('UPDATE tutor_messages SET content = ?, edited_at = ? WHERE id = ?').run(newContent, now, messageId);
+  return res.changes > 0;
+}
+
+export function updateTutorMessageStructuredJson(messageId: string, structuredJson: string): boolean {
+  const res = db.prepare('UPDATE tutor_messages SET structured_json = ? WHERE id = ?').run(structuredJson, messageId);
+  return res.changes > 0;
+}
+
 
 
 

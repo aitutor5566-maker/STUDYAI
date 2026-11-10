@@ -4,7 +4,7 @@
  */
 
 export interface ParsedBlock {
-  type: 'h1' | 'h2' | 'h3' | 'h4' | 'hr' | 'p' | 'blockquote' | 'callout' | 'table' | 'image' | 'math-block' | 'ul' | 'ol';
+  type: 'h1' | 'h2' | 'h3' | 'h4' | 'hr' | 'p' | 'blockquote' | 'callout' | 'table' | 'image' | 'svg-diagram' | 'math-block' | 'ul' | 'ol';
   text?: string;
   subtype?: string;
   title?: string;
@@ -13,6 +13,7 @@ export interface ParsedBlock {
   alt?: string;
   url?: string;
   caption?: string;
+  svgXml?: string;
   items?: string[];
 }
 
@@ -136,6 +137,25 @@ export function parseMarkdownBlocks(md: string): ParsedBlock[] {
         blocks.push({ type: 'table', headers: rawHeaders, rows });
         continue;
       }
+    }
+
+    // Embedded SVG Diagram (<svg ... </svg>)
+    if (line.startsWith('<svg') || line.includes('<svg xmlns')) {
+      const svgLines: string[] = [];
+      while (i < lines.length) {
+        svgLines.push(lines[i]);
+        if (lines[i].includes('</svg>')) {
+          i++;
+          break;
+        }
+        i++;
+      }
+      blocks.push({
+        type: 'svg-diagram',
+        svgXml: svgLines.join('\n'),
+        title: 'Verified Scientific Diagram'
+      });
+      continue;
     }
 
     // Standalone Markdown Image ![alt](url)

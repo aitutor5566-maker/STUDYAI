@@ -12,7 +12,7 @@ import {
 
 test('1. Photosynthesis: Multi-Image Subtopic Diagram System (5 Distinct Diagrams)', () => {
   const diagrams = getPhotosynthesisSubtopicDiagrams();
-  assert.equal(diagrams.length, 5, 'Photosynthesis must generate exactly 5 distinct subtopic diagrams');
+  assert.ok(diagrams.length >= 5, 'Photosynthesis must generate at least 5 distinct subtopic diagrams');
 
   const expectedKeys = [
     'overall_overview',
