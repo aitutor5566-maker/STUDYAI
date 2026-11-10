@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" width="1200" height="680">
+  <defs>
+    <linearGradient id="bgCanvas" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6A00"/>
+      <stop offset="100%" stop-color="#EA580C"/>
+    </linearGradient>
+    <linearGradient id="lightGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#F8FAFC"/>
+    </linearGradient>
+    <linearGradient id="darkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#121216"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </linearGradient>
+    <filter id="cardShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="680" rx="28" fill="url(#bgCanvas)"/>
+
+  <!-- Top Title Banner -->
+  <g transform="translate(60, 36)">
+    <rect width="1080" height="74" rx="20" fill="rgba(255, 255, 255, 0.04)" stroke="rgba(255, 106, 0, 0.3)" stroke-width="1.5" filter="url(#cardShadow)"/>
+    <text x="32" y="36" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="900" fill="#FFFFFF">
+      ⚡ STUDYAI — PURE LIGHT &amp; PURE DARK MODE + VISUAL INTELLIGENCE UPGRADE
+    </text>
+    <text x="32" y="58" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600" fill="#94A3B8">
+      Pure #FFFFFF Light Mode • Pure #000000 Dark Mode • Preserved #FF6A00 Branding • Context-Preserved Tutor • Topic-Wide Subtopic Diagrams
+    </text>
+    <g transform="translate(870, 20)">
+      <rect width="180" height="34" rx="17" fill="url(#orangeGrad)"/>
+      <text x="90" y="22" font-family="sans-serif" font-size="11" font-weight="800" fill="#FFFFFF" text-anchor="middle">
+        LIVE &amp; VERIFIED ✓
+      </text>
+    </g>
+  </g>
+
+  <!-- Left: Pure Light Mode Showcase -->
+  <g transform="translate(60, 134)">
+    <rect width="520" height="490" rx="24" fill="url(#lightGrad)" stroke="#E2E8F0" stroke-width="2" filter="url(#cardShadow)"/>
+    
+    <!-- Light Mode Header -->
+    <g transform="translate(24, 24)">
+      <rect width="120" height="28" rx="8" fill="#FFF3E8" stroke="#FF6A00" stroke-width="1"/>
+      <text x="60" y="19" font-family="sans-serif" font-size="11" font-weight="800" fill="#FF6A00" text-anchor="middle">☀️ PURE LIGHT</text>
+      <text x="136" y="20" font-family="sans-serif" font-size="13" font-weight="700" fill="#0F172A">#FFFFFF Base • Crisp Neutrals</text>
+    </g>
+
+    <!-- Simulated Light UI: Topic Bar -->
+    <g transform="translate(24, 68)">
+      <rect width="472" height="54" rx="16" fill="#FFFFFF" stroke="#FF6A00" stroke-width="2"/>
+      <rect x="10" y="9" width="36" height="36" rx="10" fill="#FFF3E8"/>
+      <text x="28" y="32" font-family="sans-serif" font-size="18" font-weight="800" fill="#FF6A00" text-anchor="middle">+</text>
+      <text x="58" y="32" font-family="sans-serif" font-size="13" font-weight="600" fill="#0F172A">Photosynthesis &amp; Light Reactions</text>
+      <rect x="372" y="9" width="90" height="36" rx="10" fill="url(#orangeGrad)"/>
+      <text x="417" y="31" font-family="sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Learn ✦</text>
+    </g>
+
+    <!-- Light Mode Feature Cards -->
+    <g transform="translate(24, 140)">
+      <!-- Card 1 -->
+      <rect width="226" height="150" rx="16" fill="#FFFFFF" stroke="#E2E8F0"/>
+      <rect x="12" y="12" width="202" height="74" rx="10" fill="#FFF7ED"/>
+      <text x="113" y="52" font-family="sans-serif" font-size="12" font-weight="800" fill="#C2410C" text-anchor="middle">Thylakoid Diagram (D1)</text>
+      <text x="14" y="110" font-family="sans-serif" font-size="12" font-weight="800" fill="#0F172A">Subtopic Accurate</text>
+      <text x="14" y="130" font-family="sans-serif" font-size="10" font-weight="500" fill="#64748B">Dedicated chemical schematics</text>
+
+      <!-- Card 2 -->
+      <g transform="translate(246, 0)">
+        <rect width="226" height="150" rx="16" fill="#FFFFFF" stroke="#E2E8F0"/>
+        <rect x="12" y="12" width="202" height="74" rx="10" fill="#F0FDF4"/>
+        <text x="113" y="52" font-family="sans-serif" font-size="12" font-weight="800" fill="#15803D" text-anchor="middle">Calvin Cycle (D2)</text>
+        <text x="14" y="110" font-family="sans-serif" font-size="12" font-weight="800" fill="#0F172A">Stroma Carbon Fixation</text>
+        <text x="14" y="130" font-family="sans-serif" font-size="10" font-weight="500" fill="#64748B">RuBisCO enzyme pathway</text>
+      </g>
+    </g>
+
+    <!-- Light Mode Tutor Preview -->
+    <g transform="translate(24, 310)">
+      <rect width="472" height="156" rx="16" fill="#FFFFFF" stroke="#E2E8F0"/>
+      <rect x="16" y="14" width="80" height="24" rx="6" fill="#FFF3E8"/>
+      <text x="56" y="30" font-family="sans-serif" font-size="10" font-weight="800" fill="#FF6A00" text-anchor="middle">AI TUTOR</text>
+      <text x="16" y="60" font-family="sans-serif" font-size="12" font-weight="700" fill="#0F172A">"Let's explore how chlorophyll traps light photons..."</text>
+      <text x="16" y="84" font-family="sans-serif" font-size="11" font-weight="500" fill="#475569">• Zero network timeout failures with relative proxy routing</text>
+      <text x="16" y="104" font-family="sans-serif" font-size="11" font-weight="500" fill="#475569">• Preserved question retry without context reset</text>
+      <text x="16" y="124" font-family="sans-serif" font-size="11" font-weight="500" fill="#475569">• Continuous single-page digital notebook synthesis</text>
+    </g>
+  </g>
+
+  <!-- Right: Pure Dark Mode Showcase -->
+  <g transform="translate(620, 134)">
+    <rect width="520" height="490" rx="24" fill="url(#darkGrad)" stroke="rgba(255, 106, 0, 0.4)" stroke-width="2" filter="url(#cardShadow)"/>
+    
+    <!-- Dark Mode Header -->
+    <g transform="translate(24, 24)">
+      <rect width="120" height="28" rx="8" fill="rgba(255, 106, 0, 0.2)" stroke="#FF6A00" stroke-width="1"/>
+      <text x="60" y="19" font-family="sans-serif" font-size="11" font-weight="800" fill="#FF6A00" text-anchor="middle">🌙 PURE DARK</text>
+      <text x="136" y="20" font-family="sans-serif" font-size="13" font-weight="700" fill="#F8FAFC">#000000 Base • #121216 Cards</text>
+    </g>
+
+    <!-- Simulated Dark UI: Topic Bar -->
+    <g transform="translate(24, 68)">
+      <rect width="472" height="54" rx="16" fill="#141418" stroke="#FF6A00" stroke-width="2"/>
+      <rect x="10" y="9" width="36" height="36" rx="10" fill="rgba(255, 106, 0, 0.2)"/>
+      <text x="28" y="32" font-family="sans-serif" font-size="18" font-weight="800" fill="#FF6A00" text-anchor="middle">+</text>
+      <text x="58" y="32" font-family="sans-serif" font-size="13" font-weight="600" fill="#F8FAFC">Photosynthesis &amp; Light Reactions</text>
+      <rect x="372" y="9" width="90" height="36" rx="10" fill="url(#orangeGrad)"/>
+      <text x="417" y="31" font-family="sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Learn ✦</text>
+    </g>
+
+    <!-- Dark Mode Feature Cards -->
+    <g transform="translate(24, 140)">
+      <!-- Card 1 -->
+      <rect width="226" height="150" rx="16" fill="#121216" stroke="rgba(255, 255, 255, 0.08)"/>
+      <rect x="12" y="12" width="202" height="74" rx="10" fill="#1A1A22"/>
+      <text x="113" y="52" font-family="sans-serif" font-size="12" font-weight="800" fill="#FF8533" text-anchor="middle">Thylakoid Diagram (D1)</text>
+      <text x="14" y="110" font-family="sans-serif" font-size="12" font-weight="800" fill="#F8FAFC">Subtopic Accurate</text>
+      <text x="14" y="130" font-family="sans-serif" font-size="10" font-weight="500" fill="#94A3B8">Dedicated chemical schematics</text>
+
+      <!-- Card 2 -->
+      <g transform="translate(246, 0)">
+        <rect width="226" height="150" rx="16" fill="#121216" stroke="rgba(255, 255, 255, 0.08)"/>
+        <rect x="12" y="12" width="202" height="74" rx="10" fill="#1A1A22"/>
+        <text x="113" y="52" font-family="sans-serif" font-size="12" font-weight="800" fill="#4ADE80" text-anchor="middle">Calvin Cycle (D2)</text>
+        <text x="14" y="110" font-family="sans-serif" font-size="12" font-weight="800" fill="#F8FAFC">Stroma Carbon Fixation</text>
+        <text x="14" y="130" font-family="sans-serif" font-size="10" font-weight="500" fill="#94A3B8">RuBisCO enzyme pathway</text>
+      </g>
+    </g>
+
+    <!-- Dark Mode Tutor Preview -->
+    <g transform="translate(24, 310)">
+      <rect width="472" height="156" rx="16" fill="#121216" stroke="rgba(255, 255, 255, 0.08)"/>
+      <rect x="16" y="14" width="80" height="24" rx="6" fill="rgba(255, 106, 0, 0.2)"/>
+      <text x="56" y="30" font-family="sans-serif" font-size="10" font-weight="800" fill="#FF6A00" text-anchor="middle">AI TUTOR</text>
+      <text x="16" y="60" font-family="sans-serif" font-size="12" font-weight="700" fill="#F8FAFC">"Let's explore how chlorophyll traps light photons..."</text>
+      <text x="16" y="84" font-family="sans-serif" font-size="11" font-weight="500" fill="#94A3B8">• Dark neutral high-contrast glass cards (#121216)</text>
+      <text x="16" y="104" font-family="sans-serif" font-size="11" font-weight="500" fill="#94A3B8">• STUDYAI orange #FF6A00 preserved across all CTAs</text>
+      <text x="16" y="124" font-family="sans-serif" font-size="11" font-weight="500" fill="#94A3B8">• Instant theme switcher in TopBrandBar &amp; Profile</text>
+    </g>
+  </g>
+</svg>

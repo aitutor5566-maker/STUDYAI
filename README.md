@@ -4,6 +4,15 @@
 
 ![STUDYAI Banner](docs/assets/system_architecture_overview.svg)
 
+<br/>
+
+[![Live Web Application](https://img.shields.io/badge/Live%20Demo-theft--hip--just--francisco.trycloudflare.com-FF6A00?style=for-the-badge&logo=cloudflare&logoColor=white)](https://theft-hip-just-francisco.trycloudflare.com)
+
+> 🌐 **Live Public App Link:** [https://theft-hip-just-francisco.trycloudflare.com](https://theft-hip-just-francisco.trycloudflare.com)
+> *(Maintained and active live tunnel pointing to the production STUDYAI ecosystem)*
+
+<br/>
+
 [![Flutter](https://img.shields.io/badge/Flutter-3.24+-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.5+-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -21,6 +30,28 @@
 *An enterprise-grade, distraction-free educational ecosystem featuring an adaptive **Personalised AI Tutor**, cross-platform **Flutter (Android, iOS & Web)** client apps, Visual Intelligence Engine with dedicated subtopic diagrams, 8-Level Adaptive Language Learning with SOV/SVO sentence construction, non-repeating exercise banks, interactive 60fps Three.js 3D spatial simulations, meaning-preserving concise explanations, educational games, 40-mark weekly examination engines, and transparent parental oversight.*
 
 </div>
+
+---
+
+# 🎨 PURE LIGHT & PURE DARK MODE + VISUAL INTELLIGENCE UPGRADE
+
+<div align="center">
+
+![Pure Light & Pure Dark Mode and Visual Intelligence](docs/assets/pure_theme_and_visual_engine_showcase.svg)
+
+</div>
+
+### 1. Pure Light & Pure Dark Mode (Preserved STUDYAI Orange)
+- **Pure Light Mode:** Clean, pure white (`#FFFFFF`) surfaces with crisp neutral borders and eliminated peach radial washes.
+- **Pure Dark Mode:** Pure black (`#000000`) background with dark neutral glass cards (`#121216`), elevated dark modals (`#18181E`), and dark inputs (`#16161C`).
+- **Brand Consistency:** Iconic STUDYAI orange (`#FF6A00` / `#EA580C`) is maintained across buttons, active states, and focus rings in both themes.
+- **Seamless Toggling:** Instant Sun/Moon toggle in the `TopBrandBar` and dedicated appearance selector (Light, Dark, System Default) in the student `ProfilePage`.
+
+### 2. High-Reliability AI Tutor & Digital Notebooks
+- **Universal Relative API Routing:** Eliminated client-side `localhost:3001` network failures when accessing via mobile devices or tunnels.
+- **Context-Preserved Tutor Retry:** Questions are tracked in `lastSubmittedQuestion` so clicking "Retry" re-executes the exact question without falling back to defaults.
+- **AI Notes Error Recovery & Direct Opening:** Replaced false "No notebooks found" screens with actionable retry cards, and newly generated notebooks immediately load in the continuous textbook view without page redirects.
+- **Redesigned Topic Input Area:** Vertical centering and line-height constraints for the attachment button (`+`), text input, microphone, and "Learn" button with responsive mobile wrapping.
 
 ---
 
