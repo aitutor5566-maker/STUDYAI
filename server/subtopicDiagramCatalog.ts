@@ -2592,7 +2592,11 @@ import {
   getEarthStructureSubtopicDiagrams,
   getChemicalReactionsSubtopicDiagrams,
   getQuadraticEquationsSubtopicDiagrams,
-  getWaterResourcesSubtopicDiagrams
+  getWaterResourcesSubtopicDiagrams,
+  getWorkPowerEnergySubtopicDiagrams,
+  getWorldWar2SubtopicDiagrams,
+  getEnglishGrammarSubtopicDiagrams,
+  getComputerAlgorithmsSubtopicDiagrams
 } from './extendedSubtopicDiagrams.ts';
 
 // ============================================================================
@@ -2660,6 +2664,22 @@ export function getSubtopicDiagramsForTopic(topic: string, subject?: string): Su
 
   if (lower.includes('water resource') || lower.includes('water scarcity') || (lower.includes('rainwater') && lower.includes('harvest')) || lower.includes('multipurpose river') || (lower.includes('dam') && lower.includes('water'))) {
     return getWaterResourcesSubtopicDiagrams();
+  }
+
+  if (lower.includes('work') && (lower.includes('power') || lower.includes('energy') || lower.includes('joule') || lower.includes('kinetic') || lower.includes('potential'))) {
+    return getWorkPowerEnergySubtopicDiagrams();
+  }
+
+  if (lower.includes('world war') || lower.includes('wwii') || lower.includes('ww2') || lower.includes('stalingrad') || lower.includes('d-day') || lower.includes('pearl harbor')) {
+    return getWorldWar2SubtopicDiagrams();
+  }
+
+  if (lower.includes('grammar') || lower.includes('parts of speech') || lower.includes('sentence structure') || lower.includes('noun') || lower.includes('verb') || lower.includes('syntax')) {
+    return getEnglishGrammarSubtopicDiagrams();
+  }
+
+  if (lower.includes('algorithm') || lower.includes('binary search') || lower.includes('sorting') || lower.includes('flowchart') || lower.includes('time complexity')) {
+    return getComputerAlgorithmsSubtopicDiagrams();
   }
 
   // Generate fallback structured subtopic diagrams for any curriculum topic

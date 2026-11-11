@@ -41,6 +41,15 @@ export interface EducationalVisualProps {
     whyItHappens?: string;
     importantTakeaway?: string;
     examTip?: string;
+    realWorldApplication?: string;
+    coreFormula?: string;
+    pedagogicalSteps?: {
+      seeIt?: string;
+      understandIt?: string;
+      connectIt?: string;
+      rememberIt?: string;
+      applyIt?: string;
+    };
   };
   // ChatGPT-style Chart & Diagram Controls
   onEditDiagram?: (updatedVisual: any) => void;
@@ -511,7 +520,51 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
             </div>
           )}
 
-          {/* 5. Important Takeaway & Exam Memory Hook */}
+          {/* 4b. Real-World & Curriculum Connection (CONNECT IT) */}
+          {(explanation?.realWorldApplication || explanation?.pedagogicalSteps?.connectIt) && (
+            <div
+              style={{
+                padding: '10px 14px',
+                borderRadius: 12,
+                background: '#EFF6FF',
+                border: '1px solid #BFDBFE',
+                fontSize: '0.82rem',
+                color: '#1E40AF',
+                lineHeight: 1.55
+              }}
+            >
+              <div style={{ fontWeight: 800, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>🔗</span>
+                <span>Real-Life &amp; Curriculum Connection:</span>
+              </div>
+              <div>{explanation.realWorldApplication || explanation.pedagogicalSteps?.connectIt}</div>
+            </div>
+          )}
+
+          {/* 4c. Governing Formula or Rule (REMEMBER IT) */}
+          {explanation?.coreFormula && (
+            <div
+              style={{
+                padding: '10px 14px',
+                borderRadius: 12,
+                background: '#FAF5FF',
+                border: '1px solid #E9D5FF',
+                fontSize: '0.82rem',
+                color: '#6B21A8',
+                lineHeight: 1.55
+              }}
+            >
+              <div style={{ fontWeight: 800, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>📐</span>
+                <span>Governing Mathematical / Scientific Formula:</span>
+              </div>
+              <code style={{ background: '#FFFFFF', padding: '2px 8px', borderRadius: 6, fontWeight: 800, fontSize: '0.84rem' }}>
+                {explanation.coreFormula}
+              </code>
+            </div>
+          )}
+
+          {/* 5. Important Takeaway & Exam Memory Hook (APPLY IT) */}
           {takeaway && (
             <div
               style={{
@@ -526,7 +579,7 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
             >
               <div style={{ fontWeight: 800, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span>🎯</span>
-                <span>Important Exam Takeaway:</span>
+                <span>Important Exam Takeaway &amp; Application:</span>
               </div>
               <div>{takeaway}</div>
             </div>

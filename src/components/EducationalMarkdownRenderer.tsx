@@ -225,98 +225,33 @@ export const EducationalMarkdownRenderer: React.FC<EducationalMarkdownRendererPr
             );
 
           case 'image': {
-            const isBroken = Boolean(failedImages[block.url]);
             const isDataUrl = block.url?.startsWith('data:');
             const cleanUrl = isDataUrl ? block.url : block.url;
+            const isSvgXml = cleanUrl?.startsWith('data:image/svg+xml');
 
             return (
-              <figure
+              <EducationalVisualLayout
                 key={idx}
-                style={{
-                  margin: '24px 0',
-                  padding: 16,
-                  borderRadius: 20,
-                  background: '#FFFFFF',
-                  border: '1.5px solid rgba(255, 106, 0, 0.24)',
-                  boxShadow: '0 12px 28px -6px rgba(255, 106, 0, 0.1)',
-                  overflow: 'hidden'
+                visual={{
+                  id: `img-${idx}`,
+                  title: block.alt || 'Verified Educational Diagram',
+                  caption: block.caption || 'Academic curriculum visual with verified schematic labels.',
+                  imageUrl: cleanUrl,
+                  dataUrl: cleanUrl,
+                  svgXml: isSvgXml ? decodeURIComponent(cleanUrl.split(',')[1] || '') : undefined,
+                  diagramType: 'Educational Diagram',
+                  labels: block.explanation?.keyComponents
                 }}
-              >
-                <div style={{ position: 'relative', minHeight: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8FAFC', borderRadius: 14, overflow: 'hidden' }}>
-                  {!isBroken ? (
-                    <img
-                      src={cleanUrl}
-                      alt={block.alt || block.caption || 'Educational diagram'}
-                      loading="lazy"
-                      onError={() => {
-                        setFailedImages((prev) => ({ ...prev, [block.url]: true }));
-                      }}
-                      style={{
-                        width: '100%',
-                        maxHeight: 380,
-                        objectFit: 'contain',
-                        display: 'block',
-                        cursor: 'zoom-in',
-                        transition: 'transform 0.2s ease'
-                      }}
-                      onClick={() => setZoomModal({ url: cleanUrl, title: block.alt, caption: block.caption })}
-                    />
-                  ) : (
-                    // Graceful Scientific Diagram Fallback
-                    <div style={{ padding: 24, textAlign: 'center', color: '#64748B' }}>
-                      <div style={{ display: 'inline-flex', padding: 12, borderRadius: '50%', background: '#FFF3E8', color: '#FF6A00', marginBottom: 10 }}>
-                        <Sparkles size={24} />
-                      </div>
-                      <h5 style={{ fontWeight: 800, color: '#1E293B', margin: '0 0 6px 0', fontSize: '0.96rem' }}>
-                        {block.alt || 'Scientific Diagram'}
-                      </h5>
-                      <p style={{ fontSize: '0.84rem', margin: 0, maxWidth: 440 }}>
-                        {block.caption || 'Verified curriculum diagram illustrates key components and directional flows.'}
-                      </p>
-                    </div>
-                  )}
-
-                  {!isBroken && (
-                    <button
-                      type="button"
-                      onClick={() => setZoomModal({ url: cleanUrl, title: block.alt, caption: block.caption })}
-                      aria-label="Zoom Diagram"
-                      style={{
-                        position: 'absolute',
-                        top: 10,
-                        right: 10,
-                        padding: '6px 10px',
-                        borderRadius: 8,
-                        background: 'rgba(255, 255, 255, 0.9)',
-                        border: '1px solid rgba(0, 0, 0, 0.1)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        fontSize: '0.74rem',
-                        fontWeight: 700,
-                        color: '#1E293B',
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)'
-                      }}
-                    >
-                      <ZoomIn size={13} />
-                      <span>Zoom</span>
-                    </button>
-                  )}
-                </div>
-
-                {(block.alt || block.caption) && (
-                  <figcaption style={{ marginTop: 12, fontSize: '0.86rem', color: '#475569', lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                    <div>
-                      {block.alt && <strong style={{ color: '#FF6A00', marginRight: 6 }}>{block.alt}:</strong>}
-                      <span>{block.caption || 'Verified scientific diagram.'}</span>
-                    </div>
-                    <span style={{ fontSize: '0.72rem', color: '#94A3B8', fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: '#F1F5F9' }}>
-                      Verified Curriculum Asset
-                    </span>
-                  </figcaption>
-                )}
-              </figure>
+                explanation={
+                  block.explanation || {
+                    visualTitle: block.alt || 'Scientific Diagram',
+                    whyItHappens: block.caption || 'Illustrates key biological or physical interactions and component flows.',
+                    importantTakeaway: 'Verified curriculum visual asset for conceptual understanding.',
+                    examTip: 'Examiners award marks for exact terminology and labeled directional arrows.'
+                  }
+                }
+                readOnly
+              />
             );
           }
 

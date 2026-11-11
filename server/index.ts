@@ -109,6 +109,7 @@ import {
 import { unifiedAiOrchestrator } from './unifiedAiOrchestrator.ts';
 import { centralAiOrchestrator } from './centralAiOrchestrator.ts';
 import { macCompanionBridge } from './macCompanionBridge.ts';
+import { professionalTeacherEngine } from './professionalTeacherEngine.ts';
 import { unifiedKnowledgeRetrieval } from './unifiedKnowledgeRetrieval.ts';
 import { responseValidationLayer } from './responseValidationLayer.ts';
 import { knowledgeIntelligenceAdmin } from './knowledgeIntelligenceAdmin.ts';
@@ -1082,6 +1083,46 @@ export function createAppServer() {
             ]
           }
         });
+        return;
+      }
+
+      // ==============================================================================
+      // PROFESSIONAL TEACHING INTELLIGENCE ENGINE APIS (SEE IT -> UNDERSTAND IT -> CONNECT IT -> REMEMBER IT -> APPLY IT)
+      // ==============================================================================
+      if ((pathname === '/api/teacher/lesson' || pathname === '/api/teacher/plan') && (req.method === 'GET' || req.method === 'POST')) {
+        let topic = 'Photosynthesis';
+        let grade = 10;
+        let board = 'CBSE';
+        let language: any = 'English';
+        let subject: any = undefined;
+        let mode: any = 'normal';
+
+        if (req.method === 'POST') {
+          const body = await readJsonBody(req);
+          topic = sanitizeText(body.topic || body.question || topic, 180);
+          grade = typeof body.grade === 'number' ? body.grade : 10;
+          board = sanitizeText(body.board || 'CBSE', 40);
+          language = body.language || 'English';
+          subject = body.subject;
+          mode = body.mode || 'normal';
+        } else {
+          topic = sanitizeText(parsedUrl.searchParams.get('topic') || topic, 180);
+          grade = parseInt(parsedUrl.searchParams.get('grade') || '10', 10);
+          board = sanitizeText(parsedUrl.searchParams.get('board') || 'CBSE', 40);
+          language = parsedUrl.searchParams.get('language') || 'English';
+          subject = parsedUrl.searchParams.get('subject') || undefined;
+          mode = parsedUrl.searchParams.get('mode') || 'normal';
+        }
+
+        const lesson = await professionalTeacherEngine.planAndCreateLesson({
+          topic,
+          subject,
+          grade,
+          board,
+          language,
+          mode
+        });
+        sendJson(res, 200, lesson);
         return;
       }
 
@@ -2264,6 +2305,24 @@ export function createAppServer() {
           structured.personalTeacher = personalTeacher;
         } catch (teachErr) {
           console.warn('[AI_TUTOR] Personal Teacher Engine non-blocking warning:', teachErr);
+        }
+
+        // Phase 5: Professional Teaching Intelligence Engine (SEE IT → UNDERSTAND IT → CONNECT IT → REMEMBER IT → APPLY IT)
+        try {
+          const profLesson = await professionalTeacherEngine.planAndCreateLesson({
+            topic: effectiveTopic,
+            question,
+            subject,
+            grade,
+            board: resolvedBoard,
+            language: (language === 'Telugu' ? 'Telugu' : language === 'Hindi' ? 'Hindi' : 'English'),
+            mode: teachingMode === 'exam' ? 'exam' : 'normal',
+            studentName,
+            studentId
+          });
+          structured.professionalLesson = profLesson;
+        } catch (profErr) {
+          console.warn('[PROFESSIONAL_TEACHER] non-blocking planning warning:', profErr);
         }
 
         if (body.simulateFailure === 'primary_provider') {

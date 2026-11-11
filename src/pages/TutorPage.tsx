@@ -2062,8 +2062,87 @@ export const TutorPage: React.FC = () => {
                       <span>🖼️</span> Component 5: Concept Explanations with Integrated Visuals &amp; Diagrams
                     </div>
 
-                    {/* Integrated Concept Cards with Direct Visuals */}
-                    {(s?.conceptSections?.length > 0 ? s.conceptSections : [
+                    {/* Integrated Concept Cards with Direct Visuals (SEE IT -> UNDERSTAND IT -> CONNECT IT -> REMEMBER IT -> APPLY IT) */}
+                    {Array.isArray(s?.professionalLesson?.sideBySideSections) && s.professionalLesson.sideBySideSections.length > 0 ? (
+                      s.professionalLesson.sideBySideSections.map((sec: any, idx: number) => (
+                        <div key={sec.sectionId || idx} style={{ marginBottom: 16 }}>
+                          <EducationalVisualLayout
+                            visual={{
+                              id: sec.visual.id,
+                              title: sec.visual.title,
+                              caption: sec.visual.caption,
+                              svgXml: sec.visual.svgXml,
+                              imageUrl: sec.visual.imageUrl,
+                              dataUrl: sec.visual.imageUrl,
+                              diagramType: sec.visual.diagramType,
+                              labels: sec.visual.labels
+                            }}
+                            explanation={{
+                              visualTitle: `Concept ${idx + 1}: ${sec.title}`,
+                              stepByStepProcess: sec.explanation.understandIt_stepByStepMechanism,
+                              keyComponents: (sec.explanation.seeIt_keyComponents || []).map((p: any, pIdx: number) => ({
+                                key: `k_${pIdx}`,
+                                label: p.label,
+                                description: p.description
+                              })),
+                              whyItHappens: sec.explanation.understandIt_whyItHappens,
+                              realWorldApplication: sec.explanation.connectIt_realWorldApplication,
+                              coreFormula: sec.explanation.rememberIt_coreFormulaOrRule,
+                              importantTakeaway: sec.explanation.rememberIt_keyTakeaway,
+                              examTip: sec.explanation.applyIt_examTip,
+                              pedagogicalSteps: {
+                                seeIt: sec.explanation.seeIt_whatAmILookingAt,
+                                understandIt: sec.explanation.understandIt_howItWorks,
+                                connectIt: sec.explanation.connectIt_realWorldApplication,
+                                rememberIt: sec.explanation.rememberIt_keyTakeaway,
+                                applyIt: sec.explanation.applyIt_examTip
+                              }
+                            }}
+                            onEditDiagram={async (updated) => {
+                              try {
+                                await apiFetch(`/api/tutor/messages/${msg.id}/diagram`, {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    title: updated.title,
+                                    labels: updated.labels
+                                  })
+                                });
+                                setActionToast('Diagram annotations updated!');
+                              } catch (e: any) {
+                                setActionToast(`Failed to update diagram: ${e.message}`);
+                              }
+                            }}
+                            onRegenerateDiagram={async (promptMod) => {
+                              setLoading(true);
+                              try {
+                                const res = await apiFetch<any>(`/api/tutor/messages/${msg.id}/regenerate-diagram`, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    promptModification: promptMod,
+                                    subtopic: sec.title
+                                  })
+                                });
+                                if (res.updatedStructured) {
+                                  setMessages((prev) =>
+                                    prev.map((m) =>
+                                      m.id === msg.id ? { ...m, structured: res.updatedStructured } : m
+                                    )
+                                  );
+                                  setActionToast(`Diagram updated: "${promptMod}"!`);
+                                }
+                              } catch (e: any) {
+                                setActionToast(`Diagram adjustment failed: ${e.message}`);
+                              } finally {
+                                setLoading(false);
+                              }
+                            }}
+                          />
+                        </div>
+                      ))
+                    ) : (
+                    (s?.conceptSections?.length > 0 ? s.conceptSections : [
                       {
                         id: 'concept-1',
                         title: `${s?.topic || activeTopic} Core Mechanism`,
@@ -2087,52 +2166,41 @@ export const TutorPage: React.FC = () => {
                         <div
                           key={sec.id || idx}
                           style={{
-                            padding: 16,
-                            borderRadius: 18,
-                            background: '#FFFFFF',
-                            border: '1.5px solid rgba(255,106,0,0.25)',
-                            boxShadow: '0 4px 14px rgba(255,106,0,0.06)'
+                            marginBottom: 16
                           }}
                         >
-                          <div style={{ fontWeight: 800, color: '#EA580C', fontSize: '0.92rem', marginBottom: 6 }}>
-                            Concept {idx + 1}: {sec.title}
-                          </div>
-
-                          <div style={{ display: 'grid', gap: 5, fontSize: '0.85rem', color: '#374151', lineHeight: 1.55, marginBottom: 12 }}>
-                            <div><strong style={{ color: '#1F2937' }}>What it is:</strong> {sec.whatItIs}</div>
-                            {sec.whereItOccurs && <div><strong style={{ color: '#1F2937' }}>Where it occurs:</strong> {sec.whereItOccurs}</div>}
-                            <div><strong style={{ color: '#1F2937' }}>How it works:</strong> {sec.howItWorks}</div>
-                            <div><strong style={{ color: '#1F2937' }}>Why it matters:</strong> {sec.whyItMatters}</div>
-                            {sec.whatIfItFails && <div style={{ color: '#B91C1C' }}><strong>If it fails / changes:</strong> {sec.whatIfItFails}</div>}
-                            {sec.examTip && <div style={{ color: '#047857', fontWeight: 700 }}>🎯 Exam Tip: {sec.examTip}</div>}
-                          </div>
-
-                          {/* DIRECTLY CONNECTED VISUAL / 3D MODEL FOR THIS CONCEPT */}
-                          {matchingImg && (
-                            <div style={{ marginTop: 10 }}>
-                              <EducationalVisualLayout
-                                visual={{
-                                  id: matchingImg.id || `vis-${idx}`,
-                                  title: matchingImg.title || sec.title,
-                                  caption: matchingImg.caption || `${sec.title} Educational Visual`,
-                                  svgXml: matchingImg.svgXml,
-                                  dataUrl: matchingImg.imageUrl,
-                                  imageUrl: matchingImg.imageUrl,
-                                  labels: matchingImg.explanation?.importantParts || []
-                                }}
-                                explanation={{
-                                  visualTitle: matchingImg.title || sec.title,
-                                  stepByStepProcess: matchingImg.explanation?.processStages || (matchingImg.explanation?.howPartsConnect ? [matchingImg.explanation.howPartsConnect] : []),
-                                  keyComponents: (matchingImg.explanation?.importantParts || []).map((p: any, pIdx: number) => ({
-                                    key: `k_${pIdx}`,
-                                    label: typeof p === 'string' ? p : p.label,
-                                    description: typeof p === 'object' ? (p.description || p.role) : ''
-                                  })),
-                                  whyItHappens: matchingImg.explanation?.whyItMatters || sec.whyItMatters,
-                                  importantTakeaway: matchingImg.explanation?.whatToRemember || sec.examTip,
-                                  examTip: sec.examTip
-                                }}
-                                onEditDiagram={async (updated) => {
+                          {matchingImg ? (
+                            <EducationalVisualLayout
+                              visual={{
+                                id: matchingImg.id || `vis-${idx}`,
+                                title: matchingImg.title || sec.title,
+                                caption: matchingImg.caption || `${sec.title} Educational Visual`,
+                                svgXml: matchingImg.svgXml,
+                                dataUrl: matchingImg.imageUrl,
+                                imageUrl: matchingImg.imageUrl,
+                                labels: matchingImg.explanation?.importantParts || []
+                              }}
+                              explanation={{
+                                visualTitle: `Concept ${idx + 1}: ${matchingImg.title || sec.title}`,
+                                stepByStepProcess: matchingImg.explanation?.processStages || (matchingImg.explanation?.howPartsConnect ? [matchingImg.explanation.howPartsConnect] : [sec.howItWorks]),
+                                keyComponents: (matchingImg.explanation?.importantParts || []).map((p: any, pIdx: number) => ({
+                                  key: `k_${pIdx}`,
+                                  label: typeof p === 'string' ? p : p.label,
+                                  description: typeof p === 'object' ? (p.description || p.role) : ''
+                                })),
+                                whyItHappens: matchingImg.explanation?.whyItMatters || sec.whyItMatters,
+                                realWorldApplication: sec.whereItOccurs,
+                                importantTakeaway: matchingImg.explanation?.whatToRemember || sec.whyItMatters,
+                                examTip: sec.examTip,
+                                pedagogicalSteps: {
+                                  seeIt: sec.whatItIs,
+                                  understandIt: sec.howItWorks,
+                                  connectIt: sec.whereItOccurs,
+                                  rememberIt: sec.whyItMatters,
+                                  applyIt: sec.examTip
+                                }
+                              }}
+                              onEditDiagram={async (updated) => {
                                   try {
                                     await apiFetch(`/api/tutor/messages/${msg.id}/diagram`, {
                                       method: 'PUT',
@@ -2173,11 +2241,31 @@ export const TutorPage: React.FC = () => {
                                   }
                                 }}
                               />
-                            </div>
-                          )}
+                            ) : (
+                              <div
+                                style={{
+                                  padding: 16,
+                                  borderRadius: 18,
+                                  background: '#FFFFFF',
+                                  border: '1.5px solid rgba(255,106,0,0.25)',
+                                  boxShadow: '0 4px 14px rgba(255,106,0,0.06)'
+                                }}
+                              >
+                                <div style={{ fontWeight: 800, color: '#EA580C', fontSize: '0.92rem', marginBottom: 6 }}>
+                                  Concept {idx + 1}: {sec.title}
+                                </div>
+                                <div style={{ display: 'grid', gap: 5, fontSize: '0.85rem', color: '#374151', lineHeight: 1.55 }}>
+                                  <div><strong style={{ color: '#1F2937' }}>What it is:</strong> {sec.whatItIs}</div>
+                                  {sec.whereItOccurs && <div><strong style={{ color: '#1F2937' }}>Where it occurs:</strong> {sec.whereItOccurs}</div>}
+                                  <div><strong style={{ color: '#1F2937' }}>How it works:</strong> {sec.howItWorks}</div>
+                                  <div><strong style={{ color: '#1F2937' }}>Why it matters:</strong> {sec.whyItMatters}</div>
+                                  {sec.examTip && <div style={{ color: '#047857', fontWeight: 700 }}>🎯 Exam Tip: {sec.examTip}</div>}
+                                </div>
+                              </div>
+                            )}
                         </div>
                       );
-                    })}
+                    }))}
 
                     {/* Quadratic Parabola Plot if applicable */}
                     {s?.interactivePlotSpec && <InteractiveQuadraticPlot spec={s.interactivePlotSpec} />}

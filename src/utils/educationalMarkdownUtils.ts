@@ -15,6 +15,16 @@ export interface ParsedBlock {
   caption?: string;
   svgXml?: string;
   items?: string[];
+  explanation?: {
+    visualTitle?: string;
+    stepByStepProcess?: string[];
+    keyComponents?: Array<{ label: string; description?: string }>;
+    whyItHappens?: string;
+    importantTakeaway?: string;
+    examTip?: string;
+    realWorldApplication?: string;
+    coreFormula?: string;
+  };
 }
 
 export function slugify(text: string): string {
@@ -166,11 +176,85 @@ export function parseMarkdownBlocks(md: string): ParsedBlock[] {
         caption = lines[i + 1].trim().slice(1, -1);
         i++;
       }
+
+      // Lookahead: pair subsequent explanation or breakdown directly into side-by-side layout
+      let explanation: any = undefined;
+      let j = i + 1;
+      while (j < lines.length && !lines[j].trim()) j++;
+
+      if (
+        j < lines.length &&
+        (lines[j].includes('Breakdown') ||
+          lines[j].includes('SEE IT') ||
+          lines[j].includes('What it Represents') ||
+          lines[j].startsWith('#### 🔍') ||
+          lines[j].startsWith('#### 1.') ||
+          lines[j].startsWith('1. **What it Represents'))
+      ) {
+        const stepByStepProcess: string[] = [];
+        const keyComponents: Array<{ label: string; description?: string }> = [];
+        let whyItHappens = '';
+        let importantTakeaway = '';
+        let examTip = '';
+        let realWorldApplication = '';
+        let coreFormula = '';
+
+        while (j < lines.length) {
+          const l = lines[j].trim();
+          if (!l) {
+            j++;
+            continue;
+          }
+          if (l === '---' || l.startsWith('## ') || l.startsWith('# ') || l.startsWith('### Figure') || (l.startsWith('### Concept') && !l.includes(imgMatch[1]))) {
+            break;
+          }
+
+          if (l.includes('What it Represents:') || l.includes('SEE IT')) {
+            const val = l.replace(/^.*(What it Represents:|SEE IT.*?\))\s*/i, '').trim();
+            if (val) stepByStepProcess.push(`Orientation: ${val}`);
+          } else if (l.startsWith('- **') || l.startsWith('* **') || l.includes('Component Functions:')) {
+            const compMatch = l.match(/[-*]\s*\*\*([^*:]+):?\*\*[:]?\s*(.*)/);
+            if (compMatch) {
+              keyComponents.push({ label: compMatch[1].trim(), description: compMatch[2].trim() });
+            }
+          } else if (l.includes('Why This Happens:') || l.includes('Why It Happens:')) {
+            whyItHappens = l.replace(/^.*(Why This Happens:|Why It Happens:)\s*/i, '').trim();
+          } else if (l.includes('Crucial Fact to Remember:') || l.includes('What to Remember for Exams:')) {
+            importantTakeaway = l.replace(/^.*(Crucial Fact to Remember:|What to Remember for Exams:)\s*/i, '').replace(/\*\*/g, '').trim();
+          } else if (l.includes('Exam Marking Tip:') || l.includes('Board Exam Marking Tip:')) {
+            examTip = l.replace(/^.*(Exam Marking Tip:|Board Exam Marking Tip:)\s*/i, '').trim();
+          } else if (l.includes('Real-World Application:')) {
+            realWorldApplication = l.replace(/^.*Real-World Application:\s*/i, '').trim();
+          } else if (l.includes('Governing Formula') || l.includes('Governing Equation')) {
+            const fMatch = l.match(/`([^`]+)`/);
+            if (fMatch) coreFormula = fMatch[1];
+          } else if (/^\d+\.\s+/.test(l)) {
+            stepByStepProcess.push(l.replace(/^\d+\.\s+/, '').trim());
+          } else if (!l.startsWith('#') && !l.startsWith('-') && !l.startsWith('*') && l.length > 5) {
+            stepByStepProcess.push(l);
+          }
+          j++;
+        }
+
+        explanation = {
+          visualTitle: imgMatch[1],
+          stepByStepProcess,
+          keyComponents,
+          whyItHappens,
+          importantTakeaway,
+          examTip,
+          realWorldApplication,
+          coreFormula
+        };
+        i = j - 1;
+      }
+
       blocks.push({
         type: 'image',
         alt: imgMatch[1],
         url: imgMatch[2],
-        caption
+        caption,
+        explanation
       });
       i++;
       continue;

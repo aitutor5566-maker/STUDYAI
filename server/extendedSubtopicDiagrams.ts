@@ -1871,3 +1871,451 @@ export function getWaterResourcesSubtopicDiagrams(): SubtopicDiagramItem[] {
     }
   ];
 }
+
+// =============================================================================
+// TOPIC 17: Work, Power and Energy (Physics - Class 9/10)
+// =============================================================================
+export function getWorkPowerEnergySubtopicDiagrams(): SubtopicDiagramItem[] {
+  const svg1 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" width="100%" height="100%">
+  <rect width="900" height="500" fill="#0A0F1D"/>
+  <rect x="20" y="20" width="860" height="460" rx="16" fill="#131D31" stroke="#38BDF8" stroke-width="2"/>
+  <text x="450" y="55" fill="#F8FAFC" font-size="22" font-weight="bold" text-anchor="middle" font-family="system-ui, sans-serif">WORK, POWER AND MECHANICAL ENERGY CONSERVATION</text>
+  <text x="450" y="80" fill="#38BDF8" font-size="14" text-anchor="middle" font-family="system-ui, sans-serif">W = F · s · cos(θ) • Ek = ½mv² • Ep = mgh • Conservation: E_total = Constant</text>
+  
+  <!-- Left: Work Done by Force Vector -->
+  <g transform="translate(60, 120)">
+    <rect width="360" height="320" rx="12" fill="#1E293B" stroke="#64748B" stroke-width="1.5"/>
+    <text x="180" y="32" fill="#FBBF24" font-size="16" font-weight="bold" text-anchor="middle">1. Work Done &amp; Force Vector Angle</text>
+    <!-- Ground line -->
+    <line x1="30" y1="240" x2="330" y2="240" stroke="#94A3B8" stroke-width="3"/>
+    <!-- Object Block -->
+    <rect x="70" y="170" width="80" height="70" rx="8" fill="#3B82F6" stroke="#60A5FA" stroke-width="2"/>
+    <text x="110" y="210" fill="#FFFFFF" font-size="16" font-weight="bold" text-anchor="middle">Mass m</text>
+    <!-- Displacement Vector s -->
+    <line x1="160" y1="220" x2="290" y2="220" stroke="#10B981" stroke-width="3" marker-end="url(#arrow-green)"/>
+    <text x="225" y="212" fill="#10B981" font-size="13" font-weight="bold">Displacement s →</text>
+    <!-- Force Vector F at angle theta -->
+    <line x1="150" y1="180" x2="250" y2="100" stroke="#EF4444" stroke-width="3.5"/>
+    <polygon points="252,98 238,102 246,114" fill="#EF4444"/>
+    <text x="210" y="90" fill="#EF4444" font-size="14" font-weight="bold">Applied Force F</text>
+    <!-- Angle arc -->
+    <path d="M 190,180 A 40,40 0 0,0 185,150" fill="none" stroke="#FBBF24" stroke-width="2"/>
+    <text x="195" y="165" fill="#FBBF24" font-size="13" font-weight="bold">θ</text>
+    <!-- Formula Box -->
+    <rect x="30" y="260" width="300" height="46" rx="8" fill="#0F172A" stroke="#FBBF24"/>
+    <text x="180" y="288" fill="#FBBF24" font-size="14" font-weight="bold" text-anchor="middle">W = F · s · cos(θ) [Joules: 1 J = 1 N · m]</text>
+  </g>
+
+  <!-- Right: Conservation of Energy (Rollercoaster / Pendulum) -->
+  <g transform="translate(480, 120)">
+    <rect width="360" height="320" rx="12" fill="#1E293B" stroke="#64748B" stroke-width="1.5"/>
+    <text x="180" y="32" fill="#34D399" font-size="16" font-weight="bold" text-anchor="middle">2. Mechanical Energy Conservation</text>
+    <!-- Curved Track -->
+    <path d="M 40,80 Q 180,260 320,130" fill="none" stroke="#38BDF8" stroke-width="4"/>
+    <!-- Position A (Top Left) -->
+    <circle cx="50" cy="88" r="14" fill="#EF4444" stroke="#FFFFFF" stroke-width="2"/>
+    <text x="50" y="65" fill="#EF4444" font-size="12" font-weight="bold" text-anchor="middle">Point A (Max Height h)</text>
+    <text x="85" y="115" fill="#94A3B8" font-size="11">Ep = mgh (Max)<br/>Ek = 0 (Rest)</text>
+    <!-- Position B (Bottom) -->
+    <circle cx="180" cy="245" r="14" fill="#10B981" stroke="#FFFFFF" stroke-width="2"/>
+    <text x="180" y="280" fill="#10B981" font-size="12" font-weight="bold" text-anchor="middle">Point B (Min Height)</text>
+    <text x="180" y="225" fill="#94A3B8" font-size="11" text-anchor="middle">Ep = 0 | Ek = ½mv² (Max)</text>
+    <!-- Position C (Intermediate) -->
+    <circle cx="310" cy="138" r="14" fill="#FBBF24" stroke="#FFFFFF" stroke-width="2"/>
+    <text x="300" y="115" fill="#FBBF24" font-size="12" font-weight="bold" text-anchor="middle">Point C</text>
+    <!-- Total Energy Box -->
+    <rect x="30" y="260" width="300" height="46" rx="8" fill="#0F172A" stroke="#34D399"/>
+    <text x="180" y="288" fill="#34D399" font-size="13" font-weight="bold" text-anchor="middle">E_total = Ek + Ep = Constant (No Friction)</text>
+  </g>
+</svg>`;
+
+  return [
+    {
+      diagramId: 'wpe-sub-01',
+      subtopicKey: 'work_power_energy_principles',
+      subtopicTitle: 'Work Done, Kinetic & Potential Energy Conservation',
+      diagramTitle: 'Work Vector Resolution & Conservation of Mechanical Energy',
+      diagramType: 'Classical Mechanics Quantitative Physics Schematic',
+      caption: 'Relates applied force and displacement vectors W = F · s · cos(θ) with conservative kinetic and gravitational potential energy exchange.',
+      svgXml: svg1,
+      dataUrl: svgToDataUrl(svg1),
+      point1_whatItRepresents: 'The relationship between scalar work done by a vector force and the conservation of total mechanical energy in a conservative gravitational field.',
+      point2_labelledParts: [
+        { label: 'Applied Force Vector F', description: 'Directional push or pull applied to the mass at angle theta relative to displacement' },
+        { label: 'Displacement Vector s', description: 'Net linear distance moved by the object in the direction of the horizontal component' },
+        { label: 'Gravitational Potential Energy (Ep = mgh)', description: 'Energy stored due to vertical height position against gravity' },
+        { label: 'Kinetic Energy (Ek = ½mv²)', description: 'Energy possessed by the body by virtue of its linear velocity' }
+      ],
+      point3_componentFunctions: 'Converts chemical or mechanical work into kinetic and potential energy forms with zero net loss in isolated systems.',
+      point4_componentRelationships: 'As the object falls from maximum height h, potential energy converts directly into kinetic energy such that Ek + Ep = Constant.',
+      point5_directionOfMovementOrProcess: 'Potential energy at apex → kinetic energy at nadir → mechanical work performed on resistive target.',
+      point6_stepByStepInterpretation: [
+        '1. Force F acting at angle θ performs work only through its parallel component F·cos(θ).',
+        '2. When θ = 90° (perpendicular force like centripetal force), cos(90°) = 0 and zero work is done.',
+        '3. Work done against gravity is stored as gravitational potential energy Ep = mgh.',
+        '4. As the body descends, Ep transforms entirely into kinetic energy Ek = ½mv².',
+        '5. Power P = W/t represents the time rate of doing work in Watts (1 W = 1 J/s).'
+      ],
+      point7_learningOutcome: 'Calculate work done under inclined forces, derive mechanical energy conservation, and solve kinetic-potential energy transformation numericals.',
+      point8_whatToRemember: 'Work W = F · s · cos(θ); Kinetic Energy = ½mv²; Potential Energy = mgh; Power = W/t in Watts (Joules/sec).',
+      isVerified: true
+    }
+  ];
+}
+
+// =============================================================================
+// TOPIC 18: World War II (History - Class 9/10)
+// =============================================================================
+export function getWorldWar2SubtopicDiagrams(): SubtopicDiagramItem[] {
+  const svg1 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" width="100%" height="100%">
+  <rect width="900" height="500" fill="#0B132B"/>
+  <rect x="20" y="20" width="860" height="460" rx="16" fill="#1C2541" stroke="#E65100" stroke-width="2"/>
+  <text x="450" y="55" fill="#F8FAFC" font-size="22" font-weight="bold" text-anchor="middle" font-family="system-ui, sans-serif">WORLD WAR II: CHRONOLOGICAL TIMELINE &amp; TURNING POINTS (1939–1945)</text>
+  <text x="450" y="80" fill="#FB923C" font-size="14" text-anchor="middle" font-family="system-ui, sans-serif">Axis Powers (Germany, Italy, Japan) vs Allied Powers (UK, USSR, USA, France)</text>
+
+  <!-- Central Chronological Axis Line -->
+  <line x1="60" y1="250" x2="840" y2="250" stroke="#FF6A00" stroke-width="4"/>
+
+  <!-- Milestone 1: 1939 Invasion of Poland -->
+  <g transform="translate(100, 160)">
+    <circle cx="0" cy="90" r="12" fill="#EF4444" stroke="#FFFFFF" stroke-width="2"/>
+    <line x1="0" y1="90" x2="0" y2="20" stroke="#EF4444" stroke-width="2" stroke-dasharray="4"/>
+    <rect x="-80" y="-30" width="160" height="50" rx="8" fill="#0B132B" stroke="#EF4444"/>
+    <text x="0" y="-12" fill="#EF4444" font-size="12" font-weight="bold" text-anchor="middle">Sept 1939: Outbreak</text>
+    <text x="0" y="6" fill="#CBD5E1" font-size="10" text-anchor="middle">Invasion of Poland (Blitzkrieg)</text>
+  </g>
+
+  <!-- Milestone 2: 1940 Battle of Britain -->
+  <g transform="translate(240, 280)">
+    <circle cx="0" cy="-30" r="12" fill="#FBBF24" stroke="#FFFFFF" stroke-width="2"/>
+    <line x1="0" y1="-30" x2="0" y2="30" stroke="#FBBF24" stroke-width="2" stroke-dasharray="4"/>
+    <rect x="-80" y="30" width="160" height="50" rx="8" fill="#0B132B" stroke="#FBBF24"/>
+    <text x="0" y="48" fill="#FBBF24" font-size="12" font-weight="bold" text-anchor="middle">1940: Battle of Britain</text>
+    <text x="0" y="66" fill="#CBD5E1" font-size="10" text-anchor="middle">RAF Defends Airspace</text>
+  </g>
+
+  <!-- Milestone 3: 1941 Pearl Harbor & Barbarossa -->
+  <g transform="translate(380, 160)">
+    <circle cx="0" cy="90" r="12" fill="#EF4444" stroke="#FFFFFF" stroke-width="2"/>
+    <line x1="0" y1="90" x2="0" y2="20" stroke="#EF4444" stroke-width="2" stroke-dasharray="4"/>
+    <rect x="-80" y="-30" width="160" height="50" rx="8" fill="#0B132B" stroke="#EF4444"/>
+    <text x="0" y="-12" fill="#EF4444" font-size="12" font-weight="bold" text-anchor="middle">1941: Global War</text>
+    <text x="0" y="6" fill="#CBD5E1" font-size="10" text-anchor="middle">Barbarossa &amp; Pearl Harbor</text>
+  </g>
+
+  <!-- Milestone 4: 1942-43 Stalingrad Turning Point -->
+  <g transform="translate(520, 280)">
+    <circle cx="0" cy="-30" r="14" fill="#3B82F6" stroke="#FFFFFF" stroke-width="3"/>
+    <line x1="0" y1="-30" x2="0" y2="30" stroke="#3B82F6" stroke-width="2" stroke-dasharray="4"/>
+    <rect x="-85" y="30" width="170" height="54" rx="8" fill="#0B132B" stroke="#3B82F6"/>
+    <text x="0" y="48" fill="#60A5FA" font-size="12" font-weight="bold" text-anchor="middle">1942–43: Stalingrad</text>
+    <text x="0" y="66" fill="#CBD5E1" font-size="10" text-anchor="middle">Eastern Front Axis Retreat</text>
+  </g>
+
+  <!-- Milestone 5: 1944 D-Day Normandy -->
+  <g transform="translate(660, 160)">
+    <circle cx="0" cy="90" r="12" fill="#10B981" stroke="#FFFFFF" stroke-width="2"/>
+    <line x1="0" y1="90" x2="0" y2="20" stroke="#10B981" stroke-width="2" stroke-dasharray="4"/>
+    <rect x="-80" y="-30" width="160" height="50" rx="8" fill="#0B132B" stroke="#10B981"/>
+    <text x="0" y="-12" fill="#34D399" font-size="12" font-weight="bold" text-anchor="middle">June 1944: D-Day</text>
+    <text x="0" y="6" fill="#CBD5E1" font-size="10" text-anchor="middle">Allied Normandy Landings</text>
+  </g>
+
+  <!-- Milestone 6: 1945 Victory & UN Formation -->
+  <g transform="translate(800, 280)">
+    <circle cx="0" cy="-30" r="14" fill="#10B981" stroke="#FFFFFF" stroke-width="3"/>
+    <line x1="0" y1="-30" x2="0" y2="30" stroke="#10B981" stroke-width="2" stroke-dasharray="4"/>
+    <rect x="-80" y="30" width="160" height="54" rx="8" fill="#0B132B" stroke="#10B981"/>
+    <text x="0" y="48" fill="#34D399" font-size="12" font-weight="bold" text-anchor="middle">1945: Allied Victory</text>
+    <text x="0" y="66" fill="#CBD5E1" font-size="10" text-anchor="middle">Hiroshima, Surrender &amp; UN</text>
+  </g>
+
+  <!-- Bottom Summary Bar -->
+  <rect x="50" y="420" width="800" height="42" rx="8" fill="#0B132B" stroke="#FF6A00"/>
+  <text x="450" y="446" fill="#FED7AA" font-size="13" font-weight="bold" text-anchor="middle">Outcome: Defeat of Totalitarian Fascism, Decolonization of Asia/Africa, and Foundation of United Nations</text>
+</svg>`;
+
+  return [
+    {
+      diagramId: 'ww2-sub-01',
+      subtopicKey: 'world_war_2_chronology_turning_points',
+      subtopicTitle: 'World War II Chronology, Causes and Geopolitical Consequences',
+      diagramTitle: 'World War II Chronology & Major Strategic Turning Points',
+      diagramType: 'Historical Timeline & Cause-and-Effect Analysis',
+      caption: 'Chronological timeline tracing the escalation of WWII from the 1939 invasion of Poland to Stalingrad, Normandy, and the 1945 peace settlement.',
+      svgXml: svg1,
+      dataUrl: svgToDataUrl(svg1),
+      point1_whatItRepresents: 'A chronological timeline of World War II illustrating the progression of conflicts and strategic turning points across Europe and the Pacific.',
+      point2_labelledParts: [
+        { label: 'Outbreak (Sept 1939)', description: 'Nazi German invasion of Poland triggering British and French declarations of war' },
+        { label: 'Operation Barbarossa & Pearl Harbor (1941)', description: 'German invasion of USSR and Japanese attack on US Pacific fleet bringing USA into the war' },
+        { label: 'Battle of Stalingrad (1942-1943)', description: 'Catastrophic Axis defeat on the Eastern Front marking the definitive military turning point' },
+        { label: 'D-Day Normandy Landings (June 1944)', description: 'Allied liberation of Western Europe opening the decisive two-front war against Germany' },
+        { label: '1945 Allied Victory & United Nations', description: 'Unconditional surrender of Germany and Japan followed by the birth of the UN to preserve world peace' }
+      ],
+      point3_componentFunctions: 'Depicts how aggressive militarism, appeasement failure, and ideological conflicts led to total industrial warfare and subsequent global institutional reorganization.',
+      point4_componentRelationships: 'The failure of the League of Nations and Treaty of Versailles inequities created conditions for fascism, while 1945 victory prompted the establishment of the UN.',
+      point5_directionOfMovementOrProcess: '1939 Polish Blitzkrieg → 1940 Western Europe fall → 1942-43 Stalingrad pivot → 1944 D-Day liberation → 1945 UN creation.',
+      point6_stepByStepInterpretation: [
+        '1. Treaty of Versailles grievances and the Great Depression fostered the rise of fascism in Germany and Italy.',
+        '2. Policy of appeasement failed when Hitler annexed Czechoslovakia and invaded Poland in September 1939.',
+        '3. 1941 marked global expansion as Nazi forces invaded the Soviet Union and Japan attacked Pearl Harbor.',
+        '4. The Red Army encircled the German 6th Army at Stalingrad (1943), halting the Axis advance permanently.',
+        '5. Allied forces landed in Normandy on D-Day (1944) while Soviet forces pressed from the East, liberating Europe in May 1945.'
+      ],
+      point7_learningOutcome: 'Analyze the causes, chronological milestones, and consequences of World War II including decolonization and the Cold War dawn.',
+      point8_whatToRemember: 'WWII (1939-1945): Axis vs Allies; Turning point was Stalingrad (1943); Ended with atomic bombs and the establishment of the United Nations (1945).',
+      isVerified: true
+    }
+  ];
+}
+
+// =============================================================================
+// TOPIC 19: English Grammar & Language Learning (Class 6-10)
+// =============================================================================
+export function getEnglishGrammarSubtopicDiagrams(): SubtopicDiagramItem[] {
+  const svg1 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" width="100%" height="100%">
+  <rect width="900" height="500" fill="#0D1B2A"/>
+  <rect x="20" y="20" width="860" height="460" rx="16" fill="#1B263B" stroke="#00B4D8" stroke-width="2"/>
+  <text x="450" y="55" fill="#F8FAFC" font-size="22" font-weight="bold" text-anchor="middle" font-family="system-ui, sans-serif">ENGLISH GRAMMAR: SENTENCE STRUCTURE &amp; PARTS OF SPEECH</text>
+  <text x="450" y="80" fill="#90E0EF" font-size="14" text-anchor="middle" font-family="system-ui, sans-serif">Subject + Verb + Object Hierarchy • 8 Core Parts of Speech Taxonomy</text>
+
+  <!-- Left: Sentence Syntax Tree (Subject - Predicate) -->
+  <g transform="translate(60, 110)">
+    <rect width="360" height="330" rx="12" fill="#0D1B2A" stroke="#415A77" stroke-width="1.5"/>
+    <text x="180" y="32" fill="#00B4D8" font-size="16" font-weight="bold" text-anchor="middle">1. Sentence Syntax Architecture</text>
+    <!-- Root Sentence -->
+    <rect x="110" y="55" width="140" height="36" rx="8" fill="#0077B6" stroke="#90E0EF"/>
+    <text x="180" y="78" fill="#FFFFFF" font-size="14" font-weight="bold" text-anchor="middle">Complete Sentence</text>
+    <!-- Branches -->
+    <line x1="150" y1="91" x2="80" y2="135" stroke="#90E0EF" stroke-width="2"/>
+    <line x1="210" y1="91" x2="280" y2="135" stroke="#90E0EF" stroke-width="2"/>
+    <!-- Subject Box -->
+    <rect x="20" y="135" width="120" height="40" rx="8" fill="#1B4965" stroke="#64DFDF"/>
+    <text x="80" y="160" fill="#64DFDF" font-size="13" font-weight="bold" text-anchor="middle">Subject (Actor)</text>
+    <!-- Predicate Box -->
+    <rect x="220" y="135" width="120" height="40" rx="8" fill="#1B4965" stroke="#F77F00"/>
+    <text x="280" y="160" fill="#F77F00" font-size="13" font-weight="bold" text-anchor="middle">Predicate (Action)</text>
+    <!-- Example breakdown -->
+    <rect x="30" y="205" width="300" height="105" rx="10" fill="#1B263B" stroke="#00B4D8"/>
+    <text x="180" y="230" fill="#90E0EF" font-size="13" font-weight="bold" text-anchor="middle">Example: "The smart student solved the problem."</text>
+    <text x="50" y="255" fill="#E0E1DD" font-size="12">• <strong style="fill:#64DFDF;">Subject:</strong> "The smart student" (Noun Phrase)</text>
+    <text x="50" y="278" fill="#E0E1DD" font-size="12">• <strong style="fill:#F77F00;">Verb:</strong> "solved" (Transitive Verb)</text>
+    <text x="50" y="300" fill="#E0E1DD" font-size="12">• <strong style="fill:#90E0EF;">Object:</strong> "the problem" (Direct Object)</text>
+  </g>
+
+  <!-- Right: 8 Parts of Speech Wheel / Matrix -->
+  <g transform="translate(480, 110)">
+    <rect width="360" height="330" rx="12" fill="#0D1B2A" stroke="#415A77" stroke-width="1.5"/>
+    <text x="180" y="32" fill="#64DFDF" font-size="16" font-weight="bold" text-anchor="middle">2. The 8 Parts of Speech Taxonomy</text>
+    
+    <!-- 8 Grid Items -->
+    <g transform="translate(20, 55)">
+      <rect x="0" y="0" width="150" height="55" rx="8" fill="#1B263B" stroke="#64DFDF"/>
+      <text x="75" y="24" fill="#64DFDF" font-size="12" font-weight="bold" text-anchor="middle">1. Noun</text>
+      <text x="75" y="42" fill="#E0E1DD" font-size="10" text-anchor="middle">Person, Place, Thing, Idea</text>
+
+      <rect x="170" y="0" width="150" height="55" rx="8" fill="#1B263B" stroke="#F77F00"/>
+      <text x="245" y="24" fill="#F77F00" font-size="12" font-weight="bold" text-anchor="middle">2. Pronoun</text>
+      <text x="245" y="42" fill="#E0E1DD" font-size="10" text-anchor="middle">Replaces noun (he, she, it)</text>
+
+      <rect x="0" y="65" width="150" height="55" rx="8" fill="#1B263B" stroke="#FFD166"/>
+      <text x="75" y="89" fill="#FFD166" font-size="12" font-weight="bold" text-anchor="middle">3. Verb</text>
+      <text x="75" y="107" fill="#E0E1DD" font-size="10" text-anchor="middle">Action or state of being</text>
+
+      <rect x="170" y="65" width="150" height="55" rx="8" fill="#1B263B" stroke="#06D6A0"/>
+      <text x="245" y="89" fill="#06D6A0" font-size="12" font-weight="bold" text-anchor="middle">4. Adjective</text>
+      <text x="245" y="107" fill="#E0E1DD" font-size="10" text-anchor="middle">Describes a noun</text>
+
+      <rect x="0" y="130" width="150" height="55" rx="8" fill="#1B263B" stroke="#118AB2"/>
+      <text x="75" y="154" fill="#118AB2" font-size="12" font-weight="bold" text-anchor="middle">5. Adverb</text>
+      <text x="75" y="172" fill="#E0E1DD" font-size="10" text-anchor="middle">Modifies verb/adjective</text>
+
+      <rect x="170" y="130" width="150" height="55" rx="8" fill="#1B263B" stroke="#EF476F"/>
+      <text x="245" y="154" fill="#EF476F" font-size="12" font-weight="bold" text-anchor="middle">6. Preposition</text>
+      <text x="245" y="172" fill="#E0E1DD" font-size="10" text-anchor="middle">Shows relation in time/space</text>
+
+      <rect x="0" y="195" width="150" height="55" rx="8" fill="#1B263B" stroke="#8338EC"/>
+      <text x="75" y="219" fill="#8338EC" font-size="12" font-weight="bold" text-anchor="middle">7. Conjunction</text>
+      <text x="75" y="237" fill="#E0E1DD" font-size="10" text-anchor="middle">Connects clauses (FANBOYS)</text>
+
+      <rect x="170" y="195" width="150" height="55" rx="8" fill="#1B263B" stroke="#FF5400"/>
+      <text x="245" y="219" fill="#FF5400" font-size="12" font-weight="bold" text-anchor="middle">8. Interjection</text>
+      <text x="245" y="237" fill="#E0E1DD" font-size="10" text-anchor="middle">Expresses sudden emotion</text>
+    </g>
+  </g>
+</svg>`;
+
+  return [
+    {
+      diagramId: 'grammar-sub-01',
+      subtopicKey: 'english_grammar_sentence_structure',
+      subtopicTitle: 'English Grammar Syntax, Clauses and 8 Parts of Speech',
+      diagramTitle: 'English Syntax Hierarchy & 8 Parts of Speech Taxonomy',
+      diagramType: 'Linguistic Structure & Grammar Classification Chart',
+      caption: 'Deconstructs sentence architecture into Subject and Predicate phrases alongside the functional taxonomy of all 8 core English parts of speech.',
+      svgXml: svg1,
+      dataUrl: svgToDataUrl(svg1),
+      point1_whatItRepresents: 'The structural hierarchy of English sentences and the classification of lexical words into the eight traditional parts of speech.',
+      point2_labelledParts: [
+        { label: 'Subject', description: 'The noun or pronoun naming who or what performs the action or is described' },
+        { label: 'Predicate', description: 'The verb and its complements describing what the subject does or experiences' },
+        { label: 'Nouns & Pronouns', description: 'Entities, people, places, and their referring substitutes' },
+        { label: 'Verbs & Adverbs', description: 'Actions/states and qualifiers indicating how, when, or where they occur' },
+        { label: 'Adjectives', description: 'Modifiers adding specific descriptive detail and quality to nouns' },
+        { label: 'Prepositions & Conjunctions', description: 'Connectives establishing spatial, temporal, and logical relationships between clauses' }
+      ],
+      point3_componentFunctions: 'Provides the grammatical scaffolding that allows words to combine meaningfully into grammatically correct and communicative clauses.',
+      point4_componentRelationships: 'Every complete thought requires a subject and finite verb; modifiers attach hierarchically to the heads they qualify.',
+      point5_directionOfMovementOrProcess: 'Word level (parts of speech) → phrase level (noun/verb phrase) → clause level → complete sentence.',
+      point6_stepByStepInterpretation: [
+        '1. A sentence consists of two fundamental pillars: Subject (topic) and Predicate (comment).',
+        '2. Words in the predicate are governed by the main verb (transitive, intransitive, or linking).',
+        '3. Direct objects answer "whom?" or "what?" after an action verb.',
+        '4. Coordinating conjunctions (for, and, nor, but, or, yet, so) unite independent clauses without subordinating.',
+        '5. Active voice places the subject as agent; passive voice highlights the recipient of the action.'
+      ],
+      point7_learningOutcome: 'Identify parts of speech, construct compound and complex sentences, and convert active sentences into passive voice accurately.',
+      point8_whatToRemember: 'A complete sentence needs Subject + Predicate; 8 parts of speech classify word roles; FANBOYS connect coordinating clauses.',
+      isVerified: true
+    }
+  ];
+}
+
+// =============================================================================
+// TOPIC 20: Computer Algorithms & Logic (Computer Science - Class 8-10)
+// =============================================================================
+export function getComputerAlgorithmsSubtopicDiagrams(): SubtopicDiagramItem[] {
+  const svg1 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" width="100%" height="100%">
+  <rect width="900" height="500" fill="#0B0F19"/>
+  <rect x="20" y="20" width="860" height="460" rx="16" fill="#111827" stroke="#10B981" stroke-width="2"/>
+  <text x="450" y="55" fill="#F8FAFC" font-size="22" font-weight="bold" text-anchor="middle" font-family="system-ui, sans-serif">COMPUTER ALGORITHMS: BINARY SEARCH LOGIC &amp; FLOWCHART</text>
+  <text x="450" y="80" fill="#34D399" font-size="14" text-anchor="middle" font-family="system-ui, sans-serif">Divide and Conquer Strategy • Time Complexity O(log n) vs Linear Search O(n)</text>
+
+  <!-- Left: Flowchart Structure -->
+  <g transform="translate(60, 110)">
+    <rect width="360" height="330" rx="12" fill="#0B0F19" stroke="#374151" stroke-width="1.5"/>
+    <text x="180" y="30" fill="#10B981" font-size="15" font-weight="bold" text-anchor="middle">Binary Search Flowchart</text>
+
+    <!-- Start Oval -->
+    <rect x="110" y="48" width="140" height="32" rx="16" fill="#065F46" stroke="#34D399" stroke-width="1.5"/>
+    <text x="180" y="69" fill="#FFFFFF" font-size="12" font-weight="bold" text-anchor="middle">START (low = 0, high = n-1)</text>
+
+    <!-- Arrow Down -->
+    <line x1="180" y1="80" x2="180" y2="105" stroke="#34D399" stroke-width="2"/>
+
+    <!-- Process Box: Midpoint -->
+    <rect x="90" y="105" width="180" height="34" rx="6" fill="#1F2937" stroke="#60A5FA"/>
+    <text x="180" y="127" fill="#60A5FA" font-size="12" font-weight="bold" text-anchor="middle">mid = floor((low + high) / 2)</text>
+
+    <!-- Arrow Down -->
+    <line x1="180" y1="139" x2="180" y2="160" stroke="#34D399" stroke-width="2"/>
+
+    <!-- Decision Diamond: arr[mid] == target -->
+    <polygon points="180,160 270,195 180,230 90,195" fill="#1E1B4B" stroke="#A78BFA" stroke-width="2"/>
+    <text x="180" y="199" fill="#E9D5FF" font-size="11" font-weight="bold" text-anchor="middle">arr[mid] == Target?</text>
+
+    <!-- YES branch: Return Mid -->
+    <line x1="270" y1="195" x2="310" y2="195" stroke="#34D399" stroke-width="2"/>
+    <rect x="250" y="240" width="95" height="30" rx="6" fill="#065F46" stroke="#34D399"/>
+    <text x="297" y="260" fill="#FFFFFF" font-size="11" font-weight="bold" text-anchor="middle">FOUND mid 🎉</text>
+
+    <!-- NO branch down: arr[mid] < target -->
+    <line x1="180" y1="230" x2="180" y2="255" stroke="#F87171" stroke-width="2"/>
+    <rect x="70" y="255" width="220" height="34" rx="6" fill="#1F2937" stroke="#F59E0B"/>
+    <text x="180" y="277" fill="#FBBF24" font-size="11" font-weight="bold" text-anchor="middle">if arr[mid] &lt; Target: low = mid + 1</text>
+  </g>
+
+  <!-- Right: Array Visual Elimination Trace -->
+  <g transform="translate(480, 110)">
+    <rect width="360" height="330" rx="12" fill="#0B0F19" stroke="#374151" stroke-width="1.5"/>
+    <text x="180" y="30" fill="#60A5FA" font-size="15" font-weight="bold" text-anchor="middle">Sorted Array Elimination (Target = 38)</text>
+
+    <!-- Step 1: Initial Array [12, 18, 24, 31, 38, 45, 52] -->
+    <g transform="translate(20, 60)">
+      <text x="0" y="14" fill="#9CA3AF" font-size="11" font-weight="bold">Step 1: Check mid = arr[3] = 31</text>
+      <!-- 7 cells -->
+      <rect x="0" y="24" width="42" height="36" rx="4" fill="#374151" opacity="0.4"/>
+      <text x="21" y="47" fill="#6B7280" font-size="12" text-anchor="middle">12</text>
+
+      <rect x="46" y="24" width="42" height="36" rx="4" fill="#374151" opacity="0.4"/>
+      <text x="67" y="47" fill="#6B7280" font-size="12" text-anchor="middle">18</text>
+
+      <rect x="92" y="24" width="42" height="36" rx="4" fill="#374151" opacity="0.4"/>
+      <text x="113" y="47" fill="#6B7280" font-size="12" text-anchor="middle">24</text>
+
+      <rect x="138" y="24" width="42" height="36" rx="4" fill="#DC2626" stroke="#FFFFFF"/>
+      <text x="159" y="47" fill="#FFFFFF" font-size="12" font-weight="bold" text-anchor="middle">31</text>
+
+      <rect x="184" y="24" width="42" height="36" rx="4" fill="#1E3A8A" stroke="#60A5FA"/>
+      <text x="205" y="47" fill="#93C5FD" font-size="12" text-anchor="middle">38</text>
+
+      <rect x="230" y="24" width="42" height="36" rx="4" fill="#1E3A8A" stroke="#60A5FA"/>
+      <text x="251" y="47" fill="#93C5FD" font-size="12" text-anchor="middle">45</text>
+
+      <rect x="276" y="24" width="42" height="36" rx="4" fill="#1E3A8A" stroke="#60A5FA"/>
+      <text x="297" y="47" fill="#93C5FD" font-size="12" text-anchor="middle">52</text>
+
+      <text x="159" y="78" fill="#F87171" font-size="10" text-anchor="middle">31 &lt; 38 → Discard Left Half!</text>
+    </g>
+
+    <!-- Step 2: Right Half [38, 45, 52] -->
+    <g transform="translate(20, 160)">
+      <text x="0" y="14" fill="#9CA3AF" font-size="11" font-weight="bold">Step 2: Check mid = arr[5] = 45</text>
+      <rect x="184" y="24" width="42" height="36" rx="4" fill="#1E3A8A" stroke="#60A5FA"/>
+      <text x="205" y="47" fill="#93C5FD" font-size="12" text-anchor="middle">38</text>
+
+      <rect x="230" y="24" width="42" height="36" rx="4" fill="#DC2626" stroke="#FFFFFF"/>
+      <text x="251" y="47" fill="#FFFFFF" font-size="12" font-weight="bold" text-anchor="middle">45</text>
+
+      <rect x="276" y="24" width="42" height="36" rx="4" fill="#374151" opacity="0.4"/>
+      <text x="297" y="47" fill="#6B7280" font-size="12" text-anchor="middle">52</text>
+
+      <text x="251" y="78" fill="#F87171" font-size="10" text-anchor="middle">45 &gt; 38 → Discard Right!</text>
+    </g>
+
+    <!-- Step 3: Match Found! -->
+    <g transform="translate(20, 255)">
+      <text x="0" y="14" fill="#34D399" font-size="11" font-weight="bold">Step 3: mid = arr[4] = 38 (Match Found!)</text>
+      <rect x="184" y="24" width="42" height="36" rx="6" fill="#059669" stroke="#34D399" stroke-width="2"/>
+      <text x="205" y="47" fill="#FFFFFF" font-size="13" font-weight="bold" text-anchor="middle">38</text>
+      <text x="240" y="47" fill="#34D399" font-size="11" font-weight="bold">Index 4 Found in 3 Comparisons!</text>
+    </g>
+  </g>
+</svg>`;
+
+  return [
+    {
+      diagramId: 'algo-sub-01',
+      subtopicKey: 'binary_search_algorithm_complexity',
+      subtopicTitle: 'Binary Search Algorithm, Flowchart and O(log n) Complexity',
+      diagramTitle: 'Binary Search Algorithm Logic & Divide-and-Conquer Trace',
+      diagramType: 'Computer Science Algorithm Flowchart & State Trace',
+      caption: 'Illustrates the divide-and-conquer binary search flowchart alongside an execution trace demonstrating logarithmic O(log n) elimination on a sorted array.',
+      svgXml: svg1,
+      dataUrl: svgToDataUrl(svg1),
+      point1_whatItRepresents: 'A visual flowchart and stepwise array reduction trace of the classic binary search algorithm on ordered data.',
+      point2_labelledParts: [
+        { label: 'Low & High Pointers', description: 'Boundary markers enclosing the active search subarray' },
+        { label: 'Midpoint (mid)', description: 'Pivot element evaluated at index floor((low + high) / 2)' },
+        { label: 'Target Value', description: 'The queried key element searched within the array' },
+        { label: 'Discarded Half', description: 'Subarray eliminated from further inspection based on relational comparison' }
+      ],
+      point3_componentFunctions: 'Executes rapid element location in logarithmic O(log n) steps by halving the search space at every single comparison.',
+      point4_componentRelationships: 'Requires the prerequisite invariant that elements are already arranged in ascending or descending sorted order.',
+      point5_directionOfMovementOrProcess: 'Check mid → compare with target → discard half → update bounds (low or high) → repeat until found or low > high.',
+      point6_stepByStepInterpretation: [
+        '1. Ensure the array is sorted in ascending order.',
+        '2. Initialize pointers: low = 0, high = array length - 1.',
+        '3. Compute midpoint: mid = floor((low + high) / 2).',
+        '4. If arr[mid] == target, return mid (element found).',
+        '5. If target < arr[mid], search the left half by setting high = mid - 1.',
+        '6. If target > arr[mid], search the right half by setting low = mid + 1.',
+        '7. Repeat until element is discovered or low > high (element not present).'
+      ],
+      point7_learningOutcome: 'Design algorithm flowcharts, calculate binary search iterations for any array size N, and explain O(log n) vs O(n) trade-offs.',
+      point8_whatToRemember: 'Binary search requires a sorted array; halves search space every step; runs in O(log n) time complexity.',
+      isVerified: true
+    }
+  ];
+}
