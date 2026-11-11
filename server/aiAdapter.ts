@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { macCompanionBridge } from './macCompanionBridge.ts';
 import {
   enrichLessonWithRebuildStructure,
   prepareTeacherNarrationScript,
@@ -103,12 +104,12 @@ export function getProviderStatus(): ProviderStatus {
   const hasVideoProvider = false; // Strictly disabled per Section I
   const hasTtsProvider = Boolean(process.env.ELEVENLABS_API_KEY && process.env.ELEVENLABS_API_KEY.trim().length > 10);
 
-  const activeProviders: string[] = [];
-  if (hasGroq) activeProviders.push('Groq (GPT-OSS-120B / Qwen-3.8)');
-  if (hasGemini) activeProviders.push('Google Gemini (3.8 Flash + Neural TTS + Visual Engine)');
-  if (hasOpenAI) activeProviders.push('OpenAI (GPT-4o-mini)');
+  const activeProviders: string[] = ['Qwen 2.5 7B (Primary Model via Local Ollama / Mac Bridge)'];
+  if (hasGemini) activeProviders.push('Google Gemini (Research & Multimodal Specialist)');
+  if (hasOpenAI) activeProviders.push('OpenAI GPT-4o (Reasoning & Review Specialist)');
+  if (hasGroq) activeProviders.push('Groq High-Throughput Engine');
 
-  const anyLlm = hasGroq || hasGemini || hasOpenAI;
+  const anyLlm = true; // Qwen 2.5 7B is always primary
   const imageModel = process.env.GEMINI_IMAGE_MODEL || 'gemini-3.1-flash-image + AI SVG Synthesizer';
 
   return {
@@ -330,7 +331,29 @@ export async function callConfiguredLlmJson(
       }
     }
   } catch {
-    // If Ollama is temporarily unavailable, fall back to configured cloud providers below
+    // If local Ollama direct connection failed, check Mode B: Mac Companion Bridge
+  }
+
+  // 0b. Mode B: Hosted STUDYAI with Authenticated Mac Companion Bridge
+  if (macCompanionBridge.isBridgeOnline()) {
+    try {
+      const bridgeRes = await macCompanionBridge.dispatchJob({
+        model: ollamaModel,
+        messages: [
+          { role: 'system', content: systemPrompt + '\nRespond strictly with a valid JSON object. No markdown fences.' },
+          { role: 'user', content: userPrompt }
+        ],
+        format: 'json',
+        temperature: 0.35,
+        timeoutMs
+      });
+      const parsed = extractFirstJsonObject(bridgeRes.content);
+      if (parsed) {
+        return { parsed, providerUsed: `AI Tutor Qwen 2.5 7B (via Mac Companion Bridge)` };
+      }
+    } catch {
+      // Bridge job failed or timed out, proceed to Gemini / OpenAI fallback
+    }
   }
 
   // 1. Try Groq API (gsk_...)

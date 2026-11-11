@@ -346,6 +346,10 @@ export class UnifiedKnowledgeRetrievalService {
    * Resolves universal knowledge, maps to student's board, applies grade pedagogy,
    * pairs dual explanations, attaches visual assets and exam tips.
    */
+  async retrieveCurriculumKnowledge(query: KnowledgeRetrievalQuery): Promise<UnifiedRetrievedKnowledge> {
+    return this.retrieve(query);
+  }
+
   async retrieve(query: KnowledgeRetrievalQuery): Promise<UnifiedRetrievedKnowledge> {
     const cleanTopic = (query.topic || '').trim();
     const resolvedSubject = this.resolveSubject(cleanTopic, query.subject);
@@ -487,6 +491,37 @@ export class UnifiedKnowledgeRetrievalService {
           { title: 'Internal Anatomy (Four Chambers)', summary: 'Right/left atria and right/left ventricles.' },
           { title: 'Pulmonary & Systemic Circulation', summary: 'Separate oxygenation and nutrient distribution routes.' },
           { title: 'Cardiac Conduction Cycle', summary: 'Electrical propagation through SA node, AV node, and Purkinje fibers.' }
+        ],
+        verifiedScientificFactCheck: true
+      };
+    }
+
+    if (lower.includes('newton') || lower.includes('force') || lower.includes('motion')) {
+      return {
+        id,
+        topic: "Newton's Laws of Motion & Force",
+        subject: 'Physics',
+        domain: 'Classical Mechanics & Dynamics',
+        academicDefinition: 'Newtonian mechanics postulates that the rate of change of momentum of a body is directly proportional to the applied unbalanced force and takes place in the direction in which the force acts.',
+        fundamentalLaws: ["Newton's First Law (Inertia)", "Newton's Second Law (F = ma)", "Newton's Third Law (Action & Reaction)"],
+        governingFormulas: [
+          {
+            formula: 'F = m · a',
+            explanation: 'Net force equals mass multiplied by linear acceleration.',
+            siUnits: 'Newtons (N) or kg·m/s²'
+          },
+          {
+            formula: 'p = m · v',
+            explanation: 'Linear momentum equals mass multiplied by velocity.',
+            siUnits: 'kg·m/s'
+          }
+        ],
+        keyPhenomena: ['Inertia of rest, motion, and direction', 'Momentum conservation in collisions', 'Equal and opposite contact forces'],
+        prerequisites: ['Kinematics (Displacement, Velocity, Acceleration)', 'Scalar and Vector Quantities', 'Basic Algebra'],
+        subtopics: [
+          { title: "Newton's First Law and Inertia", summary: 'Resistance of an object to change in its state of motion.' },
+          { title: "Newton's Second Law and Momentum", summary: 'Quantitative definition of force and mathematical derivation.' },
+          { title: "Newton's Third Law and Applications", summary: 'Universal pairs of action and reaction forces.' }
         ],
         verifiedScientificFactCheck: true
       };

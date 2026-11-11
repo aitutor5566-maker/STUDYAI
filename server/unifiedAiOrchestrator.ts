@@ -1,7 +1,8 @@
 import crypto from 'node:crypto';
 import { db } from './db.ts';
+import { macCompanionBridge } from './macCompanionBridge.ts';
 
-export type SupportedAIProvider = 'gemini' | 'openai' | 'groq' | 'local_curriculum';
+export type SupportedAIProvider = 'qwen' | 'gemini' | 'openai' | 'groq' | 'local_curriculum';
 
 export type OrchestrationTaskType =
   | 'RESEARCH_AND_TEACH'   // Deep curriculum research, structured teaching explanation (Gemini primary)
@@ -66,6 +67,109 @@ export interface AIProviderAdapter {
     parsedJson?: any;
     tokensUsed?: { prompt?: number; completion?: number; total?: number };
   }>;
+}
+
+// -----------------------------------------------------------------------------
+// Provider Adapter 0: Qwen 2.5 7B Local Ollama & Mac Bridge Adapter
+// Role: Primary AI Teaching Model for normal learning, tutoring & notes drafting
+// -----------------------------------------------------------------------------
+export class QwenUnifiedProviderAdapter implements AIProviderAdapter {
+  id: SupportedAIProvider = 'qwen';
+  name = 'Qwen 2.5 7B (Primary AI Teaching Model via Local Ollama / Mac Bridge)';
+
+  isConfigured(): boolean {
+    return true; // Configured by default via local Ollama endpoint or Mac Bridge
+  }
+
+  async execute(req: AIOrchestrationRequest, timeoutMs: number) {
+    const ollamaUrl = process.env.OLLAMA_BASE_URL || process.env.OLLAMA_URL || 'http://127.0.0.1:11434';
+    const model = process.env.OLLAMA_MODEL || 'qwen2.5:7b';
+
+    const system = `${req.systemPrompt || 'You are STUDYAI, an expert Indian curriculum teacher.'}\nBoard: ${req.board || 'CBSE'} | Grade: ${req.grade} | Subject: ${req.subject}`;
+    const messages = [
+      { role: 'system', content: system },
+      { role: 'user', content: req.prompt }
+    ];
+
+    // Check direct local Ollama first
+    let directReachable = false;
+    try {
+      const checkRes = await fetch(`${ollamaUrl}/api/tags`, { signal: AbortSignal.timeout(1000) });
+      if (checkRes.ok) directReachable = true;
+    } catch {
+      directReachable = false;
+    }
+
+    if (!directReachable && macCompanionBridge.isBridgeOnline()) {
+      const bridgeRes = await macCompanionBridge.dispatchJob({
+        model,
+        messages,
+        format: req.responseJsonSchema ? 'json' : undefined,
+        temperature: req.temperature ?? 0.35,
+        timeoutMs
+      });
+
+      let parsedJson: any = null;
+      try {
+        parsedJson = JSON.parse(bridgeRes.content);
+      } catch {}
+
+      return {
+        content: bridgeRes.content,
+        model: `${model} (via Mac Bridge)`,
+        parsedJson,
+        tokensUsed: bridgeRes.tokensUsed
+      };
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const res = await fetch(`${ollamaUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          messages,
+          stream: false,
+          format: req.responseJsonSchema ? 'json' : undefined,
+          options: {
+            temperature: req.temperature ?? 0.35,
+            top_p: 0.9
+          }
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timer);
+
+      if (!res.ok) {
+        throw new Error(`Ollama HTTP ${res.status}`);
+      }
+
+      const data = (await res.json()) as any;
+      const text = data?.message?.content || '';
+      let parsedJson: any = null;
+      try {
+        parsedJson = JSON.parse(text);
+      } catch {}
+
+      return {
+        content: text,
+        model: `${model} (Local Ollama)`,
+        parsedJson,
+        tokensUsed: {
+          prompt: data.prompt_eval_count,
+          completion: data.eval_count,
+          total: (data.prompt_eval_count || 0) + (data.eval_count || 0)
+        }
+      };
+    } catch (err: any) {
+      clearTimeout(timer);
+      throw err;
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -393,6 +497,7 @@ export class UnifiedAiOrchestrationService {
   private adapters: Map<SupportedAIProvider, AIProviderAdapter> = new Map();
 
   constructor() {
+    this.adapters.set('qwen', new QwenUnifiedProviderAdapter());
     this.adapters.set('gemini', new GeminiProviderAdapter());
     this.adapters.set('openai', new OpenAIProviderAdapter());
     this.adapters.set('groq', new GroqProviderAdapter());
@@ -409,6 +514,9 @@ export class UnifiedAiOrchestrationService {
       const configured = adapter.isConfigured();
       let role = '';
       switch (id) {
+        case 'qwen':
+          role = 'Primary AI Teaching Model (Qwen 2.5 7B via Local Ollama / Mac Companion Bridge)';
+          break;
         case 'gemini':
           role = 'Primary Research, Knowledge Extraction & Teaching Content Generation';
           break;
@@ -446,20 +554,20 @@ export class UnifiedAiOrchestrationService {
     switch (taskType) {
       case 'INDEPENDENT_REVIEW':
         // Review must prioritize OpenAI first for independent validation
-        return ['openai', 'gemini', 'local_curriculum'];
+        return ['openai', 'gemini', 'qwen', 'local_curriculum'];
 
       case 'RESEARCH_AND_TEACH':
       case 'DEEP_NOTES_SYNTHESIS':
-        // Deep educational research and note structuring prioritize Gemini first
-        return ['gemini', 'groq', 'openai', 'local_curriculum'];
+        // Primary teaching: Qwen 2.5 7B -> Gemini -> OpenAI -> Local
+        return ['qwen', 'gemini', 'openai', 'groq', 'local_curriculum'];
 
       case 'FAST_TUTOR_CHAT':
-        // Fast tutoring: Gemini -> Groq -> OpenAI -> Local
-        return ['gemini', 'groq', 'openai', 'local_curriculum'];
+        // Fast tutoring: Qwen 2.5 7B -> Gemini -> Groq -> OpenAI -> Local
+        return ['qwen', 'gemini', 'groq', 'openai', 'local_curriculum'];
 
       case 'CONTENT_STRUCTURING':
       default:
-        return ['gemini', 'groq', 'local_curriculum'];
+        return ['qwen', 'gemini', 'groq', 'local_curriculum'];
     }
   }
 

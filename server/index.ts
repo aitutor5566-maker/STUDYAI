@@ -107,6 +107,8 @@ import {
   type GameDifficulty
 } from './educationalGamesEngine.ts';
 import { unifiedAiOrchestrator } from './unifiedAiOrchestrator.ts';
+import { centralAiOrchestrator } from './centralAiOrchestrator.ts';
+import { macCompanionBridge } from './macCompanionBridge.ts';
 import { unifiedKnowledgeRetrieval } from './unifiedKnowledgeRetrieval.ts';
 import { responseValidationLayer } from './responseValidationLayer.ts';
 import { knowledgeIntelligenceAdmin } from './knowledgeIntelligenceAdmin.ts';
@@ -997,7 +999,88 @@ export function createAppServer() {
           configured_model: 'qwen2.5:7b',
           models_installed: ['qwen2.5:7b', 'ai-tutor:latest'],
           model_available: true,
+          bridge_status: macCompanionBridge.getStatus(),
           providers: getProviderStatus()
+        });
+        return;
+      }
+
+      // ==============================================================================
+      // MAC COMPANION BRIDGE APIS (Mode B: Remote Hosted App -> Local Mac Ollama)
+      // ==============================================================================
+      if (pathname === '/api/bridge/status' && req.method === 'GET') {
+        sendJson(res, 200, macCompanionBridge.getStatus());
+        return;
+      }
+
+      if (pathname === '/api/bridge/register' && req.method === 'POST') {
+        const authHeader = req.headers.authorization;
+        if (!macCompanionBridge.validateAuth(authHeader)) {
+          sendJson(res, 401, { error: 'Unauthorized: Invalid Mac Companion Bridge Secret.' });
+          return;
+        }
+        const body = await readJsonBody(req);
+        const reg = macCompanionBridge.registerClient(body, req.socket.remoteAddress);
+        sendJson(res, 200, reg);
+        return;
+      }
+
+      if (pathname === '/api/bridge/heartbeat' && req.method === 'POST') {
+        const authHeader = req.headers.authorization;
+        if (!macCompanionBridge.validateAuth(authHeader)) {
+          sendJson(res, 401, { error: 'Unauthorized' });
+          return;
+        }
+        const body = await readJsonBody(req);
+        const ok = macCompanionBridge.recordHeartbeat(body.clientId);
+        sendJson(res, ok ? 200 : 404, { success: ok });
+        return;
+      }
+
+      if (pathname === '/api/bridge/poll' && req.method === 'GET') {
+        const authHeader = req.headers.authorization;
+        if (!macCompanionBridge.validateAuth(authHeader)) {
+          sendJson(res, 401, { error: 'Unauthorized' });
+          return;
+        }
+        const clientId = parsedUrl.searchParams.get('clientId') || '';
+        const job = macCompanionBridge.pollNextJob(clientId);
+        sendJson(res, 200, job || { idle: true });
+        return;
+      }
+
+      if (pathname === '/api/bridge/result' && req.method === 'POST') {
+        const authHeader = req.headers.authorization;
+        if (!macCompanionBridge.validateAuth(authHeader)) {
+          sendJson(res, 401, { error: 'Unauthorized' });
+          return;
+        }
+        const body = await readJsonBody(req);
+        const ok = macCompanionBridge.submitJobResult(body.clientId, body);
+        sendJson(res, ok ? 200 : 404, { success: ok });
+        return;
+      }
+
+      // ==============================================================================
+      // CENTRAL AI ORCHESTRATOR DIAGNOSTICS & ADMIN HEALTH (PART 18)
+      // ==============================================================================
+      if ((pathname === '/api/admin/ai/overview' || pathname === '/api/admin/ai/health') && req.method === 'GET') {
+        const overview = await centralAiOrchestrator.getHealthOverview();
+        sendJson(res, 200, {
+          status: 'ok',
+          architecture: 'Intelligent Hybrid AI System (Qwen 2.5 7B Primary + Gemini + OpenAI + Shared Indian Knowledge)',
+          primaryModel: 'Qwen 2.5 7B (Local Ollama / Mac Bridge)',
+          bridge: macCompanionBridge.getStatus(),
+          providers: overview,
+          curriculumCoverage: {
+            boards: ['CBSE', 'ICSE', 'AP_STATE_BOARD', 'TS_STATE_BOARD'],
+            languages: ['English', 'Telugu', 'Hindi'],
+            grades: 'Grades 1 to 10',
+            subjects: [
+              'Mathematics', 'Physics', 'Chemistry', 'Biology', 'Social Studies',
+              'History', 'Geography', 'Civics', 'Economics', 'English', 'Telugu', 'Hindi', 'Computer Science'
+            ]
+          }
         });
         return;
       }
@@ -1018,21 +1101,22 @@ export function createAppServer() {
         });
 
         try {
-          const structured = await generateTutorExplanation({
-            topic,
-            question: question || `Explain ${topic}`,
-            mode: 'detailed',
-            subject,
-            level: `Grade ${grade}`,
-            grade,
-            language,
-            history: Array.isArray(body.history) ? body.history : []
-          });
-          const fullText = `${structured.introduction}\n\nKey Steps:\n${(structured.keySteps || []).map((s: string, i: number) => `${i + 1}. ${s}`).join('\n')}`;
-          const words = fullText.split(/(?=\s)/);
-          for (const w of words) {
-            res.write(`data: ${JSON.stringify({ token: w })}\n\n`);
-          }
+          await centralAiOrchestrator.stream(
+            {
+              taskType: 'TUTOR_CHAT',
+              topic,
+              prompt: question || `Explain ${topic} step by step with clear definitions and examples.`,
+              grade,
+              subject,
+              language,
+              board: sanitizeText(body.board || 'CBSE', 40),
+              history: Array.isArray(body.history) ? body.history : [],
+              stream: true
+            },
+            (token: string) => {
+              res.write(`data: ${JSON.stringify({ token })}\n\n`);
+            }
+          );
           res.write('data: [DONE]\n\n');
           res.end();
         } catch (err: any) {
