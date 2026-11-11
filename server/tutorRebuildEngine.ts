@@ -1208,7 +1208,8 @@ export function normalizeAndAnalyzeWavPcm16(wavBuffer: Buffer): {
 export async function synthesizeMacOsNeuralSpeechWav(
   spokenText: string,
   voicePreference = 'Nova (Teacher)',
-  speed = 1.0
+  speed = 1.0,
+  language = 'en'
 ): Promise<{
   wavBuffer: Buffer;
   durationSeconds: number;
@@ -1224,9 +1225,22 @@ export async function synthesizeMacOsNeuralSpeechWav(
 
   const tmpFile = path.join(os.tmpdir(), `studyai_tts_${crypto.randomUUID().slice(0, 8)}.wav`);
   try {
-    // Select clear macOS system voice
-    const macVoice =
-      voicePreference.includes('Aarav') ? 'Rishi' : voicePreference.includes('Clara') ? 'Daniel' : 'Samantha';
+    // Select clear macOS system voice based on language and preference
+    const langLower = String(language || '').toLowerCase();
+    let macVoice = 'Samantha';
+    if (langLower.includes('te') || langLower.includes('telugu')) {
+      macVoice = 'Geeta';
+    } else if (langLower.includes('hi') || langLower.includes('hindi')) {
+      macVoice = 'Lekha';
+    } else if (voicePreference.includes('Aarav') || voicePreference.includes('Rishi')) {
+      macVoice = 'Rishi';
+    } else if (voicePreference.includes('Tara') || voicePreference.includes('Indian')) {
+      macVoice = 'Tara';
+    } else if (voicePreference.includes('Clara') || voicePreference.includes('Daniel')) {
+      macVoice = 'Daniel';
+    } else {
+      macVoice = 'Samantha';
+    }
     const wordsPerMin = Math.round(172 * Math.max(0.75, Math.min(1.5, speed || 1.0)));
     const cleanInput = spokenText.slice(0, 2400);
 

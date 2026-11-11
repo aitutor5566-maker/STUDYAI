@@ -3414,6 +3414,7 @@ export async function generateNaturalAudioLesson(params: {
   scriptText: string;
   voice: string;
   speed: number;
+  language?: string;
 }): Promise<{
   wavDataUrl: string;
   durationSeconds: number;
@@ -3617,7 +3618,7 @@ export async function generateNaturalAudioLesson(params: {
   }
 
   // 4. Local macOS High-Clarity Neural Speech Synthesis (/usr/bin/say -> 22.05kHz 16-bit PCM WAV Normalized)
-  const macSpeech = await synthesizeMacOsNeuralSpeechWav(cleanSpeechText, params.voice, params.speed);
+  const macSpeech = await synthesizeMacOsNeuralSpeechWav(cleanSpeechText, params.voice, params.speed, params.language);
   if (macSpeech) {
     return {
       wavDataUrl: `data:audio/wav;base64,${macSpeech.wavBuffer.toString('base64')}`,

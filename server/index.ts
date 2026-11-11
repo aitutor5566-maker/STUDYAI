@@ -110,6 +110,7 @@ import { unifiedAiOrchestrator } from './unifiedAiOrchestrator.ts';
 import { centralAiOrchestrator } from './centralAiOrchestrator.ts';
 import { macCompanionBridge } from './macCompanionBridge.ts';
 import { professionalTeacherEngine } from './professionalTeacherEngine.ts';
+import { voiceTeachingEngine } from './voiceTeachingEngine.ts';
 import { unifiedKnowledgeRetrieval } from './unifiedKnowledgeRetrieval.ts';
 import { responseValidationLayer } from './responseValidationLayer.ts';
 import { knowledgeIntelligenceAdmin } from './knowledgeIntelligenceAdmin.ts';
@@ -3954,13 +3955,16 @@ export function createAppServer() {
       }
 
       // Voice Teacher Lessons (Personal AI Teacher with Synced Educational Visuals)
-      if (pathname === '/api/v1/voice/start-lesson' && req.method === 'POST') {
+      if ((pathname === '/api/v1/voice/start-lesson' || pathname === '/api/voice/start-lesson') && req.method === 'POST') {
         const body = await readJsonBody(req);
         const topic = sanitizeText(body.topic || 'Photosynthesis', 180);
         const grade = typeof body.grade === 'number' ? body.grade : 10;
         const subject = sanitizeText(body.subject || inferSubjectFromTopic(topic), 60);
         const mode = sanitizeText(body.mode || 'learning', 40);
-        const voiceName = sanitizeText(body.voice_name || 'Nova (Teacher)', 60);
+        const rawLang = String(body.language || 'en').toLowerCase();
+        const language = (rawLang.includes('te') || rawLang.includes('telugu')) ? 'te' : (rawLang.includes('hi') || rawLang.includes('hindi')) ? 'hi' : 'en';
+        const voiceName = sanitizeText(body.voice_name || (language === 'te' ? 'Geeta' : language === 'hi' ? 'Lekha' : 'Nova (Teacher)'), 60);
+        const speed = typeof body.speed === 'number' ? body.speed : 1.0;
 
         const studentUser = db.prepare('SELECT name FROM users WHERE id = ?').get(studentId) as any;
         const studentName = sanitizeText(body.student_name || body.studentName || studentUser?.name || '', 60);
@@ -3971,38 +3975,81 @@ export function createAppServer() {
         const visual = await researchAndRetrieveEducationalVisual(topic, grade, subject);
 
         // Friendly personal teacher opening
-        const introGreeting = generateFriendlyPersonalTeacherIntro({
-          studentName,
-          topic,
-          subject,
-          mode: 'voice'
-        });
+        const introGreeting = language === 'te'
+          ? `నమస్కారం! "${topic}" పై మీ వ్యక్తిగత ఆడియో తరగతికి స్వాగతం.`
+          : language === 'hi'
+          ? `नमस्ते! "${topic}" के इस विशेष व्यक्तिगत ऑडियो पाठ में आपका स्वागत है।`
+          : generateFriendlyPersonalTeacherIntro({ studentName, topic, subject, mode: 'voice' });
+
+        const diagNarration = visual.directImageUrl
+          ? voiceTeachingEngine.generateDiagramSpokenNarration({
+              title: visual.title,
+              caption: visual.description,
+              labels: visual.walkthrough?.labels || ['Input', 'Mechanism', 'Output'],
+              svgXml: visual.directImageUrl?.startsWith('data:image/svg+xml') ? visual.directImageUrl : undefined
+            }, topic, language)
+          : null;
 
         // 5 Structured Pedagogical Steps
         const steps = [
           {
-            title: '1. Overview & Fundamentals',
-            speech: `${introGreeting} Today we are exploring ${topic}. In fundamental terms, this is a cornerstone concept in ${subject}. Let's make sure you understand the core meaning before we break down how it actually operates. Ready to begin?`
+            title: language === 'te' ? '1. పరిచయం & ప్రాథమిక భావనలు' : language === 'hi' ? '1. प्रस्तावना व मूल अवधारणा' : '1. Overview & Fundamentals',
+            speech: language === 'te'
+              ? `${introGreeting} ఈరోజు మనం ${subject} లో అత్యంత ముఖ్యమైన అంశమైన ${topic} గురించి నేర్చుకుందాం. సిద్ధంగా ఉన్నారా?`
+              : language === 'hi'
+              ? `${introGreeting} आज हम ${subject} के एक अत्यंत महत्वपूर्ण विषय ${topic} को समझेंगे। क्या आप तैयार हैं?`
+              : `${introGreeting} Today we are exploring ${topic}. In fundamental terms, this is a cornerstone concept in ${subject}. Let's make sure you understand the core meaning before we break down how it actually operates. Ready to begin?`
           },
           {
-            title: '2. Deep Scientific Mechanism',
-            speech: `Let's break down the exact mechanism of ${topic}. Notice how the fundamental parts interact: energy and matter transfer step by step through specific physical and biological rules. In exam questions, examiners love asking about this precise sequence of events.`
+            title: language === 'te' ? '2. శాస్త్రీయ పనితీరు విధానం' : language === 'hi' ? '2. वैज्ञानिक कार्यप्रणाली' : '2. Deep Scientific Mechanism',
+            speech: language === 'te'
+              ? `${topic} లోని దశలవారీ పనితీరును గమనించండి. శక్తి మరియు పదార్థాలు నియమబద్ధంగా ఒక రూపం నుండి మరొక రూపంలోకి మారతాయి. పరీక్షల్లో ఈ క్రమాన్ని అడుగుతారు.`
+              : language === 'hi'
+              ? `आइए ${topic} की वैज्ञानिक कार्यप्रणाली को समझें। ऊर्जा और पदार्थ का स्थानांतरण विशिष्ट नियमों के अनुसार होता है। परीक्षा में यह क्रम अवश्य पूछा जाता है।`
+              : `Let's break down the exact mechanism of ${topic}. Notice how the fundamental parts interact: energy and matter transfer step by step through specific physical and biological rules. In exam questions, examiners love asking about this precise sequence of events.`
           },
           {
-            title: '3. Visual & Diagram Interpretation',
-            speech: visual.walkthrough
-              ? `Let's examine the scientific diagram together. On your screen, look closely: ${visual.walkthrough.whatItRepresents || visual.walkthrough.whatIsShown || visual.description}. ${visual.walkthrough.arrowIndications || visual.walkthrough.processSequence || 'Energy and components interact systematically'}. When studying this schematic, always remember: ${visual.walkthrough.importantConclusion || visual.walkthrough.examTip || 'Check key labels and functions'}.`
-              : `Take a look at the scientific schematic on your screen. Notice how every labeled component is positioned and connects directly to the working principles we just discussed.`
+            title: language === 'te' ? '3. చిత్ర పటం సమగ్ర పరిశీలన' : language === 'hi' ? '3. रेखाचित्र व दृश्य विश्लेषण' : '3. Visual & Diagram Interpretation',
+            speech: diagNarration ? diagNarration.spokenText : `Take a look at the scientific schematic on your screen. Notice how every labeled component is positioned and connects directly to the working principles we just discussed.`
           },
           {
-            title: '4. Real-World Applications & Examples',
-            speech: `Now, where do we see ${topic} in real everyday life and modern technology? From industrial processes to living ecosystems, the principles of ${topic} govern how systems sustain equilibrium. Can you think of an everyday observation that links to this?`
+            title: language === 'te' ? '4. నిజజీవిత అనువర్తనాలు' : language === 'hi' ? '4. वास्तविक जीवन में अनुप्रयोग' : '4. Real-World Applications & Examples',
+            speech: language === 'te'
+              ? `నిజ జీవితంలో ${topic} ఎక్కడ కనిపిస్తుంది? పర్యావరణ వ్యవస్థల నుండి ఆధునిక సాంకేతికత వరకు ఇది నిరంతరం పనిచేస్తూనే ఉంటుంది.`
+              : language === 'hi'
+              ? `दैनिक जीवन में ${topic} का महत्व: प्राकृतिक पर्यावरण से लेकर आधुनिक प्रौद्योगिकी तक, यह सिद्धांत निरंतर क्रियाशील रहता है।`
+              : `Now, where do we see ${topic} in real everyday life and modern technology? From industrial processes to living ecosystems, the principles of ${topic} govern how systems sustain equilibrium. Can you think of an everyday observation that links to this?`
           },
           {
-            title: '5. Exam Mastery & Key Takeaways',
-            speech: `Outstanding effort! For your upcoming examinations, keep these three key points in mind: first, state the exact definition and scientific law; second, always draw and label your diagram accurately; and third, explain cause and effect step by step. You're ready to score full marks!`
+            title: language === 'te' ? '5. పరీక్ష సన్నద్ధత & ముఖ్యాంశాలు' : language === 'hi' ? '5. परीक्षा सफलता व मुख्य बिंदु' : '5. Exam Mastery & Key Takeaways',
+            speech: language === 'te'
+              ? `అద్భుతం! రాబోయే పరీక్షల కోసం ఈ మూడు విషయాలు గుర్తుంచుకోండి: ఖచ్చితమైన నిర్వచనం, స్పష్టమైన డ్రాయింగ్, మరియు క్రమబద్ధమైన వివరణ. మీకు పూర్తి మార్కులు లభిస్తాయి!`
+              : language === 'hi'
+              ? `बहुत अच्छा! आगामी परीक्षाओं के लिए तीन बातें याद रखें: सटीक परिभाषा, नामांकित चित्र, और चरणबद्ध उत्तर। आप निश्चित ही पूरे अंक प्राप्त करेंगे!`
+              : `Outstanding effort! For your upcoming examinations, keep these three key points in mind: first, state the exact definition and scientific law; second, always draw and label your diagram accurately; and third, explain cause and effect step by step. You're ready to score full marks!`
           }
         ];
+
+        // Synthesize spoken audio for step 0
+        let audioUrl = '';
+        let audioDurationSeconds = 8;
+        let providerUsed = 'STUDYAI Voice Engine';
+        try {
+          const synthesized = await generateNaturalAudioLesson({
+            topic,
+            scriptText: steps[0].speech,
+            voice: voiceName,
+            speed,
+            language
+          });
+          audioUrl = synthesized.wavDataUrl;
+          audioDurationSeconds = synthesized.durationSeconds;
+          providerUsed = synthesized.providerUsed;
+        } catch (e: any) {
+          console.warn('Voice synthesis fallback:', e?.message);
+        }
+
+        const sentences = voiceTeachingEngine.segmentTextIntoSentences(steps[0].speech, visual.walkthrough?.labels || []);
 
         const sessionData = {
           sessionId,
@@ -4012,7 +4059,9 @@ export function createAppServer() {
           subject,
           grade,
           mode,
+          language,
           voiceName,
+          speed,
           visual,
           steps,
           currentStepIndex: 0,
@@ -4028,6 +4077,11 @@ export function createAppServer() {
           step_title: steps[0].title,
           current_step_index: 0,
           total_steps: steps.length,
+          audio_url: audioUrl,
+          audio_available: Boolean(audioUrl),
+          audio_duration_seconds: audioDurationSeconds,
+          provider_used: providerUsed,
+          sentences,
           synced_visual: {
             title: visual.title,
             imageUrl: visual.directImageUrl,
@@ -4040,7 +4094,7 @@ export function createAppServer() {
         return;
       }
 
-      if (pathname === '/api/v1/voice/interact' && req.method === 'POST') {
+      if ((pathname === '/api/v1/voice/interact' || pathname === '/api/voice/interact') && req.method === 'POST') {
         const body = await readJsonBody(req);
         const sessionId = sanitizeText(body.session_id || '', 80);
         const studentUtterance = sanitizeText(body.student_utterance || '', 2000);
@@ -4059,28 +4113,38 @@ export function createAppServer() {
 
         let nextIndex = session.currentStepIndex;
         const lower = studentUtterance.toLowerCase();
-        if (
-          lower.includes('next') ||
-          lower.includes('yes') ||
-          lower.includes('ready') ||
-          lower.includes('understand') ||
-          lower.includes('go on') ||
-          lower.includes('tell me') ||
-          lower.includes('explain') ||
-          lower.includes('continue') ||
-          studentUtterance.length > 20
+        const isInterrupt = lower.includes('again') || lower.includes('repeat') || lower.includes('what does') ||
+          lower.includes('meaning') || lower.includes('simplify') || lower.includes('easier') || lower.includes('example') ||
+          lower.includes('formula') || lower.includes('diagram');
+
+        let teacherSpeech = '';
+        if (isInterrupt) {
+          // Generate patient interruption clarification
+          if (lower.includes('again') || lower.includes('repeat')) {
+            teacherSpeech = `Happy to repeat that! ${session.steps[nextIndex].speech}`;
+          } else if (lower.includes('simplify') || lower.includes('easier') || lower.includes('simple')) {
+            teacherSpeech = `In simple terms: think of ${session.topic} as a natural chain reaction where each component transfers energy to achieve a stable outcome.`;
+          } else if (lower.includes('diagram') || lower.includes('picture')) {
+            teacherSpeech = `Looking at the diagram on screen: notice how the labeled arrows indicate the direction of energy and material flow.`;
+          } else if (lower.includes('example')) {
+            teacherSpeech = `Here is a clear example: we observe this phenomenon in everyday environments whenever balance and physical conservation are maintained.`;
+          } else {
+            teacherSpeech = `Great question! In ${session.topic}, this happens because physical and chemical systems strictly obey conservation laws. Let's continue when you're ready.`;
+          }
+        } else if (
+          lower.includes('next') || lower.includes('yes') || lower.includes('ready') ||
+          lower.includes('understand') || lower.includes('go on') || lower.includes('tell me') ||
+          lower.includes('continue') || studentUtterance.length > 10
         ) {
           if (nextIndex < session.steps.length - 1) {
             nextIndex++;
             session.currentStepIndex = nextIndex;
           }
+          const step = session.steps[nextIndex];
+          teacherSpeech = nextIndex > 0 ? `Well understood. ${step.speech}` : step.speech;
+        } else {
+          teacherSpeech = session.steps[nextIndex].speech;
         }
-
-        const step = session.steps[nextIndex];
-        const teacherSpeech =
-          nextIndex > 0
-            ? `That's a thoughtful point. ${step.speech}`
-            : step.speech;
 
         session.transcript.push({
           speaker: 'teacher',
@@ -4088,12 +4152,38 @@ export function createAppServer() {
           timestamp: new Date().toISOString()
         });
 
+        // Synthesize audio response
+        let audioUrl = '';
+        let audioDurationSeconds = 8;
+        let providerUsed = 'STUDYAI Voice Engine';
+        try {
+          const synthesized = await generateNaturalAudioLesson({
+            topic: session.topic,
+            scriptText: teacherSpeech,
+            voice: session.voiceName,
+            speed: session.speed || 1.0,
+            language: session.language
+          });
+          audioUrl = synthesized.wavDataUrl;
+          audioDurationSeconds = synthesized.durationSeconds;
+          providerUsed = synthesized.providerUsed;
+        } catch (e: any) {
+          console.warn('Voice interact synthesis fallback:', e?.message);
+        }
+
+        const sentences = voiceTeachingEngine.segmentTextIntoSentences(teacherSpeech, session.visual?.walkthrough?.labels || []);
+
         sendJson(res, 200, {
           session_id: sessionId,
           teacher_speech: teacherSpeech,
-          step_title: step.title,
+          step_title: session.steps[nextIndex].title,
           current_step_index: nextIndex,
           total_steps: session.steps.length,
+          audio_url: audioUrl,
+          audio_available: Boolean(audioUrl),
+          audio_duration_seconds: audioDurationSeconds,
+          provider_used: providerUsed,
+          sentences,
           synced_visual: {
             title: session.visual.title,
             imageUrl: session.visual.directImageUrl,
@@ -4106,7 +4196,7 @@ export function createAppServer() {
         return;
       }
 
-      if (pathname === '/api/v1/voice/control' && req.method === 'POST') {
+      if ((pathname === '/api/v1/voice/control' || pathname === '/api/voice/control') && req.method === 'POST') {
         const body = await readJsonBody(req);
         const sessionId = sanitizeText(body.session_id || '', 80);
         const action = sanitizeText(body.action || 'stop', 30);
@@ -4114,6 +4204,301 @@ export function createAppServer() {
           activeVoiceLessons.delete(sessionId);
         }
         sendJson(res, 200, { status: 'ok', session_id: sessionId, action });
+        return;
+      }
+
+      // =========================================================================
+      // INTELLIGENT NOTES-TO-AUDIO ENGINE (Endpoints for Listen to Notes)
+      // =========================================================================
+
+      // POST /api/notes/:id/audio/generate — Generate or retrieve structured multi-section audio lesson
+      if (pathname.startsWith('/api/notes/') && pathname.endsWith('/audio/generate') && req.method === 'POST') {
+        const parts = pathname.split('/');
+        const noteId = sanitizeText(parts[3] || '', 80);
+        const body = await readJsonBody(req);
+        const depth = (body.depth || 'detailed') as any;
+        const rawLang = String(body.language || 'en').toLowerCase();
+        const language = (rawLang.includes('te') || rawLang.includes('telugu')) ? 'te' : (rawLang.includes('hi') || rawLang.includes('hindi')) ? 'hi' : 'en';
+        const speed = typeof body.speed === 'number' ? body.speed : 1.0;
+
+        const note = db.prepare('SELECT * FROM notes WHERE id = ? AND user_id = ?').get(noteId, studentId) as any;
+        if (!note) {
+          sendJson(res, 404, { error: 'Note not found in notebook repository.' });
+          return;
+        }
+
+        // Check if existing audio lesson already exists and reuse unless forceRegenerate requested
+        if (!body.forceRegenerate) {
+          const existing = db.prepare(`
+            SELECT * FROM note_audio_lessons 
+            WHERE note_id = ? AND user_id = ? AND depth = ? AND language = ?
+            ORDER BY updated_at DESC LIMIT 1
+          `).get(noteId, studentId, depth, language) as any;
+
+          if (existing) {
+            try {
+              const sections = JSON.parse(existing.sections_json);
+              sendJson(res, 200, {
+                id: existing.id,
+                noteId: existing.note_id,
+                userId: existing.user_id,
+                topic: note.topic,
+                subject: note.subject,
+                grade: 10,
+                board: 'CBSE',
+                depth: existing.depth,
+                language: existing.language,
+                voiceName: existing.voice_name,
+                status: existing.status,
+                lessonTitle: existing.lesson_title,
+                teacherGreeting: `Welcome back to your audio lesson on ${note.topic}.`,
+                totalDurationSeconds: existing.total_duration_seconds,
+                sections,
+                currentPlaybackSection: existing.current_playback_section,
+                currentPlaybackSeconds: existing.current_playback_seconds,
+                createdAt: existing.created_at,
+                updatedAt: existing.updated_at,
+                cached: true
+              });
+              return;
+            } catch {}
+          }
+        }
+
+        // Prepare structured multi-section audio lesson
+        const lesson = await voiceTeachingEngine.prepareNarrationScriptForNote({
+          noteId,
+          userId: studentId,
+          topic: note.topic,
+          subject: note.subject,
+          grade: 10,
+          board: 'CBSE',
+          depth,
+          language,
+          voiceName: body.voiceName,
+          contentMarkdown: note.content_markdown,
+          structuredJson: note.structured_json ? JSON.parse(note.structured_json) : undefined
+        });
+
+        // Pre-synthesize section 0 for instant playback
+        if (lesson.sections[0]) {
+          try {
+            const s0Audio = await voiceTeachingEngine.synthesizeSectionAudio(
+              lesson.sections[0],
+              lesson.topic,
+              lesson.voiceName,
+              speed,
+              language
+            );
+            lesson.sections[0].audioUrl = s0Audio.audioUrl;
+            lesson.sections[0].actualDurationSeconds = s0Audio.durationSeconds;
+            lesson.sections[0].audioProvider = s0Audio.providerUsed;
+            lesson.sections[0].status = 'synthesized';
+          } catch (e: any) {
+            console.warn('Initial section pre-synthesis notice:', e?.message);
+          }
+        }
+
+        // Persist to database
+        db.prepare(`
+          INSERT OR REPLACE INTO note_audio_lessons (
+            id, note_id, user_id, depth, language, voice_name, status, lesson_title, total_duration_seconds, sections_json, current_playback_section, current_playback_seconds, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          lesson.id,
+          noteId,
+          studentId,
+          depth,
+          language,
+          lesson.voiceName,
+          'ready',
+          lesson.lessonTitle,
+          lesson.totalDurationSeconds,
+          JSON.stringify(lesson.sections),
+          0,
+          0,
+          lesson.createdAt,
+          lesson.updatedAt
+        );
+
+        sendJson(res, 200, lesson);
+        return;
+      }
+
+      // GET /api/notes/:id/audio — Retrieve saved audio lesson for note
+      if (pathname.startsWith('/api/notes/') && pathname.endsWith('/audio') && req.method === 'GET') {
+        const parts = pathname.split('/');
+        const noteId = sanitizeText(parts[3] || '', 80);
+        const urlObj = new URL(req.url || '', 'http://127.0.0.1');
+        const depth = urlObj.searchParams.get('depth');
+        const language = urlObj.searchParams.get('language');
+
+        let query = 'SELECT * FROM note_audio_lessons WHERE note_id = ? AND user_id = ?';
+        const params: any[] = [noteId, studentId];
+        if (depth) {
+          query += ' AND depth = ?';
+          params.push(depth);
+        }
+        if (language) {
+          query += ' AND language = ?';
+          params.push(language);
+        }
+        query += ' ORDER BY updated_at DESC LIMIT 1';
+
+        const row = db.prepare(query).get(...params) as any;
+        if (!row) {
+          sendJson(res, 404, { error: 'No audio lesson generated for this note yet.' });
+          return;
+        }
+
+        const sections = JSON.parse(row.sections_json);
+        sendJson(res, 200, {
+          id: row.id,
+          noteId: row.note_id,
+          userId: row.user_id,
+          depth: row.depth,
+          language: row.language,
+          voiceName: row.voice_name,
+          status: row.status,
+          lessonTitle: row.lesson_title,
+          totalDurationSeconds: row.total_duration_seconds,
+          sections,
+          currentPlaybackSection: row.current_playback_section,
+          currentPlaybackSeconds: row.current_playback_seconds,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at
+        });
+        return;
+      }
+
+      // POST /api/notes/:id/audio/section/:sectionIndex — Synthesize or retry a specific section
+      if (pathname.startsWith('/api/notes/') && pathname.includes('/audio/section/') && req.method === 'POST') {
+        const parts = pathname.split('/');
+        const noteId = sanitizeText(parts[3] || '', 80);
+        const sectionIndex = parseInt(parts[6] || '0', 10);
+        const body = await readJsonBody(req);
+        const speed = typeof body.speed === 'number' ? body.speed : 1.0;
+
+        const row = db.prepare(`
+          SELECT * FROM note_audio_lessons 
+          WHERE note_id = ? AND user_id = ?
+          ORDER BY updated_at DESC LIMIT 1
+        `).get(noteId, studentId) as any;
+
+        if (!row) {
+          sendJson(res, 404, { error: 'Audio lesson not found.' });
+          return;
+        }
+
+        const sections = JSON.parse(row.sections_json);
+        const section = sections[sectionIndex];
+        if (!section) {
+          sendJson(res, 404, { error: 'Section index not found in audio lesson.' });
+          return;
+        }
+
+        const note = db.prepare('SELECT topic FROM notes WHERE id = ?').get(noteId) as any;
+        const topic = note?.topic || row.lesson_title;
+
+        const synthesized = await voiceTeachingEngine.synthesizeSectionAudio(
+          section,
+          topic,
+          row.voice_name,
+          speed,
+          row.language
+        );
+
+        section.audioUrl = synthesized.audioUrl;
+        section.actualDurationSeconds = synthesized.durationSeconds;
+        section.audioProvider = synthesized.providerUsed;
+        section.status = 'synthesized';
+        sections[sectionIndex] = section;
+
+        db.prepare(`
+          UPDATE note_audio_lessons 
+          SET sections_json = ?, updated_at = ?
+          WHERE id = ?
+        `).run(JSON.stringify(sections), new Date().toISOString(), row.id);
+
+        sendJson(res, 200, {
+          sectionIndex,
+          section,
+          audioUrl: synthesized.audioUrl,
+          durationSeconds: synthesized.durationSeconds,
+          providerUsed: synthesized.providerUsed
+        });
+        return;
+      }
+
+      // POST /api/notes/:id/audio/progress — Update student playback position
+      if (pathname.startsWith('/api/notes/') && pathname.endsWith('/audio/progress') && req.method === 'POST') {
+        const parts = pathname.split('/');
+        const noteId = sanitizeText(parts[3] || '', 80);
+        const body = await readJsonBody(req);
+        const section = typeof body.currentPlaybackSection === 'number' ? body.currentPlaybackSection : 0;
+        const seconds = typeof body.currentPlaybackSeconds === 'number' ? body.currentPlaybackSeconds : 0;
+
+        db.prepare(`
+          UPDATE note_audio_lessons
+          SET current_playback_section = ?, current_playback_seconds = ?, updated_at = ?
+          WHERE note_id = ? AND user_id = ?
+        `).run(section, seconds, new Date().toISOString(), noteId, studentId);
+
+        sendJson(res, 200, { status: 'ok', currentPlaybackSection: section, currentPlaybackSeconds: seconds });
+        return;
+      }
+
+      // DELETE /api/notes/:id/audio — Remove audio lesson without deleting note
+      if (pathname.startsWith('/api/notes/') && pathname.endsWith('/audio') && req.method === 'DELETE') {
+        const parts = pathname.split('/');
+        const noteId = sanitizeText(parts[3] || '', 80);
+        db.prepare('DELETE FROM note_audio_lessons WHERE note_id = ? AND user_id = ?').run(noteId, studentId);
+        sendJson(res, 200, { status: 'deleted', noteId });
+        return;
+      }
+
+      // POST /api/notes/:id/audio/interrupt — Interrupt lesson with question and preserve resume point
+      if (pathname.startsWith('/api/notes/') && pathname.endsWith('/audio/interrupt') && req.method === 'POST') {
+        const parts = pathname.split('/');
+        const noteId = sanitizeText(parts[3] || '', 80);
+        const body = await readJsonBody(req);
+        const question = sanitizeText(body.question || 'Can you explain that again?', 1000);
+        const sectionIndex = typeof body.currentSectionIndex === 'number' ? body.currentSectionIndex : 0;
+        const playbackSeconds = typeof body.playbackSeconds === 'number' ? body.playbackSeconds : 0;
+
+        const row = db.prepare(`
+          SELECT * FROM note_audio_lessons 
+          WHERE note_id = ? AND user_id = ? 
+          ORDER BY updated_at DESC LIMIT 1
+        `).get(noteId, studentId) as any;
+
+        if (!row) {
+          sendJson(res, 404, { error: 'Audio lesson not found.' });
+          return;
+        }
+
+        const sections = JSON.parse(row.sections_json);
+        const mockLesson: any = {
+          id: row.id,
+          noteId: row.note_id,
+          userId: row.user_id,
+          topic: sections[0]?.title || 'Lesson Topic',
+          subject: 'Curriculum',
+          depth: row.depth,
+          language: row.language,
+          voiceName: row.voice_name,
+          sections
+        };
+
+        const result = await voiceTeachingEngine.handleInteractiveVoiceInterruption({
+          noteAudioLesson: mockLesson,
+          currentSectionIndex: sectionIndex,
+          playbackSeconds,
+          studentQuestion: question,
+          language: row.language
+        });
+
+        sendJson(res, 200, result);
         return;
       }
 

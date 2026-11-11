@@ -129,6 +129,25 @@ export function initDatabase() {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS note_audio_lessons (
+      id TEXT PRIMARY KEY,
+      note_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      depth TEXT NOT NULL DEFAULT 'detailed',
+      language TEXT NOT NULL DEFAULT 'en',
+      voice_name TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'ready',
+      lesson_title TEXT NOT NULL,
+      total_duration_seconds REAL NOT NULL DEFAULT 0,
+      sections_json TEXT NOT NULL,
+      current_playback_section INTEGER NOT NULL DEFAULT 0,
+      current_playback_seconds REAL NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS library_resources (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,

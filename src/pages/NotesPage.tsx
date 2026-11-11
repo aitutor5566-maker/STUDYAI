@@ -64,6 +64,7 @@ import { FuturisticIcon } from '../components/FuturisticIcons';
 import { StudyAiAssistantCharacter } from '../components/StudyAiAssistantCharacter';
 import { EducationalMarkdownRenderer } from '../components/EducationalMarkdownRenderer';
 import { EducationalVisualLayout } from '../components/EducationalVisualLayout';
+import { AudioLessonPlayer, NoteAudioSection } from '../components/AudioLessonPlayer';
 import { useLearning } from '../context/LearningContext';
 
 interface PendingSourceItem {
@@ -263,6 +264,7 @@ export const NotesPage: React.FC = () => {
   const [studyToolsLoading, setStudyToolsLoading] = useState<boolean>(false);
   const [selectedStudioTool, setSelectedStudioTool] = useState<'audio' | 'mindmap' | 'slides' | 'infographic' | 'quiz' | 'reports'>('audio');
   const [audioExperience, setAudioExperience] = useState<'single' | 'two-speaker'>('single');
+  const [showAudioLessonPlayer, setShowAudioLessonPlayer] = useState<boolean>(false);
   const [currentSlideIdx, setCurrentSlideIdx] = useState<number>(0);
   const [mindmapZoom, setMindmapZoom] = useState<number>(1);
   const [mindmapExpandedNodes, setMindmapExpandedNodes] = useState<Record<string, boolean>>({
@@ -1683,26 +1685,24 @@ export const NotesPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  if (notesAudioPlaying) {
-                    pauseNotesAudio();
-                  } else if (notesAudioPaused) {
-                    resumeNotesAudio();
+                  if (activeNote) {
+                    setShowAudioLessonPlayer(true);
                   } else {
                     playNotesAudio(currentPageIdx);
                   }
                 }}
-                className={`btn-glass ${notesAudioPlaying ? 'active' : ''}`}
+                className={`btn-glass ${showAudioLessonPlayer || notesAudioPlaying ? 'active' : ''}`}
                 style={{
                   padding: '6px 12px',
                   fontSize: '0.78rem',
-                  background: notesAudioPlaying ? '#ECFDF5' : '#FFF7ED',
-                  color: notesAudioPlaying ? '#047857' : '#C2410C',
-                  borderColor: notesAudioPlaying ? '#10B981' : '#FED7AA'
+                  background: showAudioLessonPlayer || notesAudioPlaying ? '#ECFDF5' : '#FFF7ED',
+                  color: showAudioLessonPlayer || notesAudioPlaying ? '#047857' : '#C2410C',
+                  borderColor: showAudioLessonPlayer || notesAudioPlaying ? '#10B981' : '#FED7AA'
                 }}
-                title="Listen to textbook narration with natural speech"
+                title="Listen to textbook narration with natural teacher speech"
               >
                 <Volume2 size={14} />
-                <span>{notesAudioPlaying ? 'Narration Active' : '🎧 Listen to Notes'}</span>
+                <span>{showAudioLessonPlayer || notesAudioPlaying ? 'Narration Active' : '🎧 Listen to Notes'}</span>
               </button>
               <button
                 type="button"
@@ -2315,10 +2315,8 @@ export const NotesPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      if (notesAudioPlaying) {
-                        pauseNotesAudio();
-                      } else if (notesAudioPaused) {
-                        resumeNotesAudio();
+                      if (activeNote) {
+                        setShowAudioLessonPlayer(true);
                       } else {
                         playNotesAudio(currentPageIdx);
                       }
@@ -2327,14 +2325,14 @@ export const NotesPage: React.FC = () => {
                     style={{
                       padding: '6px 12px',
                       fontSize: '0.78rem',
-                      background: notesAudioPlaying ? '#ECFDF5' : '#FFF7ED',
-                      color: notesAudioPlaying ? '#047857' : '#C2410C',
-                      borderColor: notesAudioPlaying ? '#10B981' : '#FED7AA'
+                      background: showAudioLessonPlayer || notesAudioPlaying ? '#ECFDF5' : '#FFF7ED',
+                      color: showAudioLessonPlayer || notesAudioPlaying ? '#047857' : '#C2410C',
+                      borderColor: showAudioLessonPlayer || notesAudioPlaying ? '#10B981' : '#FED7AA'
                     }}
-                    title="Listen to this page with clean, natural speech"
+                    title="Listen to textbook narration with natural speech"
                   >
                     <Volume2 size={14} />
-                    <span>{notesAudioPlaying && notesAudioTrackIdx === currentPageIdx ? 'Playing' : '🎧 Listen'}</span>
+                    <span>{showAudioLessonPlayer || notesAudioPlaying ? 'Narration Active' : '🎧 Listen'}</span>
                   </button>
 
                   <button
@@ -5025,6 +5023,23 @@ export const NotesPage: React.FC = () => {
             ) : null}
           </div>
         </div>
+      )}
+      {/* Advanced AI Audio Teacher & Notes-to-Audio Player */}
+      {showAudioLessonPlayer && activeNote && (
+        <AudioLessonPlayer
+          noteId={activeNote.id}
+          noteTitle={editTitle || activeNote.title}
+          noteSubject={activeNote.subject || 'Curriculum'}
+          isOpen={showAudioLessonPlayer}
+          onClose={() => setShowAudioLessonPlayer(false)}
+          apiFetch={apiFetch}
+          onSectionChange={(sec) => {
+            if (sec.highlightTargetHeading) {
+              const el = document.getElementById(sec.highlightTargetHeading.toLowerCase().replace(/[^a-z0-9]/g, '-'));
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }}
+        />
       )}
     </div>
   );
