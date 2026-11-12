@@ -23,6 +23,31 @@ export interface VisualLabelItem {
   order?: number;
 }
 
+export interface VisualLevelItem {
+  level: number;
+  levelName: string;
+  title: string;
+  description: string;
+  assetKey: string;
+  dataUrl?: string;
+  svgXml?: string;
+  labels?: VisualLabelItem[];
+}
+
+export interface DeepTeacherWalkthroughProps {
+  whatItShows?: string;
+  point1_whatStudentIsLookingAt?: string;
+  point2_structureIdentity?: string;
+  point3_anatomicalLocation?: string;
+  point4_primaryFunction?: string;
+  point5_workingMechanism?: string;
+  point6_whyImportant?: string;
+  point7_connectionsToOtherComponents?: string;
+  point8_malfunctionOrEdgeCase?: string;
+  point9_realWorldOrClinicalLife?: string;
+  point10_examKeyTakeaway?: string;
+}
+
 export interface EducationalVisualProps {
   visual: {
     id: string;
@@ -37,6 +62,8 @@ export interface EducationalVisualProps {
     limitationNote?: string;
     interactive3dSupported?: boolean;
     recommendedModel3d?: string;
+    multiLevels?: VisualLevelItem[];
+    deepTeacherWalkthrough?: DeepTeacherWalkthroughProps;
   };
   explanation?: {
     visualTitle?: string;
@@ -74,31 +101,50 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
   const [show3dModal, setShow3dModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editTitle, setEditTitle] = useState(visual.title || '');
+  const [activeLevelIndex, setActiveLevelIndex] = useState<number>(0);
+
+  const activeLevel = visual.multiLevels && visual.multiLevels.length > 0
+    ? visual.multiLevels[activeLevelIndex] || visual.multiLevels[0]
+    : null;
+
+  const currentSvgXml = activeLevel?.svgXml || visual.svgXml;
+  const currentDataUrl = activeLevel?.dataUrl || visual.dataUrl;
+  const currentTitle = activeLevel?.title || explanation?.visualTitle || visual.title || 'Verified Scientific Diagram';
+  const currentCaption = activeLevel?.description || visual.caption || 'Curriculum-aligned scientific diagram with validated anatomical and schematic labels.';
+  const componentsList = explanation?.keyComponents || activeLevel?.labels || visual.labels || [];
+  const stepsList = explanation?.stepByStepProcess || [];
+  const whyItHappens = explanation?.whyItHappens;
+  const takeaway = explanation?.importantTakeaway || explanation?.examTip;
+  const deepWalkthrough = visual.deepTeacherWalkthrough;
+
+  const [editTitle, setEditTitle] = useState(currentTitle);
   const [editLabels, setEditLabels] = useState<string>(
-    (visual.labels || explanation?.keyComponents || []).map((l) => `${l.label}: ${l.description || ''}`).join('\n')
+    componentsList.map((l) => `${l.label}: ${l.description || ''}`).join('\n')
   );
   const [activeComponent, setActiveComponent] = useState<VisualLabelItem | null>(null);
+
+  const activeComponentKey = React.useMemo(() => {
+    if (!activeComponent) return '';
+    return (activeComponent.key || activeComponent.label || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '_');
+  }, [activeComponent]);
 
   const has3D =
     visual.interactive3dSupported ||
     Boolean(visual.recommendedModel3d) ||
     /heart|cardiac|lungs|circuit|electric|dna|plant cell|solar system|torso|ear|motor/i.test(
-      visual.title || visual.diagramType || ''
+      currentTitle || visual.diagramType || ''
     );
   const modelKey = visual.recommendedModel3d || visual.diagramType;
 
-  const displayTitle = explanation?.visualTitle || visual.title || 'Verified Scientific Diagram';
-  const displayCaption = visual.caption || 'Curriculum-aligned scientific diagram with validated anatomical and schematic labels.';
-  const componentsList = explanation?.keyComponents || visual.labels || [];
-  const stepsList = explanation?.stepByStepProcess || [];
-  const whyItHappens = explanation?.whyItHappens;
-  const takeaway = explanation?.importantTakeaway || explanation?.examTip;
+  const displayTitle = currentTitle;
+  const displayCaption = currentCaption;
 
   // Normalize SVG XML so it never forces an oversized pixel width and always preserves aspect ratio
   const normalizedSvgXml = React.useMemo(() => {
-    if (!visual.svgXml || typeof visual.svgXml !== 'string') return '';
-    const trimmed = visual.svgXml.trim();
+    if (!currentSvgXml || typeof currentSvgXml !== 'string') return '';
+    const trimmed = currentSvgXml.trim();
     if (!trimmed.startsWith('<svg')) return '';
     return trimmed
       .replace(/\bwidth="[^"]*"/i, 'width="100%"')
@@ -108,17 +154,17 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
           ? match
           : `<svg${attrs} preserveAspectRatio="xMidYMid meet">`
       );
-  }, [visual.svgXml]);
+  }, [currentSvgXml]);
 
   // Unified data URL / image URL for guaranteed fit-contain rendering without DOM ID collisions
   const resolvedImageUrl = React.useMemo(() => {
-    if (visual.dataUrl && visual.dataUrl.trim()) return visual.dataUrl;
+    if (currentDataUrl && currentDataUrl.trim()) return currentDataUrl;
     if (visual.imageUrl && visual.imageUrl.trim()) return visual.imageUrl;
     if (normalizedSvgXml) {
       return `data:image/svg+xml;utf8,${encodeURIComponent(normalizedSvgXml)}`;
     }
     return '';
-  }, [visual.dataUrl, visual.imageUrl, normalizedSvgXml]);
+  }, [currentDataUrl, visual.imageUrl, normalizedSvgXml]);
 
   const handleCopySvgOrUrl = () => {
     const textToCopy = visual.svgXml || visual.dataUrl || visual.imageUrl || '';
@@ -358,6 +404,58 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
       >
         {/* LEFT COLUMN: Visual Area (Complete Image Visible by Default, Fit-Contain, Zero Forced Crop/Zoom) */}
         <div className="educational-visual-col" style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
+          {/* Multi-Level Visual View Tabs (Update 2 Requirement 3) */}
+          {visual.multiLevels && visual.multiLevels.length > 1 && (
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 6,
+                padding: '2px 0 6px 0',
+                borderBottom: '1px solid rgba(255, 106, 0, 0.15)'
+              }}
+            >
+              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#C2410C', alignSelf: 'center', marginRight: 4 }}>
+                Visual Levels:
+              </span>
+              {visual.multiLevels.map((lvl, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setActiveLevelIndex(idx);
+                    setActiveComponent(null);
+                  }}
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: 999,
+                    fontSize: '0.73rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    background: activeLevelIndex === idx ? '#FF6A00' : '#FFF7ED',
+                    color: activeLevelIndex === idx ? '#FFFFFF' : '#C2410C',
+                    border: activeLevelIndex === idx ? '1px solid #EA580C' : '1px solid rgba(255, 106, 0, 0.3)',
+                    boxShadow: activeLevelIndex === idx ? '0 2px 8px rgba(255, 106, 0, 0.25)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {lvl.levelName || `Level ${lvl.level}`}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {activeComponentKey && (
+            <style>{`
+              .educational-visual-stage svg #${activeComponentKey},
+              .educational-visual-stage svg [id="${activeComponentKey}"] {
+                stroke: #FF6A00 !important;
+                stroke-width: 4px !important;
+                filter: drop-shadow(0 0 10px rgba(255, 106, 0, 0.9)) !important;
+              }
+            `}</style>
+          )}
+
           <div
             className="educational-visual-stage"
             onClick={() => setZoomOpen(true)}
@@ -483,6 +581,80 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
               {displayCaption}
             </div>
           </div>
+
+          {/* Deep 10-Point Teacher-Style Walkthrough (Update 2 Requirement 6) */}
+          {deepWalkthrough && (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+                padding: '12px 14px',
+                borderRadius: 14,
+                background: 'linear-gradient(145deg, #FFFDFB 0%, #FFF7ED 100%)',
+                border: '1.5px solid rgba(255, 106, 0, 0.25)'
+              }}
+            >
+              <div style={{ fontWeight: 800, fontSize: '0.84rem', color: '#C2410C', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                <span>👨‍🏫</span>
+                <span>Teacher's Deep Concept Guide:</span>
+              </div>
+
+              {deepWalkthrough.point1_whatStudentIsLookingAt && (
+                <div style={{ fontSize: '0.81rem', color: '#334155', lineHeight: 1.55 }}>
+                  <strong style={{ color: '#0F172A' }}>1. What You See:</strong> {deepWalkthrough.point1_whatStudentIsLookingAt}
+                </div>
+              )}
+
+              {deepWalkthrough.point3_anatomicalLocation && (
+                <div style={{ fontSize: '0.81rem', color: '#334155', lineHeight: 1.55 }}>
+                  <strong style={{ color: '#0F172A' }}>2. Anatomical Location:</strong> {deepWalkthrough.point3_anatomicalLocation}
+                </div>
+              )}
+
+              {deepWalkthrough.point4_primaryFunction && (
+                <div style={{ fontSize: '0.81rem', color: '#334155', lineHeight: 1.55 }}>
+                  <strong style={{ color: '#0F172A' }}>3. Function &amp; Purpose:</strong> {deepWalkthrough.point4_primaryFunction}
+                </div>
+              )}
+
+              {deepWalkthrough.point5_workingMechanism && (
+                <div style={{ fontSize: '0.81rem', color: '#334155', lineHeight: 1.55 }}>
+                  <strong style={{ color: '#0F172A' }}>4. Working Mechanism:</strong> {deepWalkthrough.point5_workingMechanism}
+                </div>
+              )}
+
+              {deepWalkthrough.point6_whyImportant && (
+                <div style={{ fontSize: '0.81rem', color: '#334155', lineHeight: 1.55 }}>
+                  <strong style={{ color: '#0F172A' }}>5. Why It Matters:</strong> {deepWalkthrough.point6_whyImportant}
+                </div>
+              )}
+
+              {deepWalkthrough.point7_connectionsToOtherComponents && (
+                <div style={{ fontSize: '0.81rem', color: '#334155', lineHeight: 1.55 }}>
+                  <strong style={{ color: '#0F172A' }}>6. Upstream &amp; Downstream:</strong> {deepWalkthrough.point7_connectionsToOtherComponents}
+                </div>
+              )}
+
+              {deepWalkthrough.point8_malfunctionOrEdgeCase && (
+                <div style={{ fontSize: '0.81rem', color: '#991B1B', lineHeight: 1.55, background: '#FEF2F2', padding: '6px 10px', borderRadius: 8, border: '1px solid #FECACA' }}>
+                  <strong>⚠️ Malfunction / Pathology:</strong> {deepWalkthrough.point8_malfunctionOrEdgeCase}
+                </div>
+              )}
+
+              {deepWalkthrough.point9_realWorldOrClinicalLife && (
+                <div style={{ fontSize: '0.81rem', color: '#1E40AF', lineHeight: 1.55, background: '#EFF6FF', padding: '6px 10px', borderRadius: 8, border: '1px solid #BFDBFE' }}>
+                  <strong>🩺 Real-World / Clinical Link:</strong> {deepWalkthrough.point9_realWorldOrClinicalLife}
+                </div>
+              )}
+
+              {deepWalkthrough.point10_examKeyTakeaway && (
+                <div style={{ fontSize: '0.81rem', color: '#92400E', lineHeight: 1.55, background: '#FEF3C7', padding: '6px 10px', borderRadius: 8, border: '1px solid #FDE68A' }}>
+                  <strong>🎯 Exam Takeaway:</strong> {deepWalkthrough.point10_examKeyTakeaway}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 2. Step-by-Step Process (What happens and in which order) */}
           {stepsList.length > 0 && (

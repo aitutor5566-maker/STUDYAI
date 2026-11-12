@@ -55,6 +55,35 @@ export interface QualityAssessmentResult {
   missingElements: string[];
 }
 
+export interface VisualLevelInfo {
+  level: number;
+  levelName: string;
+  title: string;
+  description: string;
+  assetKey: string;
+  visualType?: string;
+  dataUrl?: string;
+  svgXml?: string;
+  labels?: Array<{ id: string; name: string; role?: string; color?: string }>;
+}
+
+export interface DeepTeacherWalkthrough {
+  whatItShows: string;
+  importantComponents: string[];
+  processSequence: string[];
+  examTakeaway: string;
+  point1_whatStudentIsLookingAt: string;
+  point2_structureIdentity: string;
+  point3_anatomicalLocation: string;
+  point4_primaryFunction: string;
+  point5_workingMechanism: string;
+  point6_whyImportant: string;
+  point7_connectionsToOtherComponents: string;
+  point8_malfunctionOrEdgeCase: string;
+  point9_realWorldOrClinicalLife: string;
+  point10_examKeyTakeaway: string;
+}
+
 export interface EducationalVisualOutput {
   assetId: string;
   topic: string;
@@ -72,6 +101,8 @@ export interface EducationalVisualOutput {
     processSequence: string[];
     examTakeaway: string;
   };
+  deepExplanation?: DeepTeacherWalkthrough;
+  multiLevels?: VisualLevelInfo[];
   labels: Array<{ id: string; name: string; x?: number; y?: number; role?: string; color?: string }>;
   interactive3dSupported?: boolean;
   recommendedModel3d?: string;
@@ -103,7 +134,32 @@ export class EducationalVisualIntelligenceEngine {
     let goal = 'Clear understanding of internal structure and functional mechanism';
     let model3d: string | undefined = undefined;
 
-    if (/(heart|cardiac|ventricle|atrium|valve|circulation|aorta)/i.test(lower)) {
+    if (/(conduction|pacemaker|sa node|av node|purkinje|ecg)/i.test(lower)) {
+      modality = 'anatomical_cross_section';
+      expectedComponents = ['Sinoatrial (SA) Node', 'Atrioventricular (AV) Node', 'Bundle of His & Bundle Branches', 'Subendocardial Purkinje Network', 'Synchronized Surface ECG (Lead II)'];
+      style = 'Cardiovascular electrophysiology schematic, glowing myocardial conduction pathway inside coronal silhouette, synchronized surface Lead II ECG trace';
+      goal = 'Demonstrate automatic pacemaker excitation, AV nodal 0.1s delay, and synchronous Purkinje ventricular contraction with P-QRS-T ECG correlation';
+    } else if (/(double circulation|systemic circulation|pulmonary circulation)/i.test(lower)) {
+      modality = 'biological_process_diagram';
+      expectedComponents = ['Pulmonary Circuit', 'Systemic Circuit', 'Alveolar Capillary Bed (Lungs)', 'Systemic Capillary Bed (Organs & Muscles)', 'Cardiac Central Dual Pump'];
+      style = 'Closed figure-8 dual circulation loop, bilobed lung silhouette with gas exchange, 4-chamber heart central pump, systemic capillary beds, 120/25 mmHg pressure annotations';
+      goal = 'Explain why blood passes through the human heart twice per cycle and separate high-pressure systemic loop from low-pressure pulmonary loop';
+    } else if (/(chloroplast.*structure|chloroplast.*ultrastructure|thylakoid.*grana|stroma lamellae)/i.test(lower)) {
+      modality = 'biological_process_diagram';
+      expectedComponents = ['Double Membrane Envelope', 'Aqueous Stroma Matrix', 'Stacked Thylakoid Grana', 'Stroma Lamellae (Frets)', 'Circular cpDNA & Ribosomes'];
+      style = 'Cutaway chloroplast double envelope, aqueous stroma matrix, stacked green grana discs, interconnecting stroma lamellae frets, circular cpDNA loop';
+      goal = 'Illustrate sub-cellular compartmentalization between light-harvesting thylakoid grana and carbon-fixing stroma';
+    } else if (/(magnetic field|flux line|bar magnet|solenoid|electromagnet)/i.test(lower)) {
+      modality = 'physics_vector_schematic';
+      expectedComponents = ['Bar Magnet Dipole (N & S Poles)', 'Continuous Magnetic Flux Lines', 'Current-Carrying Solenoid Coil', 'Right-Hand Grip Rule'];
+      style = 'Rigorous electromagnetism vector schematic, continuous unbroken magnetic flux loops, compass needle tangent alignment, B = μ₀·n·I formula annotation';
+      goal = 'Demonstrate that magnetic field lines form continuous closed loops and never intersect';
+    } else if (/(earth.*layer|earth.*internal structure|crust mantle core|lithosphere asthenosphere|outer core|inner core)/i.test(lower)) {
+      modality = 'geological_cross_section';
+      expectedComponents = ['Crust & Rigid Lithosphere (0–100 km)', 'Asthenosphere & Mantle (100–2900 km)', 'Outer Core: Liquid Fe-Ni (2900–5150 km)', 'Inner Core: Solid Fe-Ni (5150–6371 km)'];
+      style = 'Radial planetary spherical wedge from surface (0 km) to center (6371 km), Mohorovičić, Gutenberg and Lehmann discontinuities, seismic S-wave shadow zone proof';
+      goal = 'Explain planetary differentiation, mantle convection driving plate tectonics, and geodynamo geomagnetic field generation in liquid outer core';
+    } else if (/(heart|cardiac|ventricle|atrium|valve|circulation|aorta)/i.test(lower)) {
       modality = 'anatomical_cross_section';
       model3d = 'human_heart';
       expectedComponents = ['Left Ventricle', 'Right Ventricle', 'Left Atrium', 'Right Atrium', 'Aorta Arch', 'Pulmonary Trunk', 'Tricuspid Valve', 'Bicuspid Valve', 'Interventricular Septum'];
@@ -245,7 +301,9 @@ export class EducationalVisualIntelligenceEngine {
           },
           labels: labels.length > 0 ? labels : (detailed?.labels || []),
           interactive3dSupported: Boolean(plan.recommendedModel3d),
-          recommendedModel3d: plan.recommendedModel3d
+          recommendedModel3d: plan.recommendedModel3d,
+          multiLevels: this.getMultiLevelVisuals(plan.topic),
+          deepExplanation: detailed ? this.buildDeepTeacherWalkthrough(plan.topic, plan.subject, detailed) : undefined
         };
         this.assetCache.set(cacheKey, out);
         return out;
@@ -312,7 +370,9 @@ export class EducationalVisualIntelligenceEngine {
         walkthrough: vectorAsset.walkthrough,
         labels: vectorAsset.labels,
         interactive3dSupported: Boolean(plan.recommendedModel3d),
-        recommendedModel3d: plan.recommendedModel3d
+        recommendedModel3d: plan.recommendedModel3d,
+        multiLevels: this.getMultiLevelVisuals(plan.topic),
+        deepExplanation: this.buildDeepTeacherWalkthrough(plan.topic, plan.subject, vectorAsset)
       };
 
       this.assetCache.set(cacheKey, out);
@@ -622,6 +682,387 @@ export class EducationalVisualIntelligenceEngine {
       ],
       verifiedAnatomyPresent: foundComponents,
       missingElements: missing
+    };
+  }
+
+/**
+   * Generates coordinated multi-level visual representations for complex concepts (Update 2).
+   * Level 1: Overall understanding
+   * Level 2: Detailed structure
+   * Level 3: Process sequence
+   * Level 4: Application
+   * Level 5: Examination representation
+   */
+  public getMultiLevelVisuals(topic: string): VisualLevelInfo[] {
+    const t = topic.toLowerCase().trim();
+    const levels: VisualLevelInfo[] = [];
+
+    if (/(heart|cardiac|circulation|ventricle|atrium|conduction)/.test(t)) {
+      const heartAsset = SCIENTIFIC_VECTOR_REGISTRY.human_heart;
+      const conductionAsset = SCIENTIFIC_VECTOR_REGISTRY.cardiac_conduction;
+      const doubleCircAsset = SCIENTIFIC_VECTOR_REGISTRY.double_circulation;
+
+      if (heartAsset) {
+        levels.push({
+          level: 1,
+          levelName: 'Level 1: Overall Anatomy',
+          title: heartAsset.title,
+          description: 'Coronal cutaway showing 4 muscular chambers, thick left myocardium, and atrioventricular valves.',
+          assetKey: 'human_heart',
+          visualType: heartAsset.visualType,
+          dataUrl: `data:image/svg+xml;base64,${Buffer.from(heartAsset.svgXml).toString('base64')}`,
+          svgXml: heartAsset.svgXml,
+          labels: heartAsset.labels
+        });
+      }
+
+      if (conductionAsset) {
+        levels.push({
+          level: 2,
+          levelName: 'Level 2: Electrical Conduction',
+          title: conductionAsset.title,
+          description: 'Intrinsic cardiac conduction: SA Node (72 bpm), AV Node (0.1s delay), Bundle of His & Purkinje fibers with ECG.',
+          assetKey: 'cardiac_conduction',
+          visualType: conductionAsset.visualType,
+          dataUrl: `data:image/svg+xml;base64,${Buffer.from(conductionAsset.svgXml).toString('base64')}`,
+          svgXml: conductionAsset.svgXml,
+          labels: conductionAsset.labels
+        });
+      }
+
+      if (doubleCircAsset) {
+        levels.push({
+          level: 3,
+          levelName: 'Level 3: Double Circulation',
+          title: doubleCircAsset.title,
+          description: 'Figure-8 systemic (120 mmHg) and pulmonary (25 mmHg) closed loops demonstrating complete blood separation.',
+          assetKey: 'double_circulation',
+          visualType: doubleCircAsset.visualType,
+          dataUrl: `data:image/svg+xml;base64,${Buffer.from(doubleCircAsset.svgXml).toString('base64')}`,
+          svgXml: doubleCircAsset.svgXml,
+          labels: doubleCircAsset.labels
+        });
+      }
+
+      if (heartAsset) {
+        levels.push({
+          level: 4,
+          levelName: 'Level 4: Exam Takeaway',
+          title: 'Cardiac Cycle & Hemodynamics Exam Breakdown',
+          description: 'Systole vs Diastole timing, S₁ (Lub) & S₂ (Dub) valve closures, and stroke volume calculation (SV = EDV - ESV).',
+          assetKey: 'human_heart_exam',
+          visualType: 'anatomical_cross_section',
+          dataUrl: `data:image/svg+xml;base64,${Buffer.from(heartAsset.svgXml).toString('base64')}`,
+          svgXml: heartAsset.svgXml,
+          labels: heartAsset.labels
+        });
+      }
+    } else if (/(photosynthesis|chloroplast|thylakoid|grana|stroma)/.test(t)) {
+      const photoAsset = SCIENTIFIC_VECTOR_REGISTRY.photosynthesis;
+      const chlorAsset = SCIENTIFIC_VECTOR_REGISTRY.chloroplast_structure;
+      const plantAsset = SCIENTIFIC_VECTOR_REGISTRY.plant_cell;
+
+      if (photoAsset) {
+        levels.push({
+          level: 1,
+          levelName: 'Level 1: Overall Process',
+          title: photoAsset.title,
+          description: 'Solar energy conversion: Water photolysis in grana and CO₂ carbon fixation in stroma.',
+          assetKey: 'photosynthesis',
+          visualType: photoAsset.visualType,
+          dataUrl: `data:image/svg+xml;base64,${Buffer.from(photoAsset.svgXml).toString('base64')}`,
+          svgXml: photoAsset.svgXml,
+          labels: photoAsset.labels
+        });
+      }
+
+      if (chlorAsset) {
+        levels.push({
+          level: 2,
+          levelName: 'Level 2: Organelle Ultrastructure',
+          title: chlorAsset.title,
+          description: 'Double envelope, aqueous stroma matrix, stacked thylakoid grana, stroma lamellae frets, and circular cpDNA.',
+          assetKey: 'chloroplast_structure',
+          visualType: chlorAsset.visualType,
+          dataUrl: `data:image/svg+xml;base64,${Buffer.from(chlorAsset.svgXml).toString('base64')}`,
+          svgXml: chlorAsset.svgXml,
+          labels: chlorAsset.labels
+        });
+      }
+
+      if (plantAsset) {
+        levels.push({
+          level: 3,
+          levelName: 'Level 3: Cellular Context',
+          title: plantAsset.title,
+          description: 'Plant cell architecture: Cellulose cell wall, large central vacuole, and chloroplast distribution.',
+          assetKey: 'plant_cell',
+          visualType: plantAsset.visualType,
+          dataUrl: `data:image/svg+xml;base64,${Buffer.from(plantAsset.svgXml).toString('base64')}`,
+          svgXml: plantAsset.svgXml,
+          labels: plantAsset.labels
+        });
+      }
+
+      if (photoAsset) {
+        levels.push({
+          level: 4,
+          levelName: 'Level 4: Exam Equations',
+          title: 'Photosynthesis Balanced Chemical Equation & RuBisCO',
+          description: '6CO₂ + 6H₂O + Photons → C₆H₁₂O₆ + 6O₂ with light-dependent ATP/NADPH photophosphorylation.',
+          assetKey: 'photosynthesis_exam',
+          visualType: 'biological_process_diagram',
+          dataUrl: `data:image/svg+xml;base64,${Buffer.from(photoAsset.svgXml).toString('base64')}`,
+          svgXml: photoAsset.svgXml,
+          labels: photoAsset.labels
+        });
+      }
+    } else if (/(magnet|solenoid|induction)/.test(t)) {
+      const magAsset = SCIENTIFIC_VECTOR_REGISTRY.magnetic_fields;
+      const circAsset = SCIENTIFIC_VECTOR_REGISTRY.electric_circuit;
+
+      if (magAsset) {
+        levels.push({
+          level: 1,
+          levelName: 'Level 1: Bar Magnet Dipole',
+          title: 'Permanent Dipole Magnetic Field Flux Loops',
+          description: 'Closed continuous flux lines emerging from North, entering South externally, and continuing South to North internally.',
+          assetKey: 'magnetic_fields',
+          visualType: magAsset.visualType,
+          dataUrl: `data:image/svg+xml;base64,${Buffer.from(magAsset.svgXml).toString('base64')}`,
+          svgXml: magAsset.svgXml,
+          labels: magAsset.labels
+        });
+
+        levels.push({
+          level: 2,
+          levelName: 'Level 2: Solenoid Electromagnet',
+          title: 'Current-Carrying Helical Solenoid and B-Field',
+          description: 'Uniform axial magnetic field B = μ₀·n·I and the Right-Hand Grip Rule.',
+          assetKey: 'magnetic_fields',
+          visualType: magAsset.visualType,
+          dataUrl: `data:image/svg+xml;base64,${Buffer.from(magAsset.svgXml).toString('base64')}`,
+          svgXml: magAsset.svgXml,
+          labels: magAsset.labels
+        });
+      }
+
+      if (circAsset) {
+        levels.push({
+          level: 3,
+          levelName: 'Level 3: Circuit Driving Force',
+          title: circAsset.title,
+          description: 'DC circuit driving current through conductors via Ohm\'s Law V = IR.',
+          assetKey: 'electric_circuit',
+          visualType: circAsset.visualType,
+          dataUrl: `data:image/svg+xml;base64,${Buffer.from(circAsset.svgXml).toString('base64')}`,
+          svgXml: circAsset.svgXml,
+          labels: circAsset.labels
+        });
+      }
+    } else if (/(earth|geology|crust|mantle|core|layer)/.test(t)) {
+      const earthAsset = SCIENTIFIC_VECTOR_REGISTRY.earth_layers;
+      const tectAsset = SCIENTIFIC_VECTOR_REGISTRY.plate_tectonics;
+      const waterAsset = SCIENTIFIC_VECTOR_REGISTRY.water_cycle;
+
+      if (earthAsset) {
+        levels.push({
+          level: 1,
+          levelName: 'Level 1: Radial Planetary Layers',
+          title: earthAsset.title,
+          description: 'Radial wedge: Crust, Lithosphere, Asthenosphere, Mantle, Liquid Outer Core, Solid Inner Core.',
+          assetKey: 'earth_layers',
+          visualType: earthAsset.visualType,
+          dataUrl: `data:image/svg+xml;base64,${Buffer.from(earthAsset.svgXml).toString('base64')}`,
+          svgXml: earthAsset.svgXml,
+          labels: earthAsset.labels
+        });
+      }
+
+      if (tectAsset) {
+        levels.push({
+          level: 2,
+          levelName: 'Level 2: Tectonic Boundaries',
+          title: tectAsset.title,
+          description: 'Plate boundaries: Subduction trenches, mid-ocean divergent ridges, and mantle convection loops.',
+          assetKey: 'plate_tectonics',
+          visualType: tectAsset.visualType,
+          dataUrl: `data:image/svg+xml;base64,${Buffer.from(tectAsset.svgXml).toString('base64')}`,
+          svgXml: tectAsset.svgXml,
+          labels: tectAsset.labels
+        });
+      }
+
+      if (waterAsset) {
+        levels.push({
+          level: 3,
+          levelName: 'Level 3: Hydrosphere Interaction',
+          title: waterAsset.title,
+          description: 'Global hydrological cycle connecting surface runoff with atmospheric precipitation.',
+          assetKey: 'water_cycle',
+          visualType: waterAsset.visualType,
+          dataUrl: `data:image/svg+xml;base64,${Buffer.from(waterAsset.svgXml).toString('base64')}`,
+          svgXml: waterAsset.svgXml,
+          labels: waterAsset.labels
+        });
+      }
+    } else if (/(atom|bohr|electron|bond|reaction)/.test(t)) {
+      const atomAsset = SCIENTIFIC_VECTOR_REGISTRY.atomic_structure;
+      const bondAsset = SCIENTIFIC_VECTOR_REGISTRY.chemical_bonding;
+      const rxnAsset = SCIENTIFIC_VECTOR_REGISTRY.chemical_reactions;
+
+      if (atomAsset) {
+        levels.push({
+          level: 1,
+          levelName: 'Level 1: Quantized Atomic Structure',
+          title: atomAsset.title,
+          description: 'Bohr planetary model with dense nucleus (protons + neutrons) and quantized K, L, M electron shells.',
+          assetKey: 'atomic_structure',
+          visualType: atomAsset.visualType,
+          dataUrl: `data:image/svg+xml;base64,${Buffer.from(atomAsset.svgXml).toString('base64')}`,
+          svgXml: atomAsset.svgXml,
+          labels: atomAsset.labels
+        });
+      }
+
+      if (bondAsset) {
+        levels.push({
+          level: 2,
+          levelName: 'Level 2: Chemical Bonding',
+          title: bondAsset.title,
+          description: 'Ionic electron transfer (NaCl lattice) vs Covalent orbital sharing (H₂O bent dipole 104.5°).',
+          assetKey: 'chemical_bonding',
+          visualType: bondAsset.visualType,
+          dataUrl: `data:image/svg+xml;base64,${Buffer.from(bondAsset.svgXml).toString('base64')}`,
+          svgXml: bondAsset.svgXml,
+          labels: bondAsset.labels
+        });
+      }
+
+      if (rxnAsset) {
+        levels.push({
+          level: 3,
+          levelName: 'Level 3: Reaction Kinetics',
+          title: rxnAsset.title,
+          description: 'Activation energy Ea profiles, transition state complexes, and exothermic vs endothermic enthalpy ΔH.',
+          assetKey: 'chemical_reactions',
+          visualType: rxnAsset.visualType,
+          dataUrl: `data:image/svg+xml;base64,${Buffer.from(rxnAsset.svgXml).toString('base64')}`,
+          svgXml: rxnAsset.svgXml,
+          labels: rxnAsset.labels
+        });
+      }
+    }
+
+    return levels;
+  }
+
+  /**
+   * Generates a comprehensive 10-point deep teacher-style walkthrough (Update 2 Requirement 6).
+   */
+  public buildDeepTeacherWalkthrough(topic: string, subject: string, asset: DetailedVisualAsset): DeepTeacherWalkthrough {
+    const t = topic.toLowerCase();
+    const isHeart = /(heart|cardiac|ventricle|atrium)/.test(t);
+    const isDoubleCirc = /(double circulation|circulation)/.test(t);
+    const isConduction = /(conduction|pacemaker|sa node|av node|ecg)/.test(t);
+    const isChloroplast = /(chloroplast|photosynthesis|thylakoid)/.test(t);
+    const isMagnetism = /(magnet|magnetic|solenoid)/.test(t);
+    const isEarth = /(earth|crust|mantle|core|layer)/.test(t);
+
+    let p1 = asset.walkthrough.whatItShows;
+    let p2 = asset.title;
+    let p3 = 'Anatomically aligned in anatomical standard position within the chest / cell / system.';
+    let p4 = asset.caption;
+    let p5 = asset.walkthrough.processSequence.join(' → ');
+    let p6 = 'Critical for physiological homeostasis, energy transfer, or natural equilibrium.';
+    let p7 = asset.walkthrough.importantComponents.join('; ');
+    let p8 = 'Malfunction leads to clinical pathology, structural collapse, or energetic deficit.';
+    let p9 = 'Observed in diagnostic medicine, clinical ECG, technology devices, or natural phenomena.';
+    let p10 = asset.walkthrough.examTakeaway;
+
+    if (isConduction) {
+      p1 = 'Anatomical mapping of the heart\'s intrinsic cardiac conduction system alongside surface Lead II ECG trace.';
+      p2 = 'Sinoatrial (SA) Node, Atrioventricular (AV) Node, Bundle of His, Left & Right Bundle Branches, and Purkinje Fibers.';
+      p3 = 'SA node sits in the superior posterolateral wall of Right Atrium; AV node sits in the inferior interatrial septum; Bundle of His traverses the central fibrous skeleton.';
+      p4 = 'Generates and coordinates rhythmic, sequential atrial and ventricular electrical depolarization and mechanical contraction.';
+      p5 = 'Spontaneous SA firing (72 bpm) → Interatrial wave (P wave) → AV nodal 0.1s delay (PR segment) → His-Purkinje rapid conduction (QRS complex) → Upward apex-to-base ventricular contraction → Repolarization (T wave).';
+      p6 = 'Ensures atria empty completely before ventricles contract; drives synchronous apex-to-base ejection against aortic pressure.';
+      p7 = 'Connected directly to atrial and ventricular cardiomyocytes via low-resistance gap junctions within intercalated discs.';
+      p8 = 'Arrhythmias, Sick Sinus Syndrome, and Heart Blocks (First, Second, or Third Degree Complete AV Block requiring an artificial pacemaker).';
+      p9 = 'Clinical 12-lead electrocardiograms (ECG/EKG), Holter monitors, artificial electronic pacemakers, and defibrillators.';
+      p10 = 'P wave = Atrial depolarization; QRS = Ventricular depolarization; T wave = Ventricular repolarization; AV delay = 0.1s (PR interval 0.12–0.20s).';
+    } else if (isDoubleCirc) {
+      p1 = 'Closed figure-8 dual circulation schematic separating the low-pressure pulmonary loop from the high-pressure systemic loop.';
+      p2 = 'Right heart (deoxygenated venous return), pulmonary capillaries (lungs), left heart (oxygenated arterial supply), and systemic capillary bed (tissues).';
+      p3 = 'Pulmonary loop spans heart and thoracic lungs; systemic loop spans heart and every vascularized organ in the body.';
+      p4 = 'Double circulation ensures oxygenated and deoxygenated blood never mix and maintains independent optimal pressures in both circuits.';
+      p5 = 'Body tissues → Vena Cava → Right Atrium → Right Ventricle → Pulmonary Artery → Lungs → Pulmonary Veins → Left Atrium → Left Ventricle → Aorta → Body.';
+      p6 = 'Crucial for maintaining high mammalian metabolic rate, endothermy (constant 37°C body temperature), and protecting fragile alveolar capillaries from barotrauma.';
+      p7 = 'Interconnected through the four chambers of the heart and the continuous closed vascular tree of arteries, arterioles, capillaries, venules, and veins.';
+      p8 = 'Ventricular Septal Defect (VSD / "hole in the heart") causing left-to-right shunting, pulmonary hypertension, and cyanosis.';
+      p9 = 'Blood pressure monitoring with a sphygmomanometer (120/80 mmHg in systemic arteries vs 25/10 mmHg in pulmonary trunk).';
+      p10 = 'Blood passes through the heart TWICE during each complete circuit. Pulmonary circuit is low pressure (~25 mmHg); Systemic circuit is high pressure (~120 mmHg).';
+    } else if (isHeart) {
+      p1 = 'Internal coronal cross-section of the 4-chambered human heart displaying internal cavities, valves, and myocardial wall thicknesses.';
+      p2 = 'Right Atrium, Right Ventricle, Left Atrium, Left Ventricle, Interventricular Septum, Tricuspid Valve, Bicuspid/Mitral Valve, Aorta, and Vena Cava.';
+      p3 = 'Located within the thoracic mediastinum between the two lungs, tilted obliquely with two-thirds of its mass lying to the left of the midline.';
+      p4 = 'Functions as a muscular dual-pump that continuously propels deoxygenated blood to the lungs and oxygenated blood to the body.';
+      p5 = 'Diastole: atria and ventricles relax, filling passively → Atrial systole completes filling → Ventricular systole closes AV valves (Lub S₁) and ejects stroke volume into great arteries → SL valves close (Dub S₂).';
+      p6 = 'Continuous perfusion of vital organs (especially brain and kidneys) with oxygen and glucose to maintain aerobic respiration and ATP synthesis.';
+      p7 = 'Anchored to great vessels (Aorta, Pulmonary Trunk, SVC, IVC) and enclosed by the double-layered protective pericardial sac.';
+      p8 = 'Myocardial infarction (coronary thrombosis), mitral valve prolapse, hypertrophic cardiomyopathy, and congestive heart failure.';
+      p9 = 'Auscultation of Lub-Dub heart sounds with a stethoscope, blood pressure measurement, and echocardiography imaging.';
+      p10 = 'Left Ventricle myocardium is 3 times thicker than Right Ventricle because it must pump against high systemic vascular resistance across the entire body!';
+    } else if (isChloroplast) {
+      p1 = 'Sub-cellular ultrastructure of the plant chloroplast organelle showing double envelope, stroma matrix, stacked thylakoid grana, and lamellae.';
+      p2 = 'Outer membrane, Inner membrane, Intermembrane space, Stroma, Thylakoid discs, Grana stacks, Stroma lamellae (frets), and circular cpDNA.';
+      p3 = 'Suspended within the cytoplasm of plant mesophyll cells, predominantly located in the palisade parenchyma of green leaves.';
+      p4 = 'Harvests solar electromagnetic radiation to produce ATP and NADPH (light reaction) and synthesizes carbohydrates from CO₂ (dark reaction).';
+      p5 = 'Photons excite chlorophyll in thylakoid Photosystems II & I → Water photolysis yields O₂ and H⁺ gradient → ATP Synthase generates ATP → Calvin cycle in stroma fixes CO₂ into glucose.';
+      p6 = 'The foundational biological engine supporting terrestrial life by producing atmospheric oxygen and the primary organic biomass for all food webs.';
+      p7 = 'Exchanges metabolites (triose phosphates, ATP, ADP) with the cytoplasm and mitochondria through selective membrane transport proteins.';
+      p8 = 'Chlorosis (yellowing of leaves due to magnesium or iron deficiency preventing chlorophyll synthesis) and photoinhibition under excessive light stress.';
+      p9 = 'Agricultural crop yields, biofuel production, carbon sequestration technologies, and artificial photosynthesis research.';
+      p10 = 'Light reaction occurs in the THYLAKOID MEMBRANE (produces ATP, NADPH, O₂). Dark reaction (Calvin cycle) occurs in the STROMA (consumes ATP, NADPH to fix CO₂).';
+    } else if (isMagnetism) {
+      p1 = 'Vector representation of magnetic field flux lines surrounding permanent bar magnet dipoles and current-carrying helical solenoids.';
+      p2 = 'Magnetic North and South poles, continuous magnetic field loops (B-field), helical solenoid coil windings, and Right-Hand Grip Rule.';
+      p3 = 'Surrounds any permanent magnet or region of moving electric charge (current-carrying conductor).';
+      p4 = 'Exerts a Lorentz magnetic force on moving electric charges (F = q(v × B)) and magnetic dipoles.';
+      p5 = 'External flux lines point from North to South; internal flux lines continue from South to North, forming unbroken continuous closed loops without start or end.';
+      p6 = 'Underpins all modern electromagnetic technology including electric generators, transformers, inductors, MRI scanners, and electric motors.';
+      p7 = 'Coupled to electric fields through Maxwell\'s equations (Faraday\'s Law of Induction: ∇ × E = -∂B/∂t; Ampère-Maxwell Law: ∇ × B = μ₀J + μ₀ε₀∂E/∂t).';
+      p8 = 'Demagnetization from overheating above the Curie temperature (loss of ferromagnetic domain alignment).';
+      p9 = 'Electric vehicle motors, maglev trains, MRI medical scanners, hard disk drives, and geomagnetism compass navigation.';
+      p10 = 'Magnetic field lines NEVER cross! If they did, a compass needle placed at the intersection would have to point in two different directions simultaneously!';
+    } else if (isEarth) {
+      p1 = 'Radial spherical wedge cross-section of planet Earth illustrating concentric physical and chemical geosphere layers from surface to core.';
+      p2 = 'Continental and Oceanic Crust, Lithosphere, Asthenosphere, Upper & Lower Mantle, Liquid Outer Core, and Solid Inner Core.';
+      p3 = 'Spans radially from the surface (0 km) to the planetary center at 6371 km depth.';
+      p4 = 'Provides mechanical tectonic support, thermal convection driving continental drift, and generates Earth\'s geomagnetic shield against cosmic radiation.';
+      p5 = 'Thermal and compositional convection in the molten liquid iron-nickel outer core generates the geodynamo; mantle convection drives plate tectonics.';
+      p6 = 'The geomagnetic field generated by the liquid outer core deflects the solar wind, preventing atmospheric stripping and enabling life on Earth.';
+      p7 = 'Interconnected via thermal plumes, subduction zones, oceanic spreading ridges, and seismic energy transmission.';
+      p8 = 'Tectonic earthquakes along fault lines, volcanic eruptions at convergent boundaries, and geomagnetic pole reversals.';
+      p9 = 'Geothermal energy extraction, petroleum and mineral exploration, and seismic hazard forecasting for civil engineering.';
+      p10 = 'Seismic S-waves cannot travel through liquids! The global S-wave shadow zone beyond 105° angular distance proves the Outer Core is molten liquid!';
+    }
+
+    return {
+      whatItShows: p1,
+      importantComponents: asset.walkthrough.importantComponents,
+      processSequence: asset.walkthrough.processSequence,
+      examTakeaway: p10,
+      point1_whatStudentIsLookingAt: p1,
+      point2_structureIdentity: p2,
+      point3_anatomicalLocation: p3,
+      point4_primaryFunction: p4,
+      point5_workingMechanism: p5,
+      point6_whyImportant: p6,
+      point7_connectionsToOtherComponents: p7,
+      point8_malfunctionOrEdgeCase: p8,
+      point9_realWorldOrClinicalLife: p9,
+      point10_examKeyTakeaway: p10
     };
   }
 

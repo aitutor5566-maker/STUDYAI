@@ -84,45 +84,45 @@ export const SCIENTIFIC_VECTOR_REGISTRY: Record<string, DetailedVisualAsset> = {
       <text x="420" y="32" font-family="Inter, sans-serif" font-size="17" font-weight="800" fill="#FFFFFF" text-anchor="middle">Human Heart — Coronal Cutaway &amp; Double Circulation</text>
       
       <!-- Aorta Arch (Red Top) -->
-      <path d="M 370 170 C 370 70, 480 50, 480 140 L 440 150 C 440 90, 395 95, 395 170 Z" fill="url(#aortaGrad)" stroke="#F87171" stroke-width="2"/>
+      <path id="aortic_arch" d="M 370 170 C 370 70, 480 50, 480 140 L 440 150 C 440 90, 395 95, 395 170 Z" fill="url(#aortaGrad)" stroke="#F87171" stroke-width="2"/>
       <!-- Brachiocephalic, Carotid, Subclavian Branches -->
       <rect x="385" y="45" width="16" height="30" rx="5" fill="#EF4444"/>
       <rect x="415" y="40" width="16" height="35" rx="5" fill="#EF4444"/>
       <rect x="445" y="48" width="16" height="30" rx="5" fill="#EF4444"/>
 
       <!-- Pulmonary Trunk (Blue Left/Right bifurcation) -->
-      <path d="M 350 200 C 350 140, 430 110, 450 160" stroke="url(#pulmGrad)" stroke-width="26" fill="none" stroke-linecap="round"/>
+      <path id="pulmonary_trunk" d="M 350 200 C 350 140, 430 110, 450 160" stroke="url(#pulmGrad)" stroke-width="26" fill="none" stroke-linecap="round"/>
       <path d="M 450 135 L 510 110" stroke="url(#pulmGrad)" stroke-width="20" fill="none" stroke-linecap="round"/>
 
       <!-- Superior & Inferior Vena Cava -->
-      <rect x="290" y="70" width="34" height="110" rx="10" fill="#1E40AF" stroke="#60A5FA" stroke-width="1.5"/>
+      <rect id="superior_vena_cava" x="290" y="70" width="34" height="110" rx="10" fill="#1E40AF" stroke="#60A5FA" stroke-width="1.5"/>
       <rect x="295" y="380" width="30" height="60" rx="8" fill="#1E40AF"/>
 
       <!-- Outer Cardiac Muscle Silhouette -->
       <path d="M 270 200 C 240 240, 240 340, 310 420 C 350 460, 420 480, 430 480 C 450 480, 560 450, 580 340 C 600 250, 560 190, 510 190 Z" fill="#7F1D1D" stroke="#DC2626" stroke-width="3"/>
 
       <!-- Right Atrium Cavity (Blue Deoxy) -->
-      <path d="M 285 200 C 270 240, 290 280, 335 280 C 355 280, 360 230, 350 200 Z" fill="#2563EB" opacity="0.95"/>
+      <path id="right_atrium" d="M 285 200 C 270 240, 290 280, 335 280 C 355 280, 360 230, 350 200 Z" fill="#2563EB" opacity="0.95"/>
       <text x="315" y="240" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Right Atrium</text>
 
       <!-- Right Ventricle Cavity (Blue Deoxy) -->
-      <path d="M 290 300 C 290 360, 330 420, 380 430 L 380 300 Z" fill="#1D4ED8"/>
+      <path id="right_ventricle" d="M 290 300 C 290 360, 330 420, 380 430 L 380 300 Z" fill="#1D4ED8"/>
       <text x="340" y="360" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Right Ventricle</text>
 
       <!-- Left Atrium Cavity (Red Oxygenated) -->
-      <path d="M 460 200 C 450 240, 470 280, 520 280 C 545 280, 550 230, 530 200 Z" fill="#DC2626" opacity="0.95"/>
+      <path id="left_atrium" d="M 460 200 C 450 240, 470 280, 520 280 C 545 280, 550 230, 530 200 Z" fill="#DC2626" opacity="0.95"/>
       <text x="500" y="240" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Left Atrium</text>
 
       <!-- Left Ventricle Cavity (Red Oxygenated, Thick Muscle) -->
-      <path d="M 410 300 L 410 430 C 460 420, 500 370, 500 300 Z" fill="#B91C1C"/>
+      <path id="left_ventricle" d="M 410 300 L 410 430 C 460 420, 500 370, 500 300 Z" fill="#B91C1C"/>
       <text x="455" y="360" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Left Ventricle</text>
 
       <!-- Interventricular Septum (Central Thick Wall) -->
-      <rect x="382" y="295" width="26" height="150" rx="6" fill="#991B1B" stroke="#450A0A" stroke-width="1.5"/>
+      <rect id="interventricular_septum" x="382" y="295" width="26" height="150" rx="6" fill="#991B1B" stroke="#450A0A" stroke-width="1.5"/>
 
       <!-- Heart Valves (Tricuspid & Bicuspid/Mitral) -->
-      <ellipse cx="335" cy="290" rx="20" ry="6" fill="#F59E0B" stroke="#FEF3C7" stroke-width="2"/>
-      <ellipse cx="465" cy="290" rx="20" ry="6" fill="#F59E0B" stroke="#FEF3C7" stroke-width="2"/>
+      <ellipse id="tricuspid_valve" cx="335" cy="290" rx="20" ry="6" fill="#F59E0B" stroke="#FEF3C7" stroke-width="2"/>
+      <ellipse id="bicuspid_valve" cx="465" cy="290" rx="20" ry="6" fill="#F59E0B" stroke="#FEF3C7" stroke-width="2"/>
 
       <!-- Programmatic Callout Badges -->
       <g font-family="Inter, sans-serif" font-size="11.5" font-weight="700">
@@ -1456,6 +1456,570 @@ export const SCIENTIFIC_VECTOR_REGISTRY: Record<string, DetailedVisualAsset> = {
       <rect x="130" y="435" width="580" height="44" rx="10" fill="#1E293B" stroke="#22C55E" stroke-width="1.5"/>
       <text x="420" y="462" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#DCFCE7" text-anchor="middle">mid = low + ⌊(high - low)/2⌋  |  Time Complexity: O(log₂ n)  |  Auxiliary Space: O(1) Iterative</text>
     </svg>`
+  },
+// 24. DOUBLE CIRCULATION (Pulmonary & Systemic Circuits with Blood Pressure Values)
+  double_circulation: {
+    topic: 'Human Double Circulation System',
+    subtopic: 'Pulmonary and Systemic Loops, Pressure Gradients and Oxygenation Cycle',
+    subject: 'Biology',
+    visualType: 'biological_process_diagram',
+    title: 'Double Circulation: Pulmonary and Systemic Closed Circuits',
+    caption: 'Schematic of human double circulation showing the low-pressure pulmonary circuit (~25/10 mmHg) and high-pressure systemic circuit (~120/80 mmHg) with directional blood flow.',
+    labels: [
+      { id: 'pulmonary_circuit', name: 'Pulmonary Circuit', x: 260, y: 110, role: 'Deoxygenated blood pumped from RV to lungs; returns oxygenated to LA.', color: '#38BDF8' },
+      { id: 'systemic_circuit', name: 'Systemic Circuit', x: 580, y: 360, role: 'Oxygenated blood pumped from LV via Aorta to body tissues; returns deoxygenated via Vena Cava to RA.', color: '#EF4444' },
+      { id: 'lungs_capillaries', name: 'Alveolar Capillary Bed (Lungs)', x: 420, y: 80, role: 'Site of pulmonary gas exchange: CO₂ leaves blood, O₂ binds hemoglobin.', color: '#0284C7' },
+      { id: 'body_capillaries', name: 'Systemic Capillary Bed (Organs & Muscles)', x: 420, y: 410, role: 'Site of internal respiration: cells extract O₂ for ATP production and release CO₂.', color: '#B91C1C' },
+      { id: 'four_chamber_pump', name: 'Cardiac Central Dual Pump', x: 420, y: 240, role: 'Right side drives low-pressure pulmonary loop; left side drives high-pressure systemic loop.', color: '#F59E0B' }
+    ],
+    walkthrough: {
+      whatItShows: 'Complete double circulation loop showing why blood passes through the human heart twice in every single systemic journey.',
+      importantComponents: [
+        'Pulmonary Circuit: Right Ventricle → Pulmonary Trunk & Arteries → Lungs Capillaries → Pulmonary Veins → Left Atrium. Operates at low pressure (~25/10 mmHg) to protect delicate alveolar membranes.',
+        'Systemic Circuit: Left Ventricle → Ascending Aorta → Systemic Arteries → Capillary Beds in Brain & Viscera → Venae Cavae → Right Atrium. Operates at high pressure (~120/80 mmHg) to overcome systemic vascular resistance.',
+        'Complete Physical Separation: The muscular septum prevents mixing of oxygenated (arterial) and deoxygenated (venous) blood, maximizing aerobic metabolic efficiency for endothermic homeotherms.'
+      ],
+      processSequence: [
+        '1. Systemic deoxygenated blood from tissues enters the Right Atrium through the Superior & Inferior Vena Cava.',
+        '2. The Right Atrium empties through the Tricuspid Valve into the Right Ventricle.',
+        '3. The Right Ventricle ejects blood into the Pulmonary Trunk toward the lungs (Pulmonary Circulation).',
+        '4. Carbon dioxide is eliminated and oxygen is absorbed in the pulmonary capillaries.',
+        '5. Four Pulmonary Veins return oxygenated blood to the Left Atrium.',
+        '6. The Left Ventricle contracts forcefully, pumping oxygenated blood into the Aorta to nourish the entire body (Systemic Circulation).'
+      ],
+      examTakeaway: 'In single circulation (fish), blood passes through the heart once per circuit under low pressure. In human double circulation, blood is repressurized by the left ventricle before systemic delivery, sustaining high mammalian metabolic rates.'
+    },
+    svgXml: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 520" width="100%" height="auto" preserveAspectRatio="xMidYMid meet">
+      <rect width="840" height="520" rx="20" fill="#0F172A"/>
+      <text x="420" y="34" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Human Double Circulation — Pulmonary &amp; Systemic Closed Circuits</text>
+      <text x="420" y="56" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">Body → Right Heart → Lungs → Left Heart → Body (Figure-8 Circuit)</text>
+
+      <!-- TOP: LUNGS (Anatomical Bilobed Silhouette & Capillary Network) -->
+      <g id="lungs_capillaries" transform="translate(320, 70)">
+        <path d="M 40 10 C 10 20, 5 60, 20 85 C 35 105, 80 105, 90 75 C 95 60, 90 25, 60 10 Z" fill="#0369A1" stroke="#38BDF8" stroke-width="2" opacity="0.85"/>
+        <path d="M 160 10 C 190 20, 195 60, 180 85 C 165 105, 120 105, 110 75 C 105 60, 110 25, 140 10 Z" fill="#991B1B" stroke="#F87171" stroke-width="2" opacity="0.85"/>
+        <path d="M 85 45 Q 100 35 115 45 Q 100 55 85 45" stroke="#F59E0B" stroke-width="3" fill="none"/>
+        <text x="100" y="48" font-family="Inter, sans-serif" font-size="13" font-weight="900" fill="#FFFFFF" text-anchor="middle">LUNGS</text>
+        <text x="100" y="66" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#BAE6FD" text-anchor="middle">Alveolar Gas Exchange</text>
+        <text x="100" y="80" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="#FEF08A" text-anchor="middle">O₂ in • CO₂ out</text>
+      </g>
+
+      <!-- CENTER: THE HEART (Anatomical Dual-Pump 4-Chamber Structure) -->
+      <g id="four_chamber_pump" transform="translate(310, 190)">
+        <path d="M 20 30 C 0 70, 30 130, 110 155 C 190 130, 220 70, 200 30 C 180 0, 130 5, 110 20 C 90 5, 40 0, 20 30 Z" fill="#1E293B" stroke="#475569" stroke-width="3"/>
+        <!-- Right Heart (Blue) -->
+        <path d="M 35 35 C 25 70, 50 120, 105 140 L 105 35 Z" fill="#1D4ED8" stroke="#38BDF8" stroke-width="1.5"/>
+        <text x="70" y="70" font-family="Inter, sans-serif" font-size="12" font-weight="900" fill="#FFFFFF" text-anchor="middle">RA</text>
+        <text x="70" y="110" font-family="Inter, sans-serif" font-size="12" font-weight="900" fill="#FFFFFF" text-anchor="middle">RV</text>
+        <line x1="45" y1="85" x2="95" y2="85" stroke="#FDE047" stroke-width="2" stroke-dasharray="4 2"/>
+
+        <!-- Left Heart (Red) -->
+        <path d="M 185 35 C 195 70, 170 120, 115 140 L 115 35 Z" fill="#DC2626" stroke="#F87171" stroke-width="1.5"/>
+        <text x="150" y="70" font-family="Inter, sans-serif" font-size="12" font-weight="900" fill="#FFFFFF" text-anchor="middle">LA</text>
+        <text x="150" y="110" font-family="Inter, sans-serif" font-size="12" font-weight="900" fill="#FFFFFF" text-anchor="middle">LV</text>
+        <line x1="125" y1="85" x2="175" y2="85" stroke="#FDE047" stroke-width="2" stroke-dasharray="4 2"/>
+
+        <!-- Central Septum -->
+        <line x1="110" y1="25" x2="110" y2="150" stroke="#FDE047" stroke-width="3"/>
+      </g>
+
+      <!-- BOTTOM: BODY TISSUES & ORGANS (Systemic Microcirculation) -->
+      <g id="body_capillaries" transform="translate(300, 375)">
+        <rect x="0" y="0" width="240" height="75" rx="14" fill="#1E293B" stroke="#64748B" stroke-width="2"/>
+        <text x="120" y="24" font-family="Inter, sans-serif" font-size="13" font-weight="900" fill="#FFFFFF" text-anchor="middle">BODY TISSUES &amp; ORGANS</text>
+        <text x="120" y="44" font-family="Inter, sans-serif" font-size="10.5" font-weight="700" fill="#F87171" text-anchor="middle">Cellular Respiration (ATP)</text>
+        <text x="120" y="60" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#BAE6FD" text-anchor="middle">O₂ delivered • CO₂ collected</text>
+      </g>
+
+      <!-- PULMONARY CIRCUIT PATHWAYS (Top Loop) -->
+      <!-- 1. RV to Lungs via Pulmonary Artery -->
+      <path id="pulmonary_circuit" d="M 350 230 C 250 190, 250 120, 340 98" stroke="#0284C7" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <polygon points="345,95 330,90 338,105" fill="#38BDF8"/>
+      <text x="210" y="150" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#38BDF8" text-anchor="middle">Pulmonary Artery</text>
+      <text x="210" y="168" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#BAE6FD" text-anchor="middle">(~25 mmHg Deoxy)</text>
+
+      <!-- 2. Lungs to LA via Pulmonary Veins -->
+      <path d="M 500 98 C 590 120, 590 190, 490 230" stroke="#EF4444" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <polygon points="485,232 500,227 495,240" fill="#EF4444"/>
+      <text x="630" y="150" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#F87171" text-anchor="middle">Pulmonary Veins</text>
+      <text x="630" y="168" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#FECACA" text-anchor="middle">(Oxygen-Rich Blood)</text>
+
+      <!-- SYSTEMIC CIRCUIT PATHWAYS (Bottom Loop) -->
+      <!-- 3. LV to Body via Aorta Arch -->
+      <path id="systemic_circuit" d="M 470 310 C 620 340, 620 405, 545 415" stroke="#DC2626" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <polygon points="540,416 553,407 553,423" fill="#DC2626"/>
+      <text x="655" y="360" font-family="Inter, sans-serif" font-size="12.5" font-weight="800" fill="#F87171" text-anchor="middle">Systemic Aorta</text>
+      <text x="655" y="380" font-family="Inter, sans-serif" font-size="10.5" font-weight="800" fill="#FEF08A" text-anchor="middle">120 mmHg Systolic</text>
+
+      <!-- 4. Body to RA via Vena Cava -->
+      <path d="M 295 415 C 220 405, 220 340, 370 310" stroke="#1D4ED8" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <polygon points="375,308 362,302 362,318" fill="#38BDF8"/>
+      <text x="185" y="360" font-family="Inter, sans-serif" font-size="12.5" font-weight="800" fill="#38BDF8" text-anchor="middle">Vena Cava</text>
+      <text x="185" y="380" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#BAE6FD" text-anchor="middle">Systemic Venous Return</text>
+
+      <!-- Bottom Summary Banner -->
+      <rect x="80" y="470" width="680" height="34" rx="8" fill="#1E293B" stroke="#475569" stroke-width="1.5"/>
+      <text x="420" y="492" font-family="Inter, sans-serif" font-size="11.5" font-weight="700" fill="#F8FAFC" text-anchor="middle">Pulmonary Circuit (Low Resistance ~25 mmHg)  |  Systemic Circuit (High Resistance ~120 mmHg)</text>
+    </svg>`
+  },
+
+  // 25. CARDIAC CONDUCTION (SA Node, AV Node, Bundle of His, Purkinje & Synchronized ECG)
+  cardiac_conduction: {
+    topic: 'Cardiac Conduction System and ECG Correlation',
+    subtopic: 'SA Node Pacemaker, AV Delay, Bundle of His, Purkinje Fibers and P-QRS-T Waveforms',
+    subject: 'Biology',
+    visualType: 'anatomical_cross_section',
+    title: 'Cardiac Conduction System: Intrinsic Pacemaker and Electrocardiogram (ECG) Synchronization',
+    caption: 'Anatomical mapping of myocardial electrical excitation from the SA node through the AV node, Bundle of His, and Purkinje fibers with correlated P-QRS-T ECG deflection waves.',
+    labels: [
+      { id: 'sa_node', name: 'Sinoatrial (SA) Node', x: 250, y: 155, role: 'Primary pacemaker located in posterior wall of RA near SVC; spontaneously generates 70–80 action potentials/min.', color: '#FBBF24' },
+      { id: 'av_node', name: 'Atrioventricular (AV) Node', x: 345, y: 220, role: 'Introduces a vital 0.1-second delay, allowing the atria to fully empty into ventricles before ventricular systole.', color: '#F59E0B' },
+      { id: 'bundle_of_his', name: 'Bundle of His & Bundle Branches', x: 380, y: 290, role: 'Conducts electrical impulses down the interventricular septum to the left and right ventricles.', color: '#38BDF8' },
+      { id: 'purkinje_fibers', name: 'Subendocardial Purkinje Network', x: 280, y: 390, role: 'Rapid conduction fibers (2–4 m/s) triggering simultaneous upward ventricular contraction from apex to base.', color: '#22C55E' },
+      { id: 'ecg_correlation', name: 'Synchronized Surface ECG (Lead II)', x: 670, y: 220, role: 'P wave (atrial depolarization), PR segment (AV delay), QRS complex (ventricular depolarization), T wave (ventricular repolarization).', color: '#A855F7' }
+    ],
+    walkthrough: {
+      whatItShows: 'The intrinsic neuromuscular conduction system regulating automatic rhythmic cardiac contractions and its direct correlation to clinical ECG waveforms.',
+      importantComponents: [
+        'Sinoatrial (SA) Node: Inherent automaticity driven by funny sodium current (If) and transient Ca²⁺ influx; sets normal sinus rhythm (72 bpm).',
+        'AV Nodal Delay: 0.10s pause caused by small-diameter myocytes and fewer gap junctions, ensuring complete ventricular end-diastolic filling.',
+        'Bundle of His & Purkinje System: Fast conducting pathways insulated by fibrous rings, ensuring contraction begins at the apex to wring blood upward into the aorta and pulmonary trunk.'
+      ],
+      processSequence: [
+        '1. SA node spontaneously fires: action potential sweeps across atria producing the ECG P Wave.',
+        '2. Impulse arrives at AV node: held for 0.1s represented by the isoelectric PR Segment.',
+        '3. Impulse enters Bundle of His and descends Left and Right Bundle Branches in the septum.',
+        '4. Purkinje fibers deliver impulse to ventricular myocardium: generates the prominent sharp QRS Complex.',
+        '5. Ventricles contract (Systole) ejecting stroke volume (~70 mL).',
+        '6. Ventricular repolarization occurs, producing the smooth upward deflection of the T Wave.'
+      ],
+      examTakeaway: 'If the SA node fails, the AV node assumes pacing at 40–60 bpm (nodal rhythm). If AV conduction is blocked (complete heart block), atria and ventricles beat independently (AV dissociation).'
+    },
+    svgXml: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 520" width="100%" height="auto" preserveAspectRatio="xMidYMid meet">
+      <rect width="840" height="520" rx="20" fill="#0F172A"/>
+      <text x="420" y="34" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Cardiac Conduction System &amp; Correlated Electrocardiogram (ECG)</text>
+      <text x="420" y="56" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">SA Node (72 bpm) → Internodal Tracts → AV Node (0.1s delay) → Bundle of His → Purkinje Network</text>
+
+      <!-- LEFT: ANATOMICAL HEART WITH ELECTRICAL SYSTEM -->
+      <g transform="translate(40, 80)">
+        <!-- Heart Myocardium Outline -->
+        <path d="M 120 70 C 80 130, 100 240, 200 320 C 230 340, 260 340, 290 320 C 390 240, 410 130, 370 70 C 350 30, 290 20, 245 40 C 200 20, 140 30, 120 70 Z" fill="#1E293B" stroke="#475569" stroke-width="3"/>
+
+        <!-- 1. Sinoatrial (SA) Node in RA posterior wall -->
+        <circle id="sa_node" cx="170" cy="85" r="14" fill="#FBBF24" stroke="#FDE047" stroke-width="3"/>
+        <text x="170" y="90" font-family="Inter, sans-serif" font-size="10" font-weight="900" fill="#78350F" text-anchor="middle">SA</text>
+
+        <!-- Internodal Pathways -->
+        <path d="M 180 95 Q 220 120, 235 145" stroke="#FDE047" stroke-width="4" stroke-dasharray="6 3" fill="none"/>
+
+        <!-- 2. Atrioventricular (AV) Node in interatrial septum -->
+        <circle id="av_node" cx="240" cy="155" r="12" fill="#F59E0B" stroke="#FDE047" stroke-width="3"/>
+        <text x="240" y="159" font-family="Inter, sans-serif" font-size="9.5" font-weight="900" fill="#78350F" text-anchor="middle">AV</text>
+
+        <!-- 3. Bundle of His -->
+        <line id="bundle_of_his" x1="245" y1="167" x2="250" y2="210" stroke="#38BDF8" stroke-width="6"/>
+
+        <!-- 4. Left and Right Bundle Branches -->
+        <path d="M 250 210 Q 210 250, 185 285" stroke="#38BDF8" stroke-width="4" fill="none"/>
+        <path d="M 250 210 Q 285 250, 310 285" stroke="#38BDF8" stroke-width="4" fill="none"/>
+
+        <!-- 5. Purkinje Fibers Network -->
+        <g id="purkinje_fibers" stroke="#4ADE80" stroke-width="2.5" stroke-dasharray="4 2" fill="none">
+          <path d="M 185 285 Q 140 260, 135 190"/>
+          <path d="M 185 285 Q 160 295, 150 250"/>
+          <path d="M 310 285 Q 355 260, 360 190"/>
+          <path d="M 310 285 Q 335 295, 345 250"/>
+        </g>
+
+        <!-- SA Node Callout -->
+        <rect x="0" y="55" width="130" height="42" rx="8" fill="#1E293B" stroke="#FDE047" stroke-width="1.5"/>
+        <text x="65" y="73" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#FDE047" text-anchor="middle">1. SA Node</text>
+        <text x="65" y="88" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="#FEF08A" text-anchor="middle">70–80 bpm Pacemaker</text>
+        <line x1="130" y1="75" x2="156" y2="82" stroke="#FDE047" stroke-width="1.5"/>
+
+        <!-- AV Node Callout -->
+        <rect x="0" y="140" width="135" height="42" rx="8" fill="#1E293B" stroke="#F59E0B" stroke-width="1.5"/>
+        <text x="67" y="158" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#FBBF24" text-anchor="middle">2. AV Node</text>
+        <text x="67" y="173" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="#FEF08A" text-anchor="middle">0.1s AV Delay</text>
+        <line x1="135" y1="160" x2="228" y2="156" stroke="#F59E0B" stroke-width="1.5"/>
+
+        <!-- Purkinje Callout -->
+        <rect x="0" y="270" width="135" height="42" rx="8" fill="#1E293B" stroke="#4ADE80" stroke-width="1.5"/>
+        <text x="67" y="288" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#4ADE80" text-anchor="middle">3. Purkinje Fibers</text>
+        <text x="67" y="303" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="#DCFCE7" text-anchor="middle">Apex-Up Contraction</text>
+      </g>
+
+      <!-- RIGHT: SYNCHRONIZED ECG LEAD II WAVEFORM -->
+      <g id="ecg_correlation" transform="translate(510, 80)">
+        <rect x="0" y="0" width="290" height="350" rx="14" fill="#1E293B" stroke="#A855F7" stroke-width="2"/>
+        <text x="145" y="28" font-family="Inter, sans-serif" font-size="14" font-weight="900" fill="#E9D5FF" text-anchor="middle">Surface ECG Waveform (Lead II)</text>
+
+        <!-- Grid Lines for ECG background -->
+        <g stroke="#334155" stroke-width="0.75" stroke-dasharray="3 3">
+          <line x1="20" y1="70" x2="270" y2="70"/>
+          <line x1="20" y1="120" x2="270" y2="120"/>
+          <line x1="20" y1="170" x2="270" y2="170"/>
+          <line x1="20" y1="220" x2="270" y2="220"/>
+          <line x1="70" y1="40" x2="70" y2="250"/>
+          <line x1="120" y1="40" x2="120" y2="250"/>
+          <line x1="170" y1="40" x2="170" y2="250"/>
+          <line x1="220" y1="40" x2="220" y2="250"/>
+        </g>
+
+        <!-- Actual ECG Trace Line (P - Q - R - S - T) -->
+        <path d="M 20 170 L 50 170 C 60 150, 75 150, 85 170 L 105 170 L 115 180 L 130 80 L 145 200 L 155 170 L 180 170 C 195 135, 220 135, 235 170 L 270 170" fill="none" stroke="#22C55E" stroke-width="3.5" stroke-linecap="round"/>
+
+        <!-- Annotations: P Wave -->
+        <circle cx="67" cy="155" r="4" fill="#FBBF24"/>
+        <text x="67" y="142" font-family="Inter, sans-serif" font-size="12" font-weight="900" fill="#FDE047" text-anchor="middle">P</text>
+
+        <!-- Annotations: Q, R, S -->
+        <circle cx="115" cy="180" r="3" fill="#38BDF8"/>
+        <text x="110" y="196" font-family="Inter, sans-serif" font-size="11" font-weight="900" fill="#38BDF8">Q</text>
+        <circle cx="130" cy="80" r="4" fill="#EF4444"/>
+        <text x="130" y="68" font-family="Inter, sans-serif" font-size="14" font-weight="900" fill="#F87171" text-anchor="middle">R</text>
+        <circle cx="145" cy="200" r="3" fill="#38BDF8"/>
+        <text x="150" y="214" font-family="Inter, sans-serif" font-size="11" font-weight="900" fill="#38BDF8">S</text>
+
+        <!-- Annotations: T Wave -->
+        <circle cx="207" cy="145" r="4" fill="#A855F7"/>
+        <text x="207" y="132" font-family="Inter, sans-serif" font-size="12" font-weight="900" fill="#E9D5FF" text-anchor="middle">T</text>
+
+        <!-- ECG Legend description -->
+        <rect x="15" y="240" width="260" height="95" rx="8" fill="#0F172A" stroke="#475569" stroke-width="1"/>
+        <text x="25" y="260" font-family="Inter, sans-serif" font-size="10.5" font-weight="700" fill="#FDE047">• P Wave: Atrial Depolarization (SA firing)</text>
+        <text x="25" y="278" font-family="Inter, sans-serif" font-size="10.5" font-weight="700" fill="#BAE6FD">• PR Interval: AV Conduction Delay (0.12–0.20s)</text>
+        <text x="25" y="296" font-family="Inter, sans-serif" font-size="10.5" font-weight="700" fill="#86EFAC">• QRS: Ventricular Depolarization &amp; Systole</text>
+        <text x="25" y="314" font-family="Inter, sans-serif" font-size="10.5" font-weight="700" fill="#E9D5FF">• T Wave: Ventricular Repolarization (Diastole)</text>
+      </g>
+
+      <!-- Bottom Diagnostic Note -->
+      <rect x="80" y="460" width="680" height="40" rx="10" fill="#1E293B" stroke="#F59E0B" stroke-width="1.5"/>
+      <text x="420" y="484" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#FEF3C7" text-anchor="middle">Clinical Correlation: Arrhythmias &amp; Heart Blocks occur when conduction fails at SA node or AV bundle</text>
+    </svg>`
+  },
+
+  // 26. CHLOROPLAST STRUCTURE (Ultrastructure: Envelope, Stroma, Thylakoid Grana, Lamellae, cpDNA)
+  chloroplast_structure: {
+    topic: 'Chloroplast Ultrastructure and Photosynthetic Thylakoids',
+    subtopic: 'Double Envelope, Stroma Matrix, Thylakoid Grana Discs, Stroma Lamellae and cpDNA',
+    subject: 'Biology',
+    visualType: 'biological_process_diagram',
+    title: 'Chloroplast Ultrastructure: Organelle of Photosynthesis',
+    caption: 'High-resolution cutaway diagram of the chloroplast showing double membrane envelope, aqueous stroma, stacked thylakoid grana, unstacked stroma lamellae, and endosymbiotic circular DNA.',
+    labels: [
+      { id: 'outer_inner_membrane', name: 'Double Membrane Envelope', x: 190, y: 130, role: 'Outer membrane has porins; inner membrane contains selective transport proteins; encloses intermembrane space.', color: '#10B981' },
+      { id: 'stroma_matrix', name: 'Aqueous Stroma Matrix', x: 260, y: 360, role: 'Alkaline fluid containing RuBisCO, 70S ribosomes, circular cpDNA; site of light-independent Calvin Cycle.', color: '#047857' },
+      { id: 'grana_thylakoids', name: 'Stacked Thylakoid Grana', x: 440, y: 220, role: 'Membrane stacks housing Photosystems I & II, cytochrome b₆f, and ATP Synthase; site of light photolysis.', color: '#22C55E' },
+      { id: 'stroma_lamellae', name: 'Stroma Lamellae (Frets)', x: 550, y: 310, role: 'Unstacked interconnecting tubular membranes linking grana; predominantly contain Photosystem I.', color: '#34D399' },
+      { id: 'chloroplast_dna', name: 'Circular cpDNA & Ribosomes', x: 670, y: 170, role: 'Semi-autonomous prokaryotic-like circular chromosome and 70S ribosomes supporting Endosymbiotic Theory.', color: '#F59E0B' }
+    ],
+    walkthrough: {
+      whatItShows: 'Detailed sub-cellular ultrastructure of the green plant chloroplast, illustrating spatial compartmentalization between light-harvesting grana and carbon-fixing stroma.',
+      importantComponents: [
+        'Thylakoid Grana: Discs packed with chlorophyll a, chlorophyll b, carotenoids, and electron carriers. Thylakoid lumen accumulates H⁺ ions creating proton motive force (pH ~4.5 vs stroma pH ~8.0).',
+        'Stroma Matrix: Dense colloidal fluid containing RuBisCO (most abundant enzyme on Earth), responsible for carboxylation of Ribulose-1,5-bisphosphate (RuBP).',
+        'Semi-Autonomous Organelle: Chloroplasts reproduce via binary fission and synthesize several of their own polypeptides using circular cpDNA and 70S ribosomes.'
+      ],
+      processSequence: [
+        '1. Solar photons excite pigment molecules in Photosystem II located within thylakoid membranes.',
+        '2. Water photolysis (2H₂O → O₂ + 4H⁺ + 4e⁻) replenishes electrons and releases molecular oxygen.',
+        '3. Protons pumped across thylakoid membrane drive Chemiosmotic ATP Synthase into stroma.',
+        '4. High-energy ATP and NADPH diffuse into the aqueous stroma to power the Calvin Cycle (CO₂ fixation into glucose).'
+      ],
+      examTakeaway: 'Light reaction occurs in THYLAKOID MEMBRANE (produces ATP, NADPH, O₂). Dark reaction / Calvin cycle occurs in the STROMA (consumes ATP, NADPH, fixes CO₂ into glucose).'
+    },
+    svgXml: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 520" width="100%" height="auto" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <radialGradient id="chlorStromaGrad" cx="50%" cy="50%" r="65%">
+          <stop offset="0%" stop-color="#065F46"/>
+          <stop offset="100%" stop-color="#022C22"/>
+        </radialGradient>
+      </defs>
+      <rect width="840" height="520" rx="20" fill="#0F172A"/>
+      <text x="420" y="34" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Chloroplast Ultrastructure — Organelle of Photosynthesis</text>
+      <text x="420" y="56" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">Double Envelope • Aqueous Stroma Matrix • Stacked Thylakoid Grana • Interconnecting Lamellae</text>
+
+      <!-- OUTER & INNER DOUBLE MEMBRANE ENVELOPE -->
+      <g id="outer_inner_membrane">
+        <ellipse cx="420" cy="270" rx="360" ry="190" fill="#064E3B" stroke="#10B981" stroke-width="4"/>
+        <ellipse cx="420" cy="270" rx="340" ry="172" fill="url(#chlorStromaGrad)" stroke="#34D399" stroke-width="2.5"/>
+      </g>
+
+      <!-- STROMA LAMELLAE -->
+      <g id="stroma_lamellae" stroke="#34D399" stroke-width="5" stroke-linecap="round">
+        <line x1="250" y1="260" x2="350" y2="240"/>
+        <line x1="390" y1="240" x2="490" y2="270"/>
+        <line x1="530" y1="270" x2="620" y2="250"/>
+        <line x1="370" y1="310" x2="490" y2="330"/>
+      </g>
+
+      <!-- THYLAKOID GRANA STACKS -->
+      <!-- Stack 1 -->
+      <g id="grana_thylakoids" transform="translate(190, 190)">
+        <ellipse cx="40" cy="90" rx="36" ry="10" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="80" rx="36" ry="10" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="70" rx="36" ry="10" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="60" rx="36" ry="10" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="50" rx="36" ry="10" fill="#22C55E" stroke="#BBF7D0" stroke-width="1.5"/>
+        <text x="40" y="30" font-family="Inter, sans-serif" font-size="11" font-weight="900" fill="#86EFAC" text-anchor="middle">Granum 1</text>
+      </g>
+
+      <!-- Stack 2 -->
+      <g transform="translate(330, 160)">
+        <ellipse cx="40" cy="110" rx="40" ry="11" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="98" rx="40" ry="11" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="86" rx="40" ry="11" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="74" rx="40" ry="11" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="62" rx="40" ry="11" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="50" rx="40" ry="11" fill="#22C55E" stroke="#BBF7D0" stroke-width="1.5"/>
+        <text x="40" y="30" font-family="Inter, sans-serif" font-size="11" font-weight="900" fill="#86EFAC" text-anchor="middle">Granum 2</text>
+      </g>
+
+      <!-- Stack 3 -->
+      <g transform="translate(470, 180)">
+        <ellipse cx="40" cy="100" rx="38" ry="11" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="88" rx="38" ry="11" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="76" rx="38" ry="11" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="64" rx="38" ry="11" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="52" rx="40" ry="11" fill="#22C55E" stroke="#BBF7D0" stroke-width="1.5"/>
+        <text x="40" y="32" font-family="Inter, sans-serif" font-size="11" font-weight="900" fill="#86EFAC" text-anchor="middle">Granum 3</text>
+      </g>
+
+      <!-- Stack 4 -->
+      <g transform="translate(600, 200)">
+        <ellipse cx="36" cy="85" rx="34" ry="10" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="36" cy="74" rx="34" ry="10" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="36" cy="63" rx="34" ry="10" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="36" cy="52" rx="36" ry="10" fill="#22C55E" stroke="#BBF7D0" stroke-width="1.5"/>
+        <text x="36" y="32" font-family="Inter, sans-serif" font-size="11" font-weight="900" fill="#86EFAC" text-anchor="middle">Granum 4</text>
+      </g>
+
+      <!-- STROMA INCLUSIONS -->
+      <g id="chloroplast_dna">
+        <path d="M 280 370 C 310 350, 340 370, 330 395 C 315 410, 270 410, 260 390 C 255 375, 270 365, 280 370 Z" fill="none" stroke="#FBBF24" stroke-width="2.5" stroke-dasharray="4 2"/>
+        <text x="300" y="390" font-family="Inter, sans-serif" font-size="10" font-weight="900" fill="#FEF08A">cpDNA</text>
+        <circle cx="360" cy="380" r="3.5" fill="#38BDF8"/>
+        <circle cx="375" cy="390" r="3.5" fill="#38BDF8"/>
+        <circle cx="430" cy="360" r="3.5" fill="#38BDF8"/>
+        <ellipse cx="580" cy="365" rx="28" ry="15" fill="#FEF3C7" opacity="0.8" stroke="#F59E0B" stroke-width="1.5"/>
+        <text x="580" y="370" font-family="Inter, sans-serif" font-size="9.5" font-weight="800" fill="#78350F" text-anchor="middle">Starch Granule</text>
+      </g>
+
+      <!-- CALLOUT SITES -->
+      <rect x="50" y="90" width="220" height="60" rx="10" fill="#1E293B" stroke="#22C55E" stroke-width="1.5"/>
+      <text x="160" y="112" font-family="Inter, sans-serif" font-size="12" font-weight="900" fill="#86EFAC" text-anchor="middle">Light Reaction (Grana)</text>
+      <text x="160" y="128" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">• Water Photolysis (H₂O → O₂)</text>
+      <text x="160" y="142" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#BBF7D0" text-anchor="middle">• ATP &amp; NADPH Photophosphorylation</text>
+
+      <rect x="570" y="90" width="220" height="60" rx="10" fill="#1E293B" stroke="#F59E0B" stroke-width="1.5"/>
+      <text x="680" y="112" font-family="Inter, sans-serif" font-size="12" font-weight="900" fill="#FDE047" text-anchor="middle">Dark Reaction (Stroma Matrix)</text>
+      <text x="680" y="128" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">• Calvin Cycle (RuBisCO enzyme)</text>
+      <text x="680" y="142" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#FEF08A" text-anchor="middle">• CO₂ Fixation into Glucose (C₆H₁₂O₆)</text>
+
+      <!-- Bottom Diagnostic Bar -->
+      <rect x="80" y="470" width="680" height="34" rx="8" fill="#1E293B" stroke="#10B981" stroke-width="1.5"/>
+      <text x="420" y="492" font-family="Inter, sans-serif" font-size="11.5" font-weight="700" fill="#ECFDF5" text-anchor="middle">Endosymbiotic Evidence: Double membrane, autonomous circular cpDNA, and 70S prokaryotic-type ribosomes</text>
+    </svg>`
+  },
+
+  // 27. MAGNETIC FIELDS (Bar Magnet Dipole Flux Loops & Solenoid B-Field)
+  magnetic_fields: {
+    topic: 'Magnetic Fields and Solenoid Electromagnetism',
+    subtopic: 'Bar Magnet Dipole, Field Lines Direction, Solenoid Induction and Right-Hand Grip Rule',
+    subject: 'Physics',
+    visualType: 'physics_vector_schematic',
+    title: 'Magnetic Fields: Bar Magnet Flux Loops, Neutral Points and Solenoid B-Field',
+    caption: 'Vector depiction of closed continuous magnetic flux lines looping North to South outside and South to North inside a bar magnet, alongside a current-carrying solenoid coil.',
+    labels: [
+      { id: 'magnetic_dipole', name: 'Bar Magnet Dipole (N & S Poles)', x: 240, y: 220, role: 'North (red) and South (blue) poles; magnetic monopoles do not exist in nature (∇·B = 0).', color: '#EF4444' },
+      { id: 'flux_lines', name: 'Continuous Magnetic Flux Lines', x: 240, y: 110, role: 'Closed continuous curves; tangent gives field direction; density indicates field strength B in Teslas.', color: '#38BDF8' },
+      { id: 'solenoid_coil', name: 'Current-Carrying Solenoid Coil', x: 590, y: 220, role: 'Helical wire winding producing strong, uniform magnetic field B = μ₀·n·I along central interior axis.', color: '#F59E0B' },
+      { id: 'right_hand_grip', name: 'Right-Hand Grip Rule', x: 590, y: 370, role: 'Fingers curl in direction of electric current I; thumb points toward the Magnetic North pole.', color: '#22C55E' }
+    ],
+    walkthrough: {
+      whatItShows: 'Vector geometry of magnetic field lines around permanent dipoles and electromagnets, illustrating continuous closed flux loops and the right-hand grip rule.',
+      importantComponents: [
+        'External vs Internal Field: Magnetic field lines emerge from North pole and enter South pole externally, but continue from South to North internally, forming unbroken closed loops.',
+        'No Magnetic Monopoles: Gauss\'s Law for Magnetism (Gauss: ∮ B · dA = 0) confirms cutting a magnet creates two smaller dipoles, never isolated poles.',
+        'Uniform Solenoid Field: Inside a long tightly-wound solenoid, the magnetic field is uniform, parallel to axis, and calculated by B = μ₀ n I (where n = turns/length).'
+      ],
+      processSequence: [
+        '1. Electric charge in motion creates a circulating magnetic field (Oersted\'s experiment).',
+        '2. In ferromagnetic materials, unaligned electron spin domains align in parallel to form permanent poles.',
+        '3. When electric current I passes through a helical solenoid, individual loop fields reinforce along the axis.',
+        '4. Placing a soft iron core inside dramatically multiplies magnetic field strength (electromagnet).'
+      ],
+      examTakeaway: 'Magnetic field lines NEVER cross or intersect! If they did, a magnetic compass placed at the intersection would have to point in two different directions at once, which is physically impossible!'
+    },
+    svgXml: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 520" width="100%" height="auto" preserveAspectRatio="xMidYMid meet">
+      <rect width="840" height="520" rx="20" fill="#0F172A"/>
+      <text x="420" y="34" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Magnetic Fields — Bar Magnet Dipole Loops &amp; Solenoid Electromagnet</text>
+      <text x="420" y="56" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">External: North → South  |  Internal: South → North (Closed Continuous Flux Lines)</text>
+
+      <!-- LEFT: BAR MAGNET DIPOLE WITH FIELD LINES -->
+      <g id="magnetic_dipole" transform="translate(60, 90)">
+        <path d="M 120 180 C 120 40, 260 40, 260 180" fill="none" stroke="#38BDF8" stroke-width="2"/>
+        <path d="M 120 180 C 120 320, 260 320, 260 180" fill="none" stroke="#38BDF8" stroke-width="2"/>
+        <path d="M 140 180 C 140 80, 240 80, 240 180" fill="none" stroke="#38BDF8" stroke-width="2.5"/>
+        <path d="M 140 180 C 140 280, 240 280, 240 180" fill="none" stroke="#38BDF8" stroke-width="2.5"/>
+        <polygon points="190,52 182,47 182,57" fill="#38BDF8"/>
+        <polygon points="190,308 198,303 198,313" fill="#38BDF8"/>
+        <polygon points="190,92 182,87 182,97" fill="#38BDF8"/>
+        <polygon points="190,268 198,263 198,273" fill="#38BDF8"/>
+
+        <!-- The Bar Magnet -->
+        <rect x="130" y="160" width="60" height="40" fill="#DC2626" stroke="#EF4444" stroke-width="2"/>
+        <text x="160" y="186" font-family="Inter, sans-serif" font-size="18" font-weight="900" fill="#FFFFFF" text-anchor="middle">N</text>
+        <rect x="190" y="160" width="60" height="40" fill="#1D4ED8" stroke="#38BDF8" stroke-width="2"/>
+        <text x="220" y="186" font-family="Inter, sans-serif" font-size="18" font-weight="900" fill="#FFFFFF" text-anchor="middle">S</text>
+
+        <!-- Compass Needle -->
+        <polygon points="190,44 196,52 184,52" fill="#EF4444"/>
+        <polygon points="190,60 196,52 184,52" fill="#1D4ED8"/>
+        <circle cx="190" cy="52" r="2" fill="#FFFFFF"/>
+
+        <text x="190" y="340" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FEF08A" text-anchor="middle">Permanent Dipole (No Monopoles)</text>
+      </g>
+
+      <!-- RIGHT: HELICAL SOLENOID COIL & B-FIELD -->
+      <g id="solenoid_coil" transform="translate(470, 90)">
+        <rect x="0" y="15" width="310" height="340" rx="14" fill="#1E293B" stroke="#F59E0B" stroke-width="2"/>
+        <text x="155" y="44" font-family="Inter, sans-serif" font-size="14" font-weight="900" fill="#FEF08A" text-anchor="middle">Helical Solenoid Electromagnet</text>
+
+        <!-- Interior Uniform Field Lines -->
+        <line x1="40" y1="170" x2="270" y2="170" stroke="#FBBF24" stroke-width="3"/>
+        <line x1="40" y1="180" x2="270" y2="180" stroke="#FBBF24" stroke-width="3"/>
+        <line x1="40" y1="190" x2="270" y2="190" stroke="#FBBF24" stroke-width="3"/>
+        <polygon points="50,170 60,165 60,175" fill="#FBBF24"/>
+        <polygon points="50,180 60,175 60,185" fill="#FBBF24"/>
+        <polygon points="50,190 60,185 60,195" fill="#FBBF24"/>
+
+        <!-- Helical Copper Wire Windings -->
+        <g stroke="#F97316" stroke-width="5" fill="none" stroke-linecap="round">
+          <ellipse cx="70" cy="180" rx="14" ry="40"/>
+          <ellipse cx="110" cy="180" rx="14" ry="40"/>
+          <ellipse cx="150" cy="180" rx="14" ry="40"/>
+          <ellipse cx="190" cy="180" rx="14" ry="40"/>
+          <ellipse cx="230" cy="180" rx="14" ry="40"/>
+        </g>
+
+        <!-- Current Arrows -->
+        <text x="50" y="125" font-family="Inter, sans-serif" font-size="11" font-weight="900" fill="#EF4444">North (Out)</text>
+        <text x="220" y="125" font-family="Inter, sans-serif" font-size="11" font-weight="900" fill="#38BDF8">South (In)</text>
+
+        <!-- Formula Banner -->
+        <rect x="25" y="245" width="260" height="50" rx="8" fill="#0F172A" stroke="#475569" stroke-width="1.5"/>
+        <text x="155" y="268" font-family="Inter, sans-serif" font-size="13" font-weight="900" fill="#4ADE80" text-anchor="middle">B = μ₀ · n · I</text>
+        <text x="155" y="286" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#CBD5E1" text-anchor="middle">μ₀ = 4π×10⁻⁷ T·m/A  |  n = turns/meter</text>
+
+        <text x="155" y="325" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#BAE6FD" text-anchor="middle">Right-Hand Grip Rule: Fingers = I, Thumb = N</text>
+      </g>
+
+      <!-- Bottom Principle Note -->
+      <rect x="80" y="465" width="680" height="34" rx="8" fill="#1E293B" stroke="#38BDF8" stroke-width="1.5"/>
+      <text x="420" y="487" font-family="Inter, sans-serif" font-size="11.5" font-weight="700" fill="#F8FAFC" text-anchor="middle">Key Rule: Field lines NEVER intersect (a compass cannot point in two directions at once)</text>
+    </svg>`
+  },
+
+  // 28. EARTH INTERNAL STRUCTURE (Radial Wedge: Crust, Lithosphere, Mantle, Outer Core, Inner Core)
+  earth_layers: {
+    topic: "Earth's Internal Structure and Geosphere Layers",
+    subtopic: 'Crust, Lithosphere, Asthenosphere, Mantle, Liquid Outer Core and Solid Inner Core',
+    subject: 'Geography',
+    visualType: 'geological_cross_section',
+    title: "Earth's Internal Structure: Radial Wedge, Convection Zones & Discontinuities",
+    caption: 'Radial wedge cross-section from surface continental crust (0 km) down through mantle convection, Gutenberg boundary, liquid iron-nickel outer core, and solid inner core (6371 km).',
+    labels: [
+      { id: 'crust_lithosphere', name: 'Crust & Rigid Lithosphere (0–100 km)', x: 440, y: 80, role: 'Continental SiAl (30–50 km, granite) and Oceanic SiMa (5–10 km, basalt); broken into tectonic plates.', color: '#10B981' },
+      { id: 'asthenosphere_mantle', name: 'Asthenosphere & Mantle (100–2900 km)', x: 440, y: 190, role: 'Semi-fluid ductile zone driving convection currents (slab pull/ridge push); silicates of Fe and Mg.', color: '#F97316' },
+      { id: 'outer_core_liquid', name: 'Outer Core: Liquid Fe-Ni (2900–5150 km)', x: 440, y: 310, role: 'Molten iron-nickel generating Earth\'s geomagnetic field via geodynamo; blocks seismic S-waves.', color: '#EF4444' },
+      { id: 'inner_core_solid', name: 'Inner Core: Solid Fe-Ni (5150–6371 km)', x: 440, y: 420, role: 'Solid crystalline sphere under 3.6 million atm and 5700 K; density ~13 g/cm³; unyielding pressure.', color: '#FBBF24' }
+    ],
+    walkthrough: {
+      whatItShows: 'Concentric spherical layering of planet Earth discovered through earthquake seismology (P-wave refraction and S-wave shadow zones).',
+      importantComponents: [
+        'Crust: Oceanic crust is thin (5–10 km), dense (3.0 g/cm³), and basaltic (SiMa); continental crust is thick (30–50 km), buoyant (2.7 g/cm³), and granitic (SiAl).',
+        'Mantle: Comprises 84% of Earth\'s volume; peridotite rock; asthenosphere convection drives plate tectonics.',
+        'Outer Core vs Inner Core: Gutenberg Discontinuity (2900 km) separates solid mantle from molten liquid Outer Core (creates S-wave shadow 105°–142°). Inner Core is solid due to immense pressure.'
+      ],
+      processSequence: [
+        '1. Planetary Differentiation: 4.5 billion years ago, dense molten iron and nickel sank to form the core while buoyant silicate slag floated to form the crust.',
+        '2. Geodynamo Effect: Thermal and compositional convection in liquid outer core generates Earth\'s protective magnetic shield against solar wind.',
+        '3. Mantle Convection: Hot plumes rise from core-mantle boundary (D\'\' layer), cool beneath lithosphere, and descend in subduction zones.'
+      ],
+      examTakeaway: 'Seismic S-waves cannot travel through liquids! The global S-wave shadow zone beyond 105° angular distance is the definitive empirical proof that the Earth\'s Outer Core is molten liquid!'
+    },
+    svgXml: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 520" width="100%" height="auto" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <radialGradient id="innerCoreGrad" cx="50%" cy="100%" r="90%">
+          <stop offset="0%" stop-color="#FEF08A"/>
+          <stop offset="100%" stop-color="#F59E0B"/>
+        </radialGradient>
+      </defs>
+      <rect width="840" height="520" rx="20" fill="#0F172A"/>
+      <text x="420" y="34" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Earth's Internal Structure — Radial Planetary Wedge &amp; Discontinuities</text>
+      <text x="420" y="56" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">Crust (0–35 km) • Mantle (2900 km) • Liquid Outer Core (5150 km) • Solid Inner Core (6371 km)</text>
+
+      <!-- RADIAL EARTH WEDGE -->
+      <g transform="translate(0, 10)">
+        <!-- Layer 1: Solid Inner Core -->
+        <path id="inner_core_solid" d="M 420 450 L 390 380 A 80 80 0 0 1 450 380 Z" fill="url(#innerCoreGrad)" stroke="#FBBF24" stroke-width="2"/>
+        <text x="420" y="420" font-family="Inter, sans-serif" font-size="10.5" font-weight="900" fill="#78350F" text-anchor="middle">Solid Inner Core</text>
+
+        <!-- Layer 2: Liquid Outer Core -->
+        <path id="outer_core_liquid" d="M 390 380 L 340 270 A 200 200 0 0 1 500 270 L 450 380 A 80 80 0 0 0 390 380 Z" fill="#DC2626" stroke="#EF4444" stroke-width="2"/>
+        <text x="420" y="330" font-family="Inter, sans-serif" font-size="12" font-weight="900" fill="#FFFFFF" text-anchor="middle">Liquid Outer Core (Fe-Ni)</text>
+        <text x="420" y="348" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#FEF08A" text-anchor="middle">Geodynamo Magnetic Field Generator</text>
+
+        <!-- Layer 3: Lower & Upper Mantle / Asthenosphere -->
+        <path id="asthenosphere_mantle" d="M 340 270 L 270 120 A 360 360 0 0 1 570 120 L 500 270 A 200 200 0 0 0 340 270 Z" fill="#EA580C" stroke="#F97316" stroke-width="2"/>
+        <text x="420" y="190" font-family="Inter, sans-serif" font-size="13" font-weight="900" fill="#FFFFFF" text-anchor="middle">Mantle / Asthenosphere (2900 km)</text>
+        <text x="420" y="210" font-family="Inter, sans-serif" font-size="10.5" font-weight="700" fill="#FFEDD5" text-anchor="middle">Semi-Fluid Plastic Rock Convection Loops</text>
+
+        <!-- Layer 4: Rigid Lithosphere & Crust -->
+        <path id="crust_lithosphere" d="M 270 120 L 260 95 A 385 385 0 0 1 580 95 L 570 120 A 360 360 0 0 0 270 120 Z" fill="#047857" stroke="#34D399" stroke-width="2"/>
+        <text x="420" y="112" font-family="Inter, sans-serif" font-size="11" font-weight="900" fill="#D1FAE5" text-anchor="middle">Crust (SiAl Continental / SiMa Oceanic) &amp; Lithosphere</text>
+      </g>
+
+      <!-- DEPTH LABELS & DISCONTINUITIES -->
+      <g font-family="Inter, sans-serif" font-size="11" font-weight="800">
+        <text x="210" y="105" fill="#34D399" text-anchor="end">0 km (Surface)</text>
+        <line x1="220" y1="105" x2="260" y2="105" stroke="#34D399" stroke-width="1.5"/>
+
+        <text x="210" y="130" fill="#FDE047" text-anchor="end">Moho Discontinuity (~35 km)</text>
+        <line x1="220" y1="130" x2="270" y2="130" stroke="#FDE047" stroke-width="1.5" stroke-dasharray="3 2"/>
+
+        <text x="210" y="280" fill="#EF4444" text-anchor="end">Gutenberg Discontinuity (2900 km)</text>
+        <line x1="220" y1="280" x2="340" y2="280" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="3 2"/>
+
+        <text x="210" y="390" fill="#FBBF24" text-anchor="end">Lehmann Discontinuity (5150 km)</text>
+        <line x1="220" y1="390" x2="390" y2="390" stroke="#FBBF24" stroke-width="1.5" stroke-dasharray="3 2"/>
+
+        <text x="210" y="460" fill="#FDE047" text-anchor="end">Earth Center (6371 km)</text>
+        <line x1="220" y1="460" x2="420" y2="460" stroke="#FDE047" stroke-width="1.5"/>
+      </g>
+
+      <!-- Right Properties Callout Box -->
+      <rect x="610" y="130" width="205" height="280" rx="12" fill="#1E293B" stroke="#475569" stroke-width="1.5"/>
+      <text x="712" y="155" font-family="Inter, sans-serif" font-size="13" font-weight="900" fill="#FFFFFF" text-anchor="middle">Physical Properties</text>
+
+      <text x="625" y="185" font-family="Inter, sans-serif" font-size="10.5" font-weight="800" fill="#34D399">• Continental Crust:</text>
+      <text x="635" y="202" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#CBD5E1">Granite (SiAl), ~2.7 g/cm³</text>
+
+      <text x="625" y="225" font-family="Inter, sans-serif" font-size="10.5" font-weight="800" fill="#F97316">• Mantle Convection:</text>
+      <text x="635" y="242" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#CBD5E1">Peridotite, drives plates</text>
+
+      <text x="625" y="265" font-family="Inter, sans-serif" font-size="10.5" font-weight="800" fill="#EF4444">• Outer Core (Liquid):</text>
+      <text x="635" y="282" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#CBD5E1">Blocks S-waves, creates field</text>
+
+      <text x="625" y="305" font-family="Inter, sans-serif" font-size="10.5" font-weight="800" fill="#FDE047">• Inner Core (Solid):</text>
+      <text x="635" y="322" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#CBD5E1">Solid Fe-Ni, 3.6M atm, 5700K</text>
+
+      <!-- Bottom Seismic Proof Note -->
+      <rect x="80" y="475" width="680" height="34" rx="8" fill="#1E293B" stroke="#475569" stroke-width="1.5"/>
+      <text x="420" y="497" font-family="Inter, sans-serif" font-size="11.5" font-weight="700" fill="#F8FAFC" text-anchor="middle">Seismic Proof: S-wave shadow zone (&gt;105°) proves the Outer Core is molten liquid!</text>
+    </svg>`
   }
 };
 
@@ -1464,6 +2028,21 @@ export const SCIENTIFIC_VECTOR_REGISTRY: Record<string, DetailedVisualAsset> = {
  */
 export function getDetailedScientificAsset(topicOrType: string): DetailedVisualAsset | null {
   const t = topicOrType.toLowerCase().trim();
+  if (t === 'cardiac_conduction' || /(conduction system|cardiac conduction|sa node|av node|pacemaker|purkinje|ecg|bundle of his)/.test(t)) {
+    return SCIENTIFIC_VECTOR_REGISTRY.cardiac_conduction;
+  }
+  if (t === 'double_circulation' || /(double circulation|systemic circulation|pulmonary circulation|pulmonary circuit|systemic circuit)/.test(t)) {
+    return SCIENTIFIC_VECTOR_REGISTRY.double_circulation;
+  }
+  if (t === 'chloroplast_structure' || /(chloroplast structure|chloroplast ultrastructure|thylakoid|grana|stroma lamellae)/.test(t)) {
+    return SCIENTIFIC_VECTOR_REGISTRY.chloroplast_structure;
+  }
+  if (t === 'magnetic_fields' || /(magnetic field|magnetic flux|bar magnet|solenoid|electromagnet|right.hand grip)/.test(t)) {
+    return SCIENTIFIC_VECTOR_REGISTRY.magnetic_fields;
+  }
+  if (t === 'earth_layers' || /(earth.*layer|earth.*internal structure|crust mantle core|lithosphere asthenosphere|inner core|outer core|moho discontinuity)/.test(t)) {
+    return SCIENTIFIC_VECTOR_REGISTRY.earth_layers;
+  }
   if (t === 'human_heart' || /(heart|cardiac|ventricle|atrium|valve|circulation)/.test(t)) {
     return SCIENTIFIC_VECTOR_REGISTRY.human_heart;
   }

@@ -21,45 +21,45 @@
       <text x="420" y="32" font-family="Inter, sans-serif" font-size="17" font-weight="800" fill="#FFFFFF" text-anchor="middle">Human Heart — Coronal Cutaway &amp; Double Circulation</text>
       
       <!-- Aorta Arch (Red Top) -->
-      <path d="M 370 170 C 370 70, 480 50, 480 140 L 440 150 C 440 90, 395 95, 395 170 Z" fill="url(#aortaGrad)" stroke="#F87171" stroke-width="2"/>
+      <path id="aortic_arch" d="M 370 170 C 370 70, 480 50, 480 140 L 440 150 C 440 90, 395 95, 395 170 Z" fill="url(#aortaGrad)" stroke="#F87171" stroke-width="2"/>
       <!-- Brachiocephalic, Carotid, Subclavian Branches -->
       <rect x="385" y="45" width="16" height="30" rx="5" fill="#EF4444"/>
       <rect x="415" y="40" width="16" height="35" rx="5" fill="#EF4444"/>
       <rect x="445" y="48" width="16" height="30" rx="5" fill="#EF4444"/>
 
       <!-- Pulmonary Trunk (Blue Left/Right bifurcation) -->
-      <path d="M 350 200 C 350 140, 430 110, 450 160" stroke="url(#pulmGrad)" stroke-width="26" fill="none" stroke-linecap="round"/>
+      <path id="pulmonary_trunk" d="M 350 200 C 350 140, 430 110, 450 160" stroke="url(#pulmGrad)" stroke-width="26" fill="none" stroke-linecap="round"/>
       <path d="M 450 135 L 510 110" stroke="url(#pulmGrad)" stroke-width="20" fill="none" stroke-linecap="round"/>
 
       <!-- Superior & Inferior Vena Cava -->
-      <rect x="290" y="70" width="34" height="110" rx="10" fill="#1E40AF" stroke="#60A5FA" stroke-width="1.5"/>
+      <rect id="superior_vena_cava" x="290" y="70" width="34" height="110" rx="10" fill="#1E40AF" stroke="#60A5FA" stroke-width="1.5"/>
       <rect x="295" y="380" width="30" height="60" rx="8" fill="#1E40AF"/>
 
       <!-- Outer Cardiac Muscle Silhouette -->
       <path d="M 270 200 C 240 240, 240 340, 310 420 C 350 460, 420 480, 430 480 C 450 480, 560 450, 580 340 C 600 250, 560 190, 510 190 Z" fill="#7F1D1D" stroke="#DC2626" stroke-width="3"/>
 
       <!-- Right Atrium Cavity (Blue Deoxy) -->
-      <path d="M 285 200 C 270 240, 290 280, 335 280 C 355 280, 360 230, 350 200 Z" fill="#2563EB" opacity="0.95"/>
+      <path id="right_atrium" d="M 285 200 C 270 240, 290 280, 335 280 C 355 280, 360 230, 350 200 Z" fill="#2563EB" opacity="0.95"/>
       <text x="315" y="240" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Right Atrium</text>
 
       <!-- Right Ventricle Cavity (Blue Deoxy) -->
-      <path d="M 290 300 C 290 360, 330 420, 380 430 L 380 300 Z" fill="#1D4ED8"/>
+      <path id="right_ventricle" d="M 290 300 C 290 360, 330 420, 380 430 L 380 300 Z" fill="#1D4ED8"/>
       <text x="340" y="360" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Right Ventricle</text>
 
       <!-- Left Atrium Cavity (Red Oxygenated) -->
-      <path d="M 460 200 C 450 240, 470 280, 520 280 C 545 280, 550 230, 530 200 Z" fill="#DC2626" opacity="0.95"/>
+      <path id="left_atrium" d="M 460 200 C 450 240, 470 280, 520 280 C 545 280, 550 230, 530 200 Z" fill="#DC2626" opacity="0.95"/>
       <text x="500" y="240" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Left Atrium</text>
 
       <!-- Left Ventricle Cavity (Red Oxygenated, Thick Muscle) -->
-      <path d="M 410 300 L 410 430 C 460 420, 500 370, 500 300 Z" fill="#B91C1C"/>
+      <path id="left_ventricle" d="M 410 300 L 410 430 C 460 420, 500 370, 500 300 Z" fill="#B91C1C"/>
       <text x="455" y="360" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Left Ventricle</text>
 
       <!-- Interventricular Septum (Central Thick Wall) -->
-      <rect x="382" y="295" width="26" height="150" rx="6" fill="#991B1B" stroke="#450A0A" stroke-width="1.5"/>
+      <rect id="interventricular_septum" x="382" y="295" width="26" height="150" rx="6" fill="#991B1B" stroke="#450A0A" stroke-width="1.5"/>
 
       <!-- Heart Valves (Tricuspid & Bicuspid/Mitral) -->
-      <ellipse cx="335" cy="290" rx="20" ry="6" fill="#F59E0B" stroke="#FEF3C7" stroke-width="2"/>
-      <ellipse cx="465" cy="290" rx="20" ry="6" fill="#F59E0B" stroke="#FEF3C7" stroke-width="2"/>
+      <ellipse id="tricuspid_valve" cx="335" cy="290" rx="20" ry="6" fill="#F59E0B" stroke="#FEF3C7" stroke-width="2"/>
+      <ellipse id="bicuspid_valve" cx="465" cy="290" rx="20" ry="6" fill="#F59E0B" stroke="#FEF3C7" stroke-width="2"/>
 
       <!-- Programmatic Callout Badges -->
       <g font-family="Inter, sans-serif" font-size="11.5" font-weight="700">

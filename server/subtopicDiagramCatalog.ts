@@ -731,99 +731,180 @@ export function getHumanHeartSubtopicDiagrams(): SubtopicDiagramItem[] {
     <text x="645" y="200" font-family="Inter, sans-serif" font-size="11.5" font-weight="600" fill="#CBD5E1" text-anchor="middle">• Size of closed fist (~300g)</text>
   </svg>`;
 
-  // Diagram 2: Four Chambers & Valves Cross-Section
+  // Diagram 2: Four Chambers & Valves Cross-Section (Anatomical Cutaway — No Generic Boxes)
   const svg2 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480">
+    <defs>
+      <linearGradient id="lvMyoGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#991B1B"/>
+        <stop offset="100%" stop-color="#581C87"/>
+      </linearGradient>
+      <linearGradient id="rvMyoGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#1E3A8A"/>
+        <stop offset="100%" stop-color="#1E293B"/>
+      </linearGradient>
+    </defs>
     <rect width="800" height="480" rx="20" fill="#0F172A"/>
     <text x="400" y="36" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Internal Heart Cross-Section — Four Chambers &amp; Valves</text>
-    <text x="400" y="58" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">Right Heart (Deoxygenated Blue) | Left Heart (Oxygenated Red) | Interventricular Septum</text>
+    <text x="400" y="58" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">Anatomical Coronal Cutaway: Right Heart (Blue) | Left Heart (Red) | Thick Muscular Myocardium</text>
 
-    <!-- Outer Myocardium Wall -->
-    <path d="M 180 180 C 180 320 260 420 400 440 C 540 420 620 320 620 180 C 620 120 540 100 400 100 C 260 100 180 120 180 180 Z" fill="#1E293B" stroke="#475569" stroke-width="4"/>
+    <!-- Great Vessels Background Trunks -->
+    <!-- Superior Vena Cava -->
+    <path d="M 230 70 L 230 160 C 230 170 250 170 250 160 L 250 70 Z" fill="#1D4ED8" stroke="#38BDF8" stroke-width="2"/>
+    <text x="240" y="65" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#38BDF8" text-anchor="middle">Superior Vena Cava</text>
 
-    <!-- Interventricular & Interatrial Septum -->
-    <rect x="385" y="110" width="30" height="320" rx="8" fill="#475569" stroke="#94A3B8" stroke-width="2"/>
-    <text x="400" y="310" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#FFFFFF" text-anchor="middle" transform="rotate(-90 400 310)">Interventricular Septum</text>
+    <!-- Ascending Aorta Arch -->
+    <path d="M 370 170 C 370 90, 470 70, 480 140 L 445 150 C 440 105, 395 105, 395 170 Z" fill="#DC2626" stroke="#F87171" stroke-width="2"/>
+    <text x="430" y="75" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#F87171" text-anchor="middle">Aorta Arch (120 mmHg)</text>
 
-    <!-- Right Atrium (Upper Left, Anatomical Right) -->
-    <rect x="220" y="130" width="150" height="110" rx="14" fill="#0369A1" stroke="#38BDF8" stroke-width="2.5"/>
-    <text x="295" y="175" font-family="Inter, sans-serif" font-size="15" font-weight="900" fill="#FFFFFF" text-anchor="middle">Right Atrium</text>
-    <text x="295" y="196" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#BAE6FD" text-anchor="middle">Deoxygenated Blood</text>
-    <text x="295" y="214" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#7DD3FC" text-anchor="middle">From Vena Cava</text>
+    <!-- Pulmonary Trunk -->
+    <path d="M 340 180 C 345 120, 520 110, 540 145" stroke="#0284C7" stroke-width="24" fill="none" stroke-linecap="round"/>
+    <text x="550" y="125" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#7DD3FC">Pulmonary Trunk → Lungs</text>
 
-    <!-- Left Atrium (Upper Right, Anatomical Left) -->
-    <rect x="430" y="130" width="150" height="110" rx="14" fill="#B91C1C" stroke="#F87171" stroke-width="2.5"/>
-    <text x="505" y="175" font-family="Inter, sans-serif" font-size="15" font-weight="900" fill="#FFFFFF" text-anchor="middle">Left Atrium</text>
-    <text x="505" y="196" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#FECACA" text-anchor="middle">Oxygenated Blood</text>
-    <text x="505" y="214" font-family="Inter, sans-serif" font-size="10.5" font-weight="600" fill="#FCA5A5" text-anchor="middle">From Pulmonary Veins</text>
+    <!-- External Heart Pericardium / Myocardial Muscle Contour -->
+    <path d="M 200 190 C 180 280, 220 380, 360 440 C 400 455, 420 455, 450 440 C 580 380, 620 280, 600 190 C 590 145, 520 140, 400 140 C 280 140, 210 145, 200 190 Z" fill="#450A0A" stroke="#B91C1C" stroke-width="4"/>
 
-    <!-- Tricuspid Valve (AV Valve Right) -->
-    <line x1="250" y1="245" x2="340" y2="245" stroke="#FDE047" stroke-width="5" stroke-dasharray="8 4"/>
-    <text x="295" y="260" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#FDE047" text-anchor="middle">Tricuspid Valve (3 Cusps)</text>
+    <!-- Left Ventricle Thick Lateral Myocardium Crescent (3x Thicker than RV) -->
+    <path d="M 460 270 C 540 270, 570 340, 440 435 C 470 420, 530 360, 480 270 Z" fill="url(#lvMyoGrad)" stroke="#EF4444" stroke-width="2"/>
 
-    <!-- Bicuspid / Mitral Valve (AV Valve Left) -->
-    <line x1="460" y1="245" x2="550" y2="245" stroke="#FDE047" stroke-width="5" stroke-dasharray="8 4"/>
-    <text x="505" y="260" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#FDE047" text-anchor="middle">Bicuspid / Mitral Valve (2 Cusps)</text>
+    <!-- Right Ventricle Thin Myocardium Lateral Wall (5mm vs 15mm LV) -->
+    <path d="M 240 270 C 200 320, 230 400, 360 435 C 310 410, 270 350, 280 270 Z" fill="url(#rvMyoGrad)" stroke="#38BDF8" stroke-width="1.5"/>
 
-    <!-- Right Ventricle (Lower Left, Moderate Wall) -->
-    <rect x="220" y="275" width="150" height="135" rx="14" fill="#0284C7" stroke="#38BDF8" stroke-width="2.5"/>
-    <text x="295" y="330" font-family="Inter, sans-serif" font-size="15" font-weight="900" fill="#FFFFFF" text-anchor="middle">Right Ventricle</text>
-    <text x="295" y="352" font-family="Inter, sans-serif" font-size="11.5" font-weight="700" fill="#BAE6FD" text-anchor="middle">Pumps to Lungs</text>
-    <text x="295" y="372" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#E0F2FE" text-anchor="middle">Pulmonary Loop (~25 mmHg)</text>
+    <!-- Central Muscular Interventricular Septum (Separates Oxygenated and Deoxygenated Blood) -->
+    <path d="M 380 240 C 380 320, 375 380, 395 435 C 415 380, 415 320, 415 240 Z" fill="#7F1D1D" stroke="#991B1B" stroke-width="2"/>
+    <text x="400" y="340" font-family="Inter, sans-serif" font-size="10.5" font-weight="900" fill="#FEF08A" text-anchor="middle" transform="rotate(-90 400 340)">Interventricular Septum</text>
 
-    <!-- Left Ventricle (Lower Right, 3x THICK Myocardium Wall) -->
-    <rect x="430" y="275" width="150" height="135" rx="14" fill="#991B1B" stroke="#EF4444" stroke-width="5"/>
-    <text x="505" y="325" font-family="Inter, sans-serif" font-size="15" font-weight="900" fill="#FFFFFF" text-anchor="middle">Left Ventricle</text>
-    <text x="505" y="347" font-family="Inter, sans-serif" font-size="11.5" font-weight="800" fill="#FECACA" text-anchor="middle">Pumps to Entire Body</text>
-    <text x="505" y="367" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#FEF08A" text-anchor="middle">★ 3x Thicker Myocardium</text>
-    <text x="505" y="387" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#FEE2E2" text-anchor="middle">Systemic Loop (~120 mmHg)</text>
+    <!-- Internal Cavity 1: Right Atrium (Organic Curved Cavity) -->
+    <path d="M 235 170 C 220 205, 235 245, 280 245 C 320 245, 345 220, 350 170 C 310 175, 260 170, 235 170 Z" fill="#1E40AF" stroke="#60A5FA" stroke-width="2" opacity="0.95"/>
+    <text x="285" y="200" font-family="Inter, sans-serif" font-size="13" font-weight="900" fill="#FFFFFF" text-anchor="middle">Right Atrium</text>
+    <text x="285" y="216" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#BAE6FD" text-anchor="middle">Deoxygenated (SVC/IVC)</text>
+
+    <!-- Internal Cavity 2: Left Atrium (Organic Curved Cavity) -->
+    <path d="M 450 170 C 455 220, 480 245, 520 245 C 565 245, 580 205, 565 170 C 540 170, 490 175, 450 170 Z" fill="#B91C1C" stroke="#F87171" stroke-width="2" opacity="0.95"/>
+    <text x="515" y="200" font-family="Inter, sans-serif" font-size="13" font-weight="900" fill="#FFFFFF" text-anchor="middle">Left Atrium</text>
+    <text x="515" y="216" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#FECACA" text-anchor="middle">Oxygenated (Pulm Veins)</text>
+
+    <!-- Internal Cavity 3: Right Ventricle Cavity (Organic Crescent) -->
+    <path d="M 280 255 C 280 320, 310 390, 370 420 C 365 370, 365 310, 370 255 Z" fill="#1D4ED8" stroke="#38BDF8" stroke-width="2"/>
+    <!-- Papillary Muscle & Chordae Tendineae (Right) -->
+    <path d="M 305 370 C 310 340, 320 330, 325 310" stroke="#FDE047" stroke-width="2" fill="none"/>
+    <path d="M 320 375 C 330 350, 335 335, 340 310" stroke="#FDE047" stroke-width="2" fill="none"/>
+    <path d="M 300 395 C 315 385, 325 375, 315 365 C 300 370, 290 385, 300 395 Z" fill="#1E3A8A"/>
+    <text x="325" y="285" font-family="Inter, sans-serif" font-size="13" font-weight="900" fill="#FFFFFF" text-anchor="middle">Right Ventricle</text>
+    <text x="325" y="302" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#BAE6FD" text-anchor="middle">~25 mmHg (To Lungs)</text>
+
+    <!-- Internal Cavity 4: Left Ventricle Cavity (Deep Conical Chamber with 3x Muscle) -->
+    <path d="M 430 255 C 430 310, 430 370, 420 420 C 470 390, 490 330, 490 255 Z" fill="#DC2626" stroke="#FCA5A5" stroke-width="2"/>
+    <!-- Papillary Muscle & Chordae Tendineae (Left) -->
+    <path d="M 470 365 C 465 340, 460 325, 455 305" stroke="#FDE047" stroke-width="2" fill="none"/>
+    <path d="M 480 370 C 475 350, 470 330, 465 305" stroke="#FDE047" stroke-width="2" fill="none"/>
+    <path d="M 475 390 C 490 380, 495 365, 480 360 C 465 365, 460 380, 475 390 Z" fill="#7F1D1D"/>
+    <text x="460" y="285" font-family="Inter, sans-serif" font-size="13" font-weight="900" fill="#FFFFFF" text-anchor="middle">Left Ventricle</text>
+    <text x="460" y="302" font-family="Inter, sans-serif" font-size="9.5" font-weight="800" fill="#FEF08A" text-anchor="middle">~120 mmHg (Systemic)</text>
+
+    <!-- Atrioventricular Valves: Tricuspid & Bicuspid (Mitral) -->
+    <!-- Tricuspid Valve Cusps -->
+    <path d="M 285 248 C 300 258, 315 258, 335 248" stroke="#FDE047" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <text x="305" y="240" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#FDE047" text-anchor="middle">Tricuspid Valve</text>
+
+    <!-- Bicuspid (Mitral) Valve Cusps -->
+    <path d="M 455 248 C 470 258, 485 258, 505 248" stroke="#FDE047" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <text x="480" y="240" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#FDE047" text-anchor="middle">Bicuspid / Mitral Valve</text>
+
+    <!-- Annotations & Callout Notes -->
+    <rect x="50" y="260" width="165" height="110" rx="10" fill="#1E293B" stroke="#38BDF8" stroke-width="1.5"/>
+    <text x="132" y="282" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#38BDF8" text-anchor="middle">Right Heart Circuit</text>
+    <text x="132" y="302" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#E2E8F0" text-anchor="middle">• Receives vena caval return</text>
+    <text x="132" y="320" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#E2E8F0" text-anchor="middle">• Tricuspid valve (3 flaps)</text>
+    <text x="132" y="338" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#E2E8F0" text-anchor="middle">• Low pressure (25 mmHg)</text>
+    <text x="132" y="356" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#BAE6FD" text-anchor="middle">• Pumps to lungs only</text>
+
+    <rect x="585" y="260" width="175" height="110" rx="10" fill="#1E293B" stroke="#EF4444" stroke-width="1.5"/>
+    <text x="672" y="282" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#F87171" text-anchor="middle">Left Heart Circuit</text>
+    <text x="672" y="302" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#E2E8F0" text-anchor="middle">• Receives oxygenated return</text>
+    <text x="672" y="320" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#E2E8F0" text-anchor="middle">• Bicuspid valve (2 flaps)</text>
+    <text x="672" y="338" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#FEF08A" text-anchor="middle">★ LV wall 3x thicker</text>
+    <text x="672" y="356" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#FECACA" text-anchor="middle">• High pressure (120 mmHg)</text>
+
+    <!-- Bottom Legend -->
+    <rect x="180" y="442" width="440" height="30" rx="8" fill="#1E293B" stroke="#475569" stroke-width="1"/>
+    <text x="400" y="462" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#E2E8F0" text-anchor="middle">Blue = Deoxygenated Venous Blood  |  Red = Oxygenated Arterial Blood  |  Yellow = AV Valves &amp; Chordae</text>
   </svg>`;
 
-  // Diagram 3: Double Circulation Pathway
+  // Diagram 3: Double Circulation Pathway (Recognisable Heart, Lungs & Body Capillaries)
   const svg3 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480">
     <rect width="800" height="480" rx="20" fill="#0F172A"/>
-    <text x="400" y="36" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Human Double Circulation — Pulmonary &amp; Systemic Circuits</text>
-    <text x="400" y="58" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">Blood passes through the heart TWICE during each complete body circuit</text>
+    <text x="400" y="34" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Human Double Circulation — Pulmonary &amp; Systemic Circuits</text>
+    <text x="400" y="54" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">Body → Right Heart → Lungs → Left Heart → Body (Complete Figure-8 Circuit)</text>
 
-    <!-- Top: Lungs Capillary Bed -->
-    <rect x="300" y="85" width="200" height="60" rx="14" fill="#1E293B" stroke="#38BDF8" stroke-width="2.5"/>
-    <text x="400" y="112" font-family="Inter, sans-serif" font-size="14" font-weight="900" fill="#FFFFFF" text-anchor="middle">Lungs (Pulmonary Bed)</text>
-    <text x="400" y="132" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#38BDF8" text-anchor="middle">Drops CO₂ • Picks up O₂</text>
+    <!-- TOP: LUNGS (Recognisable Bilobed Lungs Silhouette & Capillary Network) -->
+    <g transform="translate(300, 68)">
+      <!-- Left & Right Lung Silhouette -->
+      <path d="M 50 15 C 20 20, 10 50, 25 80 C 40 100, 80 100, 90 75 C 95 60, 90 25, 65 15 Z" fill="#0369A1" stroke="#38BDF8" stroke-width="2" opacity="0.85"/>
+      <path d="M 150 15 C 175 25, 170 60, 175 75 C 185 100, 125 100, 140 80 C 155 50, 145 20, 115 15 Z" fill="#991B1B" stroke="#F87171" stroke-width="2" opacity="0.85"/>
+      <!-- Capillary Mesh representation -->
+      <path d="M 85 45 Q 100 35 115 45 Q 100 55 85 45" stroke="#F59E0B" stroke-width="3" fill="none"/>
+      <text x="100" y="48" font-family="Inter, sans-serif" font-size="12" font-weight="900" fill="#FFFFFF" text-anchor="middle">LUNGS</text>
+      <text x="100" y="66" font-family="Inter, sans-serif" font-size="9.5" font-weight="700" fill="#BAE6FD" text-anchor="middle">Alveolar Gas Exchange</text>
+      <text x="100" y="80" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="#FEF08A" text-anchor="middle">O₂ absorbed, CO₂ exhaled</text>
+    </g>
 
-    <!-- Center: The Heart (Split Blue / Red) -->
-    <rect x="250" y="190" width="140" height="110" rx="14" fill="#0369A1" stroke="#38BDF8" stroke-width="3"/>
-    <text x="320" y="235" font-family="Inter, sans-serif" font-size="13" font-weight="900" fill="#FFFFFF" text-anchor="middle">Right Heart</text>
-    <text x="320" y="255" font-family="Inter, sans-serif" font-size="10.5" font-weight="700" fill="#BAE6FD" text-anchor="middle">RA + RV (Deoxy)</text>
+    <!-- CENTER: THE HEART (Anatomical 4-Chamber Silhouette) -->
+    <g transform="translate(290, 175)">
+      <!-- Heart Wall Outer -->
+      <path d="M 20 30 C 0 70, 30 130, 110 155 C 190 130, 220 70, 200 30 C 180 0, 130 5, 110 20 C 90 5, 40 0, 20 30 Z" fill="#1E293B" stroke="#475569" stroke-width="3"/>
+      <!-- Right Heart Cavity (Deoxygenated Blue) -->
+      <path d="M 35 35 C 25 70, 50 120, 105 140 L 105 35 Z" fill="#1D4ED8" stroke="#38BDF8" stroke-width="1.5"/>
+      <text x="70" y="70" font-family="Inter, sans-serif" font-size="12" font-weight="900" fill="#FFFFFF" text-anchor="middle">RA</text>
+      <text x="70" y="105" font-family="Inter, sans-serif" font-size="12" font-weight="900" fill="#FFFFFF" text-anchor="middle">RV</text>
+      <line x1="45" y1="80" x2="95" y2="80" stroke="#FDE047" stroke-width="2" stroke-dasharray="4 2"/>
 
-    <rect x="410" y="190" width="140" height="110" rx="14" fill="#B91C1C" stroke="#F87171" stroke-width="3"/>
-    <text x="480" y="235" font-family="Inter, sans-serif" font-size="13" font-weight="900" fill="#FFFFFF" text-anchor="middle">Left Heart</text>
-    <text x="480" y="255" font-family="Inter, sans-serif" font-size="10.5" font-weight="700" fill="#FECACA" text-anchor="middle">LA + LV (Oxy)</text>
+      <!-- Left Heart Cavity (Oxygenated Red) -->
+      <path d="M 185 35 C 195 70, 170 120, 115 140 L 115 35 Z" fill="#DC2626" stroke="#F87171" stroke-width="1.5"/>
+      <text x="150" y="70" font-family="Inter, sans-serif" font-size="12" font-weight="900" fill="#FFFFFF" text-anchor="middle">LA</text>
+      <text x="150" y="105" font-family="Inter, sans-serif" font-size="12" font-weight="900" fill="#FFFFFF" text-anchor="middle">LV</text>
+      <line x1="125" y1="80" x2="175" y2="80" stroke="#FDE047" stroke-width="2" stroke-dasharray="4 2"/>
 
-    <!-- Bottom: Body Tissues Capillary Bed -->
-    <rect x="280" y="360" width="240" height="65" rx="14" fill="#1E293B" stroke="#F87171" stroke-width="2.5"/>
-    <text x="400" y="388" font-family="Inter, sans-serif" font-size="14" font-weight="900" fill="#FFFFFF" text-anchor="middle">Body Tissues &amp; Organs</text>
-    <text x="400" y="408" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#FCA5A5" text-anchor="middle">Delivers O₂ + Glucose • Collects CO₂</text>
+      <!-- Central Septum -->
+      <line x1="110" y1="25" x2="110" y2="148" stroke="#FDE047" stroke-width="3"/>
+    </g>
 
-    <!-- Circuit 1: Pulmonary Circuit Loops -->
-    <!-- RV to Lungs (Pulmonary Artery - Blue) -->
-    <path d="M 300 190 Q 260 115 300 115" stroke="#38BDF8" stroke-width="4" fill="none"/>
-    <polygon points="302,115 290,108 290,122" fill="#38BDF8"/>
-    <text x="215" y="145" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#38BDF8">Pulmonary Artery (Deoxy)</text>
+    <!-- BOTTOM: BODY TISSUES & ORGANS (Systemic Capillary Mesh) -->
+    <g transform="translate(280, 350)">
+      <rect x="0" y="0" width="240" height="75" rx="14" fill="#1E293B" stroke="#64748B" stroke-width="2"/>
+      <text x="120" y="24" font-family="Inter, sans-serif" font-size="13" font-weight="900" fill="#FFFFFF" text-anchor="middle">BODY TISSUES &amp; ORGANS</text>
+      <text x="120" y="42" font-family="Inter, sans-serif" font-size="10.5" font-weight="700" fill="#F87171" text-anchor="middle">Cells consume O₂ for ATP (Respiration)</text>
+      <text x="120" y="58" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#BAE6FD" text-anchor="middle">CO₂ waste collected into systemic veins</text>
+    </g>
 
-    <!-- Lungs to LA (Pulmonary Vein - Red) -->
-    <path d="M 500 115 Q 540 115 500 190" stroke="#EF4444" stroke-width="4" fill="none"/>
-    <polygon points="498,193 508,180 496,180" fill="#EF4444"/>
-    <text x="555" y="145" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#F87171">Pulmonary Veins (Oxy)</text>
+    <!-- PULMONARY CIRCUIT PATHWAYS (Top Loop) -->
+    <!-- 1. RV to Lungs via Pulmonary Artery (Blue, Deoxygenated) -->
+    <path d="M 330 215 C 240 180, 240 120, 320 95" stroke="#0284C7" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <polygon points="325,92 310,87 318,102" fill="#38BDF8"/>
+    <text x="210" y="145" font-family="Inter, sans-serif" font-size="11.5" font-weight="800" fill="#38BDF8" text-anchor="middle">Pulmonary Artery</text>
+    <text x="210" y="162" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#BAE6FD" text-anchor="middle">(~25 mmHg Deoxy)</text>
 
-    <!-- Circuit 2: Systemic Circuit Loops -->
-    <!-- LV to Body (Systemic Aorta - Red) -->
-    <path d="M 500 300 Q 560 380 520 380" stroke="#EF4444" stroke-width="4" fill="none"/>
-    <polygon points="517,380 530,373 530,387" fill="#EF4444"/>
-    <text x="560" y="340" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#F87171">Aorta Arch (Oxy)</text>
+    <!-- 2. Lungs to LA via Pulmonary Veins (Red, Oxygenated) -->
+    <path d="M 480 95 C 560 120, 560 180, 470 215" stroke="#EF4444" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <polygon points="465,217 480,212 475,225" fill="#EF4444"/>
+    <text x="590" y="145" font-family="Inter, sans-serif" font-size="11.5" font-weight="800" fill="#F87171" text-anchor="middle">Pulmonary Veins</text>
+    <text x="590" y="162" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#FECACA" text-anchor="middle">(Oxygen-Rich Blood)</text>
 
-    <!-- Body to RA (Vena Cava - Blue) -->
-    <path d="M 280 380 Q 230 380 300 300" stroke="#38BDF8" stroke-width="4" fill="none"/>
-    <polygon points="302,298 290,305 302,312" fill="#38BDF8"/>
-    <text x="195" y="340" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#38BDF8">Vena Cava (Deoxy)</text>
+    <!-- SYSTEMIC CIRCUIT PATHWAYS (Bottom Loop) -->
+    <!-- 3. LV to Body via Aorta Arch (Red, Oxygenated, 120 mmHg) -->
+    <path d="M 450 290 C 580 320, 580 380, 520 390" stroke="#DC2626" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <polygon points="515,391 528,382 528,398" fill="#DC2626"/>
+    <text x="615" y="340" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#F87171" text-anchor="middle">Systemic Aorta</text>
+    <text x="615" y="358" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#FEF08A" text-anchor="middle">High Pressure (120 mmHg)</text>
+
+    <!-- 4. Body to RA via Vena Cava (Blue, Deoxygenated) -->
+    <path d="M 280 390 C 220 380, 220 320, 350 290" stroke="#1D4ED8" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <polygon points="355,288 342,282 342,298" fill="#38BDF8"/>
+    <text x="185" y="340" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#38BDF8" text-anchor="middle">Vena Cava</text>
+    <text x="185" y="358" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#BAE6FD" text-anchor="middle">Venous Return to RA</text>
+
+    <!-- Central Process Walkthrough Banner -->
+    <rect x="80" y="440" width="640" height="32" rx="8" fill="#1E293B" stroke="#475569" stroke-width="1.5"/>
+    <text x="400" y="461" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#F8FAFC" text-anchor="middle">1. Pulmonary Loop: RV → Lungs → LA (Oxygenation)  |  2. Systemic Loop: LV → Body → RA (Tissue Delivery)</text>
   </svg>`;
 
   // Diagram 4: Cardiac Conduction & Heartbeat Cycle

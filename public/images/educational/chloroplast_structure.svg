@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 520" width="100%" height="auto" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <radialGradient id="chlorStromaGrad" cx="50%" cy="50%" r="65%">
+          <stop offset="0%" stop-color="#065F46"/>
+          <stop offset="100%" stop-color="#022C22"/>
+        </radialGradient>
+      </defs>
+      <rect width="840" height="520" rx="20" fill="#0F172A"/>
+      <text x="420" y="34" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Chloroplast Ultrastructure — Organelle of Photosynthesis</text>
+      <text x="420" y="56" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">Double Envelope • Aqueous Stroma Matrix • Stacked Thylakoid Grana • Interconnecting Lamellae</text>
+
+      <!-- OUTER & INNER DOUBLE MEMBRANE ENVELOPE -->
+      <g id="outer_inner_membrane">
+        <ellipse cx="420" cy="270" rx="360" ry="190" fill="#064E3B" stroke="#10B981" stroke-width="4"/>
+        <ellipse cx="420" cy="270" rx="340" ry="172" fill="url(#chlorStromaGrad)" stroke="#34D399" stroke-width="2.5"/>
+      </g>
+
+      <!-- STROMA LAMELLAE -->
+      <g id="stroma_lamellae" stroke="#34D399" stroke-width="5" stroke-linecap="round">
+        <line x1="250" y1="260" x2="350" y2="240"/>
+        <line x1="390" y1="240" x2="490" y2="270"/>
+        <line x1="530" y1="270" x2="620" y2="250"/>
+        <line x1="370" y1="310" x2="490" y2="330"/>
+      </g>
+
+      <!-- THYLAKOID GRANA STACKS -->
+      <!-- Stack 1 -->
+      <g id="grana_thylakoids" transform="translate(190, 190)">
+        <ellipse cx="40" cy="90" rx="36" ry="10" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="80" rx="36" ry="10" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="70" rx="36" ry="10" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="60" rx="36" ry="10" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="50" rx="36" ry="10" fill="#22C55E" stroke="#BBF7D0" stroke-width="1.5"/>
+        <text x="40" y="30" font-family="Inter, sans-serif" font-size="11" font-weight="900" fill="#86EFAC" text-anchor="middle">Granum 1</text>
+      </g>
+
+      <!-- Stack 2 -->
+      <g transform="translate(330, 160)">
+        <ellipse cx="40" cy="110" rx="40" ry="11" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="98" rx="40" ry="11" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="86" rx="40" ry="11" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="74" rx="40" ry="11" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="62" rx="40" ry="11" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="50" rx="40" ry="11" fill="#22C55E" stroke="#BBF7D0" stroke-width="1.5"/>
+        <text x="40" y="30" font-family="Inter, sans-serif" font-size="11" font-weight="900" fill="#86EFAC" text-anchor="middle">Granum 2</text>
+      </g>
+
+      <!-- Stack 3 -->
+      <g transform="translate(470, 180)">
+        <ellipse cx="40" cy="100" rx="38" ry="11" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="88" rx="38" ry="11" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="76" rx="38" ry="11" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="64" rx="38" ry="11" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="40" cy="52" rx="40" ry="11" fill="#22C55E" stroke="#BBF7D0" stroke-width="1.5"/>
+        <text x="40" y="32" font-family="Inter, sans-serif" font-size="11" font-weight="900" fill="#86EFAC" text-anchor="middle">Granum 3</text>
+      </g>
+
+      <!-- Stack 4 -->
+      <g transform="translate(600, 200)">
+        <ellipse cx="36" cy="85" rx="34" ry="10" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="36" cy="74" rx="34" ry="10" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="36" cy="63" rx="34" ry="10" fill="#15803D" stroke="#86EFAC" stroke-width="1.5"/>
+        <ellipse cx="36" cy="52" rx="36" ry="10" fill="#22C55E" stroke="#BBF7D0" stroke-width="1.5"/>
+        <text x="36" y="32" font-family="Inter, sans-serif" font-size="11" font-weight="900" fill="#86EFAC" text-anchor="middle">Granum 4</text>
+      </g>
+
+      <!-- STROMA INCLUSIONS -->
+      <g id="chloroplast_dna">
+        <path d="M 280 370 C 310 350, 340 370, 330 395 C 315 410, 270 410, 260 390 C 255 375, 270 365, 280 370 Z" fill="none" stroke="#FBBF24" stroke-width="2.5" stroke-dasharray="4 2"/>
+        <text x="300" y="390" font-family="Inter, sans-serif" font-size="10" font-weight="900" fill="#FEF08A">cpDNA</text>
+        <circle cx="360" cy="380" r="3.5" fill="#38BDF8"/>
+        <circle cx="375" cy="390" r="3.5" fill="#38BDF8"/>
+        <circle cx="430" cy="360" r="3.5" fill="#38BDF8"/>
+        <ellipse cx="580" cy="365" rx="28" ry="15" fill="#FEF3C7" opacity="0.8" stroke="#F59E0B" stroke-width="1.5"/>
+        <text x="580" y="370" font-family="Inter, sans-serif" font-size="9.5" font-weight="800" fill="#78350F" text-anchor="middle">Starch Granule</text>
+      </g>
+
+      <!-- CALLOUT SITES -->
+      <rect x="50" y="90" width="220" height="60" rx="10" fill="#1E293B" stroke="#22C55E" stroke-width="1.5"/>
+      <text x="160" y="112" font-family="Inter, sans-serif" font-size="12" font-weight="900" fill="#86EFAC" text-anchor="middle">Light Reaction (Grana)</text>
+      <text x="160" y="128" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">• Water Photolysis (H₂O → O₂)</text>
+      <text x="160" y="142" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#BBF7D0" text-anchor="middle">• ATP &amp; NADPH Photophosphorylation</text>
+
+      <rect x="570" y="90" width="220" height="60" rx="10" fill="#1E293B" stroke="#F59E0B" stroke-width="1.5"/>
+      <text x="680" y="112" font-family="Inter, sans-serif" font-size="12" font-weight="900" fill="#FDE047" text-anchor="middle">Dark Reaction (Stroma Matrix)</text>
+      <text x="680" y="128" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">• Calvin Cycle (RuBisCO enzyme)</text>
+      <text x="680" y="142" font-family="Inter, sans-serif" font-size="9.5" font-weight="600" fill="#FEF08A" text-anchor="middle">• CO₂ Fixation into Glucose (C₆H₁₂O₆)</text>
+
+      <!-- Bottom Diagnostic Bar -->
+      <rect x="80" y="470" width="680" height="34" rx="8" fill="#1E293B" stroke="#10B981" stroke-width="1.5"/>
+      <text x="420" y="492" font-family="Inter, sans-serif" font-size="11.5" font-weight="700" fill="#ECFDF5" text-anchor="middle">Endosymbiotic Evidence: Double membrane, autonomous circular cpDNA, and 70S prokaryotic-type ribosomes</text>
+    </svg>

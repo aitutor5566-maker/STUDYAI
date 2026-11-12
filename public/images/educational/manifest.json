@@ -626,5 +626,143 @@
       ],
       "examTakeaway": "For N = 1,000,000 sorted elements, Linear Search takes up to 1,000,000 comparisons, whereas Binary Search takes at most ⌈log₂(1,000,000)⌉ = 20 comparisons!"
     }
+  },
+  {
+    "key": "double_circulation",
+    "topic": "Human Double Circulation System",
+    "subtopic": "Pulmonary and Systemic Loops, Pressure Gradients and Oxygenation Cycle",
+    "subject": "Biology",
+    "visualType": "biological_process_diagram",
+    "title": "Double Circulation: Pulmonary and Systemic Closed Circuits",
+    "caption": "Schematic of human double circulation showing the low-pressure pulmonary circuit (~25/10 mmHg) and high-pressure systemic circuit (~120/80 mmHg) with directional blood flow.",
+    "publicUrl": "/images/educational/double_circulation.svg",
+    "visualLearningPath": "visual_learning/assets/biology/double_circulation.svg",
+    "labelsCount": 5,
+    "walkthrough": {
+      "whatItShows": "Complete double circulation loop showing why blood passes through the human heart twice in every single systemic journey.",
+      "importantComponents": [
+        "Pulmonary Circuit: Right Ventricle → Pulmonary Trunk & Arteries → Lungs Capillaries → Pulmonary Veins → Left Atrium. Operates at low pressure (~25/10 mmHg) to protect delicate alveolar membranes.",
+        "Systemic Circuit: Left Ventricle → Ascending Aorta → Systemic Arteries → Capillary Beds in Brain & Viscera → Venae Cavae → Right Atrium. Operates at high pressure (~120/80 mmHg) to overcome systemic vascular resistance.",
+        "Complete Physical Separation: The muscular septum prevents mixing of oxygenated (arterial) and deoxygenated (venous) blood, maximizing aerobic metabolic efficiency for endothermic homeotherms."
+      ],
+      "processSequence": [
+        "1. Systemic deoxygenated blood from tissues enters the Right Atrium through the Superior & Inferior Vena Cava.",
+        "2. The Right Atrium empties through the Tricuspid Valve into the Right Ventricle.",
+        "3. The Right Ventricle ejects blood into the Pulmonary Trunk toward the lungs (Pulmonary Circulation).",
+        "4. Carbon dioxide is eliminated and oxygen is absorbed in the pulmonary capillaries.",
+        "5. Four Pulmonary Veins return oxygenated blood to the Left Atrium.",
+        "6. The Left Ventricle contracts forcefully, pumping oxygenated blood into the Aorta to nourish the entire body (Systemic Circulation)."
+      ],
+      "examTakeaway": "In single circulation (fish), blood passes through the heart once per circuit under low pressure. In human double circulation, blood is repressurized by the left ventricle before systemic delivery, sustaining high mammalian metabolic rates."
+    }
+  },
+  {
+    "key": "cardiac_conduction",
+    "topic": "Cardiac Conduction System and ECG Correlation",
+    "subtopic": "SA Node Pacemaker, AV Delay, Bundle of His, Purkinje Fibers and P-QRS-T Waveforms",
+    "subject": "Biology",
+    "visualType": "anatomical_cross_section",
+    "title": "Cardiac Conduction System: Intrinsic Pacemaker and Electrocardiogram (ECG) Synchronization",
+    "caption": "Anatomical mapping of myocardial electrical excitation from the SA node through the AV node, Bundle of His, and Purkinje fibers with correlated P-QRS-T ECG deflection waves.",
+    "publicUrl": "/images/educational/cardiac_conduction.svg",
+    "visualLearningPath": "visual_learning/assets/biology/cardiac_conduction.svg",
+    "labelsCount": 5,
+    "walkthrough": {
+      "whatItShows": "The intrinsic neuromuscular conduction system regulating automatic rhythmic cardiac contractions and its direct correlation to clinical ECG waveforms.",
+      "importantComponents": [
+        "Sinoatrial (SA) Node: Inherent automaticity driven by funny sodium current (If) and transient Ca²⁺ influx; sets normal sinus rhythm (72 bpm).",
+        "AV Nodal Delay: 0.10s pause caused by small-diameter myocytes and fewer gap junctions, ensuring complete ventricular end-diastolic filling.",
+        "Bundle of His & Purkinje System: Fast conducting pathways insulated by fibrous rings, ensuring contraction begins at the apex to wring blood upward into the aorta and pulmonary trunk."
+      ],
+      "processSequence": [
+        "1. SA node spontaneously fires: action potential sweeps across atria producing the ECG P Wave.",
+        "2. Impulse arrives at AV node: held for 0.1s represented by the isoelectric PR Segment.",
+        "3. Impulse enters Bundle of His and descends Left and Right Bundle Branches in the septum.",
+        "4. Purkinje fibers deliver impulse to ventricular myocardium: generates the prominent sharp QRS Complex.",
+        "5. Ventricles contract (Systole) ejecting stroke volume (~70 mL).",
+        "6. Ventricular repolarization occurs, producing the smooth upward deflection of the T Wave."
+      ],
+      "examTakeaway": "If the SA node fails, the AV node assumes pacing at 40–60 bpm (nodal rhythm). If AV conduction is blocked (complete heart block), atria and ventricles beat independently (AV dissociation)."
+    }
+  },
+  {
+    "key": "chloroplast_structure",
+    "topic": "Chloroplast Ultrastructure and Photosynthetic Thylakoids",
+    "subtopic": "Double Envelope, Stroma Matrix, Thylakoid Grana Discs, Stroma Lamellae and cpDNA",
+    "subject": "Biology",
+    "visualType": "biological_process_diagram",
+    "title": "Chloroplast Ultrastructure: Organelle of Photosynthesis",
+    "caption": "High-resolution cutaway diagram of the chloroplast showing double membrane envelope, aqueous stroma, stacked thylakoid grana, unstacked stroma lamellae, and endosymbiotic circular DNA.",
+    "publicUrl": "/images/educational/chloroplast_structure.svg",
+    "visualLearningPath": "visual_learning/assets/biology/chloroplast_structure.svg",
+    "labelsCount": 5,
+    "walkthrough": {
+      "whatItShows": "Detailed sub-cellular ultrastructure of the green plant chloroplast, illustrating spatial compartmentalization between light-harvesting grana and carbon-fixing stroma.",
+      "importantComponents": [
+        "Thylakoid Grana: Discs packed with chlorophyll a, chlorophyll b, carotenoids, and electron carriers. Thylakoid lumen accumulates H⁺ ions creating proton motive force (pH ~4.5 vs stroma pH ~8.0).",
+        "Stroma Matrix: Dense colloidal fluid containing RuBisCO (most abundant enzyme on Earth), responsible for carboxylation of Ribulose-1,5-bisphosphate (RuBP).",
+        "Semi-Autonomous Organelle: Chloroplasts reproduce via binary fission and synthesize several of their own polypeptides using circular cpDNA and 70S ribosomes."
+      ],
+      "processSequence": [
+        "1. Solar photons excite pigment molecules in Photosystem II located within thylakoid membranes.",
+        "2. Water photolysis (2H₂O → O₂ + 4H⁺ + 4e⁻) replenishes electrons and releases molecular oxygen.",
+        "3. Protons pumped across thylakoid membrane drive Chemiosmotic ATP Synthase into stroma.",
+        "4. High-energy ATP and NADPH diffuse into the aqueous stroma to power the Calvin Cycle (CO₂ fixation into glucose)."
+      ],
+      "examTakeaway": "Light reaction occurs in THYLAKOID MEMBRANE (produces ATP, NADPH, O₂). Dark reaction / Calvin cycle occurs in the STROMA (consumes ATP, NADPH, fixes CO₂ into glucose)."
+    }
+  },
+  {
+    "key": "magnetic_fields",
+    "topic": "Magnetic Fields and Solenoid Electromagnetism",
+    "subtopic": "Bar Magnet Dipole, Field Lines Direction, Solenoid Induction and Right-Hand Grip Rule",
+    "subject": "Physics",
+    "visualType": "physics_vector_schematic",
+    "title": "Magnetic Fields: Bar Magnet Flux Loops, Neutral Points and Solenoid B-Field",
+    "caption": "Vector depiction of closed continuous magnetic flux lines looping North to South outside and South to North inside a bar magnet, alongside a current-carrying solenoid coil.",
+    "publicUrl": "/images/educational/magnetic_fields.svg",
+    "visualLearningPath": "visual_learning/assets/physics/magnetic_fields.svg",
+    "labelsCount": 4,
+    "walkthrough": {
+      "whatItShows": "Vector geometry of magnetic field lines around permanent dipoles and electromagnets, illustrating continuous closed flux loops and the right-hand grip rule.",
+      "importantComponents": [
+        "External vs Internal Field: Magnetic field lines emerge from North pole and enter South pole externally, but continue from South to North internally, forming unbroken closed loops.",
+        "No Magnetic Monopoles: Gauss's Law for Magnetism (Gauss: ∮ B · dA = 0) confirms cutting a magnet creates two smaller dipoles, never isolated poles.",
+        "Uniform Solenoid Field: Inside a long tightly-wound solenoid, the magnetic field is uniform, parallel to axis, and calculated by B = μ₀ n I (where n = turns/length)."
+      ],
+      "processSequence": [
+        "1. Electric charge in motion creates a circulating magnetic field (Oersted's experiment).",
+        "2. In ferromagnetic materials, unaligned electron spin domains align in parallel to form permanent poles.",
+        "3. When electric current I passes through a helical solenoid, individual loop fields reinforce along the axis.",
+        "4. Placing a soft iron core inside dramatically multiplies magnetic field strength (electromagnet)."
+      ],
+      "examTakeaway": "Magnetic field lines NEVER cross or intersect! If they did, a magnetic compass placed at the intersection would have to point in two different directions at once, which is physically impossible!"
+    }
+  },
+  {
+    "key": "earth_layers",
+    "topic": "Earth's Internal Structure and Geosphere Layers",
+    "subtopic": "Crust, Lithosphere, Asthenosphere, Mantle, Liquid Outer Core and Solid Inner Core",
+    "subject": "Geography",
+    "visualType": "geological_cross_section",
+    "title": "Earth's Internal Structure: Radial Wedge, Convection Zones & Discontinuities",
+    "caption": "Radial wedge cross-section from surface continental crust (0 km) down through mantle convection, Gutenberg boundary, liquid iron-nickel outer core, and solid inner core (6371 km).",
+    "publicUrl": "/images/educational/earth_layers.svg",
+    "visualLearningPath": "visual_learning/assets/geography/earth_layers.svg",
+    "labelsCount": 4,
+    "walkthrough": {
+      "whatItShows": "Concentric spherical layering of planet Earth discovered through earthquake seismology (P-wave refraction and S-wave shadow zones).",
+      "importantComponents": [
+        "Crust: Oceanic crust is thin (5–10 km), dense (3.0 g/cm³), and basaltic (SiMa); continental crust is thick (30–50 km), buoyant (2.7 g/cm³), and granitic (SiAl).",
+        "Mantle: Comprises 84% of Earth's volume; peridotite rock; asthenosphere convection drives plate tectonics.",
+        "Outer Core vs Inner Core: Gutenberg Discontinuity (2900 km) separates solid mantle from molten liquid Outer Core (creates S-wave shadow 105°–142°). Inner Core is solid due to immense pressure."
+      ],
+      "processSequence": [
+        "1. Planetary Differentiation: 4.5 billion years ago, dense molten iron and nickel sank to form the core while buoyant silicate slag floated to form the crust.",
+        "2. Geodynamo Effect: Thermal and compositional convection in liquid outer core generates Earth's protective magnetic shield against solar wind.",
+        "3. Mantle Convection: Hot plumes rise from core-mantle boundary (D'' layer), cool beneath lithosphere, and descend in subduction zones."
+      ],
+      "examTakeaway": "Seismic S-waves cannot travel through liquids! The global S-wave shadow zone beyond 105° angular distance is the definitive empirical proof that the Earth's Outer Core is molten liquid!"
+    }
   }
 ]
