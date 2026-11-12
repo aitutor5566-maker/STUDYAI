@@ -992,7 +992,7 @@ export const ProfilePage: React.FC = () => {
                             onChange={(e) => setNewProfileGrade(e.target.value)}
                             style={{ padding: '8px 10px', borderRadius: 10, border: '1px solid #D1D5DB', fontSize: '0.85rem' }}
                           >
-                            {['Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12'].map((g) => (
+                            {['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12'].map((g) => (
                               <option key={g} value={g}>{g}</option>
                             ))}
                           </select>
@@ -1001,7 +1001,7 @@ export const ProfilePage: React.FC = () => {
                             onChange={(e) => setNewProfileBoard(e.target.value)}
                             style={{ padding: '8px 10px', borderRadius: 10, border: '1px solid #D1D5DB', fontSize: '0.85rem' }}
                           >
-                            {['CBSE', 'ICSE', 'Cambridge', 'IB', 'State Board'].map((b) => (
+                            {['CBSE', 'ICSE', 'AP_STATE_BOARD', 'TS_STATE_BOARD', 'State Board', 'Cambridge', 'IB'].map((b) => (
                               <option key={b} value={b}>{b}</option>
                             ))}
                           </select>
@@ -1036,11 +1036,13 @@ export const ProfilePage: React.FC = () => {
                               onChange={(e) => setAcadBoard(e.target.value)}
                               style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1px solid #D1D5DB', fontSize: '0.85rem' }}
                             >
-                              <option value="CBSE">CBSE (Central Board of Secondary Education)</option>
-                              <option value="ICSE">ICSE / ISC (Council for Indian School Certificate)</option>
+                              <option value="CBSE">CBSE / NCERT (Central Board of Secondary Education)</option>
+                              <option value="ICSE">ICSE / CISCE (Council for Indian School Certificate)</option>
+                              <option value="AP_STATE_BOARD">Andhra Pradesh State Board (SCERT AP)</option>
+                              <option value="TS_STATE_BOARD">Telangana State Board (SCERT TS)</option>
+                              <option value="State Board">State Board (General State Curriculum)</option>
                               <option value="Cambridge">Cambridge Assessment (IGCSE / A-Levels)</option>
                               <option value="IB">International Baccalaureate (IB MYP / DP)</option>
-                              <option value="State Board">State Board (Telangana / Maharashtra / AP / Karnataka)</option>
                             </select>
                           </div>
                           <div>
@@ -1052,7 +1054,7 @@ export const ProfilePage: React.FC = () => {
                               onChange={(e) => setAcadGrade(e.target.value)}
                               style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1px solid #D1D5DB', fontSize: '0.85rem' }}
                             >
-                              {['Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12'].map((g) => (
+                              {['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12'].map((g) => (
                                 <option key={g} value={g}>{g}</option>
                               ))}
                             </select>

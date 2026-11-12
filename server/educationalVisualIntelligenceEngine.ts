@@ -214,13 +214,14 @@ export class EducationalVisualIntelligenceEngine {
 
       if (existing && existing.svg_xml && params.preferredSource !== 'openai' && params.preferredSource !== 'gemini') {
         const labels = JSON.parse(existing.labels_json || '[]');
+        const detailed = getDetailedScientificAsset(existing.topic);
         const out: EducationalVisualOutput = {
           assetId: existing.image_id,
           topic: existing.topic,
           subject: existing.subject,
-          modality: existing.visual_category as VisualModality,
-          title: `${existing.topic} — Scientific Visual Schematic`,
-          caption: `Verified curriculum schematic for ${existing.topic}.`,
+          modality: (existing.visual_category as VisualModality) || detailed?.visualType || 'anatomical_cross_section',
+          title: detailed?.title || `${existing.topic} — Scientific Visual Schematic`,
+          caption: detailed?.caption || `Verified curriculum schematic for ${existing.topic}.`,
           dataUrl: existing.preview_url || `data:image/svg+xml;base64,${Buffer.from(existing.svg_xml).toString('base64')}`,
           sourceType: 'scientific_vector',
           providerUsed: existing.provider || 'STUDYAI Scientific Visual Engine',
@@ -233,16 +234,16 @@ export class EducationalVisualIntelligenceEngine {
             labelClarityScore: 98,
             freedomFromDistortionsScore: 98,
             feedbackNotes: ['Retrieved verified curriculum vector asset from visual library.'],
-            verifiedAnatomyPresent: plan.expectedComponents,
+            verifiedAnatomyPresent: plan.expectedComponents.length > 0 ? plan.expectedComponents : (labels.map((l: any) => l.name) || []),
             missingElements: []
           },
-          walkthrough: {
+          walkthrough: detailed?.walkthrough || {
             whatItShows: `Detailed visual schematic illustrating ${plan.topic}.`,
-            importantComponents: plan.expectedComponents,
+            importantComponents: plan.expectedComponents.length > 0 ? plan.expectedComponents : (labels.map((l: any) => l.name) || []),
             processSequence: ['Structure identification', 'Directional interaction flow', 'Curriculum takeaway'],
             examTakeaway: plan.primaryExplanationGoal
           },
-          labels,
+          labels: labels.length > 0 ? labels : (detailed?.labels || []),
           interactive3dSupported: Boolean(plan.recommendedModel3d),
           recommendedModel3d: plan.recommendedModel3d
         };
@@ -570,10 +571,18 @@ export class EducationalVisualIntelligenceEngine {
     const isSvg = imageOrSvg.includes('<svg') || imageOrSvg.startsWith('data:image/svg+xml');
     const content = imageOrSvg.toLowerCase();
 
-    // Check expected components
-    const foundComponents = plan.expectedComponents.filter(
-      (c) => content.includes(c.toLowerCase()) || detectedLabels.some((l) => l.toLowerCase().includes(c.toLowerCase()))
-    );
+    // Check expected components by matching words / sub-tokens
+    const foundComponents = plan.expectedComponents.filter((c) => {
+      const cLower = c.toLowerCase();
+      if (content.includes(cLower) || detectedLabels.some((l) => l.toLowerCase().includes(cLower))) {
+        return true;
+      }
+      // Check token stems (e.g. "thylakoid", "stroma", "calvin", "photons", "atp")
+      const tokens = cLower
+        .split(/[\s,()\-→/]+/)
+        .filter((t) => t.length >= 4 && !['discs', 'fluid', 'matrix', 'energy', 'carriers'].includes(t));
+      return tokens.some((tok) => content.includes(tok) || detectedLabels.some((l) => l.toLowerCase().includes(tok)));
+    });
     const missing = plan.expectedComponents.filter((c) => !foundComponents.includes(c));
 
     const completeness = plan.expectedComponents.length > 0

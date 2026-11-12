@@ -95,6 +95,31 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
   const whyItHappens = explanation?.whyItHappens;
   const takeaway = explanation?.importantTakeaway || explanation?.examTip;
 
+  // Normalize SVG XML so it never forces an oversized pixel width and always preserves aspect ratio
+  const normalizedSvgXml = React.useMemo(() => {
+    if (!visual.svgXml || typeof visual.svgXml !== 'string') return '';
+    const trimmed = visual.svgXml.trim();
+    if (!trimmed.startsWith('<svg')) return '';
+    return trimmed
+      .replace(/\bwidth="[^"]*"/i, 'width="100%"')
+      .replace(/\bheight="[^"]*"/i, 'height="auto"')
+      .replace(/<svg\b([^>]*?)>/i, (match, attrs) =>
+        attrs.includes('preserveAspectRatio')
+          ? match
+          : `<svg${attrs} preserveAspectRatio="xMidYMid meet">`
+      );
+  }, [visual.svgXml]);
+
+  // Unified data URL / image URL for guaranteed fit-contain rendering without DOM ID collisions
+  const resolvedImageUrl = React.useMemo(() => {
+    if (visual.dataUrl && visual.dataUrl.trim()) return visual.dataUrl;
+    if (visual.imageUrl && visual.imageUrl.trim()) return visual.imageUrl;
+    if (normalizedSvgXml) {
+      return `data:image/svg+xml;utf8,${encodeURIComponent(normalizedSvgXml)}`;
+    }
+    return '';
+  }, [visual.dataUrl, visual.imageUrl, normalizedSvgXml]);
+
   const handleCopySvgOrUrl = () => {
     const textToCopy = visual.svgXml || visual.dataUrl || visual.imageUrl || '';
     if (navigator.clipboard) {
@@ -324,14 +349,19 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
         className="educational-visual-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))',
           gap: 20,
-          padding: 18
+          padding: 18,
+          alignItems: 'start',
+          boxSizing: 'border-box'
         }}
       >
-        {/* LEFT COLUMN: Visual Area (Image or Programmatic SVG) */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* LEFT COLUMN: Visual Area (Complete Image Visible by Default, Fit-Contain, Zero Forced Crop/Zoom) */}
+        <div className="educational-visual-col" style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
           <div
+            className="educational-visual-stage"
+            onClick={() => setZoomOpen(true)}
+            title="Click to open full-screen diagram view"
             style={{
               position: 'relative',
               borderRadius: 16,
@@ -342,31 +372,44 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              minHeight: 280
+              padding: 12,
+              minHeight: 220,
+              maxHeight: 380,
+              width: '100%',
+              boxSizing: 'border-box',
+              cursor: 'zoom-in'
             }}
           >
-            {visual.svgXml ? (
-              <div
-                dangerouslySetInnerHTML={{ __html: visual.svgXml }}
-                style={{ width: '100%', height: 'auto', display: 'block' }}
-              />
-            ) : (
+            {resolvedImageUrl ? (
               <img
-                src={visual.dataUrl || visual.imageUrl}
+                className="educational-visual-img"
+                src={resolvedImageUrl}
                 alt={displayTitle}
                 style={{
                   width: '100%',
-                  maxHeight: 420,
+                  maxWidth: '100%',
+                  height: 'auto',
+                  maxHeight: 350,
                   objectFit: 'contain',
-                  display: 'block'
+                  display: 'block',
+                  margin: '0 auto'
                 }}
               />
-            )}
+            ) : normalizedSvgXml ? (
+              <div
+                className="diagram-responsive-frame"
+                dangerouslySetInnerHTML={{ __html: normalizedSvgXml }}
+                style={{ width: '100%', maxWidth: '100%', maxHeight: 350, height: 'auto', display: 'block' }}
+              />
+            ) : null}
 
             {/* Click to Zoom Hint Overlay */}
             <button
               type="button"
-              onClick={() => setZoomOpen(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setZoomOpen(true);
+              }}
               style={{
                 position: 'absolute',
                 top: 10,
@@ -625,9 +668,10 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
         </div>
       </div>
 
-      {/* Fullscreen Zoom Modal */}
+      {/* Fullscreen Zoom Modal (Intentional Click-to-Zoom with Clear Return to Normal View) */}
       {zoomOpen && (
         <div
+          onClick={() => setZoomOpen(false)}
           style={{
             position: 'fixed',
             inset: 0,
@@ -639,7 +683,10 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
             padding: 24
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}
+          >
             <div style={{ color: '#FFFFFF', fontWeight: 900, fontSize: '1.1rem' }}>
               {displayTitle}
             </div>
@@ -647,31 +694,37 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
               type="button"
               onClick={() => setZoomOpen(false)}
               style={{
-                padding: '8px 16px',
+                padding: '8px 18px',
                 borderRadius: 999,
                 background: '#FF6A00',
                 color: '#FFFFFF',
                 border: 'none',
                 fontWeight: 800,
-                cursor: 'pointer'
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6
               }}
             >
-              ✕ Close
+              <span>← Return to Lesson View (Close)</span>
             </button>
           </div>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'auto' }}>
-            {visual.svgXml ? (
-              <div
-                dangerouslySetInnerHTML={{ __html: visual.svgXml }}
-                style={{ maxWidth: '90vw', maxHeight: '82vh' }}
-              />
-            ) : (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'auto' }}
+          >
+            {resolvedImageUrl ? (
               <img
-                src={visual.dataUrl || visual.imageUrl}
+                src={resolvedImageUrl}
                 alt={displayTitle}
-                style={{ maxWidth: '90vw', maxHeight: '82vh', objectFit: 'contain' }}
+                style={{ width: 'auto', height: 'auto', maxWidth: '90vw', maxHeight: '82vh', objectFit: 'contain' }}
               />
-            )}
+            ) : normalizedSvgXml ? (
+              <div
+                dangerouslySetInnerHTML={{ __html: normalizedSvgXml }}
+                style={{ maxWidth: '90vw', maxHeight: '82vh', width: '100%' }}
+              />
+            ) : null}
           </div>
         </div>
       )}

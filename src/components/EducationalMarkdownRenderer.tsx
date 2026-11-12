@@ -227,7 +227,16 @@ export const EducationalMarkdownRenderer: React.FC<EducationalMarkdownRendererPr
           case 'image': {
             const isDataUrl = block.url?.startsWith('data:');
             const cleanUrl = isDataUrl ? block.url : block.url;
-            const isSvgXml = cleanUrl?.startsWith('data:image/svg+xml');
+            let decodedSvgXml: string | undefined = undefined;
+            if (cleanUrl?.startsWith('data:image/svg+xml;utf8,')) {
+              try {
+                decodedSvgXml = decodeURIComponent(cleanUrl.split(',')[1] || '');
+              } catch {}
+            } else if (cleanUrl?.startsWith('data:image/svg+xml;base64,')) {
+              try {
+                decodedSvgXml = atob(cleanUrl.split(',')[1] || '');
+              } catch {}
+            }
 
             return (
               <EducationalVisualLayout
@@ -238,7 +247,7 @@ export const EducationalMarkdownRenderer: React.FC<EducationalMarkdownRendererPr
                   caption: block.caption || 'Academic curriculum visual with verified schematic labels.',
                   imageUrl: cleanUrl,
                   dataUrl: cleanUrl,
-                  svgXml: isSvgXml ? decodeURIComponent(cleanUrl.split(',')[1] || '') : undefined,
+                  svgXml: decodedSvgXml,
                   diagramType: 'Educational Diagram',
                   labels: block.explanation?.keyComponents
                 }}
