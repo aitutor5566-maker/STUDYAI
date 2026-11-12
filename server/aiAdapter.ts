@@ -22,6 +22,8 @@ import {
   type ProcessedSourceRecord,
   type NotebookSection
 } from './notesNotebookEngine.ts';
+import { getDetailedScientificAsset } from './scientificVectorLibrary.ts';
+import { educationalVisualIntelligenceEngine } from './educationalVisualIntelligenceEngine.ts';
 
 export {
   prepareTeacherNarrationScript,
@@ -898,106 +900,26 @@ export async function generateEducationalImage(
 }> {
   const cleanTopic = topic.trim() || 'Photosynthesis';
   const styleDesc = promptDetails || 'Educational Scientific Diagram with clear labels';
-  // Infer diagram type ONLY from cleanTopic so promptDetails never accidentally triggers another topic
-  const knownDiagram = inferDiagramType(cleanTopic);
 
-  if (knownDiagram === 'atp_structure') {
-    const atp = renderSpecializedSecondarySvg('atp_structure', cleanTopic);
-    const validation = validateImageAsset(atp.dataUrl, cleanTopic, atp.explanation);
-    return {
-      dataUrl: atp.dataUrl,
-      diagramType: 'atp_structure',
-      caption: atp.caption,
-      limitationNote: 'Validated molecular schematic showing Adenine, Ribose, and Alpha/Beta/Gamma Phosphate groups.',
-      providerUsed: 'Gemini Nano Banana / STUDYAI Scientific Visual Engine',
-      explanation: atp.explanation,
-      validation
-    };
-  }
+  // Delegate to Central Educational Visual Intelligence Engine for multimodal routing & quality check
+  const produced = await educationalVisualIntelligenceEngine.produceEducationalVisual({
+    topic: cleanTopic,
+    preferredSource: allowExternalNetwork ? 'auto' : 'vector'
+  });
 
-  if (knownDiagram !== 'concept_diagram') {
-    const svgResult = generateScientificSvgDataUrl(cleanTopic, styleDesc);
-    const explanation = buildPrimaryImageWalkthrough(knownDiagram, cleanTopic, []);
-    const validation = validateImageAsset(svgResult.dataUrl, cleanTopic, explanation);
-    return {
-      ...svgResult,
-      providerUsed: 'Gemini Nano Banana / STUDYAI Scientific Visual Engine',
-      explanation,
-      validation
-    };
-  }
-
-  if (allowExternalNetwork) {
-    // 1. Try Gemini Nano Banana raster image model if quota available
-    const geminiKey = process.env.GEMINI_API_KEY?.trim();
-    if (geminiKey && geminiKey.length > 10) {
-      const modelName = process.env.GEMINI_IMAGE_MODEL || 'gemini-3.1-flash-image';
-      try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 4500);
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(geminiKey)}`;
-        const imagePrompt = `Create a bright, crystal-clear educational textbook illustration for students about "${cleanTopic}" (${styleDesc}). Include clear visual structure and educational clarity.`;
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: imagePrompt }] }],
-            generationConfig: {
-              responseModalities: ['TEXT', 'IMAGE']
-            }
-          }),
-          signal: controller.signal
-        });
-        clearTimeout(timer);
-
-        if (res.ok) {
-          const data = (await res.json()) as any;
-          const parts: any[] = data?.candidates?.[0]?.content?.parts || [];
-          const imgPart = parts.find((p) => p?.inlineData?.data);
-          if (imgPart?.inlineData?.data) {
-            const mime = imgPart.inlineData.mimeType || 'image/png';
-            const dataUrl = `data:${mime};base64,${imgPart.inlineData.data}`;
-            const explanation = buildPrimaryImageWalkthrough(knownDiagram, cleanTopic, []);
-            const validation = validateImageAsset(dataUrl, cleanTopic, explanation);
-            return {
-              dataUrl,
-              diagramType: knownDiagram,
-              caption: `Nano Banana AI Visual: ${cleanTopic} (${styleDesc})`,
-              limitationNote:
-                'Generated via Google Gemini Nano Banana Image Model. Always verify scientific labels and stoichiometry against your curriculum textbook.',
-              providerUsed: `Google Gemini (${modelName})`,
-              explanation,
-              validation
-            };
-          }
-        }
-      } catch {
-        // Fall through to Live AI Dynamic SVG Diagram Architect
-      }
-    }
-
-    // 2. Live AI Dynamic SVG Diagram Architect (Groq GPT-OSS-120B / Gemini 3.8 Flash)
-    const aiSvg = await generateAiDynamicSvgDiagram(cleanTopic, styleDesc);
-    if (aiSvg) {
-      const explanation = buildPrimaryImageWalkthrough(aiSvg.diagramType, cleanTopic, []);
-      const validation = validateImageAsset(aiSvg.dataUrl, cleanTopic, explanation);
-      return {
-        ...aiSvg,
-        explanation,
-        validation
-      };
-    }
-  }
-
-  // 3. Fallback static SVG illustration
-  const svgResult = generateScientificSvgDataUrl(cleanTopic, styleDesc);
-  const explanation = buildPrimaryImageWalkthrough(svgResult.diagramType, cleanTopic, []);
-  const validation = validateImageAsset(svgResult.dataUrl, cleanTopic, explanation);
   return {
-    ...svgResult,
-    providerUsed: 'STUDYAI Scientific Visual Engine',
-    explanation,
-    validation
+    dataUrl: produced.dataUrl,
+    diagramType: produced.modality,
+    caption: produced.caption,
+    limitationNote: produced.qualityAssessment.feedbackNotes[0] || 'Verified curriculum schematic with programmatic labels.',
+    providerUsed: produced.providerUsed,
+    explanation: produced.walkthrough,
+    validation: {
+      isAcceptable: produced.qualityAssessment.overallStatus === 'approved' || produced.qualityAssessment.overallStatus === 'approved_with_limitations',
+      score: produced.qualityAssessment.qualityScore,
+      labelsFound: produced.labels.map((l) => l.name),
+      notes: produced.qualityAssessment.feedbackNotes
+    }
   };
 }
 
@@ -1365,7 +1287,10 @@ ${visualComponentContext}${
     // otherwise synthesize a bespoke topic-specific diagram directly from the LLM's keySteps, definitions, and formula!
     let visualDataUrl = '';
     let visualCaption = '';
-    if (diagramType !== 'concept_diagram') {
+    const detailedAssetCandidate =
+      getDetailedScientificAsset(resolvedTopic) ||
+      getDetailedScientificAsset(cleanQuestion);
+    if (detailedAssetCandidate || diagramType !== 'concept_diagram') {
       const specSvg = generateScientificSvgDataUrl(resolvedTopic, cleanQuestion);
       visualDataUrl = specSvg.dataUrl;
       visualCaption = specSvg.caption;
@@ -2976,6 +2901,22 @@ export function generateScientificSvgDataUrl(topic: string, promptDetails?: stri
   const primaryType = inferDiagramType(topic);
   const diagramType = primaryType !== 'concept_diagram' ? primaryType : inferDiagramType(promptDetails || '');
   const cleanTitle = topic.replace(/[<>&"']/g, '');
+
+  // 1. Check High-Precision Scientific & Anatomical Vector Registry
+  const detailedAsset =
+    getDetailedScientificAsset(cleanTitle) ||
+    getDetailedScientificAsset(diagramType) ||
+    (promptDetails ? getDetailedScientificAsset(promptDetails) : null);
+  if (detailedAsset) {
+    const base64 = Buffer.from(detailedAsset.svgXml, 'utf-8').toString('base64');
+    return {
+      dataUrl: `data:image/svg+xml;base64,${base64}`,
+      diagramType: detailedAsset.visualType || diagramType,
+      caption: detailedAsset.caption || detailedAsset.title,
+      limitationNote:
+        'STUDYAI Scientific Visual Notice: High-precision anatomical & scientific vector schematic with verified curriculum annotations.'
+    };
+  }
 
   if (diagramType === 'atp_structure') {
     const atp = renderSpecializedSecondarySvg('atp_structure', cleanTitle);

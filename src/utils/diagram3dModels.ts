@@ -985,6 +985,148 @@ export function buildElectricMotor(): Diagram3DModelResult {
   };
 }
 
+export function buildDnaHelix(): Diagram3DModelResult {
+  const rootGroup = new THREE.Group();
+  const components: Record<string, THREE.Object3D[]> = {
+    backbone: [],
+    at_pair: [],
+    gc_pair: []
+  };
+  const animatedNodes: THREE.Object3D[] = [];
+  const cutawayMeshes: THREE.Mesh[] = [];
+
+  const matBackbone1 = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3, metalness: 0.1 });
+  const matBackbone2 = new THREE.MeshStandardMaterial({ color: 0xbe185d, roughness: 0.3, metalness: 0.1 });
+  const matAdenine = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.3 });
+  const matThymine = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3 });
+  const matGuanine = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.3 });
+  const matCytosine = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.3 });
+  const matHBond = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+
+  const numTurns = 2;
+  const numSteps = 24;
+  const height = 4.2;
+  const radius = 1.1;
+
+  for (let i = 0; i <= numSteps; i++) {
+    const t = i / numSteps;
+    const angle = t * Math.PI * 2 * numTurns;
+    const y = (t - 0.5) * height;
+
+    const x1 = Math.cos(angle) * radius;
+    const z1 = Math.sin(angle) * radius;
+    const x2 = Math.cos(angle + Math.PI) * radius;
+    const z2 = Math.sin(angle + Math.PI) * radius;
+
+    // Backbone spheres
+    const b1 = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), matBackbone1);
+    b1.position.set(x1, y, z1);
+    const b2 = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), matBackbone2);
+    b2.position.set(x2, y, z2);
+    rootGroup.add(b1, b2);
+    components.backbone.push(b1, b2);
+
+    // Rung (Base Pair)
+    const isAT = (i % 2 === 0);
+    const rGroup = new THREE.Group();
+    const half1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, radius, 8), isAT ? matAdenine : matGuanine);
+    const half2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, radius, 8), isAT ? matThymine : matCytosine);
+    const bond = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), matHBond);
+
+    half1.position.set(x1 * 0.5, y, z1 * 0.5);
+    half2.position.set(x2 * 0.5, y, z2 * 0.5);
+    bond.position.set(0, y, 0);
+
+    half1.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(x1, 0, z1).normalize());
+    half2.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(x2, 0, z2).normalize());
+
+    rGroup.add(half1, half2, bond);
+    rootGroup.add(rGroup);
+
+    if (isAT) {
+      components.at_pair.push(rGroup);
+    } else {
+      components.gc_pair.push(rGroup);
+    }
+  }
+
+  return {
+    rootGroup,
+    components,
+    animatedNodes,
+    cutawayMeshes,
+    defaultCameraPosition: [0, 0, 4.5],
+    studioBackground: '#0b132b',
+    onAnimate: (clock: number, speed: number) => {
+      rootGroup.rotation.y = clock * speed * 0.8;
+    }
+  };
+}
+
+export function buildPlantCell(): Diagram3DModelResult {
+  const rootGroup = new THREE.Group();
+  const components: Record<string, THREE.Object3D[]> = {
+    cell_wall: [],
+    vacuole: [],
+    chloroplasts: [],
+    nucleus: [],
+    mitochondria: []
+  };
+  const animatedNodes: THREE.Object3D[] = [];
+  const cutawayMeshes: THREE.Mesh[] = [];
+
+  const matWall = new THREE.MeshStandardMaterial({ color: 0x059669, roughness: 0.4, side: THREE.DoubleSide });
+  const matVacuole = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.1, transparent: true, opacity: 0.75 });
+  const matChloro = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.3 });
+  const matNucleus = new THREE.MeshStandardMaterial({ color: 0x7c3aed, roughness: 0.35 });
+
+  // Hexagonal Prism Cell Wall Cutaway
+  const wall = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 2.2, 6, 1, true), matWall);
+  rootGroup.add(wall);
+  components.cell_wall.push(wall);
+  cutawayMeshes.push(wall);
+
+  // Large Central Vacuole
+  const vac = new THREE.Mesh(new THREE.SphereGeometry(0.85, 24, 24), matVacuole);
+  vac.position.set(-0.25, 0, -0.1);
+  vac.scale.set(1.2, 1, 0.9);
+  rootGroup.add(vac);
+  components.vacuole.push(vac);
+
+  // Nucleus
+  const nuc = new THREE.Mesh(new THREE.SphereGeometry(0.42, 20, 20), matNucleus);
+  nuc.position.set(0.85, 0.3, 0.2);
+  rootGroup.add(nuc);
+  components.nucleus.push(nuc);
+
+  // Chloroplasts (4 green organelles)
+  const chloroPositions = [
+    [0.9, -0.5, -0.3],
+    [-0.8, 0.6, 0.4],
+    [-0.7, -0.6, 0.3],
+    [0.2, 0.7, -0.6]
+  ];
+  chloroPositions.forEach((pos) => {
+    const c = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 16), matChloro);
+    c.scale.set(1.4, 0.8, 0.8);
+    c.position.set(pos[0], pos[1], pos[2]);
+    rootGroup.add(c);
+    components.chloroplasts.push(c);
+  });
+
+  return {
+    rootGroup,
+    components,
+    animatedNodes,
+    cutawayMeshes,
+    defaultCameraPosition: [0, 1.5, 4.2],
+    studioBackground: '#062e1f',
+    onAnimate: (clock: number, speed: number) => {
+      rootGroup.rotation.y = clock * speed * 0.4;
+    }
+  };
+}
+
 // Model Registry Map
 export const PROCEDURAL_3D_BUILDERS: Record<string, () => Diagram3DModelResult> = {
   electric_circuit: buildElectricCircuit,
@@ -992,7 +1134,9 @@ export const PROCEDURAL_3D_BUILDERS: Record<string, () => Diagram3DModelResult> 
   human_torso_anatomy: buildHumanTorsoAnatomy,
   human_heart: buildHumanHeart,
   human_ear: buildHumanEar,
-  electric_motor: buildElectricMotor
+  electric_motor: buildElectricMotor,
+  dna_helix: buildDnaHelix,
+  plant_cell: buildPlantCell
 };
 
 export interface ModelPartInfo {
@@ -1214,6 +1358,25 @@ export const VERIFIED_MODEL_SPECS: Record<string, ModelSpec> = {
       { step: '1. Antiparallel Rails', detail: 'One strand runs 5’ to 3’ while the complementary strand runs antiparallel 3’ to 5’.' },
       { step: '2. Complementary Pairing', detail: 'Chargaff’s rule: Adenine pairs exclusively with Thymine, and Guanine with Cytosine.' },
       { step: '3. Replication Unzipping', detail: 'DNA helicase unzips hydrogen bonds during S-phase to create replication forks.' }
+    ]
+  },
+  plant_cell: {
+    id: 'plant_cell',
+    title: 'Eukaryotic Plant Cell (3D Cutaway Organelle Model)',
+    subject: 'Biology • Cellular Biology',
+    verificationBadge: 'Verified Cellular Cutaway • Cell Wall, Vacuole & Chloroplasts',
+    studioBackground: '#062e1f',
+    mechanismSummary: 'Plant cell architecture: Rigid cellulose wall maintains turgor pressure, chloroplasts conduct photosynthesis, central vacuole stores water and nutrients.',
+    parts: [
+      { id: 'cell_wall', label: 'Cellulose Cell Wall', role: 'Rigid outer protective barrier maintaining hydrostatic turgor pressure.', color: '#059669', pinPosition: [1.5, 0, 0] },
+      { id: 'vacuole', label: 'Central Vacuole', role: 'Stores cell sap and generates osmotic turgor to keep plant upright.', color: '#38bdf8', pinPosition: [-0.2, 0, 0] },
+      { id: 'chloroplasts', label: 'Photosynthetic Chloroplasts', role: 'Contains chlorophyll and thylakoid grana to synthesize glucose.', color: '#22c55e', pinPosition: [0.9, -0.5, 0] },
+      { id: 'nucleus', label: 'Nucleus & Genetic Material', role: 'Houses chromosomal DNA and coordinates cellular division.', color: '#7c3aed', pinPosition: [0.85, 0.3, 0] }
+    ],
+    guidedSteps: [
+      { step: '1. Cell Wall Turgor', detail: 'Osmotic influx of water causes vacuole expansion, pressing against cellulose wall.' },
+      { step: '2. Solar Fixation in Chloroplasts', detail: 'Chloroplast thylakoids capture photons to generate ATP and NADPH for the Calvin cycle.' },
+      { step: '3. Nuclear Direction', detail: 'Nuclear pores export messenger RNA to ribosomes for protein translation.' }
     ]
   }
 };

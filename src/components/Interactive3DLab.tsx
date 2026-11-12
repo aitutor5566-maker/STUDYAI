@@ -85,6 +85,7 @@ export const Interactive3DViewer: React.FC<Interactive3DViewerProps> = ({
       if (lower.includes('heart') || lower.includes('blood') || lower.includes('cardiac')) return 'human_heart';
       if (lower.includes('solar') || lower.includes('orbit') || lower.includes('planet')) return 'solar_system';
       if (lower.includes('dna') || lower.includes('gene')) return 'dna_helix';
+      if (lower.includes('plant cell') || lower.includes('vacuole') || lower.includes('chloroplast')) return 'plant_cell';
     }
     return 'human_heart';
   }, [topic, modelType]);

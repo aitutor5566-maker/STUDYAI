@@ -11,8 +11,10 @@ import {
   Layers,
   ArrowRight,
   HelpCircle,
-  X
+  X,
+  Box
 } from 'lucide-react';
+import { Interactive3DViewer } from './Interactive3DLab';
 
 export interface VisualLabelItem {
   key?: string;
@@ -33,6 +35,8 @@ export interface EducationalVisualProps {
     diagramType?: string;
     provider?: string;
     limitationNote?: string;
+    interactive3dSupported?: boolean;
+    recommendedModel3d?: string;
   };
   explanation?: {
     visualTitle?: string;
@@ -67,6 +71,7 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
   readOnly = false
 }) => {
   const [zoomOpen, setZoomOpen] = useState(false);
+  const [show3dModal, setShow3dModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editTitle, setEditTitle] = useState(visual.title || '');
@@ -74,6 +79,14 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
     (visual.labels || explanation?.keyComponents || []).map((l) => `${l.label}: ${l.description || ''}`).join('\n')
   );
   const [activeComponent, setActiveComponent] = useState<VisualLabelItem | null>(null);
+
+  const has3D =
+    visual.interactive3dSupported ||
+    Boolean(visual.recommendedModel3d) ||
+    /heart|cardiac|lungs|circuit|electric|dna|plant cell|solar system|torso|ear|motor/i.test(
+      visual.title || visual.diagramType || ''
+    );
+  const modelKey = visual.recommendedModel3d || visual.diagramType;
 
   const displayTitle = explanation?.visualTitle || visual.title || 'Verified Scientific Diagram';
   const displayCaption = visual.caption || 'Curriculum-aligned scientific diagram with validated anatomical and schematic labels.';
@@ -171,6 +184,31 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
 
         {/* ChatGPT-style diagram action controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {has3D && (
+            <button
+              type="button"
+              onClick={() => setShow3dModal(true)}
+              title="Launch Interactive 3D Model Lab"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '5px 12px',
+                borderRadius: 8,
+                border: '1px solid #FF6A00',
+                background: 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)',
+                color: '#FFFFFF',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(255, 106, 0, 0.25)'
+              }}
+            >
+              <Box size={13} />
+              <span>3D Lab</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => setZoomOpen(true)}
@@ -746,6 +784,44 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Interactive 3D Model Modal */}
+      {show3dModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            backgroundColor: 'rgba(15, 23, 42, 0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16
+          }}
+        >
+          <div
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: 960,
+              height: '82vh',
+              borderRadius: 20,
+              overflow: 'hidden',
+              boxShadow: '0 24px 60px rgba(0, 0, 0, 0.6)',
+              background: '#0F172A',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            <Interactive3DViewer
+              topic={visual.title}
+              modelType={modelKey}
+              onClose={() => setShow3dModal(false)}
+            />
           </div>
         </div>
       )}

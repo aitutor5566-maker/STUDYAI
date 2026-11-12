@@ -5,6 +5,7 @@ import path from 'node:path';
 import { URL } from 'node:url';
 import { db, initDatabase, hashSecret, softDeleteTutorMessage, updateTutorMessageContent, updateTutorMessageStructuredJson } from './db.ts';
 import { EducationalVisualPlanningEngine } from './educationalVisualPlanningEngine.ts';
+import { educationalVisualIntelligenceEngine } from './educationalVisualIntelligenceEngine.ts';
 import { SavedNotesVisualUpgradeEngine } from './savedNotesVisualUpgradeEngine.ts';
 import {
   getProviderStatus,
@@ -1084,6 +1085,34 @@ export function createAppServer() {
             ]
           }
         });
+        return;
+      }
+
+      // ==============================================================================
+      // EDUCATIONAL VISUAL INTELLIGENCE & 3D ADMIN / DIAGNOSTICS
+      // ==============================================================================
+      if ((pathname === '/api/admin/visual-intelligence' || pathname === '/api/v1/visuals/admin-stats') && req.method === 'GET') {
+        const metrics = educationalVisualIntelligenceEngine.getVisualIntelligenceMetrics();
+        sendJson(res, 200, metrics);
+        return;
+      }
+
+      if ((pathname === '/api/visual-intelligence/produce' || pathname === '/api/v1/visuals/produce') && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        if (!body.topic) {
+          sendJson(res, 400, { error: 'topic is required' });
+          return;
+        }
+        const produced = await educationalVisualIntelligenceEngine.produceEducationalVisual({
+          topic: sanitizeText(body.topic, 100),
+          subtopic: body.subtopic ? sanitizeText(body.subtopic, 100) : undefined,
+          subject: body.subject ? sanitizeText(body.subject, 50) : undefined,
+          grade: typeof body.grade === 'number' ? body.grade : 10,
+          board: body.board ? sanitizeText(body.board, 30) : 'CBSE',
+          preferredSource: body.preferredSource || 'auto',
+          allowExternalNetwork: body.allowExternalNetwork ?? false
+        });
+        sendJson(res, 200, { success: true, visual: produced });
         return;
       }
 
