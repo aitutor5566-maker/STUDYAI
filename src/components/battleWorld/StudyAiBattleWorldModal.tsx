@@ -94,11 +94,15 @@ export const StudyAiBattleWorldModal: React.FC = () => {
     if (modalGames.open) {
       if (modalGames.topic) setTopic(modalGames.topic);
       if (modalGames.subject) setSubject(modalGames.subject);
-      setStage('setup');
       setAnsweredFeedback(null);
       setMistakesList([]);
+      if (modalGames.autoStart) {
+        handleStartGame();
+      } else {
+        setStage('setup');
+      }
     }
-  }, [modalGames.open, modalGames.topic, modalGames.subject]);
+  }, [modalGames.open, modalGames.topic, modalGames.subject, modalGames.autoStart]);
 
   // Load next question from QuestionEngine
   const fetchNextQuestion = useCallback(async () => {

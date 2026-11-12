@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
-import { Sword, Trophy, Sparkles, ChevronRight, Shield, Flame, Compass } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Sword, Trophy, Sparkles, ChevronRight, Shield, Flame, Compass, Gamepad2 } from 'lucide-react';
 import { useLearning } from '../context/LearningContext';
 import { ARENA_DEFINITIONS } from '../games/battleWorld/VoxelArenaManager';
 
 export const EducationalGamesSection: React.FC = () => {
+  const navigate = useNavigate();
   const { activeTopic, openGamesHub } = useLearning();
   const [topic, setTopic] = useState<string>(activeTopic || 'Photosynthesis');
 
   const arenas = Object.values(ARENA_DEFINITIONS);
 
   const handleLaunchBattleWorld = () => {
-    openGamesHub(topic || 'Photosynthesis', 'Science');
+    openGamesHub(topic || 'Photosynthesis', 'Science', 'battle_world', true);
   };
 
   return (
@@ -141,6 +143,28 @@ export const EducationalGamesSection: React.FC = () => {
             <Sword size={18} />
             <span>PLAY BATTLE WORLD</span>
             <ChevronRight size={16} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate('/games')}
+            style={{
+              padding: '10px 18px',
+              borderRadius: 14,
+              background: 'rgba(255, 255, 255, 0.1)',
+              color: '#FFFFFF',
+              fontWeight: 800,
+              fontSize: '0.86rem',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Gamepad2 size={16} color="#FDBA74" />
+            <span>Full Game Center →</span>
           </button>
         </div>
       </div>

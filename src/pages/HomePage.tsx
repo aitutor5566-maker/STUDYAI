@@ -150,11 +150,11 @@ export const HomePage: React.FC = () => {
       onClick: () => navigate(`/notes?topic=${encodeURIComponent(heroTopicInput || activeTopic)}&auto=true`)
     },
     {
-      label: 'Academic Games',
-      subtitle: '7 Curriculum Mastery Games',
-      tag: 'Gamified Practice',
+      label: 'Battle World',
+      subtitle: '3D Voxel Educational RPG',
+      tag: 'Game Center',
       iconName: 'games',
-      onClick: () => openGamesHub(heroTopicInput || activeTopic)
+      onClick: () => navigate('/games')
     },
     {
       label: 'Saved Library',

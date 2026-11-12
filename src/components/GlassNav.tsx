@@ -11,6 +11,7 @@ export const GlassNav: React.FC = () => {
     { path: '/', label: 'Home', ariaLabel: 'Home Dashboard', iconName: 'home' },
     { path: '/notes', label: 'Notes', ariaLabel: 'AI Notes Studio', iconName: 'notes' },
     { path: '/tutor', label: 'AI Tutor', ariaLabel: 'AI Tutor Teaching Studio', iconName: 'tutor' },
+    { path: '/games', label: 'Games', ariaLabel: 'STUDYAI Battle World Game Center', iconName: 'games' },
     { path: '/library', label: 'Library', ariaLabel: 'Saved Learning Library', iconName: 'library' },
     { path: '/profile', label: 'Profile', ariaLabel: 'Student Profile and Parent Dashboard', iconName: 'profile' }
   ];

@@ -68,8 +68,8 @@ export interface LearningContextType {
   modalVideo: { open: boolean; topic: string };
   openVideoStudio: (topic?: string) => void;
   closeVideoStudio: () => void;
-  modalGames: { open: boolean; topic: string; subject: string; initialGame?: 'answer_battle' | 'learning_runner' | 'space_shooter' };
-  openGamesHub: (topic?: string, subject?: string, initialGame?: 'answer_battle' | 'learning_runner' | 'space_shooter') => void;
+  modalGames: { open: boolean; topic: string; subject: string; initialGame?: string; autoStart?: boolean };
+  openGamesHub: (topic?: string, subject?: string, initialGame?: string, autoStart?: boolean) => void;
   closeGamesHub: () => void;
   modalQuiz: { open: boolean; topic: string; subject: string };
   openQuizModal: (topic?: string, subject?: string) => void;
@@ -291,12 +291,13 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
   const closeVideoStudio = () => setModalVideo((prev) => ({ ...prev, open: false }));
 
-  const openGamesHub = (topic?: string, subject?: string, initialGame?: 'answer_battle' | 'learning_runner' | 'space_shooter') => {
+  const openGamesHub = (topic?: string, subject?: string, initialGame?: string, autoStart?: boolean) => {
     setModalGames({
       open: true,
       topic: topic || activeTopic,
       subject: subject || activeSubject,
-      initialGame
+      initialGame,
+      autoStart
     });
   };
   const closeGamesHub = () => setModalGames((prev) => ({ ...prev, open: false }));

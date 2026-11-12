@@ -13,6 +13,7 @@ import {
   FileText,
   HelpCircle,
   Gamepad2,
+  Sword,
   Rocket,
   Bookmark,
   Paperclip,
@@ -2429,12 +2430,12 @@ export const TutorPage: React.FC = () => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => openGamesHub(s?.topic || activeTopic, s?.subject || subject, 'space_shooter')}
+                        onClick={() => openGamesHub(s?.topic || activeTopic, s?.subject || subject)}
                         className="btn-glass"
-                        style={{ fontSize: '0.8rem', padding: '10px 14px', justifyContent: 'center', color: '#0284C7' }}
+                        style={{ fontSize: '0.8rem', padding: '10px 14px', justifyContent: 'center', color: '#FF6A00' }}
                       >
-                        <Rocket size={16} color="#0284C7" />
-                        <span>Space Battle Practice</span>
+                        <Sword size={16} color="#FF6A00" />
+                        <span>Battle World Practice</span>
                       </button>
                     </div>
                   </div>
@@ -2834,20 +2835,20 @@ export const TutorPage: React.FC = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => openGamesHub(s?.topic || activeTopic, s?.subject || subject, 'space_shooter')}
+                    onClick={() => openGamesHub(s?.topic || activeTopic, s?.subject || subject)}
                     className="btn-glass"
                     style={{
                       justifyContent: 'flex-start',
                       fontSize: '0.82rem',
-                      background: 'linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)',
+                      background: 'linear-gradient(135deg, #FF7A1A 0%, #FF6A00 100%)',
                       color: '#FFFFFF',
                       fontWeight: 800,
                       border: 'none',
-                      boxShadow: '0 4px 12px rgba(124, 58, 237, 0.25)'
+                      boxShadow: '0 4px 12px rgba(255, 106, 0, 0.25)'
                     }}
                   >
-                    <Gamepad2 size={16} color="#FFFFFF" />
-                    <span>🎮 Play Game for this Topic</span>
+                    <Sword size={16} color="#FFFFFF" />
+                    <span>⚔️ Battle World for this Topic</span>
                   </button>
                   <button
                     type="button"
