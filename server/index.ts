@@ -6447,9 +6447,9 @@ export function createAppServer() {
 
       if (pathname === '/api/games/sessions' && req.method === 'POST') {
         const body = await readJsonBody(req);
-        const gameType = ['answer_battle', 'learning_runner', 'space_shooter'].includes(body.game_type)
+        const gameType = ['battle_world', 'answer_battle', 'learning_runner', 'space_shooter'].includes(body.game_type)
           ? body.game_type
-          : 'answer_battle';
+          : 'battle_world';
         const topic = sanitizeText(body.topic || 'Photosynthesis', 180);
         const subject = sanitizeText(body.subject || inferSubjectFromTopic(topic), 60);
         const difficulty = body.difficulty === 'easy' || body.difficulty === 'hard' ? body.difficulty : 'medium';

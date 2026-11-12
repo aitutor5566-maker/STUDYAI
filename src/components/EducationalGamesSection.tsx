@@ -1,104 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Play, Trophy } from 'lucide-react';
+import React, { useState } from 'react';
+import { Sword, Trophy, Sparkles, ChevronRight, Shield, Flame, Compass } from 'lucide-react';
 import { useLearning } from '../context/LearningContext';
-import { EducationalGamePlayerModal } from './EducationalGamePlayerModal';
-import { KatanaGameModal } from './games/KatanaGameModal';
-
-interface GameItem {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  category: string;
-  icon: string;
-  badge_color?: string;
-  badgeColor?: string;
-  compatible_subjects?: string[];
-  compatibleSubjects?: string[];
-  supported_difficulties?: string[];
-  supportedDifficulties?: string[];
-  instructions?: string[];
-}
+import { ARENA_DEFINITIONS } from '../games/battleWorld/VoxelArenaManager';
 
 export const EducationalGamesSection: React.FC = () => {
-  const { apiFetch, activeTopic, studentId } = useLearning();
+  const { activeTopic, openGamesHub } = useLearning();
+  const [topic, setTopic] = useState<string>(activeTopic || 'Photosynthesis');
 
-  const [games, setGames] = useState<GameItem[]>([]);
-  const [, setLoading] = useState<boolean>(true);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [gameTopic, setGameTopic] = useState<string>(activeTopic || 'Photosynthesis');
+  const arenas = Object.values(ARENA_DEFINITIONS);
 
-  // Modal player state
-  const [activeModalGame, setActiveModalGame] = useState<{ slug: string; name: string } | null>(null);
-  const [katanaOpen, setKatanaOpen] = useState<boolean>(false);
-
-  // Student stats
-  const [, setRecentStats] = useState<any[]>([]);
-  const [totalCompleted, setTotalCompleted] = useState<number>(0);
-
-  useEffect(() => {
-    let isMounted = true;
-    setLoading(true);
-
-    Promise.all([
-      apiFetch('/api/educational-games/catalog').catch(() => ({ games: [] })),
-      apiFetch('/api/educational-games/history').catch(() => ({ sessions: [], stats: [], totalSessionsCompleted: 0 }))
-    ])
-      .then(([catRes, histRes]) => {
-        if (!isMounted) return;
-        setGames(catRes?.games || []);
-        setRecentStats(histRes?.stats || []);
-        setTotalCompleted(histRes?.totalSessionsCompleted || 0);
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [apiFetch, studentId]);
-
-  // Keep topic updated if activeTopic changes
-  useEffect(() => {
-    if (activeTopic) {
-      setGameTopic(activeTopic);
-    }
-  }, [activeTopic]);
-
-  const categories = [
-    { id: 'all', label: 'All 7 Games' },
-    { id: 'vocabulary', label: 'Vocabulary & Spelling' },
-    { id: 'concept', label: 'Concept & MCQ' },
-    { id: 'recall', label: 'Recall & Matching' },
-    { id: 'logic', label: 'Logic & True/False' },
-    { id: 'critical_thinking', label: 'Error Analysis' }
-  ];
-
-  const filteredGames = games.filter((g) => {
-    const matchesSearch =
-      g.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      g.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCat = categoryFilter === 'all' || g.category === categoryFilter;
-    return matchesSearch && matchesCat;
-  });
+  const handleLaunchBattleWorld = () => {
+    openGamesHub(topic || 'Photosynthesis', 'Science');
+  };
 
   return (
     <section
       className="glass-card"
       style={{
         marginBottom: 26,
-        padding: 26,
+        padding: 28,
         borderRadius: 26,
-        background: 'linear-gradient(135deg, #FFFFFF 0%, #FFFBF7 55%, #FFF3E8 100%)',
-        border: '1.5px solid rgba(255, 106, 0, 0.26)',
-        boxShadow: '0 16px 40px -10px rgba(255, 106, 0, 0.12), inset 0 1px 0 #FFFFFF',
-        position: 'relative'
+        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+        border: '1.5px solid rgba(255, 106, 0, 0.4)',
+        boxShadow: '0 20px 45px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+        color: '#FFFFFF',
+        position: 'relative',
+        overflow: 'hidden'
       }}
     >
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
+      {/* Background Accent Glow */}
+      <div
+        style={{
+          position: 'absolute',
+          top: -100,
+          right: -100,
+          width: 320,
+          height: 320,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(255, 106, 0, 0.25) 0%, transparent 70%)',
+          pointerEvents: 'none'
+        }}
+      />
+
+      {/* Header & Badges */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 22 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div
             style={{
@@ -110,334 +55,191 @@ export const EducationalGamesSection: React.FC = () => {
               alignItems: 'center',
               justifyContent: 'center',
               color: '#FFFFFF',
-              fontSize: '1.75rem',
-              boxShadow: '0 8px 20px rgba(255, 106, 0, 0.32)',
+              boxShadow: '0 8px 24px rgba(255, 106, 0, 0.4)',
               flexShrink: 0
             }}
           >
-            🎮
+            <Sword size={30} />
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
               <span
                 style={{
                   padding: '3px 10px',
                   borderRadius: 999,
                   background: '#FF6A00',
                   color: '#FFFFFF',
-                  fontSize: '0.7rem',
-                  fontWeight: 800,
+                  fontSize: '0.72rem',
+                  fontWeight: 900,
                   letterSpacing: '0.04em'
                 }}
               >
-                7 INTERACTIVE GAMES
+                STUDYAI BATTLE WORLD
               </span>
-              <span style={{ fontSize: '0.78rem', color: '#E85D00', fontWeight: 800 }}>
-                Universal Shared Game Engine
+              <span style={{ fontSize: '0.8rem', color: '#FDBA74', fontWeight: 800 }}>
+                Minecraft-Inspired 3D Voxel Educational RPG
               </span>
             </div>
-            <h2 style={{ fontSize: '1.38rem', fontWeight: 900, color: '#202124', letterSpacing: '-0.02em', margin: '0 0 4px 0' }}>
-              Educational Games Library
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#FFFFFF', margin: '0 0 4px 0' }}>
+              Academic Arena Game Center
             </h2>
-            <p style={{ fontSize: '0.88rem', color: '#6B7280', margin: 0 }}>
-              Play, learn, and master academic concepts across all subjects.
+            <p style={{ fontSize: '0.88rem', color: '#94A3B8', margin: 0 }}>
+              Master curriculum concepts by battling through 5 enclosed voxel biomes and answering syllabus questions!
             </p>
           </div>
         </div>
 
-        {/* Global Topic Picker & Session Stats */}
+        {/* Topic Input & Direct Launch Pill */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          {totalCompleted > 0 && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '7px 14px',
-                borderRadius: 999,
-                background: '#FFF3E8',
-                border: '1.5px solid rgba(255, 106, 0, 0.28)',
-                color: '#E85D00',
-                fontSize: '0.82rem',
-                fontWeight: 800
-              }}
-            >
-              <Trophy size={16} color="#FF6A00" />
-              <span>{totalCompleted} Session{totalCompleted > 1 ? 's' : ''} Completed</span>
-            </div>
-          )}
-
           <div
             style={{
-              padding: '7px 16px',
+              padding: '6px 14px',
               borderRadius: 999,
-              background: '#FFFFFF',
-              border: '1.5px solid rgba(255, 106, 0, 0.26)',
+              background: 'rgba(15, 23, 42, 0.8)',
+              border: '1.5px solid rgba(255, 106, 0, 0.35)',
               display: 'flex',
               alignItems: 'center',
-              gap: 8,
-              boxShadow: '0 4px 12px rgba(255, 106, 0, 0.06)'
+              gap: 8
             }}
           >
-            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#FF6A00', letterSpacing: '0.04em' }}>TOPIC:</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#FF6A00' }}>TOPIC:</span>
             <input
               type="text"
-              value={gameTopic}
-              onChange={(e) => setGameTopic(e.target.value)}
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
               placeholder="e.g. Photosynthesis"
               style={{
                 border: 'none',
                 background: 'transparent',
                 fontWeight: 800,
-                fontSize: '0.88rem',
-                color: '#202124',
+                fontSize: '0.85rem',
+                color: '#FFFFFF',
                 outline: 'none',
-                maxWidth: 170
+                maxWidth: 160
               }}
             />
           </div>
+
+          <button
+            type="button"
+            onClick={handleLaunchBattleWorld}
+            style={{
+              padding: '10px 22px',
+              borderRadius: 14,
+              background: 'linear-gradient(135deg, #FF7A1A 0%, #FF6A00 100%)',
+              color: '#FFFFFF',
+              fontWeight: 900,
+              fontSize: '0.9rem',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              boxShadow: '0 8px 20px rgba(255, 106, 0, 0.35)'
+            }}
+          >
+            <Sword size={18} />
+            <span>PLAY BATTLE WORLD</span>
+            <ChevronRight size={16} />
+          </button>
         </div>
       </div>
 
-      {/* KATANA: SHADOW WARRIORS — FLAGSHIP 2.5D ACTION-ADVENTURE BANNER */}
+      {/* 5 Voxel Arena Biomes Cards */}
       <div
         style={{
-          margin: '0 0 24px 0',
-          padding: 24,
-          borderRadius: 24,
-          background: 'linear-gradient(135deg, #0A1128 0%, #1C2541 50%, #0B525B 100%)',
-          border: '2px solid #FF6A00',
-          boxShadow: '0 16px 40px rgba(255, 106, 0, 0.2)',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+          gap: 14,
+          marginTop: 16
+        }}
+      >
+        {arenas.map((arena) => (
+          <div
+            key={arena.id}
+            onClick={handleLaunchBattleWorld}
+            style={{
+              padding: 16,
+              borderRadius: 18,
+              background: 'rgba(30, 41, 59, 0.6)',
+              border: '1px solid rgba(71, 85, 105, 0.5)',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#FF6A00';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'rgba(71, 85, 105, 0.5)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span
+                style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 900,
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  background: `${arena.accentColor}25`,
+                  color: arena.accentColor,
+                  border: `1px solid ${arena.accentColor}50`
+                }}
+              >
+                WAVE {arena.waveIndex}
+              </span>
+              <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{arena.mobCount} Mobs</span>
+            </div>
+
+            <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, color: '#F8FAFC' }}>
+              {arena.name}
+            </h4>
+
+            <p style={{ margin: 0, fontSize: '0.8rem', color: '#94A3B8', lineHeight: 1.4 }}>
+              {arena.description}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Feature Highlights Footer */}
+      <div
+        style={{
+          marginTop: 20,
+          paddingTop: 16,
+          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: 20
+          gap: 12,
+          fontSize: '0.82rem',
+          color: '#CBD5E1'
         }}
       >
-        <div style={{ flex: '1 1 360px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-            <span
-              style={{
-                background: '#FF6A00',
-                color: '#FFFFFF',
-                padding: '4px 12px',
-                borderRadius: 999,
-                fontSize: '0.74rem',
-                fontWeight: 900,
-                letterSpacing: '0.05em'
-              }}
-            >
-              FLAGSHIP 2.5D ADVENTURE
-            </span>
-            <span style={{ color: '#48CAE4', fontSize: '0.82rem', fontWeight: 800 }}>
-              Moonlit Bamboo Forest • 60 FPS Engine
-            </span>
-          </div>
-
-          <h3 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#FFFFFF', margin: '0 0 6px 0', letterSpacing: '-0.01em' }}>
-            KATANA: SHADOW WARRIORS — THE WISDOM BATTLE
-          </h3>
-          <p style={{ fontSize: '0.88rem', color: '#CBD5E1', margin: 0, lineHeight: 1.5 }}>
-            Master your academic curriculum in real-time samurai combat. Unleash wisdom strikes, charge your spirit katana gauge, and defeat shadow warlords.
-          </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Sparkles size={16} color="#FBBF24" />
+          <span>Continuous Top-Center Question HUD</span>
         </div>
-
-        <button
-          type="button"
-          onClick={() => setKatanaOpen(true)}
-          style={{
-            padding: '14px 28px',
-            borderRadius: 16,
-            background: 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)',
-            border: 'none',
-            color: '#FFFFFF',
-            fontSize: '0.96rem',
-            fontWeight: 900,
-            cursor: 'pointer',
-            boxShadow: '0 8px 24px rgba(255, 106, 0, 0.4)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            transition: 'transform 0.15s ease'
-          }}
-        >
-          <Play size={18} fill="#FFFFFF" />
-          <span>Enter Katana Battle</span>
-        </button>
-      </div>
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 20, alignItems: 'center' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '9px 16px',
-            borderRadius: 999,
-            background: '#FFFFFF',
-            border: '1.5px solid rgba(255, 106, 0, 0.2)',
-            flex: '1 1 220px'
-          }}
-        >
-          <Search size={16} color="#FF6A00" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search educational games..."
-            style={{ border: 'none', outline: 'none', fontSize: '0.86rem', width: '100%', color: '#202124', background: 'transparent' }}
-          />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Compass size={16} color="#38BDF8" />
+          <span>Mobile Virtual Joystick + Desktop WASD</span>
         </div>
-
-        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
-          {categories.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => setCategoryFilter(c.id)}
-              className={`filter-pill ${categoryFilter === c.id ? 'active' : ''}`}
-            >
-              {c.label}
-            </button>
-          ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Shield size={16} color="#34D399" />
+          <span>Solid Enclosed Boundary Walls (No Void Falls)</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Trophy size={16} color="#FB923C" />
+          <span>Curriculum Integrated Knowledge XP</span>
         </div>
       </div>
-
-      {/* 7 Game Cards Grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))',
-          gap: 16
-        }}
-      >
-        {filteredGames.map((game) => {
-          const subjects = game.compatibleSubjects || game.compatible_subjects || ['Science', 'Mathematics'];
-          const difficulties = game.supportedDifficulties || game.supported_difficulties || ['easy', 'medium', 'hard'];
-
-          return (
-            <div
-              key={game.slug}
-              className="glass-card glass-card-interactive"
-              onClick={() => setActiveModalGame({ slug: game.slug, name: game.name })}
-              style={{
-                borderRadius: 20,
-                background: '#FFFFFF',
-                border: '1.5px solid rgba(255, 106, 0, 0.18)',
-                padding: 20,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between'
-              }}
-            >
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <div
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 14,
-                      background: '#FFF3E8',
-                      border: '1px solid rgba(255, 106, 0, 0.22)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1.6rem'
-                    }}
-                  >
-                    {game.icon}
-                  </div>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    {difficulties.map((d) => (
-                      <span
-                        key={d}
-                        style={{
-                          padding: '3px 8px',
-                          borderRadius: 999,
-                          background: '#FFF3E8',
-                          border: '1px solid rgba(255, 106, 0, 0.18)',
-                          fontSize: '0.68rem',
-                          fontWeight: 800,
-                          color: '#E85D00',
-                          textTransform: 'capitalize'
-                        }}
-                      >
-                        {d}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <h3 style={{ fontSize: '1.08rem', fontWeight: 900, color: '#202124', margin: '0 0 6px 0' }}>
-                  {game.name}
-                </h3>
-                <p style={{ fontSize: '0.83rem', color: '#6B7280', margin: '0 0 14px 0', lineHeight: 1.48 }}>
-                  {game.description}
-                </p>
-
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
-                  {subjects.slice(0, 3).map((sub, i) => (
-                    <span
-                      key={i}
-                      style={{
-                        padding: '3px 10px',
-                        borderRadius: 999,
-                        background: 'rgba(255, 106, 0, 0.08)',
-                        border: '1px solid rgba(255, 106, 0, 0.2)',
-                        color: '#E85D00',
-                        fontSize: '0.72rem',
-                        fontWeight: 700
-                      }}
-                    >
-                      {sub}
-                    </span>
-                  ))}
-                  {subjects.length > 3 && (
-                    <span style={{ fontSize: '0.72rem', color: '#6B7280', alignSelf: 'center', fontWeight: 600 }}>
-                      +{subjects.length - 3} more
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveModalGame({ slug: game.slug, name: game.name });
-                }}
-                className="btn-orange"
-                style={{
-                  width: '100%',
-                  padding: '11px 16px',
-                  fontSize: '0.88rem'
-                }}
-              >
-                <Play size={15} fill="#FFFFFF" />
-                <span>Play Game</span>
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Unified Interactive Game Player Modal */}
-      {activeModalGame && (
-        <EducationalGamePlayerModal
-          isOpen={Boolean(activeModalGame)}
-          onClose={() => setActiveModalGame(null)}
-          gameSlug={activeModalGame.slug}
-          gameName={activeModalGame.name}
-          initialTopic={gameTopic || 'Photosynthesis'}
-        />
-      )}
-
-      {/* Flagship KATANA 2.5D Action-Adventure Game Modal */}
-      <KatanaGameModal
-        isOpen={katanaOpen}
-        onClose={() => setKatanaOpen(false)}
-        topic={gameTopic || 'Photosynthesis'}
-      />
     </section>
   );
 };
+
+export default EducationalGamesSection;

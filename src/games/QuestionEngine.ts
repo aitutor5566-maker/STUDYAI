@@ -1,4 +1,4 @@
-import {
+import type {
   EducationalQuestion,
   GameFeedback,
   GameLanguage,
@@ -6,8 +6,8 @@ import {
   OptionId,
   SharedGameSettings,
   GameType
-} from './types';
-import { getCurriculumFallbackQuestions } from './curriculumBank';
+} from './types.ts';
+import { getCurriculumFallbackQuestions } from './curriculumBank.ts';
 
 /**
  * Modern Fisher-Yates shuffle that produces a new shuffled array.

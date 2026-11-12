@@ -12,21 +12,9 @@ const TestGameLauncher: React.FC = () => {
     <div>
       <button
         type="button"
-        onClick={() => openGamesHub('Fractions', 'Maths', 'answer_battle')}
+        onClick={() => openGamesHub('Fractions', 'Maths')}
       >
-        Open Math Game
-      </button>
-      <button
-        type="button"
-        onClick={() => openGamesHub('Solar System', 'Science', 'learning_runner')}
-      >
-        Open Runner Game
-      </button>
-      <button
-        type="button"
-        onClick={() => openGamesHub('Electricity', 'Science', 'space_shooter')}
-      >
-        Open Space Game
+        Open Battle World
       </button>
       <EducationalGamesModal />
     </div>
@@ -41,7 +29,7 @@ function renderGameApp() {
   );
 }
 
-describe('3D Educational Games Hub & Question Engine UI', () => {
+describe('STUDYAI BATTLE WORLD — Game Center Complete Rebuild UI Tests', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     global.fetch = vi.fn((url: any) => {
@@ -59,14 +47,7 @@ describe('3D Educational Games Hub & Question Engine UI', () => {
                 question: 'Which fraction is equivalent to one-half?',
                 options: ['2/4', '1/3', '3/5', '2/5'],
                 correctIndex: 0,
-                explanation: 'Two-fourths simplifies to one-half.'
-              },
-              {
-                id: 'test-q-2',
-                question: 'What is 3/6 simplified?',
-                options: ['1/3', '1/2', '2/3', '3/4'],
-                correctIndex: 1,
-                explanation: '3/6 reduces to 1/2.'
+                explanation: 'Two-fourths simplifies directly to one-half.'
               }
             ]
           })
@@ -74,86 +55,81 @@ describe('3D Educational Games Hub & Question Engine UI', () => {
     }) as any;
   });
 
-  it('renders all three 3D game options in the setup screen', async () => {
+  it('renders STUDYAI BATTLE WORLD lobby, curriculum selectors, and 5 Voxel Arenas', async () => {
     renderGameApp();
-    fireEvent.click(screen.getByRole('button', { name: /Open Math Game/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Open Battle World/i }));
 
-    expect(screen.getByText(/AI Tutor 3D Educational Games/i)).toBeInTheDocument();
-    expect(screen.getByText(/^Answer Shooter$/i)).toBeInTheDocument();
-    expect(screen.getByText(/^Answer Runner$/i)).toBeInTheDocument();
-    expect(screen.getByText(/^Space Answer Shooter$/i)).toBeInTheDocument();
+    expect(screen.getByText(/STUDYAI BATTLE WORLD/i)).toBeInTheDocument();
+    expect(screen.getByText(/3D VOXEL RPG/i)).toBeInTheDocument();
+    expect(screen.getByText(/MASTER YOUR SYLLABUS IN THE BATTLE WORLD/i)).toBeInTheDocument();
+
+    // Verify 5 Arena Biomes are displayed
+    expect(screen.getByText(/Verdant Meadow/i)).toBeInTheDocument();
+    expect(screen.getByText(/Scorched Dunes/i)).toBeInTheDocument();
+    expect(screen.getByText(/Glacial Peak/i)).toBeInTheDocument();
+    expect(screen.getByText(/Obsidian Keep/i)).toBeInTheDocument();
+    expect(screen.getByText(/Ancient Canopy/i)).toBeInTheDocument();
+
+    // Verify Enter Button
+    expect(screen.getByRole('button', { name: /ENTER BATTLE WORLD/i })).toBeInTheDocument();
   });
 
-  it('provides curriculum settings for Grade 1–10, Subject, and Language (English, Telugu, Hindi)', async () => {
+  it('provides curriculum settings for Grade 1–12, Subject, and Language (English, Telugu, Hindi)', async () => {
     renderGameApp();
-    fireEvent.click(screen.getByRole('button', { name: /Open Math Game/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Open Battle World/i }));
 
     const gradeSelect = screen.getByLabelText(/Grade/i);
     expect(gradeSelect).toBeInTheDocument();
 
+    const subjectSelect = screen.getByLabelText(/Subject/i);
+    expect(subjectSelect).toBeInTheDocument();
+
     const langSelect = screen.getByLabelText(/Language/i);
     expect(langSelect).toBeInTheDocument();
     expect(screen.getAllByRole('option', { name: /English/i }).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByRole('option', { name: /తెలుగు/i })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: /हिंदी/i })).toBeInTheDocument();
-
-    const modeSelect = screen.getByLabelText(/Mode/i);
-    expect(modeSelect).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /Telugu/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /Hindi/i })).toBeInTheDocument();
   });
 
-  it('starts Answer Shooter game, displays the 3D arena HUD, and evaluates shots', async () => {
+  it('enters 3D Battle World, displays Top-Center Continuous Question HUD and mobile controls', async () => {
     renderGameApp();
-    fireEvent.click(screen.getByRole('button', { name: /Open Math Game/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Open Battle World/i }));
 
-    const startBtn = screen.getByRole('button', { name: /Start 3D Educational Game/i });
-    fireEvent.click(startBtn);
+    const enterBtn = screen.getByRole('button', { name: /ENTER BATTLE WORLD/i });
+    fireEvent.click(enterBtn);
 
     await waitFor(() => {
-      expect(screen.getByText(/Answer Shooter •/i)).toBeInTheDocument();
-      expect(screen.getByText(/(Which fraction is equivalent to one-half|What is 3\/6 simplified)/i)).toBeInTheDocument();
-    });
-
-    // Check targets are present
-    const targetBtns = screen.getAllByRole('button', { name: /Key \[[A-D]\]/i });
-    expect(targetBtns.length).toBe(4);
-
-    // Clicking target fires projectile and shows feedback
-    fireEvent.click(targetBtns[0]);
-    await waitFor(() => {
-      expect(screen.getByText(/(DIRECT HIT|SHIELD HIT)/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /^ANSWER$/i })).toBeInTheDocument();
+      expect(screen.getAllByText(/STRIKE/i).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(/JUMP/i).length).toBeGreaterThanOrEqual(1);
     });
   });
 
-  it('starts Answer Runner game with 3 lane checkpoints', async () => {
+  it('opens Multiple Choice Question Dialog from Question HUD and displays answer feedback', async () => {
     renderGameApp();
-    fireEvent.click(screen.getByRole('button', { name: /Open Runner Game/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Open Battle World/i }));
 
-    const startBtn = screen.getByRole('button', { name: /Start 3D Educational Game/i });
-    fireEvent.click(startBtn);
+    const enterBtn = screen.getByRole('button', { name: /ENTER BATTLE WORLD/i });
+    fireEvent.click(enterBtn);
 
+    // Wait for question to be loaded into the HUD
     await waitFor(() => {
-      expect(screen.getByText(/Answer Runner/i)).toBeInTheDocument();
+      expect(screen.getByText(/Which fraction is equivalent to one-half\?/i)).toBeInTheDocument();
     });
 
-    // Expect 3 lane switcher buttons
-    expect(screen.getByRole('button', { name: /Lane 1/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Lane 2/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Lane 3/i })).toBeInTheDocument();
-  });
+    const answerHudBtn = screen.getByRole('button', { name: /^ANSWER$/i });
+    fireEvent.click(answerHudBtn);
 
-  it('starts Space Answer Shooter game with alien fleet and arcade fire controls', async () => {
-    renderGameApp();
-    fireEvent.click(screen.getByRole('button', { name: /Open Space Game/i }));
-
-    const startBtn = screen.getByRole('button', { name: /Start 3D Educational Game/i });
-    fireEvent.click(startBtn);
-
+    // Question options should be visible inside the dialog
     await waitFor(() => {
-      expect(screen.getByText(/Space Answer Shooter/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /2\/4/i })).toBeInTheDocument();
     });
 
-    // Expect arcade controls
-    expect(screen.getByRole('button', { name: /FIRE/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Pause Game/i })).toBeInTheDocument();
+    // Click option A
+    fireEvent.click(screen.getByRole('button', { name: /2\/4/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Correct! \+100 Knowledge XP/i)).toBeInTheDocument();
+    });
   });
 });
