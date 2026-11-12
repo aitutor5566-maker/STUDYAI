@@ -2595,6 +2595,17 @@ export function createAppServer() {
           }));
         }
 
+        // Guarantee every section has body, content, and plainExplanation populated
+        if (Array.isArray(parsedStructured.sections)) {
+          parsedStructured.sections.forEach((s: any) => {
+            const textContent = s.body || s.content || s.plainExplanation || s.text || s.detailedExplanation || s.simpleExplanation || '';
+            s.body = textContent;
+            s.content = textContent;
+            s.plainExplanation = s.plainExplanation || textContent;
+            s.heading = s.heading || s.title || 'Curriculum Concept';
+          });
+        }
+
         if (!parsedStructured.universalTeachingWorkflow) {
           const workflow = buildUniversalTeachingWorkflow({
             topic: r.topic || r.title,
@@ -2608,9 +2619,40 @@ export function createAppServer() {
           }
         }
 
+        if (!parsedStructured.keyPoints || parsedStructured.keyPoints.length === 0) {
+          parsedStructured.keyPoints = buildCorePrinciplesForTopic(r.topic || r.title, r.subject || 'Science');
+          parsedStructured.importantFacts = parsedStructured.keyPoints;
+        }
+
+        if (!parsedStructured.definitions || parsedStructured.definitions.length === 0) {
+          if (parsedStructured.universalTeachingWorkflow?.sectionA_definitions) {
+            parsedStructured.definitions = [
+              {
+                term: r.topic || r.title,
+                definition: parsedStructured.universalTeachingWorkflow.stage2_definitionAndMeaning?.academicDefinition || '',
+                meaning: parsedStructured.universalTeachingWorkflow.stage2_definitionAndMeaning?.simpleLanguageExplanation || ''
+              },
+              ...(parsedStructured.universalTeachingWorkflow.stage3_importantDefinitions || []).map((d: any) => ({
+                term: d.term,
+                definition: d.academicDefinition,
+                meaning: d.simpleExplanation
+              }))
+            ];
+          }
+        }
+
         if (!parsedStructured.finalRevisionPage) {
-          const cls = classifyUniversalTopic(r.topic || r.title);
-          parsedStructured.finalRevisionPage = buildComprehensiveRevisionPage(cls, r.content_markdown || '');
+          parsedStructured.finalRevisionPage = parsedStructured.universalTeachingWorkflow?.finalRevisionPage || {
+            executiveSummary: `${r.topic || r.title} is an essential curriculum unit. Review all subtopic diagrams, key definitions, and process mechanisms prior to examination.`,
+            quickRevisionMatrix: (parsedStructured.sections || []).map((s: any) => ({
+              concept: s.heading || s.title,
+              keyRuleOrPrinciple: (s.body || s.content || s.plainExplanation || '').slice(0, 180),
+              examSignificance: 'High-yield board examination topic'
+            })),
+            memoryMnemonics: [],
+            highYieldFormulasOrRules: [],
+            examTrapReminders: []
+          };
         }
 
         return {
@@ -3598,27 +3640,7 @@ export function createAppServer() {
             depth: academicNote.depth,
             notebook: academicNote.notebook,
             content_markdown: academicNote.contentMarkdown,
-            structured: {
-              tableOfContents: academicNote.tableOfContents,
-              sections: academicNote.sections,
-              visualPlan: academicNote.visualPlan,
-              images: academicNote.visualPlan ? [
-                {
-                  id: academicNote.visualPlan.existingAssetId || academicNote.visualPlan.planId,
-                  title: `${academicNote.topic} Diagram`,
-                  imageUrl: academicNote.visualPlan.svgXml
-                    ? `data:image/svg+xml;utf8,${encodeURIComponent(academicNote.visualPlan.svgXml)}`
-                    : academicNote.visualPlan.previewUrl || ''
-                }
-              ] : [],
-              evidenceSources: academicNote.evidenceSources,
-              finalRevisionSummary: academicNote.finalRevisionSummary,
-              flashcards: academicNote.flashcards,
-              quiz: academicNote.quiz,
-              classification,
-              designMode,
-              summary: academicNote.title
-            },
+            structured: academicNote.structured,
             flashcards: academicNote.flashcards,
             quiz: academicNote.quiz
           };

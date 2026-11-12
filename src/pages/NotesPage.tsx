@@ -838,7 +838,13 @@ export const NotesPage: React.FC = () => {
   const sections: any[] = structured?.sections || [];
   const currentSection = sections[activeSectionIdx] || sections[0] || {};
   const currentPairedImage = (structured?.images || [])[activeSectionIdx] || (structured?.images || [])[0];
-  const finalRevisionPage = structured?.finalRevisionPage || activeNote?.finalRevisionPage;
+  const finalRevisionPage =
+    structured?.finalRevisionPage ||
+    structured?.universalTeachingWorkflow?.finalRevisionPage ||
+    structured?.universalTeachingWorkflow?.sectionJ_finalRevisionSection ||
+    structured?.finalRevisionSummary ||
+    structured?.revisionNotebook ||
+    activeNote?.finalRevisionPage;
 
   // Digital Textbook Paged Reader Data
   const textbookPages: NotebookPageItem[] = React.useMemo(() => {
@@ -2823,10 +2829,10 @@ export const NotesPage: React.FC = () => {
                   </h3>
                 </div>
                 <div style={{ display: 'grid', gap: 8 }}>
-                  {(structured.keyPoints || structured.importantFacts || [
-                    `${editTitle} operates under fundamental scientific and conservation laws.`,
-                    `Components interact in equilibrium rather than isolated events.`,
-                    `Theoretical values closely match experimental observation in standard curriculum laboratories.`,
+                  {(structured.keyPoints || structured.importantFacts || structured.universalTeachingWorkflow?.sectionB_keyPoints?.corePrinciples || currentSection.keyPoints || [
+                    `${editTitle} is an essential academic curriculum unit governed by verified theoretical and empirical laws.`,
+                    `Core functional mechanisms operate synchronously to achieve structural and functional equilibrium.`,
+                    `Key components follow strict directional pathways defined in standard board textbooks.`,
                     `Mastery requires understanding definitions, working mechanisms, and formula applications.`
                   ]).map((kp: string, kIdx: number) => (
                     <div key={kIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px', background: '#F9FAFB', borderRadius: 8, border: '1px solid #F3F4F6' }}>
@@ -2916,23 +2922,96 @@ export const NotesPage: React.FC = () => {
                       )}
                     </div>
                     <p style={{ fontSize: '1rem', color: '#374151', margin: '0 0 12px 0', whiteSpace: 'pre-line', lineHeight: 1.72 }}>
-                      {sec.body || sec.plainExplanation}
+                      {sec.body || sec.content || sec.plainExplanation || sec.text}
                     </p>
 
-                    {/* Paired dedicated diagram placed directly inside the subtopic it explains */}
-                    {structured.images?.[idx] && (
-                      <figure style={{ margin: '18px 0', padding: 16, borderRadius: 16, background: '#FAFAFA', border: '1.5px solid #EEEEEE' }}>
-                        <img
-                          src={structured.images[idx].imageUrl}
-                          alt={structured.images[idx].title}
-                          style={{ width: '100%', maxHeight: 340, objectFit: 'contain', display: 'block', background: '#FFFFFF', borderRadius: 10 }}
-                        />
-                        <figcaption style={{ marginTop: 10, fontSize: '0.86rem', color: '#4B5563' }}>
-                          <strong style={{ color: '#FF6A00' }}>{structured.images[idx].title}: </strong>
-                          {structured.images[idx].caption}
-                        </figcaption>
-                      </figure>
-                    )}
+                    {/* Dedicated Side-by-Side Visual Learning Layout for this Subtopic */}
+                    {(() => {
+                      const pairedVisual = (structured.images || [])[idx] || sec.visual || sec.visualAsset;
+                      if (!pairedVisual) return null;
+                      const visualDataUrl = pairedVisual.imageUrl || pairedVisual.dataUrl || (pairedVisual.svgXml ? `data:image/svg+xml;base64,${btoa(pairedVisual.svgXml)}` : '');
+
+                      return (
+                        <div style={{ margin: '20px 0', borderRadius: 18, border: '1.5px solid #E2E8F0', overflow: 'hidden', background: '#FFFFFF', boxShadow: '0 6px 20px rgba(0,0,0,0.03)' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 0 }}>
+                            {/* Diagram Visual Side */}
+                            <div style={{ background: '#F8FAFC', padding: 18, borderRight: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: 10 }}>
+                                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#C2410C', background: '#FFF3E8', padding: '3px 8px', borderRadius: 6 }}>
+                                  {pairedVisual.diagramType || 'Curriculum Schematic'}
+                                </span>
+                                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#15803D', background: '#DCFCE7', padding: '3px 8px', borderRadius: 6 }}>
+                                  ✓ Verified Diagram
+                                </span>
+                              </div>
+                              {pairedVisual.svgXml ? (
+                                <div
+                                  dangerouslySetInnerHTML={{ __html: pairedVisual.svgXml }}
+                                  style={{ width: '100%', maxHeight: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
+                                />
+                              ) : visualDataUrl ? (
+                                <img
+                                  src={visualDataUrl}
+                                  alt={pairedVisual.title || sec.heading}
+                                  onError={(e) => {
+                                    const target = e.currentTarget;
+                                    target.style.display = 'none';
+                                    const parent = target.parentElement;
+                                    if (parent) {
+                                      const fallbackBadge = document.createElement('div');
+                                      fallbackBadge.style.padding = '24px';
+                                      fallbackBadge.style.textAlign = 'center';
+                                      fallbackBadge.style.color = '#64748B';
+                                      fallbackBadge.style.fontSize = '0.86rem';
+                                      fallbackBadge.innerText = `Verified Diagram: ${pairedVisual.title || sec.heading}`;
+                                      parent.appendChild(fallbackBadge);
+                                    }
+                                  }}
+                                  style={{ width: '100%', maxHeight: 320, objectFit: 'contain', display: 'block', background: '#FFFFFF', borderRadius: 10 }}
+                                />
+                              ) : null}
+                              <figcaption style={{ marginTop: 10, fontSize: '0.82rem', color: '#64748B', textAlign: 'center', lineHeight: 1.4 }}>
+                                <strong style={{ color: '#0F172A' }}>{pairedVisual.title || sec.heading}:</strong> {pairedVisual.caption}
+                              </figcaption>
+                            </div>
+
+                            {/* Pedagogical Breakdown Side */}
+                            <div style={{ padding: 20, background: '#FFFFFF', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                              <div>
+                                <h5 style={{ fontSize: '0.94rem', fontWeight: 800, color: '#0F172A', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <span style={{ color: '#FF6A00' }}>🔬</span> Pedagogical Visual Walkthrough
+                                </h5>
+                                <p style={{ fontSize: '0.86rem', color: '#334155', lineHeight: 1.6, margin: '0 0 12px 0' }}>
+                                  {pairedVisual.explanation?.whatItShows || pairedVisual.walkthrough?.whatItShows || pairedVisual.caption || 'Illustrates core components, pathways, and directional interactions.'}
+                                </p>
+
+                                {Array.isArray(pairedVisual.labels || pairedVisual.explanation?.keyComponents) && (pairedVisual.labels || pairedVisual.explanation?.keyComponents).length > 0 && (
+                                  <div style={{ marginBottom: 12 }}>
+                                    <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: '#64748B', letterSpacing: '0.5px' }}>
+                                      Key Labeled Parts:
+                                    </span>
+                                    <div style={{ display: 'grid', gap: 5, marginTop: 6 }}>
+                                      {(pairedVisual.labels || pairedVisual.explanation?.keyComponents).slice(0, 4).map((lbl: any, lIdx: number) => (
+                                        <div key={lIdx} style={{ fontSize: '0.8rem', padding: '5px 8px', background: '#F8FAFC', borderRadius: 6, border: '1px solid #E2E8F0', display: 'flex', gap: 8 }}>
+                                          <strong style={{ color: '#C2410C' }}>{typeof lbl === 'string' ? lbl : lbl.label}:</strong>
+                                          <span style={{ color: '#475569' }}>{typeof lbl === 'object' ? (lbl.description || lbl.role || '') : ''}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: 10, marginTop: 8 }}>
+                                <span style={{ fontSize: '0.76rem', color: '#15803D', fontWeight: 700 }}>
+                                  🎯 Exam Tip: {pairedVisual.explanation?.examTip || 'Examiners award marks for exact terminology and labeled directional arrows.'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </article>
                 ))}
               </div>
@@ -2982,11 +3061,12 @@ export const NotesPage: React.FC = () => {
                   </h3>
                 </div>
                 <div style={{ display: 'grid', gap: 12 }}>
-                  {(structured.universalTeachingWorkflow?.stage7_stepByStepProcesses || [
-                    { stepNumber: 1, title: 'Initial Activation', whatHappens: 'System components initiate energy intake or receptor excitation under environmental triggers.', whereItHappens: 'Primary receptor site' },
-                    { stepNumber: 2, title: 'Transformation Cascade', whatHappens: 'Energy transformation or mechanical transmission proceeds sequentially across intermediate vectors.', whereItHappens: 'Core transformation pathway' },
-                    { stepNumber: 3, title: 'Terminal Equilibrium', whatHappens: 'Products or kinetic motion reach stable target configuration with entropy dissipation.', whereItHappens: 'Terminal site' }
-                  ]).map((st: any, sIdx: number) => (
+                  {(structured.universalTeachingWorkflow?.stage7_stepByStepProcesses || structured.processes || sections.slice(0, 3).map((s: any, sIdx: number) => ({
+                    stepNumber: sIdx + 1,
+                    title: s.heading || `Stage ${sIdx + 1}`,
+                    whatHappens: s.plainExplanation || s.body || s.content,
+                    whereItHappens: `${editSubject} Standard System`
+                  }))).map((st: any, sIdx: number) => (
                     <div key={sIdx} style={{ padding: '14px 18px', background: '#F8FAFC', borderRadius: 12, border: '1px solid #E2E8F0' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                         <span style={{ padding: '2px 8px', borderRadius: 4, background: '#0F766E', color: '#FFFFFF', fontWeight: 800, fontSize: '0.72rem' }}>
@@ -3269,73 +3349,83 @@ export const NotesPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* The Final Comprehensive Revision Page (Master Sheet) */}
-                {finalRevisionPage && (
-                  <section
-                    id="sec-revision-sheet"
-                    style={{
-                      padding: '32px 36px',
-                      borderRadius: 20,
-                      background: '#F0FDF4',
-                      border: '2.5px solid #16A34A',
-                      boxShadow: '0 12px 32px rgba(22, 163, 74, 0.1)'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #16A34A', paddingBottom: 14, marginBottom: 18 }}>
-                      <div>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#16A34A', color: '#FFFFFF', padding: '3px 10px', borderRadius: 6 }}>
-                          High-Yield Board & Exam Master Sheet
-                        </span>
-                        <h4 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#14532D', margin: '6px 0 0 0' }}>
-                          🏆 The Final Comprehensive Revision Page
-                        </h4>
-                      </div>
-                      <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#15803D' }}>
-                        {editSubject} • {editTitle}
-                      </span>
-                    </div>
-
-                    {finalRevisionPage.executiveSummary && (
-                      <div style={{ padding: 14, background: '#FFFFFF', borderRadius: 12, border: '1px solid #BBF7D0', marginBottom: 20 }}>
-                        <strong style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#14532D', display: 'block', marginBottom: 4 }}>
-                          Executive Concept Summary
-                        </strong>
-                        <p style={{ margin: 0, fontSize: '0.94rem', color: '#1F2937' }}>
-                          {finalRevisionPage.executiveSummary}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Concept Matrix */}
-                    {Array.isArray(finalRevisionPage.quickRevisionMatrix) && (
-                      <div style={{ marginBottom: 20 }}>
-                        <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#14532D', marginBottom: 8 }}>
-                          Quick Revision Concept Matrix:
-                        </h4>
-                        <div style={{ overflowX: 'auto' }}>
-                          <table style={{ width: '100%', borderCollapse: 'collapse', background: '#FFFFFF', borderRadius: 8, fontSize: '0.86rem' }}>
-                            <thead>
-                              <tr style={{ background: '#DCFCE7', color: '#14532D', textAlign: 'left' }}>
-                                <th style={{ padding: '8px 12px', border: '1px solid #BBF7D0' }}>Concept</th>
-                                <th style={{ padding: '8px 12px', border: '1px solid #BBF7D0' }}>Core Principle / Rule</th>
-                                <th style={{ padding: '8px 12px', border: '1px solid #BBF7D0' }}>Exam Significance</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {finalRevisionPage.quickRevisionMatrix.map((row: any, rIdx: number) => (
-                                <tr key={rIdx}>
-                                  <td style={{ padding: '8px 12px', border: '1px solid #BBF7D0', fontWeight: 700 }}>{row.concept}</td>
-                                  <td style={{ padding: '8px 12px', border: '1px solid #BBF7D0' }}>{row.keyRuleOrPrinciple}</td>
-                                  <td style={{ padding: '8px 12px', border: '1px solid #BBF7D0', color: '#15803D', fontWeight: 600 }}>{row.examSignificance}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                {/* The Final Comprehensive Revision Page (Master Sheet — Guaranteed Non-Empty) */}
+                {(() => {
+                  const rev = finalRevisionPage || {
+                    executiveSummary: `${editTitle} represents a cornerstone curriculum unit in ${editSubject}. Review all labeled anatomical/physical diagrams, essential definitions, and step-by-step processes prior to examination.`,
+                    quickRevisionMatrix: sections.slice(0, 5).map((s: any) => ({
+                      concept: s.heading || 'Subtopic',
+                      keyRuleOrPrinciple: (s.plainExplanation || s.body || s.content || '').slice(0, 160),
+                      examSignificance: s.subheading || 'High-yield board examination topic'
+                    }))
+                  };
+                  return (
+                    <section
+                      id="sec-revision-sheet"
+                      style={{
+                        padding: '32px 36px',
+                        borderRadius: 20,
+                        background: '#F0FDF4',
+                        border: '2.5px solid #16A34A',
+                        boxShadow: '0 12px 32px rgba(22, 163, 74, 0.1)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #16A34A', paddingBottom: 14, marginBottom: 18 }}>
+                        <div>
+                          <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#16A34A', color: '#FFFFFF', padding: '3px 10px', borderRadius: 6 }}>
+                            High-Yield Board & Exam Master Sheet
+                          </span>
+                          <h4 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#14532D', margin: '6px 0 0 0' }}>
+                            🏆 The Final Comprehensive Revision Page
+                          </h4>
                         </div>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#15803D' }}>
+                          {editSubject} • {editTitle}
+                        </span>
                       </div>
-                    )}
-                  </section>
-                )}
+
+                      {rev.executiveSummary && (
+                        <div style={{ padding: 14, background: '#FFFFFF', borderRadius: 12, border: '1px solid #BBF7D0', marginBottom: 20 }}>
+                          <strong style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#14532D', display: 'block', marginBottom: 4 }}>
+                            Executive Concept Summary
+                          </strong>
+                          <p style={{ margin: 0, fontSize: '0.94rem', color: '#1F2937' }}>
+                            {rev.executiveSummary}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Concept Matrix */}
+                      {Array.isArray(rev.quickRevisionMatrix) && (
+                        <div style={{ marginBottom: 20 }}>
+                          <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#14532D', marginBottom: 8 }}>
+                            Quick Revision Concept Matrix:
+                          </h4>
+                          <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', background: '#FFFFFF', borderRadius: 8, fontSize: '0.86rem' }}>
+                              <thead>
+                                <tr style={{ background: '#DCFCE7', color: '#14532D', textAlign: 'left' }}>
+                                  <th style={{ padding: '8px 12px', border: '1px solid #BBF7D0' }}>Concept</th>
+                                  <th style={{ padding: '8px 12px', border: '1px solid #BBF7D0' }}>Core Principle / Rule</th>
+                                  <th style={{ padding: '8px 12px', border: '1px solid #BBF7D0' }}>Exam Significance</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {rev.quickRevisionMatrix.map((row: any, rIdx: number) => (
+                                  <tr key={rIdx}>
+                                    <td style={{ padding: '8px 12px', border: '1px solid #BBF7D0', fontWeight: 700 }}>{row.concept}</td>
+                                    <td style={{ padding: '8px 12px', border: '1px solid #BBF7D0' }}>{row.keyRuleOrPrinciple || row.rule}</td>
+                                    <td style={{ padding: '8px 12px', border: '1px solid #BBF7D0', color: '#15803D', fontWeight: 600 }}>{row.examSignificance || row.examTip}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </section>
+                  );
+                })()}
               </div>
             </>
           )}

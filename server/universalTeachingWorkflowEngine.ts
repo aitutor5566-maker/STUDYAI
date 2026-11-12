@@ -709,12 +709,7 @@ export function buildUniversalTeachingWorkflow(params: {
     },
     sectionB_keyPoints: {
       title: 'Section B: Key Points & Core Principles',
-      corePrinciples: [
-        `${topic} operates under universal physical and biological conservation principles.`,
-        `Key functional components operate in mutual equilibrium rather than in isolation.`,
-        `Every operational stage generates verified substrates necessary for subsequent activations.`,
-        `Empirical data in standard school curricula confirms theoretical relationships within standard tolerances.`
-      ],
+      corePrinciples: buildCorePrinciplesForTopic(topic, subject, stage12Facts),
       essentialFacts: stage12Facts.importantFacts,
       componentsAndFunctions: stage5Subtopics.map((s) => ({
         component: s.name,
@@ -785,7 +780,24 @@ export function buildUniversalTeachingWorkflow(params: {
       quickRevisionChecklist: stage13Recap.quickRevisionChecklist,
       boardTrapsToAvoid: stage12Facts.boardTraps,
       misconceptionsBusted: stage12Facts.frequentlyMisunderstood,
-      selfAssessmentQuestions: stage14Assessment
+      selfAssessmentQuestions: stage14Assessment,
+      executiveSummary: stage13Recap.coreTakeaway || `${topic} is a cornerstone academic unit governing verified interactions in ${subject}.`,
+      quickRevisionMatrix: stage5Subtopics.slice(0, 5).map((s) => ({
+        concept: s.name,
+        keyRuleOrPrinciple: s.whatItIs,
+        examSignificance: s.whyItIsImportant || 'High-yield board examination topic'
+      }))
+    },
+    finalRevisionPage: {
+      executiveSummary: stage13Recap.coreTakeaway || `${topic} is a high-yield academic topic in ${board} Class ${grade} ${subject}. Mastery requires precise understanding of definitions, labeled diagrams, mechanisms, and exam trap questions.`,
+      quickRevisionMatrix: stage5Subtopics.slice(0, 5).map((s) => ({
+        concept: s.name,
+        keyRuleOrPrinciple: s.whatItIs,
+        examSignificance: s.whyItIsImportant || 'High-yield board examination topic'
+      })),
+      memoryMnemonics: stage12Facts.boardTraps?.slice(0, 3) || [],
+      highYieldFormulasOrRules: stage10Formulas.primaryEquation ? [{ name: 'Governing Formula', formula: stage10Formulas.primaryEquation, notes: 'Must include SI units' }] : [],
+      examTrapReminders: stage12Facts.boardTraps || []
     }
   };
 }
@@ -912,10 +924,7 @@ ${w.stage3_importantDefinitions.map((d, i) => `#### A.${i + 1} ${d.term}
 <a id="section-b-key-points"></a>
 
 ### Core Principles of ${w.topic}:
-- **Fundamental Rule:** ${w.topic} operates under universal conservation and thermodynamic principles.
-- **Systematic Harmony:** Functional components operate in mutual equilibrium rather than in isolation.
-- **Stage Continuity:** Every operational stage generates verified substrates necessary for subsequent activations.
-- **Empirical Grounding:** Measurements in standard school curricula confirm theoretical relationships within standard tolerances.
+${(w.sectionB_keyPoints?.corePrinciples || []).map((cp: string) => `• ${cp}`).join('\n')}
 
 ### Essential Scientific Facts:
 ${w.stage12_importantFactsAndMisconceptions.importantFacts.map((f) => `• ${f}`).join('\n')}
@@ -2113,99 +2122,330 @@ function buildComparisonsForTopic(topic: string, subject: string) {
   };
 }
 
+export function buildCorePrinciplesForTopic(topic: string, subject: string, stage12Facts?: any): string[] {
+  const l = `${topic} ${subject}`.toLowerCase();
+
+  if (/heart|cardiac|circulat/.test(l)) {
+    return [
+      `The human heart functions as a dual muscular pump operating two discrete closed circuits: Pulmonary Circulation (to alveolar capillary beds) and Systemic Circulation (to bodily tissues).`,
+      `Complete anatomical separation between right (deoxygenated) and left (oxygenated) chambers prevents blood mixing and maintains homeothermy and high arterial pressure.`,
+      `Four non-return valves (Tricuspid, Bicuspid/Mitral, Pulmonary Semilunar, Aortic Semilunar) enforce strictly unidirectional forward hemodynamic flow.`,
+      `The cardiac cycle is governed by intrinsic myogenic pacemaking initiated at the Sinoatrial (SA) node, propagated with an essential 0.1-second delay at the Atrioventricular (AV) node, and distributed via the Bundle of His and Purkinje fibers.`,
+      `The left ventricle possesses a myocardium three times thicker than the right ventricle because it must overcome systemic vascular resistance (~120 mmHg vs ~25 mmHg).`
+    ];
+  }
+
+  if (/photosynthesis|chloroplast|light reaction|calvin/.test(l)) {
+    return [
+      `Photosynthesis converts incident solar photon energy into stable chemical bond energy stored in glucose ($C_6H_{12}O_6$), consuming carbon dioxide ($CO_2$) and water ($H_2O$) while releasing oxygen ($O_2$).`,
+      `Light-dependent reactions in the thylakoid grana membranes generate ATP and NADPH via electron transport chains driven by water photolysis ($2H_2O \\rightarrow 4H^+ + 4e^- + O_2$).`,
+      `Light-independent dark reactions (Calvin Cycle) in the stroma utilize ATP, NADPH, and the enzyme RuBisCO to fix atmospheric $CO_2$ into triose phosphates.`,
+      `The rate of photosynthesis follows Blackman's Law of Limiting Factors, determined by the reactant or environmental variable in lowest supply.`
+    ];
+  }
+
+  if (/newton|force|motion|inertia|momentum/.test(l)) {
+    return [
+      `Newton's First Law (Law of Inertia) states that a body remains at rest or in uniform rectilinear motion unless compelled to change that state by a non-zero net external force ($\\sum \\vec{F} = 0 \\iff \\vec{a} = 0$).`,
+      `Newton's Second Law quantifies dynamics: net external force equals the time rate of change of linear momentum ($\\vec{F} = \\frac{d\\vec{p}}{dt} = m\\vec{a}$).`,
+      `Newton's Third Law (Action-Reaction) mandates that mutual forces between interacting bodies are always equal in magnitude, opposite in direction, and act on different bodies ($\\vec{F}_{AB} = -\\vec{F}_{BA}$).`,
+      `The total linear momentum of an isolated physical system remains constant if no net external force acts upon it.`
+    ];
+  }
+
+  if (/circuit|electric|current|ohm|resistan|voltage/.test(l)) {
+    return [
+      `Ohm's Law states that electric current through a metallic conductor is directly proportional to the potential difference across its terminals at constant temperature ($V = I \\cdot R$).`,
+      `In a series circuit, electric current is identical across all components, while total voltage divides; equivalent resistance is the algebraic sum ($R_s = R_1 + R_2 + \\dots$).`,
+      `In a parallel circuit, potential difference across all branches is identical, while current divides; reciprocal of equivalent resistance equals the sum of reciprocals ($1/R_p = 1/R_1 + 1/R_2 + \\dots$).`,
+      `Joule's Law of Heating dictates that electrical thermal dissipation is proportional to current squared, resistance, and time ($H = I^2 R t$).`
+    ];
+  }
+
+  if (/light|reflection|refraction|lens|mirror|optics/.test(l)) {
+    return [
+      `The Law of Reflection states that the incident ray, reflected ray, and normal to the reflecting surface lie in the same plane, and the angle of incidence equals the angle of reflection ($\\angle i = \\angle r$).`,
+      `Snell's Law of Refraction relates angles to refractive indices across an optical interface: $\\frac{\\sin i}{\\sin r} = \\frac{n_2}{n_1} = \\frac{v_1}{v_2}$.`,
+      `Convex lenses are converging with positive focal length ($f > 0$), producing real inverted images for objects beyond the principal focus; concave lenses are diverging ($f < 0$).`,
+      `The Lens Formula relates object distance ($u$), image distance ($v$), and focal length ($f$): $\\frac{1}{f} = \\frac{1}{v} - \\frac{1}{u}$.`
+    ];
+  }
+
+  if (/atom|bohr|electron|proton|nucleus/.test(l)) {
+    return [
+      `The Bohr model describes the atom with a dense central positive nucleus orbited by negatively charged electrons confined to discrete, quantized non-radiating energy levels ($K, L, M, N$).`,
+      `Electrons only radiate or absorb electromagnetic energy when jumping between discrete stationary orbits ($\\Delta E = E_2 - E_1 = h\\nu$).`,
+      `The maximum electron capacity of an energy shell is determined by the $2n^2$ rule, where $n$ is the principal quantum number.`,
+      `Chemical reactivity and valence behavior are determined by the outermost valence shell electron configuration.`
+    ];
+  }
+
+  if (/bond|chemical reaction|reaction|equation|acid|base/.test(l)) {
+    return [
+      `Chemical reactions involve the breaking of existing chemical bonds in reactants and the forming of new bonds in products, strictly conserving total mass and atomic identity.`,
+      `Ionic bonding involves the complete transfer of valence electrons from electropositive metals to electronegative non-metals, producing electrostatic ionic lattices.`,
+      `Covalent bonding involves the mutual sharing of electron pairs between non-metallic atoms to achieve noble gas electron configurations.`,
+      `Enthalpy changes during chemical reactions reflect the net difference between endothermic bond-cleavage inputs and exothermic bond-formation releases.`
+    ];
+  }
+
+  if (/digest|alimentary|stomach|enzyme|peristalsis/.test(l)) {
+    return [
+      `The human digestive system breaks down complex insoluble macromolecules (carbohydrates, proteins, lipids) into simple soluble absorbable nutrients (glucose, amino acids, fatty acids).`,
+      `Food is propelled through the gastrointestinal tract by rhythmic muscular contractions termed peristalsis.`,
+      `Digestion is sequential: salivary amylase in the mouth, pepsin in acidic gastric juice, and pancreatic enzymes in the alkaline duodenum.`,
+      `Villi and microvilli in the small intestine amplify surface area for rapid nutrient absorption into blood and lymph capillaries.`
+    ];
+  }
+
+  if (/quadratic|equation|polynomial|root/.test(l)) {
+    return [
+      `A quadratic equation has canonical form $ax^2 + bx + c = 0$ ($a \\neq 0$) and possesses exactly two roots determined by the quadratic formula $x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$.`,
+      `The discriminant $\\Delta = b^2 - 4ac$ governs root nature: $\\Delta > 0$ yields two distinct real roots, $\\Delta = 0$ yields one repeated real root, and $\\Delta < 0$ yields conjugate complex roots.`,
+      `By Vieta's formulas, root sum equals $-b/a$ and root product equals $c/a$.`,
+      `The graph of a quadratic function is a symmetric parabola with vertex at $x = -b / (2a)$.`
+    ];
+  }
+
+  if (/pythagor|triangle|geometry|angle|circle/.test(l)) {
+    return [
+      `The Pythagorean Theorem states that in any right-angled Euclidean triangle, the square of the hypotenuse equals the sum of the squares of the other two legs ($a^2 + b^2 = c^2$).`,
+      `The converse of the Pythagorean Theorem confirms that if $a^2 + b^2 = c^2$, the angle opposite side $c$ is strictly $90^\\circ$.`,
+      `Pythagorean triples ($3-4-5$, $5-12-13$, $8-15-17$) satisfy integer solutions to $a^2 + b^2 = c^2$.`,
+      `Trigonometric ratios (sine, cosine, tangent) are defined as normalized ratios of side lengths relative to an acute angle in a right triangle.`
+    ];
+  }
+
+  if (stage12Facts?.importantFacts && stage12Facts.importantFacts.length >= 3) {
+    return stage12Facts.importantFacts.slice(0, 5);
+  }
+
+  return [
+    `${topic} is a core academic syllabus unit governed by verified theoretical principles and experimental proofs.`,
+    `Mastery requires understanding the foundational definitions, structural components, and sequential mechanisms.`,
+    `Mathematical or qualitative formulations accurately describe observable behaviors under standard curriculum conditions.`,
+    `Board examinations prioritize precise terminology, labeled diagrams, and step-by-step reasoning.`
+  ];
+}
+
 function buildStepByStepProcessesForTopic(topic: string, subject: string) {
-  const l = topic.toLowerCase();
-  if (l.includes('photosynthesis')) {
+  const l = `${topic} ${subject}`.toLowerCase();
+
+  if (/heart|cardiac|circulat/.test(l)) {
+    return [
+      {
+        stepNumber: 1,
+        title: 'Venous Return & Atrial Inflow',
+        whatHappens: 'Deoxygenated blood from the upper and lower body drains through the Superior and Inferior Vena Cava into the Right Atrium (RA), while oxygenated blood from the lungs drains via the four Pulmonary Veins into the Left Atrium (LA).',
+        whereItHappens: 'Superior/Inferior Vena Cava, Right Atrium, Pulmonary Veins, Left Atrium.',
+        componentsInvolved: ['Superior Vena Cava', 'Inferior Vena Cava', 'Right Atrium', 'Pulmonary Veins', 'Left Atrium'],
+        whyItHappens: 'During atrial diastole, relaxed atrial muscle creates negative chamber pressure that suctions systemic and pulmonary venous return.',
+        whatHappensNext: 'Pressure in the atria exceeds ventricular pressure, forcing open the Atrioventricular (AV) valves.'
+      },
+      {
+        stepNumber: 2,
+        title: 'Atrial Systole & Ventricular Filling',
+        whatHappens: 'The Sinoatrial (SA) node fires an electrical impulse across the atrial walls; atria contract simultaneously, pushing blood past the Tricuspid Valve into the Right Ventricle (RV) and past the Bicuspid (Mitral) Valve into the Left Ventricle (LV).',
+        whereItHappens: 'Atrioventricular junctions (Tricuspid and Bicuspid/Mitral valves) into the ventricles.',
+        componentsInvolved: ['SA Node', 'Atrial Myocardium', 'Tricuspid Valve', 'Bicuspid/Mitral Valve', 'Right Ventricle', 'Left Ventricle'],
+        whyItHappens: 'Atrial contraction tops off ventricular volume, completing the end-diastolic volume (EDV ~120 mL).',
+        whatHappensNext: 'The electrical pulse reaches the AV Node, where it is delayed for 0.1s before ventricular depolarization.'
+      },
+      {
+        stepNumber: 3,
+        title: 'Ventricular Systole & AV Valve Closure (First Heart Sound: "LUB")',
+        whatHappens: 'The action potential travels down the Bundle of His and Purkinje fibers; ventricles begin contracting forcefully from the apex upward. Rising intraventricular pressure instantly forces the Tricuspid and Mitral valves shut.',
+        whereItHappens: 'Right and Left Ventricular myocardium and AV valves.',
+        componentsInvolved: ['AV Node', 'Bundle of His', 'Purkinje Fibers', 'Chordae Tendineae', 'Papillary Muscles', 'AV Valves'],
+        whyItHappens: 'Sudden closure and vibration of the taut AV valves produces the low-pitched First Heart Sound ("LUB" / S₁), preventing regurgitation into atria.',
+        whatHappensNext: 'Ventricular pressure rises rapidly until it exceeds arterial backpressure in the Aorta and Pulmonary Artery.'
+      },
+      {
+        stepNumber: 4,
+        title: 'Ventricular Ejection into Great Vessels',
+        whatHappens: 'High ventricular pressure forces open the Pulmonary Semilunar Valve (ejecting deoxygenated blood from RV into Pulmonary Trunk towards lungs) and the Aortic Semilunar Valve (ejecting oxygenated blood from LV into Aorta towards the body).',
+        whereItHappens: 'Pulmonary Semilunar Valve, Pulmonary Artery, Aortic Semilunar Valve, Systemic Aorta.',
+        componentsInvolved: ['Right Ventricle', 'Left Ventricle', 'Pulmonary Semilunar Valve', 'Aortic Semilunar Valve', 'Pulmonary Trunk', 'Systemic Aorta'],
+        whyItHappens: 'Left ventricular pressure surges to ~120 mmHg, overcoming systemic aortic diastolic pressure (~80 mmHg) to drive cardiac stroke volume (~70 mL).',
+        whatHappensNext: 'Ventricles empty their stroke volume and begin relaxing.'
+      },
+      {
+        stepNumber: 5,
+        title: 'Ventricular Diastole & Semilunar Valve Closure (Second Heart Sound: "DUB")',
+        whatHappens: 'Ventricles relax (diastole); chamber pressure drops steeply below arterial pressures. Blood attempting to flow backward into the ventricles snaps the Aortic and Pulmonary Semilunar valves shut.',
+        whereItHappens: 'Base of Aorta and Pulmonary Trunk.',
+        componentsInvolved: ['Aortic Semilunar Valve', 'Pulmonary Semilunar Valve', 'Ventricular Cavities'],
+        whyItHappens: 'Snapping closure of the semilunar valves creates the sharp, shorter Second Heart Sound ("DUB" / S₂), protecting the ventricles from arterial backflow.',
+        whatHappensNext: 'Both atria and ventricles enter joint diastole to begin the next cardiac filling cycle.'
+      },
+      {
+        stepNumber: 6,
+        title: 'Capillary Exchange & Complete Dual Circulation Route',
+        whatHappens: 'Blood in pulmonary capillaries releases CO₂ and binds O₂ before returning to LA; simultaneously, blood in systemic capillaries delivers O₂ and nutrients to cells and absorbs cellular wastes before returning to RA: Body → Vena Cava → RA → Tricuspid → RV → Pulmonary Valve → Pulmonary Artery → Lungs → Pulmonary Veins → LA → Mitral → LV → Aorta → Body.',
+        whereItHappens: 'Alveolar pulmonary capillary networks and systemic peripheral tissue capillary beds.',
+        componentsInvolved: ['Pulmonary Capillaries', 'Systemic Capillaries', 'Erythrocytes (Hemoglobin)', 'Body Tissues'],
+        whyItHappens: 'Maintains high concentration gradients for diffusion of respiratory gases across semi-permeable membranes.',
+        whatHappensNext: 'Venous blood recollected by venules feeds back into vena cava, perpetuating the continuous circulatory circuit.'
+      }
+    ];
+  }
+
+  if (/photosynthesis|chloroplast|light reaction|calvin/.test(l)) {
     return [
       {
         stepNumber: 1,
         title: 'Photon Absorption & Water Photolysis',
-        whatHappens: 'Chlorophyll in PS II absorbs sunlight, exciting electrons while water is split into protons, electrons, and oxygen gas.',
-        whereItHappens: 'Across the thylakoid membrane and Oxygen-Evolving Complex.',
+        whatHappens: 'Chlorophyll pigments in Photosystem II (PS II) absorb light photons, promoting valence electrons to high energy levels. Simultaneously, the Oxygen-Evolving Complex cleaves water into protons, electrons, and molecular oxygen ($2H_2O \\rightarrow 4H^+ + 4e^- + O_2$).',
+        whereItHappens: 'Thylakoid grana membrane and Oxygen-Evolving Complex.',
         componentsInvolved: ['Light Photons', 'Chlorophyll P680', 'H₂O', 'Oxygen-Evolving Complex'],
-        whyItHappens: 'Light energy excites ground-state electrons to a high potential level, requiring water electrons to replenish the reaction center.',
-        whatHappensNext: 'Electrons pass to Cytochrome b₆f, triggering proton pumping into the lumen.'
+        whyItHappens: 'Absorbed light energy excites ground-state electrons; extracted water electrons replenish the oxidized reaction center while oxygen diffuses out through stomata.',
+        whatHappensNext: 'Energized electrons pass to plastoquinone and Cytochrome b₆f, initiating proton translocation.'
       },
       {
         stepNumber: 2,
-        title: 'Electron Transport & ATP/NADPH Generation',
-        whatHappens: 'Electrons travel through the electron transport chain to PS I, reducing NADP⁺ to NADPH while H⁺ efflux drives ATP synthesis.',
-        whereItHappens: 'Thylakoid membrane complexes and ATP Synthase.',
-        componentsInvolved: ['Cyt b₆f', 'PS I (P700)', 'NADP⁺ Reductase', 'ATP Synthase'],
-        whyItHappens: 'Proton accumulation in the lumen creates a chemiosmotic gradient that forces ATP Synthase to turn.',
-        whatHappensNext: 'ATP and NADPH dissolve into the adjacent stroma to fuel the Calvin Cycle.'
+        title: 'Electron Transport Chain & Photophosphorylation',
+        whatHappens: 'Electrons traverse Cytochrome b₆f to Photosystem I (PS I), pumping protons ($H^+$) into the thylakoid lumen. Ferredoxin and $NADP^+$ Reductase reduce $NADP^+$ to $NADPH$, while the resulting proton electrochemical gradient drives ATP Synthase to generate ATP.',
+        whereItHappens: 'Thylakoid membrane protein complexes and ATP Synthase coupling factor ($CF_0-CF_1$).',
+        componentsInvolved: ['Cyt b₆f', 'Plastocyanin', 'PS I (P700)', 'NADP⁺ Reductase', 'ATP Synthase'],
+        whyItHappens: 'Proton accumulation in the thylakoid lumen creates a steep chemiosmotic proton-motive force that rotates ATP Synthase.',
+        whatHappensNext: 'ATP and NADPH diffuse from the thylakoid surface into the surrounding aqueous stroma.'
       },
       {
         stepNumber: 3,
-        title: 'Enzymatic Carbon Fixation & Glucose Synthesis',
-        whatHappens: 'RuBisCO fixes atmospheric CO₂ onto RuBP; ATP and NADPH reduce 3-PGA into G3P; G3P condenses into glucose and starch.',
+        title: 'Enzymatic Carbon Fixation & Glucose Synthesis (Calvin Cycle)',
+        whatHappens: 'In the stroma, the enzyme RuBisCO fixes atmospheric $CO_2$ onto Ribulose-1,5-bisphosphate (RuBP) to yield 3-PGA; ATP and NADPH reduce 3-PGA into glyceraldehyde-3-phosphate (G3P), which condenses into glucose and regenerates RuBP.',
         whereItHappens: 'Chloroplast Stroma aqueous matrix.',
         componentsInvolved: ['CO₂', 'RuBP', 'RuBisCO', 'ATP', 'NADPH', 'G3P'],
-        whyItHappens: 'Chemical energy stored in ATP and NADPH is transferred into stable, long-lasting carbon-carbon chemical bonds.',
-        whatHappensNext: 'Synthesized glucose is translocated through phloem to nourish roots, stems, and fruits.'
+        whyItHappens: 'Chemical energy stored in ATP and NADPH is transferred into stable covalent carbon-carbon bonds of glucose ($C_6H_{12}O_6$).',
+        whatHappensNext: 'Synthesized glucose is converted to sucrose for phloem translocation or stored as starch granules.'
       }
     ];
   }
 
-  if (l.includes('heart') || l.includes('cardiac')) {
+  if (/newton|force|motion|inertia/.test(l)) {
     return [
       {
         stepNumber: 1,
-        title: 'Atrial Diastole & Passive Ventricular Filling',
-        whatHappens: 'Deoxygenated blood fills RA from vena cava while oxygenated blood fills LA from pulmonary veins; AV valves open.',
-        whereItHappens: 'Right and Left Atria and AV valves.',
-        componentsInvolved: ['Vena Cava', 'Pulmonary Veins', 'RA', 'LA', 'Tricuspid', 'Bicuspid'],
-        whyItHappens: 'Low chamber pressure creates a suction gradient drawing venous blood into the heart.',
-        whatHappensNext: 'SA node fires an action potential triggering active atrial systole.'
+        title: 'Inertial State & Force Identification',
+        whatHappens: 'An object remains in its existing state of rest or constant linear velocity until subjected to unbalanced external contact or field forces.',
+        whereItHappens: 'Inertial frame of reference.',
+        componentsInvolved: ['Physical Mass (m)', 'Inertial Frame', 'External Interactions'],
+        whyItHappens: 'Mass possesses intrinsic inertia, resisting changes to its momentum vector.',
+        whatHappensNext: 'Applied external forces resolve into a resultant non-zero net vector sum ($\\sum \\vec{F} \\neq 0$).'
       },
       {
         stepNumber: 2,
-        title: 'Atrial Systole & 0.1s AV Nodal Delay',
-        whatHappens: 'Atria contract, squeezing remaining 20–30% of blood into ventricles; pulse pauses at AV node for 0.1 second.',
-        whereItHappens: 'Atrial myocardium and AV Node.',
-        componentsInvolved: ['SA Node', 'Atrial Myocardium', 'AV Node'],
-        whyItHappens: 'The delay allows atria to finish emptying before ventricles begin contracting.',
-        whatHappensNext: 'Action potential speeds down the Bundle of His into Purkinje fibers.'
+        title: 'Momentum Variation & Dynamic Acceleration',
+        whatHappens: 'The unbalanced net force drives an acceleration inversely proportional to mass and directly proportional to force magnitude ($\\vec{a} = \\vec{F}_{\\text{net}} / m$).',
+        whereItHappens: 'Along the directional vector of the net applied force.',
+        componentsInvolved: ['Net Force (F)', 'Mass (m)', 'Acceleration Vector (a)'],
+        whyItHappens: 'Newton\'s Second Law dictates that the time rate of change of momentum is proportional to the applied force.',
+        whatHappensNext: 'Simultaneous action-reaction force pairs develop at all physical points of contact.'
       },
       {
         stepNumber: 3,
-        title: 'Ventricular Systole & Ejection (LUB Sound)',
-        whatHappens: 'Ventricles contract forcefully from apex up; AV valves snap shut (LUB); Semilunar valves open, ejecting blood into Aorta and Pulmonary trunk.',
-        whereItHappens: 'Right and Left Ventricles, Aorta, Pulmonary Artery.',
-        componentsInvolved: ['Purkinje Fibers', 'Left/Right Ventricles', 'Tricuspid/Bicuspid (closed)', 'Semilunar Valves (open)'],
-        whyItHappens: 'High ventricular pressure overcomes arterial backpressure, driving systemic and pulmonary perfusion.',
-        whatHappensNext: 'Ventricles relax, Semilunar valves snap shut (DUB), and the cycle repeats.'
+        title: 'Action-Reaction Interaction & Momentum Conservation',
+        whatHappens: 'The interacting bodies exert equal and opposite collinear forces upon each other ($\\vec{F}_{12} = -\\vec{F}_{21}$); if the system is isolated, total momentum is strictly conserved.',
+        whereItHappens: 'Mutual interface between interacting bodies.',
+        componentsInvolved: ['Body 1', 'Body 2', 'Mutual Interaction Forces'],
+        whyItHappens: 'Forces in nature always occur in paired simultaneous reciprocal interactions.',
+        whatHappensNext: 'Velocities adjust until external forces cease or reach static mechanical equilibrium.'
       }
     ];
   }
 
+  if (/circuit|electric|current|ohm/.test(l)) {
+    return [
+      {
+        stepNumber: 1,
+        title: 'Potential Difference Establishment',
+        whatHappens: 'A chemical battery or DC source creates an electromotive force (EMF) separating charges, establishing a high potential positive terminal and low potential negative terminal.',
+        whereItHappens: 'Power source and connecting conductors.',
+        componentsInvolved: ['Battery/Power Source', 'Electromotive Force', 'Free Electrons'],
+        whyItHappens: 'Electrochemical potential energy builds an electric field inside the closed conducting circuit.',
+        whatHappensNext: 'Free conduction electrons experience an electrostatic Coulomb force driving drift velocity.'
+      },
+      {
+        stepNumber: 2,
+        title: 'Charge Drift & Resistive Voltage Drop',
+        whatHappens: 'Electrons drift through the conductor; collisions with ionic lattice atoms impede motion, establishing resistance ($R$) and dropping potential by $V = I \\cdot R$.',
+        whereItHappens: 'Resistive circuit elements and metallic wire lattice.',
+        componentsInvolved: ['Drifting Electrons', 'Metallic Lattice', 'Resistor Component'],
+        whyItHappens: 'Inelastic collisions transfer electrical kinetic energy into thermal vibrations (Joule heating: $H = I^2 R t$).',
+        whatHappensNext: 'Current passes through the load, performing work or emitting light/heat.'
+      },
+      {
+        stepNumber: 3,
+        title: 'Loop Completion & Kirchhoff Equilibrium',
+        whatHappens: 'Charges return to the opposite terminal, maintaining continuous closed-loop current while total EMF equals the sum of branch potential drops ($\\sum V = 0$).',
+        whereItHappens: 'Closed circuit pathway.',
+        componentsInvolved: ['Return Wire', 'Switch/Ammeter', 'Complete Loop'],
+        whyItHappens: 'Conservation of charge dictates that current entering any junction must equal current leaving it.',
+        whatHappensNext: 'Current flows steadily as long as the voltage source and switch remain closed.'
+      }
+    ];
+  }
+
+  if (/quadratic|equation|root/.test(l)) {
+    return [
+      {
+        stepNumber: 1,
+        title: 'Standard Canonical Alignment & Coefficient Extraction',
+        whatHappens: 'All terms are gathered on one side to achieve standard quadratic form: $ax^2 + bx + c = 0$, identifying coefficients $a$, $b$, and constant $c$ ($a \\neq 0$).',
+        whereItHappens: 'Algebraic equation formulation.',
+        componentsInvolved: ['Leading Coefficient (a)', 'Linear Coefficient (b)', 'Constant Term (c)'],
+        whyItHappens: 'Standardization allows exact identification of parameters for factoring or quadratic formula substitution.',
+        whatHappensNext: 'Calculate the discriminant to determine root nature.'
+      },
+      {
+        stepNumber: 2,
+        title: 'Discriminant Evaluation ($\\Delta = b^2 - 4ac$)',
+        whatHappens: 'Compute the discriminant value: if $\\Delta > 0$, roots are real and distinct; if $\\Delta = 0$, roots are real and repeated; if $\\Delta < 0$, roots are complex conjugates.',
+        whereItHappens: 'Under the radical sign of the quadratic formula.',
+        componentsInvolved: ['Discriminant (b² - 4ac)', 'Square Root Radical'],
+        whyItHappens: 'The sign of the radical radicand determines whether real-number solutions exist on the Cartesian x-axis.',
+        whatHappensNext: 'Substitute $\\Delta$ into the quadratic formula to compute root values.'
+      },
+      {
+        stepNumber: 3,
+        title: 'Root Computation & Vieta Verification',
+        whatHappens: 'Compute $x_1, x_2 = \\frac{-b \\pm \\sqrt{\\Delta}}{2a}$, and verify against Vieta’s formulas ($x_1 + x_2 = -b/a$ and $x_1 \\cdot x_2 = c/a$).',
+        whereItHappens: 'Final algebraic solution set.',
+        componentsInvolved: ['Calculated Roots', 'Vieta Relations', 'Solution Verification'],
+        whyItHappens: 'Ensures algebraic correctness and confirms intersection coordinates on the parabola.',
+        whatHappensNext: 'Box the final verified roots with proper mathematical notation.'
+      }
+    ];
+  }
+
+  // Universal Fallback for any other academic topic:
   return [
     {
       stepNumber: 1,
-      title: 'Initial Excitation & Inflow',
-      whatHappens: 'Substrates or initial forces are gathered and concentrated at the active site.',
-      whereItHappens: 'At the boundary surface of the primary functional unit.',
-      componentsInvolved: ['External Supply', 'Receptor Surface'],
-      whyItHappens: 'Because concentration or potential difference drives inward movement.',
-      whatHappensNext: 'The activation energy threshold is reached, triggering the transformation phase.'
+      title: 'Initial Condition & Primary Inputs',
+      whatHappens: `Core prerequisite elements and fundamental conditions for ${topic} assemble and initiate interaction.`,
+      whereItHappens: `Primary domain location defined by ${subject} curriculum standards.`,
+      componentsInvolved: ['Primary Reactants / Entities', 'Initial Field / Medium'],
+      whyItHappens: `Potential difference, concentration gradient, or academic rule triggers the initial transformation.`,
+      whatHappensNext: `The activation threshold is reached, advancing into the core working mechanism.`
     },
     {
       stepNumber: 2,
-      title: 'Catalytic Transformation & Propagation',
-      whatHappens: 'Bonds are rearranged or momentum is transferred directly along the main axis.',
-      whereItHappens: 'Within the central reaction or deflection chamber.',
-      componentsInvolved: ['Enzyme/Catalyst', 'Substrate Complex', 'Force Transducer'],
-      whyItHappens: 'Unbalanced forces compel acceleration in accordance with physical laws.',
-      whatHappensNext: 'The intermediate complex resolves into final separated products.'
+      title: 'Core Transformation & Working Mechanism',
+      whatHappens: `The governing principles of ${topic} execute sequentially, transferring energy, momentum, or structural states.`,
+      whereItHappens: `Central functional zone or reaction chamber.`,
+      componentsInvolved: ['Transforming Agents', 'Intermediate States', 'Catalysts / Forces'],
+      whyItHappens: `Physical, chemical, or logical conservation laws enforce the direction of state change.`,
+      whatHappensNext: `Intermediates resolve into stable terminal outputs.`
     },
     {
       stepNumber: 3,
-      title: 'Terminal Ejection & Reset',
-      whatHappens: 'Completed outputs are discharged and the primary unit returns to ground state.',
-      whereItHappens: 'At the exhaust, systemic outflow, or ground level.',
-      componentsInvolved: ['Efflux Channels', 'Reset Pacemaker'],
-      whyItHappens: 'To maintain readiness for the subsequent operational cycle.',
-      whatHappensNext: 'The system enters a brief refractory period before repeating.'
+      title: 'Terminal Result & Equilibrium Stabilization',
+      whatHappens: `The final products, steady-state motion, or solved values of ${topic} are established and verified.`,
+      whereItHappens: `Terminal boundary or completed output domain.`,
+      componentsInvolved: ['Final Products / Quantities', 'Stabilizing Feedback'],
+      whyItHappens: `System reaches minimum free energy or logical mathematical consistency.`,
+      whatHappensNext: `The cycle or proof is complete and ready for academic application and exam evaluation.`
     }
   ];
 }
