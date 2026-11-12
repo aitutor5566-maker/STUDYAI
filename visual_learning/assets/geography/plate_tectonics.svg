@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 520" width="100%" height="auto" preserveAspectRatio="xMidYMid meet">
+      <rect width="840" height="520" rx="24" fill="#0F172A"/>
+      <text x="420" y="34" font-family="Inter, sans-serif" font-size="17" font-weight="800" fill="#FFFFFF" text-anchor="middle">Plate Tectonics — Mid-Ocean Divergent Ridge, Subduction Trench &amp; Mantle Convection</text>
+      <rect x="60" y="280" width="720" height="150" rx="12" fill="#7C2D12" stroke="#F97316" stroke-width="2"/>
+      <text x="360" y="385" font-family="Inter, sans-serif" font-size="15" font-weight="800" fill="#FFEDD5" text-anchor="middle">Asthenosphere Mantle Convection Loops (Slab Pull &amp; Ridge Push)</text>
+      <path d="M 60 225 L 220 205 L 250 235 L 280 205 L 520 235 L 610 345" fill="none" stroke="#64748B" stroke-width="24"/>
+      <polygon points="520,230 580,155 650,230 780,230 780,280 520,280" fill="#15803D" stroke="#86EFAC" stroke-width="2"/>
+      <circle cx="580" cy="155" r="8" fill="#EF4444"/>
+      <text x="250" y="175" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#FDE047" text-anchor="middle">Divergent Ridge ↑</text>
+      <text x="515" y="195" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#38BDF8" text-anchor="middle">Subduction Trench ↘</text>
+      <text x="670" y="145" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#FCA5A5" text-anchor="middle">Volcanic Arc / Fold Mtns</text>
+      <rect x="120" y="445" width="600" height="40" rx="10" fill="#1E293B" stroke="#F97316" stroke-width="1.5"/>
+      <text x="420" y="470" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#FFEDD5" text-anchor="middle">3 Boundary Types: Divergent (Constructive)  |  Convergent (Destructive/Collision)  |  Transform (Conservative)</text>
+    </svg>

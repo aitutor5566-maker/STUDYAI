@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 520" width="100%" height="auto" preserveAspectRatio="xMidYMid meet">
+      <rect width="840" height="520" rx="20" fill="#0F172A"/>
+      <text x="420" y="32" font-family="Inter, sans-serif" font-size="17" font-weight="800" fill="#FFFFFF" text-anchor="middle">Newton's Laws of Motion — Force Vector Equilibrium &amp; FBD</text>
+
+      <!-- Ground Surface with Crosshatching -->
+      <line x1="80" y1="340" x2="760" y2="340" stroke="#475569" stroke-width="5"/>
+      <g stroke="#334155" stroke-width="2">
+        <line x1="120" y1="340" x2="100" y2="360"/><line x1="160" y1="340" x2="140" y2="360"/>
+        <line x1="200" y1="340" x2="180" y2="360"/><line x1="240" y1="340" x2="220" y2="360"/>
+        <line x1="280" y1="340" x2="260" y2="360"/><line x1="320" y1="340" x2="300" y2="360"/>
+        <line x1="360" y1="340" x2="340" y2="360"/><line x1="400" y1="340" x2="380" y2="360"/>
+        <line x1="440" y1="340" x2="420" y2="360"/><line x1="480" y1="340" x2="460" y2="360"/>
+        <line x1="520" y1="340" x2="500" y2="360"/><line x1="560" y1="340" x2="540" y2="360"/>
+        <line x1="600" y1="340" x2="580" y2="360"/><line x1="640" y1="340" x2="620" y2="360"/>
+        <line x1="680" y1="340" x2="660" y2="360"/><line x1="720" y1="340" x2="700" y2="360"/>
+      </g>
+
+      <!-- Block of Mass m -->
+      <rect x="330" y="210" width="180" height="130" rx="14" fill="#FF6A00" stroke="#FFA94D" stroke-width="3"/>
+      <text x="420" y="280" font-family="Inter, sans-serif" font-size="22" font-weight="800" fill="#FFFFFF" text-anchor="middle">Mass (m)</text>
+      <text x="420" y="305" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#FED7AA" text-anchor="middle">Inertial Reference</text>
+
+      <!-- Center of Mass Dot -->
+      <circle cx="420" cy="275" r="6" fill="#FFFFFF"/>
+
+      <!-- Vector: Normal Force (Upward Blue) -->
+      <line x1="420" y1="210" x2="420" y2="90" stroke="#0284C7" stroke-width="8"/>
+      <polygon points="420,75 408,100 432,100" fill="#0284C7"/>
+      <text x="440" y="105" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#38BDF8">Normal (N = mg)</text>
+
+      <!-- Vector: Gravity Weight (Downward Purple) -->
+      <line x1="420" y1="340" x2="420" y2="460" stroke="#7C3AED" stroke-width="8"/>
+      <polygon points="420,475 408,450 432,450" fill="#7C3AED"/>
+      <text x="440" y="445" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#C084FC">Gravity (W = m · g)</text>
+
+      <!-- Vector: Applied Force (Rightward Green) -->
+      <line x1="510" y1="275" x2="680" y2="275" stroke="#16A34A" stroke-width="9"/>
+      <polygon points="695,275 670,260 670,290" fill="#16A34A"/>
+      <text x="600" y="255" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#4ADE80">Applied Force (F)</text>
+
+      <!-- Vector: Opposing Friction (Leftward Red) -->
+      <line x1="330" y1="335" x2="180" y2="335" stroke="#DC2626" stroke-width="7"/>
+      <polygon points="165,335 190,323 190,347" fill="#DC2626"/>
+      <text x="245" y="320" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#F87171">Friction (f = μN)</text>
+
+      <!-- Bottom Equation Banner -->
+      <rect x="180" y="465" width="480" height="42" rx="10" fill="#1E293B" stroke="#FF6A00" stroke-width="1.5"/>
+      <text x="420" y="492" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#FFD8A8" text-anchor="middle">Net Force Equation: F_net = F - f = m · a  ⇒  a = (F - μmg) / m</text>
+    </svg>

@@ -1,0 +1,630 @@
+[
+  {
+    "key": "human_heart",
+    "topic": "Structure of the Human Heart",
+    "subtopic": "Anatomy, 4 Chambers & Double Circulation",
+    "subject": "Biology",
+    "visualType": "anatomical_cross_section",
+    "title": "Human Heart: Internal Coronal Cutaway & Blood Flow Pathways",
+    "caption": "Detailed 4-chamber anatomical cutaway showing thick myocardial walls, atrioventricular valves, and systemic/pulmonary circulation loops.",
+    "publicUrl": "/images/educational/human_heart.svg",
+    "visualLearningPath": "visual_learning/assets/biology/human_heart.svg",
+    "labelsCount": 10,
+    "walkthrough": {
+      "whatItShows": "Coronal cross-section of the human heart revealing the internal cavities of all four chambers, cardiac valves, and major vascular trunks.",
+      "importantComponents": [
+        "Left Ventricle",
+        "Right Ventricle",
+        "Left Atrium",
+        "Right Atrium",
+        "Aorta",
+        "Pulmonary Trunk",
+        "Tricuspid & Bicuspid Valves"
+      ],
+      "processSequence": [
+        "1. Deoxygenated blood returns from body tissues via the Venae Cavae into the Right Atrium.",
+        "2. The Right Atrium contracts, passing blood through the Tricuspid Valve into the Right Ventricle.",
+        "3. The Right Ventricle pumps blood through the Pulmonary Artery to the lungs for gas exchange.",
+        "4. Oxygenated blood from the lungs returns via Pulmonary Veins into the Left Atrium.",
+        "5. The Left Ventricle contracts forcefully, ejecting oxygenated blood through the Aorta to the entire body."
+      ],
+      "examTakeaway": "Always highlight that the Left Ventricle myocardium is 3 times thicker than the Right Ventricle because it must pump blood against high systemic systemic vascular resistance."
+    }
+  },
+  {
+    "key": "human_brain",
+    "topic": "Structure of the Human Brain",
+    "subtopic": "Cerebral Lobes, Cerebellum & Brainstem",
+    "subject": "Biology",
+    "visualType": "anatomical_cross_section",
+    "title": "Human Brain: Functional Lobes & Sagittal Cross-Section",
+    "caption": "Midsagittal schematic showing Frontal, Parietal, Occipital, and Temporal lobes, Corpus Callosum, Cerebellum, and Brainstem.",
+    "publicUrl": "/images/educational/human_brain.svg",
+    "visualLearningPath": "visual_learning/assets/biology/human_brain.svg",
+    "labelsCount": 7,
+    "walkthrough": {
+      "whatItShows": "Midsagittal view of the human brain highlighting the major lobes of the cerebrum, the subcortical corpus callosum, the arbor vitae of the cerebellum, and the brainstem.",
+      "importantComponents": [
+        "Frontal Lobe",
+        "Parietal Lobe",
+        "Occipital Lobe",
+        "Temporal Lobe",
+        "Corpus Callosum",
+        "Cerebellum",
+        "Brainstem"
+      ],
+      "processSequence": [
+        "1. Sensory signals enter via the brainstem and thalamus, directing specific modalities to cortical lobes.",
+        "2. Frontal lobe integrates reasoning and initiates voluntary motor impulses.",
+        "3. Cerebellum receives motor copies to continuously refine balance and coordination.",
+        "4. Medulla oblongata within the brainstem ensures uninterrupted cardiac and respiratory rhythm."
+      ],
+      "examTakeaway": "In exams, remember: Cerebellum controls balance and fine motor coordination; Medulla oblongata controls involuntary reflex centers like breathing and heartbeat."
+    }
+  },
+  {
+    "key": "dna_helix",
+    "topic": "DNA Structure & Replication",
+    "subtopic": "Antiparallel Double Helix & Nucleotide Base Pairs",
+    "subject": "Biology",
+    "visualType": "molecular_schematic",
+    "title": "DNA Double Helix: Watson-Crick Antiparallel Molecular Model",
+    "caption": "Antiparallel 5′ to 3′ sugar-phosphate backbone with complementary Adenine-Thymine (2 H-bonds) and Guanine-Cytosine (3 H-bonds) base pairing.",
+    "publicUrl": "/images/educational/dna_helix.svg",
+    "visualLearningPath": "visual_learning/assets/biology/dna_helix.svg",
+    "labelsCount": 5,
+    "walkthrough": {
+      "whatItShows": "Right-handed B-DNA double helix showing the spiraling sugar-phosphate strands and nitrogenous base rungs.",
+      "importantComponents": [
+        "Sugar-Phosphate Strands",
+        "Adenine (A)",
+        "Thymine (T)",
+        "Guanine (G)",
+        "Cytosine (C)",
+        "Hydrogen Bonds"
+      ],
+      "processSequence": [
+        "1. Two polynucleotide chains run in opposite antiparallel directions (5′ to 3′ vs 3′ to 5′).",
+        "2. Hydrophobic nitrogenous bases face inward, perpendicular to the central helix axis.",
+        "3. Chargaff rule governs pairing: Adenine always pairs with Thymine; Guanine always pairs with Cytosine.",
+        "4. Each complete 360° helical turn spans 3.4 nanometers and contains approximately 10 base pairs."
+      ],
+      "examTakeaway": "Always state that G-C pairs are held by 3 hydrogen bonds while A-T pairs are held by 2, making G-C rich DNA thermally more stable."
+    }
+  },
+  {
+    "key": "plant_cell",
+    "topic": "Plant Cell Structure",
+    "subtopic": "Cell Wall, Chloroplasts, Vacuole & Organelles",
+    "subject": "Biology",
+    "visualType": "biological_process_diagram",
+    "title": "Eukaryotic Plant Cell: Cellular Ultrastructure & Organelles",
+    "caption": "Plant cell cross-section showing rigid cellulose cell wall, large central vacuole, photosynthetic chloroplasts, nucleus, and mitochondria.",
+    "publicUrl": "/images/educational/plant_cell.svg",
+    "visualLearningPath": "visual_learning/assets/biology/plant_cell.svg",
+    "labelsCount": 5,
+    "walkthrough": {
+      "whatItShows": "Transverse cutaway of a typical eukaryotic green plant cell showing distinguishing structures that differentiate it from animal cells.",
+      "importantComponents": [
+        "Cell Wall",
+        "Central Vacuole",
+        "Chloroplasts",
+        "Nucleus",
+        "Mitochondria",
+        "Endoplasmic Reticulum"
+      ],
+      "processSequence": [
+        "1. Cellulose cell wall and plasma membrane enclose cytoplasm while maintaining osmotic turgor.",
+        "2. Chloroplasts synthesize glucose using solar photons and carbon dioxide.",
+        "3. Mitochondria break down glucose to generate cellular ATP energy.",
+        "4. Large central vacuole absorbs water, exerting hydrostatic pressure against cell walls to keep plant stems upright."
+      ],
+      "examTakeaway": "In exams, note 3 exclusive plant cell features: Cellulose cell wall, photosynthetic chloroplasts, and a large permanent central vacuole."
+    }
+  },
+  {
+    "key": "chemical_bonding",
+    "topic": "Chemical Bonding (Ionic vs Covalent)",
+    "subtopic": "Electron Transfer (NaCl) vs Electron Sharing (H2O)",
+    "subject": "Chemistry",
+    "visualType": "comparison_diagram",
+    "title": "Chemical Bonding: Ionic Electron Transfer vs Covalent Orbital Sharing",
+    "caption": "Side-by-side comparison showing complete valence electron transfer in Sodium Chloride (NaCl) versus shared electron pairs in Water (H₂O).",
+    "publicUrl": "/images/educational/chemical_bonding.svg",
+    "visualLearningPath": "visual_learning/assets/chemistry/chemical_bonding.svg",
+    "labelsCount": 4,
+    "walkthrough": {
+      "whatItShows": "Fundamental comparison of the two primary chemical bonding types: complete electrostatic transfer (Ionic) versus mutual orbital sharing (Covalent).",
+      "importantComponents": [
+        "Na⁺ Cation",
+        "Cl⁻ Anion",
+        "H₂O Bent Molecule",
+        "Valence Electrons",
+        "Shared Pairs"
+      ],
+      "processSequence": [
+        "1. In Ionic Bonding (NaCl), Sodium transfers its single 3s¹ valence electron to Chlorine.",
+        "2. Electrostatic attraction between Na⁺ and Cl⁻ binds ions into a solid crystal lattice.",
+        "3. In Covalent Bonding (H₂O), Oxygen shares pairs of electrons with Hydrogen atoms.",
+        "4. Shared electrons achieve stable duplet configuration for Hydrogen and octet for Oxygen."
+      ],
+      "examTakeaway": "Ionic compounds have high melting points and conduct electricity when molten or aqueous; covalent molecular compounds have lower melting points and do not conduct electricity."
+    }
+  },
+  {
+    "key": "newton_motion",
+    "topic": "Newton's Laws of Force & Motion",
+    "subtopic": "Free-Body Diagram (FBD), Friction & Net Force Vectors",
+    "subject": "Physics",
+    "visualType": "physics_vector_schematic",
+    "title": "Newton's Laws of Motion: Vector Free-Body Analysis (F = m · a)",
+    "caption": "Dynamic force vector schematic showing Normal reaction (N), Gravitational weight (mg), Applied force (F), and Opposing friction (f = μN).",
+    "publicUrl": "/images/educational/newton_motion.svg",
+    "visualLearningPath": "visual_learning/assets/physics/newton_motion.svg",
+    "labelsCount": 4,
+    "walkthrough": {
+      "whatItShows": "Vector decomposition on a body of mass m resting on a horizontal plane with surface friction coefficient μ.",
+      "importantComponents": [
+        "Mass m",
+        "Normal Force N",
+        "Gravity W = mg",
+        "Applied Force F",
+        "Friction f = μN"
+      ],
+      "processSequence": [
+        "1. Vertical equilibrium holds: Net vertical force = N - mg = 0, so N = mg.",
+        "2. Horizontal net force determines motion: F_net = F_applied - f_friction.",
+        "3. By Newton 2nd Law: a = F_net / m.",
+        "4. If F_applied ≤ f_static_max, the object remains at rest due to balanced forces."
+      ],
+      "examTakeaway": "Always state that acceleration occurs in the direction of the NET unbalanced force, not simply the applied force."
+    }
+  },
+  {
+    "key": "water_cycle",
+    "topic": "Earth's Hydrological Water Cycle",
+    "subtopic": "Evaporation, Transpiration, Condensation & Precipitation",
+    "subject": "Geography",
+    "visualType": "geological_cross_section",
+    "title": "Earth's Hydrological Cycle: Closed Energy & Water Circulation",
+    "caption": "Geographical cross-section illustrating solar-driven evaporation, plant transpiration, cloud condensation, orographic precipitation, and groundwater runoff.",
+    "publicUrl": "/images/educational/water_cycle.svg",
+    "visualLearningPath": "visual_learning/assets/geography/water_cycle.svg",
+    "labelsCount": 6,
+    "walkthrough": {
+      "whatItShows": "Landscape cutaway of mountains, forests, rivers, and oceans showing the uninterrupted closed-loop circulation of water across Earth.",
+      "importantComponents": [
+        "Sun",
+        "Ocean",
+        "Clouds",
+        "Mountain Elevation",
+        "Rainfall",
+        "River System",
+        "Groundwater Table"
+      ],
+      "processSequence": [
+        "1. Solar radiation warms ocean and lake surfaces, evaporating water into vapor.",
+        "2. Warm moist air rises and expands adiabatically, cooling to dew point to form cumulus clouds.",
+        "3. When droplets coalesce beyond terminal velocity, precipitation falls as rain or snow.",
+        "4. Meltwater and rain flow as rivers and groundwater, returning to the ocean to sustain equilibrium."
+      ],
+      "examTakeaway": "Earth water cycle is a closed system: total volume of water remains constant; only its physical states (solid, liquid, gas) continuously cycle."
+    }
+  },
+  {
+    "key": "photosynthesis",
+    "topic": "Photosynthesis",
+    "subtopic": "Light-Dependent Reactions (Thylakoid) & Calvin Cycle (Stroma)",
+    "subject": "Biology",
+    "visualType": "biological_process_diagram",
+    "title": "Photosynthesis: Chloroplast Photophosphorylation & Carbon Fixation",
+    "caption": "Dual-stage biochemical pathway inside the chloroplast showing photolysis of H₂O at Thylakoid Grana producing ATP/NADPH, and CO₂ fixation via RuBisCO in the Stroma to synthesize Glucose (C₆H₁₂O₆).",
+    "publicUrl": "/images/educational/photosynthesis.svg",
+    "visualLearningPath": "visual_learning/assets/biology/photosynthesis.svg",
+    "labelsCount": 6,
+    "walkthrough": {
+      "whatItShows": "Complete chloroplast biochemical machinery linking Light-Dependent Reactions in the Thylakoid Grana to the Calvin Cycle in the Stroma.",
+      "importantComponents": [
+        "Thylakoid Grana: Captures photons via Chlorophyll-a and splits water (Photolysis) to evolve O₂.",
+        "ATP & NADPH Shuttle: High-energy molecules powering carbon reduction.",
+        "Stroma (Calvin Cycle): Fixes atmospheric CO₂ using RuBisCO enzyme into G3P and Glucose (C₆H₁₂O₆)."
+      ],
+      "processSequence": [
+        "1. Photoexcitation: Chlorophyll absorbs red/blue photons; Photolysis splits 2H₂O into O₂, protons, and electrons.",
+        "2. Photophosphorylation: Electron transport chain generates ATP and reduces NADP⁺ to NADPH.",
+        "3. Carbon Fixation (Calvin Cycle): CO₂ combines with RuBP via RuBisCO in the stroma, using ATP and NADPH to yield Glucose (C₆H₁₂O₆)."
+      ],
+      "examTakeaway": "Balanced Equation: 6CO₂ + 12H₂O --(Sunlight / Chlorophyll)--> C₆H₁₂O₆ + 6O₂ + 6H₂O. Remember: O₂ comes strictly from H₂O, not CO₂!"
+    }
+  },
+  {
+    "key": "digestive_system",
+    "topic": "Human Digestive System",
+    "subtopic": "Alimentary Canal, Accessory Glands & Peristaltic Absorption",
+    "subject": "Biology",
+    "visualType": "anatomical_cross_section",
+    "title": "Human Digestive System: Alimentary Canal & Enzymatic Pathways",
+    "caption": "Complete anatomical schematic of the human gastrointestinal tract from buccal cavity and esophagus to stomach, liver, pancreas, small intestine (villi absorption), and large intestine.",
+    "publicUrl": "/images/educational/digestive_system.svg",
+    "visualLearningPath": "visual_learning/assets/biology/digestive_system.svg",
+    "labelsCount": 7,
+    "walkthrough": {
+      "whatItShows": "Sequential organization of the 9-meter human alimentary canal and its associated digestive glands (salivary glands, liver, pancreas).",
+      "importantComponents": [
+        "Stomach: Secretes HCl (activates Pepsin and kills pathogens) and mucus (protects gastric mucosa).",
+        "Liver & Pancreas: Deliver bile (emulsification of fats) and pancreatic enzymes into the Duodenum.",
+        "Small Intestine (Ileum Villi): Microvilli provide massive surface area with blood capillaries and lacteals for nutrient absorption."
+      ],
+      "processSequence": [
+        "1. Ingestion & Buccal Digestion: Mastication mixes food with salivary amylase (Starch → Maltose).",
+        "2. Gastric Phase: Pepsin cleaves proteins into peptones and proteoses in acidic HCl medium.",
+        "3. Intestinal Phase & Absorption: Bile emulsifies lipids; Lipase, Trypsin, and Maltase complete digestion for villi absorption."
+      ],
+      "examTakeaway": "Bile contains NO enzymes—yet it is essential for fat digestion because bile salts emulsify large lipid droplets into micelles for pancreatic lipase!"
+    }
+  },
+  {
+    "key": "work_power_energy",
+    "topic": "Work, Power and Energy",
+    "subtopic": "Work Done W = F·s·cosθ, Kinetic/Potential Energy & Conservation Law",
+    "subject": "Physics",
+    "visualType": "physics_vector_schematic",
+    "title": "Work, Power & Mechanical Energy Transformation Schematic",
+    "caption": "Physics vector diagram showing force displacement work W = F·d·cosθ and conservation of mechanical energy (PE = mgh transforming into KE = ½mv²).",
+    "publicUrl": "/images/educational/work_power_energy.svg",
+    "visualLearningPath": "visual_learning/assets/physics/work_power_energy.svg",
+    "labelsCount": 4,
+    "walkthrough": {
+      "whatItShows": "Resolution of force vector F at angle θ across displacement s, alongside a frictionless roller-coaster incline demonstrating PE ↔ KE conservation.",
+      "importantComponents": [
+        "Horizontal Force Component (F cosθ): Only the component parallel to displacement performs mechanical work.",
+        "Top of Incline (Height h): Potential Energy PE = mgh is maximum while velocity v = 0.",
+        "Bottom of Incline (Ground): Kinetic Energy KE = ½mv² equals initial mgh (v = √(2gh))."
+      ],
+      "processSequence": [
+        "1. Force Application: Force F applied at angle θ moves mass m through distance s, doing work W = F·s·cosθ.",
+        "2. Energy Transformation: As mass descends from height h, gravitational potential energy converts into kinetic energy.",
+        "3. Power Output: Rate of work execution gives Power P = W / t."
+      ],
+      "examTakeaway": "When force is perpendicular to displacement (θ = 90°, e.g., centripetal force or porter carrying load on level ground), cos 90° = 0, so Work Done W = 0 J!"
+    }
+  },
+  {
+    "key": "simple_machines",
+    "topic": "Simple Machines",
+    "subtopic": "Levers (Classes I, II, III), Pulleys, Mechanical Advantage & Efficiency",
+    "subject": "Physics",
+    "visualType": "physics_vector_schematic",
+    "title": "Simple Machines: Principle of Moments, Mechanical Advantage & Velocity Ratio",
+    "caption": "Comparative physics schematic of First, Second, and Third Class Levers and Pulley systems showing Fulcrum (F), Load (L), Effort (E), Mechanical Advantage (MA = L/E), and Efficiency (η = MA/VR × 100%).",
+    "publicUrl": "/images/educational/simple_machines.svg",
+    "visualLearningPath": "visual_learning/assets/physics/simple_machines.svg",
+    "labelsCount": 4,
+    "walkthrough": {
+      "whatItShows": "Equilibrium of levers under the Principle of Moments alongside a block-and-tackle pulley system demonstrating force multiplication.",
+      "importantComponents": [
+        "Class I Lever (Fulcrum in middle): Scissors, seesaw, crowbar (MA can be >1, =1, or <1).",
+        "Class II Lever (Load in middle): Wheelbarrow, nutcracker (Effort arm > Load arm, so MA is always > 1 — Force Multiplier).",
+        "Class III Lever (Effort in middle): Human forearm, tweezers, fishing rod (MA < 1 — Speed/Distance Multiplier)."
+      ],
+      "processSequence": [
+        "1. Moment Balance: Clockwise Moment (Load × d_L) equals Anticlockwise Moment (Effort × d_E).",
+        "2. Force Multiplication: Making the Effort Arm longer than the Load Arm yields MA = d_E / d_L > 1.",
+        "3. Efficiency Relation: Work Output = η × Work Input, hence η = (MA / VR) × 100%."
+      ],
+      "examTakeaway": "Mnemonic \"FLE 1-2-3\": Middle component is Fulcrum in Class 1, Load in Class 2 (always MA > 1), and Effort in Class 3 (always MA < 1)!"
+    }
+  },
+  {
+    "key": "electric_circuit",
+    "topic": "Electricity and Electric Circuits",
+    "subtopic": "Ohm's Law (V = IR), Series vs Parallel Resistance & Electric Power",
+    "subject": "Physics",
+    "visualType": "physics_vector_schematic",
+    "title": "Electric Circuit Schematic: Ohm's Law (V = IR), Ammeter & Voltmeter",
+    "caption": "Closed DC circuit schematic showing EMF battery source, series Ammeter (A), load resistor (R) with parallel Voltmeter (V), conventional current (I) vs electron drift, and governing equations.",
+    "publicUrl": "/images/educational/electric_circuit.svg",
+    "visualLearningPath": "visual_learning/assets/physics/electric_circuit.svg",
+    "labelsCount": 4,
+    "walkthrough": {
+      "whatItShows": "Standard textbook circuit diagram demonstrating Ohm's Law (V = IR) with proper series Ammeter and parallel Voltmeter connections.",
+      "importantComponents": [
+        "Battery Cell (+ / -): Provides electromotive force (Volts).",
+        "Ammeter (A): Always connected in SERIES because it has negligible internal resistance.",
+        "Voltmeter (V): Always connected in PARALLEL across the resistor because it has very high resistance."
+      ],
+      "processSequence": [
+        "1. Potential Difference: Battery establishes electric field across the conductor.",
+        "2. Current Flow: Conventional current I flows from + to - terminal (electrons drift opposite, from - to +).",
+        "3. Ohmic Drop & Power: Voltage drop across R is V = IR; thermal energy dissipated is H = I²Rt."
+      ],
+      "examTakeaway": "Series Resistance: R_eq = R₁ + R₂. Parallel Resistance: 1/R_eq = 1/R₁ + 1/R₂. Household appliances are connected in PARALLEL so each receives full 220V independently!"
+    }
+  },
+  {
+    "key": "optics_light",
+    "topic": "Light: Reflection and Refraction",
+    "subtopic": "Snell's Law of Refraction (n₁ sinθ₁ = n₂ sinθ₂) & Convex Lens Ray Tracing",
+    "subject": "Physics",
+    "visualType": "physics_vector_schematic",
+    "title": "Geometrical Optics: Convex Lens Ray Diagram & Snell's Law",
+    "caption": "Precision optical ray diagram showing parallel paraxial rays converging through a biconvex lens to Principal Focus (F₂) to form a real inverted image, governed by 1/f = 1/v - 1/u.",
+    "publicUrl": "/images/educational/optics_light.svg",
+    "visualLearningPath": "visual_learning/assets/physics/optics_light.svg",
+    "labelsCount": 4,
+    "walkthrough": {
+      "whatItShows": "Ray tracing through a thin biconvex converging lens using the two fundamental Cartesian rules of geometrical optics.",
+      "importantComponents": [
+        "Ray 1 (Parallel to Principal Axis): Refracts through the lens and passes directly through Principal Focus F₂.",
+        "Ray 2 (Through Optical Center O): Passes straight through without angular deviation.",
+        "Image Intersection (A'B'): Where the two refracted rays intersect, forming a real, inverted image."
+      ],
+      "processSequence": [
+        "1. Incident Rays: Draw one ray parallel to principal axis and one ray through Optical Center O.",
+        "2. Refraction: Apply Snell's Law (n₁ sin i = n₂ sin r) at lens surfaces so parallel ray bends through F₂.",
+        "3. Image Location: Apply Thin Lens Formula 1/f = 1/v - 1/u with New Cartesian Sign Convention."
+      ],
+      "examTakeaway": "Convex lens focal length f is ALWAYS positive (+f), whereas Concave lens focal length is ALWAYS negative (-f). Power of lens P = 1 / f(in meters) measured in Dioptres (D)!"
+    }
+  },
+  {
+    "key": "atomic_structure",
+    "topic": "Atomic Structure",
+    "subtopic": "Nucleus (Protons + Neutrons), Bohr Quantized Shells (K, L, M) & 2n² Rule",
+    "subject": "Chemistry",
+    "visualType": "molecular_schematic",
+    "title": "Atomic Structure: Bohr Quantized Energy Shells & Subatomic Nucleus",
+    "caption": "Bohr atomic model of Sodium (₁₁Na²³) showing central dense nucleus (11 protons + 12 neutrons) surrounded by K (n=1, 2e⁻), L (n=2, 8e⁻), and M (n=3, 1 valence e⁻) shells.",
+    "publicUrl": "/images/educational/atomic_structure.svg",
+    "visualLearningPath": "visual_learning/assets/chemistry/atomic_structure.svg",
+    "labelsCount": 4,
+    "walkthrough": {
+      "whatItShows": "Rutherford-Bohr quantized atomic structure for Sodium-23 (Z=11, A=23, Electronic Configuration 2, 8, 1).",
+      "importantComponents": [
+        "Protons (p⁺, charge +1, mass 1 u) & Neutrons (n⁰, charge 0, mass 1 u) bound inside the femtometer nucleus.",
+        "Quantized Shells K, L, M, N (n = 1, 2, 3, 4) with maximum capacity governed by Bohr-Bury 2n² rule.",
+        "Valence Electron: Outermost electron participating in chemical bond formation."
+      ],
+      "processSequence": [
+        "1. Nuclear Identity: Count protons to fix Atomic Number Z (Z = 11 for Sodium).",
+        "2. Shell Filling (2n²): Fill K-shell with 2e⁻, L-shell with 8e⁻, and place the 11th electron in M-shell (2, 8, 1).",
+        "3. Quantum Transitions: Electrons absorb or emit photons ΔE = hν only when jumping between discrete orbits."
+      ],
+      "examTakeaway": "Isotopes have the SAME Atomic Number Z (same protons and chemical properties) but DIFFERENT Mass Number A (different neutrons, e.g., ¹²C and ¹⁴C)!"
+    }
+  },
+  {
+    "key": "chemical_reactions",
+    "topic": "Chemical Reactions and Equations",
+    "subtopic": "Law of Conservation of Mass, Reaction Types & Exothermic/Endothermic Profile",
+    "subject": "Chemistry",
+    "visualType": "molecular_schematic",
+    "title": "Chemical Reactions: Activation Energy Profile & Stoichiometric Balance",
+    "caption": "Reaction coordinate energy diagram showing Reactants climbing Activation Energy barrier (Eₐ) to Transition State and releasing Enthalpy (ΔH < 0) to form Products.",
+    "publicUrl": "/images/educational/chemical_reactions.svg",
+    "visualLearningPath": "visual_learning/assets/chemistry/chemical_reactions.svg",
+    "labelsCount": 4,
+    "walkthrough": {
+      "whatItShows": "Potential energy profile along a chemical reaction coordinate alongside the 4 major reaction classifications (Combination, Decomposition, Displacement, Redox).",
+      "importantComponents": [
+        "Activation Energy Peak (Eₐ): Energy barrier broken during collision; a catalyst provides an alternative lower-Eₐ pathway.",
+        "Exothermic Drop (ΔH < 0): Products sit at lower potential energy than reactants, releasing thermal energy.",
+        "Stoichiometric Coefficients: Ensure exact conservation of atoms on both sides of the arrow."
+      ],
+      "processSequence": [
+        "1. Bond Breaking (Endothermic): Reactant bonds absorb energy Eₐ to reach the activated complex.",
+        "2. Bond Formation (Exothermic): New stronger bonds form in products, releasing energy.",
+        "3. Stoichiometric Balancing: Equalize atoms of each element on LHS and RHS."
+      ],
+      "examTakeaway": "OIL RIG Mnemonic for Redox: Oxidation Is Loss of electrons (gain of oxygen); Reduction Is Gain of electrons (loss of oxygen)!"
+    }
+  },
+  {
+    "key": "fractions_visual",
+    "topic": "Fractions and Rational Numbers",
+    "subtopic": "Numerator, Denominator, Equivalent Fractions & Number Line",
+    "subject": "Mathematics",
+    "visualType": "mathematical_vector_geometry",
+    "title": "Fractions: Equal Area Partitions, Equivalence (1/2 = 2/4 = 4/8) & Number Line",
+    "caption": "Visual comparison of equivalent fractions using congruent area bars and precise rational coordinates along the 0-to-1 number line.",
+    "publicUrl": "/images/educational/fractions_visual.svg",
+    "visualLearningPath": "visual_learning/assets/mathematics/fractions_visual.svg",
+    "labelsCount": 3,
+    "walkthrough": {
+      "whatItShows": "Congruent fraction bars proving why 1/2, 2/4, and 4/8 occupy the exact same geometric area and number-line coordinate.",
+      "importantComponents": [
+        "Denominator (b): Total equal subdivisions of the unit whole.",
+        "Numerator (a): Count of shaded subdivisions.",
+        "Least Common Denominator (LCD): Required before adding or subtracting unlike fractions."
+      ],
+      "processSequence": [
+        "1. Equal Partitioning: Divide the unit interval [0, 1] into b equal segments.",
+        "2. Equivalence Scaling: Multiply top and bottom by k: (a × k) / (b × k).",
+        "3. Arithmetic Rule: a/b + c/d = (ad + bc) / bd."
+      ],
+      "examTakeaway": "Never add denominators directly! Always convert to the Least Common Multiple (LCM) of the denominators first, and for division multiply by the reciprocal: (a/b) ÷ (c/d) = (a/b) × (d/c)."
+    }
+  },
+  {
+    "key": "geometry_pythagoras",
+    "topic": "Geometry and Pythagorean Theorem",
+    "subtopic": "Right-Angled Triangle Hypotenuse Proof (a² + b² = c²) & Trigonometric Ratios",
+    "subject": "Mathematics",
+    "visualType": "mathematical_vector_geometry",
+    "title": "Euclidean Geometry: Pythagorean Area Proof (a² + b² = c²)",
+    "caption": "Visual geometric proof showing squares constructed on legs a=3 (area 9) and b=4 (area 16) equaling the area of the square on hypotenuse c=5 (area 25).",
+    "publicUrl": "/images/educational/geometry_pythagoras.svg",
+    "visualLearningPath": "visual_learning/assets/mathematics/geometry_pythagoras.svg",
+    "labelsCount": 3,
+    "walkthrough": {
+      "whatItShows": "Classical Euclidean area proof for a 3-4-5 Pythagorean triple right triangle where 3² + 4² = 9 + 16 = 25 = 5².",
+      "importantComponents": [
+        "Right Angle (90°): Vertex between perpendicular legs a and b.",
+        "Square on Leg a (Area = a² = 9) + Square on Leg b (Area = b² = 16).",
+        "Square on Hypotenuse c (Area = c² = 25)."
+      ],
+      "processSequence": [
+        "1. Identify Right Angle: Locate the 90° corner and the opposite side (Hypotenuse c).",
+        "2. Sum of Squares: Compute a² + b².",
+        "3. Extract Root: c = √(a² + b²)."
+      ],
+      "examTakeaway": "Memorize common Pythagorean Triples for fast exam calculation: (3, 4, 5), (5, 12, 13), (8, 15, 17), and (7, 24, 25)!"
+    }
+  },
+  {
+    "key": "coordinate_graphs",
+    "topic": "Algebra and Coordinate Graphs",
+    "subtopic": "Cartesian Plane (x, y), Linear Slope-Intercept (y = mx + c) & Quadratic Parabola",
+    "subject": "Mathematics",
+    "visualType": "mathematical_vector_geometry",
+    "title": "Coordinate Geometry & Algebra: Linear (y = mx + c) & Quadratic Parabola Roots",
+    "caption": "Four-quadrant Cartesian coordinate plane plotting linear function y = 2x + 1 (slope m, y-intercept c) and quadratic parabola y = x² - 4 showing vertex and x-intercept roots.",
+    "publicUrl": "/images/educational/coordinate_graphs.svg",
+    "visualLearningPath": "visual_learning/assets/mathematics/coordinate_graphs.svg",
+    "labelsCount": 3,
+    "walkthrough": {
+      "whatItShows": "Simultaneous geometric representation of a first-degree linear equation (straight line) and a second-degree quadratic polynomial (U-shaped parabola) on the Cartesian plane.",
+      "importantComponents": [
+        "Horizontal X-Axis (Abscissa) & Vertical Y-Axis (Ordinate) intersecting at Origin (0,0).",
+        "Linear Equation y = mx + c: Constant rate of change m = (y₂ - y₁)/(x₂ - x₁).",
+        "Quadratic Equation ax² + bx + c = 0: Discriminant D = b² - 4ac determines real vs complex roots."
+      ],
+      "processSequence": [
+        "1. Plot Intercepts: Set x = 0 to find y-intercept; set y = 0 to solve for x-intercepts (roots).",
+        "2. Evaluate Slope / Vertex: For line, compute m = rise/run; for parabola, locate vertex at x = -b/(2a).",
+        "3. Connect Locus: Draw the continuous line or symmetric parabolic curve."
+      ],
+      "examTakeaway": "Quadratic Formula: x = [-b ± √(b² - 4ac)] / (2a). When Discriminant D > 0, there are 2 distinct real roots; when D = 0, 1 repeated root (tangent to x-axis); when D < 0, no real roots!"
+    }
+  },
+  {
+    "key": "world_war_2",
+    "topic": "World War II (1939–1945)",
+    "subtopic": "Causes, Axis vs Allies, Key Turning Points (Stalingrad, Midway, D-Day) & UN Formation",
+    "subject": "History",
+    "visualType": "historical_timeline_infographic",
+    "title": "World War II (1939–1945): Chronological Strategic Timeline & Turning Points",
+    "caption": "Chronological historical timeline tracing major theaters and decisive turning points from the 1939 Invasion of Poland to Stalingrad, D-Day (Normandy), and 1945 Allied Victory & UN Charter.",
+    "publicUrl": "/images/educational/world_war_2.svg",
+    "visualLearningPath": "visual_learning/assets/history/world_war_2.svg",
+    "labelsCount": 4,
+    "walkthrough": {
+      "whatItShows": "Six-year strategic progression of World War II showing how Axis momentum (1939–1941) was reversed by Allied industrial and military mobilization (1942–1945).",
+      "importantComponents": [
+        "Allied Powers: Britain, USSR, USA, France, China.",
+        "Axis Powers: Nazi Germany, Imperial Japan, Fascist Italy (Tripartite Pact).",
+        "Decisive Turning Points: Battle of Stalingrad (Eastern Front), Battle of Midway (Pacific), D-Day Normandy Landings (Western Front)."
+      ],
+      "processSequence": [
+        "1. Outbreak (1939–1940): Failure of Appeasement and League of Nations culminates in Blitzkrieg across Europe.",
+        "2. Global Escalation (1941–1942): German invasion of USSR (June 1941) and Japanese attack on Pearl Harbor (Dec 7, 1941).",
+        "3. Allied Counter-Offensive & Peace (1943–1945): Stalingrad, D-Day (June 6, 1944), Berlin capture (May 1945), and UN establishment (Oct 24, 1945)."
+      ],
+      "examTakeaway": "Distinguish immediate cause (German invasion of Poland on Sept 1, 1939) from structural causes (Treaty of Versailles harsh terms, Great Depression, Failure of League of Nations, Rise of Fascism)!"
+    }
+  },
+  {
+    "key": "indian_independence",
+    "topic": "Indian Independence Movement (1857–1947)",
+    "subtopic": "Revolt of 1857, INC (1885), Non-Cooperation (1920), Civil Disobedience / Dandi March (1930) & Quit India (1942)",
+    "subject": "History",
+    "visualType": "historical_timeline_infographic",
+    "title": "Indian National Movement (1857–1947): Key Mass Movements & Milestones",
+    "caption": "Chronological progression of the Indian freedom struggle from the 1857 First War of Independence and 1885 INC formation to Gandhian Satyagraha movements (1920, 1930, 1942) and 1947 Independence.",
+    "publicUrl": "/images/educational/indian_independence.svg",
+    "visualLearningPath": "visual_learning/assets/history/indian_independence.svg",
+    "labelsCount": 4,
+    "walkthrough": {
+      "whatItShows": "Phased transformation of the Indian freedom struggle from early resistance and moderate petitions to nationwide Gandhian mass movements and Subhas Chandra Bose's INA.",
+      "importantComponents": [
+        "Moderate & Assertive Nationalism (1885–1918): Dadabhai Naoroji (Drain of Wealth theory) and Lal-Bal-Pal (Swadeshi & Boycott 1905).",
+        "Three Gandhian Mass Movements: Non-Cooperation (1920–22), Civil Disobedience / Dandi Salt Satyagraha (1930), Quit India (\"Do or Die\", Aug 8, 1942).",
+        "Revolutionary & INA Contributions: Bhagat Singh (HSRA) and Netaji Subhas Chandra Bose (Azad Hind Fauj)."
+      ],
+      "processSequence": [
+        "1. Early Awakening (1857–1915): Revolt of 1857 ends East India Company rule; INC formed in 1885; Partition of Bengal (1905) sparks Swadeshi.",
+        "2. Mass Mobilization (1919–1934): Jallianwala Bagh (1919) leads to Non-Cooperation (1920); Lahore Congress (1929) declares Purna Swaraj followed by Dandi March (March 12, 1930).",
+        "3. Final Push (1942–1947): Quit India Movement (1942) and Royal Indian Navy Mutiny culminate in the Indian Independence Act (Aug 15, 1947)."
+      ],
+      "examTakeaway": "Remember the chronological triad of Gandhian mass movements: 1920 (Non-Cooperation, halted after Chauri Chaura 1922) → 1930 (Civil Disobedience / Dandi Salt March) → 1942 (Quit India \"Do or Die\")!"
+    }
+  },
+  {
+    "key": "plate_tectonics",
+    "topic": "Plate Tectonics and Earth Interior",
+    "subtopic": "Lithospheric Plates, Asthenosphere Convection, Subduction Zones & Mid-Ocean Ridges",
+    "subject": "Geography",
+    "visualType": "geological_cross_section",
+    "title": "Plate Tectonics: Mantle Convection, Divergent Ridge & Convergent Subduction",
+    "caption": "Geological cross-section illustrating thermal convection currents in the Asthenosphere driving seafloor spreading at Divergent Mid-Ocean Ridges and trench subduction beneath Continental Crust.",
+    "publicUrl": "/images/educational/plate_tectonics.svg",
+    "visualLearningPath": "visual_learning/assets/geography/plate_tectonics.svg",
+    "labelsCount": 4,
+    "walkthrough": {
+      "whatItShows": "Complete tectonic cycle showing lithosphere creation at a mid-ocean ridge and lithosphere destruction at a convergent subduction trench.",
+      "importantComponents": [
+        "Divergent Boundary: Plates pull apart; magma rises to form Mid-Atlantic Ridge.",
+        "Convergent Boundary: Dense oceanic crust subducts into the mantle, forming deep ocean trenches (Mariana Trench) and volcanic arcs (Andes) or fold mountains (Himalayas: Indo-Australian + Eurasian collision).",
+        "Transform Boundary: Plates slide horizontally past each other along strike-slip faults (San Andreas Fault)."
+      ],
+      "processSequence": [
+        "1. Mantle Upwelling: Radioactive decay heats the lower mantle, driving rising convection plumes.",
+        "2. Seafloor Spreading & Ridge Push: New oceanic crust spreads laterally from the mid-ocean ridge.",
+        "3. Slab Pull & Subduction: Cold, dense oceanic lithosphere sinks into the asthenosphere at trenches, triggering flux melting and volcanism."
+      ],
+      "examTakeaway": "Why were the Himalayas formed? Collision of two CONTINENTAL plates (Indo-Australian Plate and Eurasian Plate) folded the Tethys Sea sediments upward because neither continental plate was dense enough to subduct deeply!"
+    }
+  },
+  {
+    "key": "english_grammar",
+    "topic": "English Grammar and Sentence Structure",
+    "subtopic": "Parts of Speech, Subject-Verb-Object Syntax, Tense Matrix & Active-Passive Voice",
+    "subject": "English",
+    "visualType": "historical_timeline_infographic",
+    "title": "English Grammar: Syntactic Parse Tree, Parts of Speech & Voice Transformation",
+    "caption": "Hierarchical syntactic structure splitting a clause into Subject (Noun Phrase) and Predicate (Verb Phrase + Object) alongside Active-to-Passive Voice transformation rules.",
+    "publicUrl": "/images/educational/english_grammar.svg",
+    "visualLearningPath": "visual_learning/assets/english/english_grammar.svg",
+    "labelsCount": 3,
+    "walkthrough": {
+      "whatItShows": "Structural syntax tree of an English declarative sentence alongside the structural cross-mapping that converts Active Voice to Passive Voice.",
+      "importantComponents": [
+        "Subject-Verb Agreement (Concord): Singular subjects require singular verbs; collective nouns and \"neither...nor\" follow proximity concord.",
+        "Tense Aspect Grid: 3 Times (Past, Present, Future) × 4 Aspects (Simple, Continuous, Perfect, Perfect Continuous) = 12 Tenses.",
+        "Passive Voice Rule: Object becomes grammatical Subject, main verb shifts to Past Participle (V₃) preceded by tense-matched form of \"to be\"."
+      ],
+      "processSequence": [
+        "1. Parse Clause: Identify the finite verb first, ask \"Who/What?\" to locate Subject, and \"Whom/What?\" to locate Direct Object.",
+        "2. Verify Concord & Tense: Match singular/plural verb inflection and sequence of tenses.",
+        "3. Transform Voice/Speech: Apply O + be + V₃ + by + S for Passive, or backshift tense for Indirect Speech."
+      ],
+      "examTakeaway": "In \"Neither the teacher nor the students WERE present\", the verb agrees with the CLOSER subject (\"students\")! In \"Each of the players IS ready\", \"Each\" is always singular!"
+    }
+  },
+  {
+    "key": "computer_science",
+    "topic": "Computer Science and Algorithms",
+    "subtopic": "Binary Search Divide-and-Conquer O(log₂ n), Data Structures & CPU Execution",
+    "subject": "Computer Science",
+    "visualType": "physics_vector_schematic",
+    "title": "Computer Science: Binary Search Divide-and-Conquer O(log₂ n) Trace",
+    "caption": "Step-by-step execution trace of Binary Search locating target=23 in a sorted 9-element array by halving the search space via mid = ⌊(low + high) / 2⌋.",
+    "publicUrl": "/images/educational/computer_science.svg",
+    "visualLearningPath": "visual_learning/assets/computer_science/computer_science.svg",
+    "labelsCount": 3,
+    "walkthrough": {
+      "whatItShows": "Iterative pointer narrowing (low, mid, high) in Binary Search finding target 23 in just 2 comparisons instead of scanning every index.",
+      "importantComponents": [
+        "Precondition: Array MUST be sorted in ascending/descending order before Binary Search can be applied.",
+        "Safe Midpoint Formula: mid = low + Math.floor((high - low) / 2) prevents 32-bit integer overflow.",
+        "Asymptotic Complexity: Time O(log₂ n) worst/average case, O(1) best case; Iterative Space O(1)."
+      ],
+      "processSequence": [
+        "1. Iteration 1: low=0, high=7 → mid=3 (arr[3]=16 < 23), discard left half by setting low = mid + 1 = 4.",
+        "2. Iteration 2: low=4, high=7 → mid=5 (arr[5]=23 == 23), target found at index 5!",
+        "3. Termination: Returns index 5 (or -1 if low > high)."
+      ],
+      "examTakeaway": "For N = 1,000,000 sorted elements, Linear Search takes up to 1,000,000 comparisons, whereas Binary Search takes at most ⌈log₂(1,000,000)⌉ = 20 comparisons!"
+    }
+  }
+]

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 520" width="100%" height="auto" preserveAspectRatio="xMidYMid meet">
+      <rect width="840" height="520" rx="24" fill="#0F172A"/>
+      <text x="420" y="34" font-family="Inter, sans-serif" font-size="17" font-weight="800" fill="#FFFFFF" text-anchor="middle">Chemical Reactions — Activation Energy (Eₐ), Catalysis &amp; Enthalpy (ΔH)</text>
+      <line x1="100" y1="80" x2="100" y2="415" stroke="#94A3B8" stroke-width="3"/>
+      <line x1="100" y1="415" x2="760" y2="415" stroke="#94A3B8" stroke-width="3"/>
+      <line x1="110" y1="245" x2="250" y2="245" stroke="#38BDF8" stroke-width="5"/>
+      <text x="180" y="232" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#38BDF8" text-anchor="middle">Reactants (CH₄ + 2O₂)</text>
+      <path d="M 250 245 Q 375 55 500 365" fill="none" stroke="#EF4444" stroke-width="4"/>
+      <path d="M 250 245 Q 375 145 500 365" fill="none" stroke="#FBBF24" stroke-width="3" stroke-dasharray="6 4"/>
+      <text x="380" y="102" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#F87171" text-anchor="middle">Uncatalyzed Eₐ</text>
+      <text x="380" y="185" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FDE047" text-anchor="middle">Catalyzed Path (Lower Eₐ)</text>
+      <line x1="500" y1="365" x2="720" y2="365" stroke="#22C55E" stroke-width="5"/>
+      <text x="615" y="352" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#4ADE80" text-anchor="middle">Products (CO₂ + 2H₂O)</text>
+      <rect x="130" y="445" width="580" height="40" rx="10" fill="#1E293B" stroke="#22C55E" stroke-width="1.5"/>
+      <text x="420" y="470" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#DCFCE7" text-anchor="middle">Conservation of Mass: ∑ m_reactants = ∑ m_products  |  ΔH = H_products - H_reactants</text>
+    </svg>

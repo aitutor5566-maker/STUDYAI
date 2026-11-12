@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 520" width="100%" height="auto" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#0284C7"/>
+          <stop offset="45%" stop-color="#BAE6FD"/>
+          <stop offset="70%" stop-color="#E0F2FE"/>
+        </linearGradient>
+      </defs>
+      <rect width="840" height="520" rx="20" fill="url(#skyGrad)"/>
+      <text x="420" y="32" font-family="Inter, sans-serif" font-size="17" font-weight="800" fill="#0F172A" text-anchor="middle">Earth's Hydrological Cycle — Closed Circulation</text>
+
+      <!-- Sun -->
+      <circle cx="120" cy="90" r="42" fill="#FACC15" stroke="#FEF08A" stroke-width="4"/>
+      <g stroke="#F59E0B" stroke-width="3" stroke-dasharray="6 4">
+        <line x1="120" y1="140" x2="120" y2="190"/><line x1="165" y1="120" x2="210" y2="150"/>
+      </g>
+
+      <!-- Mountain Range (Right Side) -->
+      <polygon points="460,400 620,160 760,400" fill="#64748B" stroke="#334155" stroke-width="3"/>
+      <!-- Snowcap -->
+      <polygon points="580,220 620,160 660,220 640,215 620,230 600,215" fill="#FFFFFF"/>
+      <polygon points="620,400 740,210 840,400" fill="#475569"/>
+
+      <!-- Foothills & Green Plains -->
+      <path d="M 320 400 Q 420 340 520 400 L 840 400 L 840 520 L 0 520 L 0 400 Z" fill="#15803D"/>
+
+      <!-- Ocean / River Basin (Left Bottom) -->
+      <path d="M 0 400 Q 180 390 320 410 L 320 520 L 0 520 Z" fill="#0284C7"/>
+      <text x="140" y="470" font-family="Inter, sans-serif" font-size="16" font-weight="800" fill="#E0F2FE" text-anchor="middle">Ocean Reservoir (97%)</text>
+
+      <!-- Clouds (Condensation) -->
+      <g fill="#FFFFFF" opacity="0.95">
+        <ellipse cx="380" cy="120" rx="55" ry="24"/><ellipse cx="420" cy="110" rx="42" ry="28"/><ellipse cx="350" cy="125" rx="35" ry="18"/>
+        <ellipse cx="640" cy="110" rx="60" ry="26"/><ellipse cx="680" cy="100" rx="45" ry="30"/>
+      </g>
+
+      <!-- Evaporation Arrows (Wavy Upward from Ocean) -->
+      <path d="M 120 370 Q 110 320 130 270 Q 110 220 130 170" stroke="#38BDF8" stroke-width="3" stroke-dasharray="6 4" fill="none"/>
+      <polygon points="130,165 120,180 138,180" fill="#38BDF8"/>
+      <text x="175" y="270" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#0369A1">Evaporation</text>
+
+      <!-- Transpiration from Forest -->
+      <path d="M 390 380 Q 380 340 395 290 Q 380 250 395 210" stroke="#22C55E" stroke-width="3" stroke-dasharray="6 4" fill="none"/>
+      <text x="445" y="320" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#166534">Transpiration</text>
+
+      <!-- Precipitation Rain Arrows (Falling from Mountain Clouds) -->
+      <g stroke="#0284C7" stroke-width="2.5" stroke-dasharray="8 6">
+        <line x1="620" y1="150" x2="600" y2="240"/>
+        <line x1="660" y1="150" x2="640" y2="250"/>
+        <line x1="700" y1="150" x2="680" y2="240"/>
+      </g>
+      <text x="730" y="220" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#0F172A">Precipitation</text>
+
+      <!-- River Runoff Flow -->
+      <path d="M 540 390 Q 420 410 320 420" stroke="#38BDF8" stroke-width="8" fill="none"/>
+      <text x="440" y="445" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF">Surface Runoff →</text>
+    </svg>

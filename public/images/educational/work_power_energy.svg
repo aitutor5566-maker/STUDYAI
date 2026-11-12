@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 520" width="100%" height="auto" preserveAspectRatio="xMidYMid meet">
+      <rect width="840" height="520" rx="24" fill="#0F172A"/>
+      <text x="420" y="34" font-family="Inter, sans-serif" font-size="17" font-weight="800" fill="#FFFFFF" text-anchor="middle">Work (W = F·s·cosθ), Power (P = W/t) &amp; Energy Conservation</text>
+      <line x1="60" y1="340" x2="380" y2="340" stroke="#94A3B8" stroke-width="4"/>
+      <rect x="100" y="270" width="90" height="70" rx="10" fill="#1E40AF" stroke="#60A5FA" stroke-width="3"/>
+      <text x="145" y="310" font-family="Inter, sans-serif" font-size="15" font-weight="800" fill="#FFFFFF" text-anchor="middle">Mass m</text>
+      <line x1="190" y1="305" x2="310" y2="225" stroke="#EF4444" stroke-width="5"/>
+      <text x="295" y="215" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#F87171">Force F</text>
+      <line x1="190" y1="305" x2="330" y2="305" stroke="#38BDF8" stroke-width="4" stroke-dasharray="6 4"/>
+      <text x="275" y="295" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#38BDF8">F cosθ → s</text>
+      <path d="M 460 130 Q 560 360 760 360" stroke="#FBBF24" stroke-width="5" fill="none"/>
+      <circle cx="465" cy="120" r="18" fill="#F59E0B"/>
+      <text x="535" y="115" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#FDE047">Top: PE = mgh, KE = 0</text>
+      <circle cx="735" cy="345" r="18" fill="#22C55E"/>
+      <text x="665" y="395" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#4ADE80">Base: KE = ½mv², PE = 0</text>
+      <rect x="150" y="445" width="540" height="40" rx="10" fill="#1E293B" stroke="#38BDF8" stroke-width="1.5"/>
+      <text x="420" y="470" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#E0F2FE" text-anchor="middle">W = F·s·cosθ (Joules)  |  E_total = mgh + ½mv² = Constant  |  P = W/t (Watts)</text>
+    </svg>

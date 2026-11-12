@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 520" width="100%" height="auto" preserveAspectRatio="xMidYMid meet">
+      <rect width="840" height="520" rx="24" fill="#0F172A"/>
+      <text x="420" y="34" font-family="Inter, sans-serif" font-size="17" font-weight="800" fill="#FFFFFF" text-anchor="middle">Simple Machines — Principle of Moments, Levers (FLE) &amp; Pulleys</text>
+      <line x1="100" y1="240" x2="540" y2="240" stroke="#E2E8F0" stroke-width="8" stroke-linecap="round"/>
+      <polygon points="280,244 250,305 310,305" fill="#F59E0B" stroke="#FEF08A" stroke-width="2"/>
+      <text x="280" y="330" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#FDE047" text-anchor="middle">Fulcrum (F)</text>
+      <rect x="115" y="175" width="75" height="60" rx="8" fill="#EF4444"/>
+      <text x="152" y="210" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#FFFFFF" text-anchor="middle">Load (L)</text>
+      <line x1="510" y1="150" x2="510" y2="232" stroke="#38BDF8" stroke-width="5"/>
+      <polygon points="510,235 500,215 520,215" fill="#38BDF8"/>
+      <text x="510" y="138" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#38BDF8" text-anchor="middle">Effort (E) ↓</text>
+      <circle cx="690" cy="150" r="38" fill="#1E293B" stroke="#60A5FA" stroke-width="4"/>
+      <circle cx="690" cy="150" r="8" fill="#F59E0B"/>
+      <line x1="652" y1="150" x2="652" y2="290" stroke="#94A3B8" stroke-width="4"/>
+      <rect x="625" y="290" width="54" height="48" rx="6" fill="#EF4444"/>
+      <text x="652" y="319" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Load</text>
+      <line x1="728" y1="150" x2="755" y2="275" stroke="#38BDF8" stroke-width="4"/>
+      <text x="765" y="295" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#38BDF8" text-anchor="middle">Effort E</text>
+      <rect x="110" y="435" width="620" height="44" rx="10" fill="#1E293B" stroke="#F59E0B" stroke-width="1.5"/>
+      <text x="420" y="462" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#FEF08A" text-anchor="middle">Load × Load Arm = Effort × Effort Arm  |  MA = L / E  |  VR = d_E / d_L  |  η = (MA / VR) × 100%</text>
+    </svg>

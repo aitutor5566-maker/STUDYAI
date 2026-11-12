@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 520" width="100%" height="auto" preserveAspectRatio="xMidYMid meet">
+      <rect width="840" height="520" rx="24" fill="#0F172A"/>
+      <text x="420" y="34" font-family="Inter, sans-serif" font-size="17" font-weight="800" fill="#FFFFFF" text-anchor="middle">Computer Science — Binary Search Divide-and-Conquer O(log₂ n) Execution Trace</text>
+      <text x="420" y="82" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#38BDF8" text-anchor="middle">Step 1: Search Target = 23  |  low = 0, high = 7 → mid = 3 (arr[3] = 16 &lt; 23 → Discard Left Half)</text>
+      <g font-family="Inter, sans-serif" font-size="14" font-weight="800" text-anchor="middle">
+        <rect x="120" y="100" width="70" height="50" rx="6" fill="#1E293B" stroke="#475569"/><text x="155" y="130" fill="#64748B">2</text>
+        <rect x="195" y="100" width="70" height="50" rx="6" fill="#1E293B" stroke="#475569"/><text x="230" y="130" fill="#64748B">5</text>
+        <rect x="270" y="100" width="70" height="50" rx="6" fill="#1E293B" stroke="#475569"/><text x="305" y="130" fill="#64748B">8</text>
+        <rect x="345" y="100" width="70" height="50" rx="6" fill="#78350F" stroke="#F59E0B" stroke-width="3"/><text x="380" y="130" fill="#FDE047">16 (mid)</text>
+        <rect x="420" y="100" width="70" height="50" rx="6" fill="#1E3A8A" stroke="#60A5FA"/><text x="455" y="130" fill="#FFFFFF">19</text>
+        <rect x="495" y="100" width="70" height="50" rx="6" fill="#1E3A8A" stroke="#60A5FA"/><text x="530" y="130" fill="#FFFFFF">23</text>
+        <rect x="570" y="100" width="70" height="50" rx="6" fill="#1E3A8A" stroke="#60A5FA"/><text x="605" y="130" fill="#FFFFFF">38</text>
+        <rect x="645" y="100" width="70" height="50" rx="6" fill="#1E3A8A" stroke="#60A5FA"/><text x="680" y="130" fill="#FFFFFF">56</text>
+      </g>
+      <text x="420" y="225" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#4ADE80" text-anchor="middle">Step 2: low = 4, high = 7 → mid = 5 (arr[5] = 23 == Target → FOUND at Index 5!)</text>
+      <g font-family="Inter, sans-serif" font-size="14" font-weight="800" text-anchor="middle">
+        <rect x="420" y="245" width="70" height="55" rx="6" fill="#1E3A8A" stroke="#60A5FA"/><text x="455" y="278" fill="#FFFFFF">19</text>
+        <rect x="495" y="245" width="70" height="55" rx="6" fill="#14532D" stroke="#22C55E" stroke-width="3"/><text x="530" y="278" fill="#86EFAC">23 ✓</text>
+        <rect x="570" y="245" width="70" height="55" rx="6" fill="#1E3A8A" stroke="#60A5FA"/><text x="605" y="278" fill="#FFFFFF">38</text>
+        <rect x="645" y="245" width="70" height="55" rx="6" fill="#1E3A8A" stroke="#60A5FA"/><text x="680" y="278" fill="#FFFFFF">56</text>
+      </g>
+      <rect x="130" y="435" width="580" height="44" rx="10" fill="#1E293B" stroke="#22C55E" stroke-width="1.5"/>
+      <text x="420" y="462" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#DCFCE7" text-anchor="middle">mid = low + ⌊(high - low)/2⌋  |  Time Complexity: O(log₂ n)  |  Auxiliary Space: O(1) Iterative</text>
+    </svg>

@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 520" width="100%" height="auto" preserveAspectRatio="xMidYMid meet">
+      <rect width="840" height="520" rx="20" fill="#0F172A"/>
+      <text x="420" y="32" font-family="Inter, sans-serif" font-size="17" font-weight="800" fill="#FFFFFF" text-anchor="middle">Chemical Bonding — Ionic Transfer vs Covalent Sharing</text>
+
+      <!-- Dividing Column Barrier -->
+      <line x1="420" y1="55" x2="420" y2="480" stroke="#334155" stroke-width="2" stroke-dasharray="6 6"/>
+
+      <!-- LEFT SIDE: IONIC BONDING (NaCl) -->
+      <rect x="30" y="55" width="370" height="420" rx="14" fill="#1E293B" stroke="#3B82F6" stroke-width="1.5"/>
+      <text x="215" y="85" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#60A5FA" text-anchor="middle">1. Ionic Bonding: Electron Transfer (NaCl)</text>
+
+      <!-- Sodium Atom (Na) -->
+      <circle cx="150" cy="220" r="50" fill="none" stroke="#60A5FA" stroke-width="2"/>
+      <circle cx="150" cy="220" r="30" fill="none" stroke="#60A5FA" stroke-width="1.5"/>
+      <circle cx="150" cy="220" r="16" fill="#3B82F6"/>
+      <text x="150" y="225" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Na⁺</text>
+      <!-- Transferred Electron Arrow -->
+      <path d="M 200 220 C 230 170, 260 170, 285 210" stroke="#FBBF24" stroke-width="3" stroke-dasharray="5 3" fill="none"/>
+      <polygon points="290,215 280,205 288,200" fill="#FBBF24"/>
+      <circle cx="240" cy="175" r="5" fill="#FBBF24"/>
+      <text x="240" y="160" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#FDE047" text-anchor="middle">1 e⁻ transfer</text>
+
+      <!-- Chlorine Atom (Cl) -->
+      <circle cx="330" cy="220" r="55" fill="none" stroke="#34D399" stroke-width="2"/>
+      <circle cx="330" cy="220" r="35" fill="none" stroke="#34D399" stroke-width="1.5"/>
+      <circle cx="330" cy="220" r="18" fill="#10B981"/>
+      <text x="330" y="225" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Cl⁻</text>
+
+      <rect x="60" y="360" width="310" height="90" rx="10" fill="#0F172A" stroke="#3B82F6" stroke-width="1"/>
+      <text x="215" y="385" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#93C5FD" text-anchor="middle">Electrostatic Ionic Attraction</text>
+      <text x="215" y="410" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="#CBD5E1" text-anchor="middle">Na (2,8,1) + Cl (2,8,7) → Na⁺ [2,8] + Cl⁻ [2,8,8]</text>
+      <text x="215" y="432" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#FDE047" text-anchor="middle">High melting point (801°C) • Crystal Lattice</text>
+
+      <!-- RIGHT SIDE: COVALENT BONDING (H2O) -->
+      <rect x="440" y="55" width="370" height="420" rx="14" fill="#1E293B" stroke="#F43F5E" stroke-width="1.5"/>
+      <text x="625" y="85" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#FB7185" text-anchor="middle">2. Covalent Bonding: Shared Pairs (H₂O)</text>
+
+      <!-- Central Oxygen Atom -->
+      <circle cx="625" cy="200" r="55" fill="none" stroke="#EF4444" stroke-width="2.5"/>
+      <circle cx="625" cy="200" r="22" fill="#DC2626"/>
+      <text x="625" y="206" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#FFFFFF" text-anchor="middle">O</text>
+
+      <!-- Hydrogen 1 (Left Overlap) -->
+      <circle cx="550" cy="280" r="40" fill="none" stroke="#38BDF8" stroke-width="2.5"/>
+      <circle cx="550" cy="280" r="14" fill="#0284C7"/>
+      <text x="550" y="285" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">H</text>
+      <!-- Shared Electrons Overlap 1 -->
+      <circle cx="585" cy="245" r="4.5" fill="#FBBF24"/>
+      <circle cx="593" cy="235" r="4.5" fill="#FBBF24"/>
+
+      <!-- Hydrogen 2 (Right Overlap) -->
+      <circle cx="700" cy="280" r="40" fill="none" stroke="#38BDF8" stroke-width="2.5"/>
+      <circle cx="700" cy="280" r="14" fill="#0284C7"/>
+      <text x="700" y="285" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">H</text>
+      <!-- Shared Electrons Overlap 2 -->
+      <circle cx="665" cy="245" r="4.5" fill="#FBBF24"/>
+      <circle cx="657" cy="235" r="4.5" fill="#FBBF24"/>
+
+      <!-- Bond Angle Notation -->
+      <text x="625" y="260" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#FCA5A5" text-anchor="middle">104.5° Bent</text>
+
+      <rect x="470" y="360" width="310" height="90" rx="10" fill="#0F172A" stroke="#F43F5E" stroke-width="1"/>
+      <text x="625" y="385" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FECDD3" text-anchor="middle">Mutual Electron Sharing</text>
+      <text x="625" y="410" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="#CBD5E1" text-anchor="middle">Oxygen completes octet (8e⁻); Hydrogen duplet (2e⁻)</text>
+      <text x="625" y="432" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#FDE047" text-anchor="middle">Discrete neutral molecules • Polar Dipole</text>
+    </svg>

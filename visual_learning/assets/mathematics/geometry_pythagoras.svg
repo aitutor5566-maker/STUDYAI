@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 520" width="100%" height="auto" preserveAspectRatio="xMidYMid meet">
+      <rect width="840" height="520" rx="24" fill="#0F172A"/>
+      <text x="420" y="34" font-family="Inter, sans-serif" font-size="17" font-weight="800" fill="#FFFFFF" text-anchor="middle">Euclidean Geometry — Pythagorean Theorem Visual Proof (a² + b² = c²)</text>
+      <polygon points="300,310 300,190 460,310" fill="#1E293B" stroke="#FFFFFF" stroke-width="3"/>
+      <rect x="300" y="292" width="18" height="18" fill="none" stroke="#FBBF24" stroke-width="2"/>
+      <rect x="180" y="190" width="120" height="120" fill="#0284C7" fill-opacity="0.45" stroke="#38BDF8" stroke-width="3"/>
+      <text x="240" y="255" font-family="Inter, sans-serif" font-size="15" font-weight="800" fill="#E0F2FE" text-anchor="middle">a² = 3² = 9</text>
+      <rect x="300" y="310" width="160" height="115" fill="#15803D" fill-opacity="0.45" stroke="#4ADE80" stroke-width="3"/>
+      <text x="380" y="372" font-family="Inter, sans-serif" font-size="15" font-weight="800" fill="#DCFCE7" text-anchor="middle">b² = 4² = 16</text>
+      <polygon points="300,190 460,310 555,190 395,70" fill="#B45309" fill-opacity="0.45" stroke="#FBBF24" stroke-width="3"/>
+      <text x="430" y="195" font-family="Inter, sans-serif" font-size="15" font-weight="800" fill="#FEF08A" text-anchor="middle">c² = 5² = 25</text>
+      <rect x="130" y="450" width="580" height="40" rx="10" fill="#1E293B" stroke="#F59E0B" stroke-width="1.5"/>
+      <text x="420" y="475" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#FEF08A" text-anchor="middle">a² + b² = c²  |  9 + 16 = 25  |  sinθ = Opp/Hyp, cosθ = Adj/Hyp, tanθ = Opp/Adj</text>
+    </svg>

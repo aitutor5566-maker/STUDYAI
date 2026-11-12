@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 520" width="100%" height="auto" preserveAspectRatio="xMidYMid meet">
+      <rect width="840" height="520" rx="20" fill="#0B132B"/>
+      <text x="420" y="32" font-family="Inter, sans-serif" font-size="17" font-weight="800" fill="#FFFFFF" text-anchor="middle">DNA Double Helix — Antiparallel Watson-Crick Molecular Model</text>
+      
+      <!-- 5' and 3' Direction Badges -->
+      <text x="310" y="65" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#38BDF8">Strand 1 (5′ → 3′)</text>
+      <text x="490" y="65" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#EC4899">Strand 2 (3′ → 5′)</text>
+
+      <!-- Helical Sine Strands -->
+      <!-- Left Ribbon Strand (Cyan) -->
+      <path d="M 330 80 Q 270 140 330 200 Q 510 260 510 320 Q 510 380 330 440" stroke="#0284C7" stroke-width="10" fill="none" stroke-linecap="round"/>
+      <path d="M 330 80 Q 270 140 330 200 Q 510 260 510 320 Q 510 380 330 440" stroke="#38BDF8" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+      <!-- Right Ribbon Strand (Magenta) -->
+      <path d="M 510 80 Q 570 140 510 200 Q 330 260 330 320 Q 330 380 510 440" stroke="#BE185D" stroke-width="10" fill="none" stroke-linecap="round"/>
+      <path d="M 510 80 Q 570 140 510 200 Q 330 260 330 320 Q 330 380 510 440" stroke="#F472B6" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+      <!-- Base Pair Rungs -->
+      <!-- Rung 1: A = T -->
+      <line x1="335" y1="110" x2="415" y2="110" stroke="#22C55E" stroke-width="8"/>
+      <line x1="425" y1="110" x2="505" y2="110" stroke="#EF4444" stroke-width="8"/>
+      <circle cx="420" cy="110" r="3" fill="#FFFFFF"/>
+      <text x="375" y="105" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#4ADE80">A</text>
+      <text x="465" y="105" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#F87171">T</text>
+
+      <!-- Rung 2: G ≡ C -->
+      <line x1="300" y1="150" x2="415" y2="150" stroke="#EAB308" stroke-width="8"/>
+      <line x1="425" y1="150" x2="540" y2="150" stroke="#3B82F6" stroke-width="8"/>
+      <circle cx="417" cy="148" r="2" fill="#FFFFFF"/><circle cx="423" cy="152" r="2" fill="#FFFFFF"/>
+      <text x="355" y="145" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#FDE047">G</text>
+      <text x="480" y="145" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#93C5FD">C</text>
+
+      <!-- Rung 3: Crossing Axis -->
+      <line x1="330" y1="200" x2="510" y2="200" stroke="#8B5CF6" stroke-width="7"/>
+      <text x="420" y="195" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#C4B5FD" text-anchor="middle">Base Pair (0.34 nm pitch)</text>
+
+      <!-- Rung 4: C ≡ G -->
+      <line x1="360" y1="250" x2="415" y2="250" stroke="#3B82F6" stroke-width="8"/>
+      <line x1="425" y1="250" x2="480" y2="250" stroke="#EAB308" stroke-width="8"/>
+      <text x="385" y="245" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#93C5FD">C</text>
+      <text x="455" y="245" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#FDE047">G</text>
+
+      <!-- Rung 5: T = A -->
+      <line x1="335" y1="290" x2="415" y2="290" stroke="#EF4444" stroke-width="8"/>
+      <line x1="425" y1="290" x2="505" y2="290" stroke="#22C55E" stroke-width="8"/>
+      <text x="375" y="285" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#F87171">T</text>
+      <text x="465" y="285" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#4ADE80">A</text>
+
+      <!-- Rung 6: G ≡ C -->
+      <line x1="300" y1="350" x2="415" y2="350" stroke="#EAB308" stroke-width="8"/>
+      <line x1="425" y1="350" x2="540" y2="350" stroke="#3B82F6" stroke-width="8"/>
+      <text x="355" y="345" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#FDE047">G</text>
+      <text x="480" y="345" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#93C5FD">C</text>
+
+      <!-- Dimensions Bracket -->
+      <line x1="570" y1="80" x2="570" y2="420" stroke="#64748B" stroke-width="1.5" stroke-dasharray="4 4"/>
+      <text x="590" y="250" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#94A3B8">1 Full Turn = 3.4 nm (10 bp)</text>
+
+      <!-- Callout Labels -->
+      <g font-family="Inter, sans-serif" font-size="11" font-weight="700">
+        <line x1="280" y1="120" x2="160" y2="120" stroke="#38BDF8" stroke-width="1.5"/>
+        <rect x="40" y="105" width="120" height="28" rx="6" fill="#0B132B" stroke="#38BDF8" stroke-width="1.5"/>
+        <text x="100" y="123" fill="#7DD3FC" text-anchor="middle">Sugar-Phosphate</text>
+
+        <line x1="420" y1="150" x2="160" y2="210" stroke="#FDE047" stroke-width="1.5"/>
+        <rect x="25" y="195" width="135" height="28" rx="6" fill="#0B132B" stroke="#FDE047" stroke-width="1.5"/>
+        <text x="92" y="213" fill="#FEF08A" text-anchor="middle">G ≡ C (3 H-Bonds)</text>
+
+        <line x1="420" y1="110" x2="680" y2="110" stroke="#4ADE80" stroke-width="1.5"/>
+        <rect x="680" y="95" width="135" height="28" rx="6" fill="#0B132B" stroke="#4ADE80" stroke-width="1.5"/>
+        <text x="747" y="113" fill="#86EFAC" text-anchor="middle">A = T (2 H-Bonds)</text>
+      </g>
+    </svg>

@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 520" width="100%" height="auto" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <radialGradient id="htBg" cx="50%" cy="50%" r="65%">
+          <stop offset="0%" stop-color="#1E1E2E"/>
+          <stop offset="100%" stop-color="#0F172A"/>
+        </radialGradient>
+        <linearGradient id="aortaGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#EF4444"/>
+          <stop offset="100%" stop-color="#991B1B"/>
+        </linearGradient>
+        <linearGradient id="pulmGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#38BDF8"/>
+          <stop offset="100%" stop-color="#0284C7"/>
+        </linearGradient>
+        <linearGradient id="myoGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#B91C1C"/>
+          <stop offset="100%" stop-color="#581C87"/>
+        </linearGradient>
+      </defs>
+      <rect width="840" height="520" rx="20" fill="url(#htBg)"/>
+      <text x="420" y="32" font-family="Inter, sans-serif" font-size="17" font-weight="800" fill="#FFFFFF" text-anchor="middle">Human Heart — Coronal Cutaway &amp; Double Circulation</text>
+      
+      <!-- Aorta Arch (Red Top) -->
+      <path d="M 370 170 C 370 70, 480 50, 480 140 L 440 150 C 440 90, 395 95, 395 170 Z" fill="url(#aortaGrad)" stroke="#F87171" stroke-width="2"/>
+      <!-- Brachiocephalic, Carotid, Subclavian Branches -->
+      <rect x="385" y="45" width="16" height="30" rx="5" fill="#EF4444"/>
+      <rect x="415" y="40" width="16" height="35" rx="5" fill="#EF4444"/>
+      <rect x="445" y="48" width="16" height="30" rx="5" fill="#EF4444"/>
+
+      <!-- Pulmonary Trunk (Blue Left/Right bifurcation) -->
+      <path d="M 350 200 C 350 140, 430 110, 450 160" stroke="url(#pulmGrad)" stroke-width="26" fill="none" stroke-linecap="round"/>
+      <path d="M 450 135 L 510 110" stroke="url(#pulmGrad)" stroke-width="20" fill="none" stroke-linecap="round"/>
+
+      <!-- Superior & Inferior Vena Cava -->
+      <rect x="290" y="70" width="34" height="110" rx="10" fill="#1E40AF" stroke="#60A5FA" stroke-width="1.5"/>
+      <rect x="295" y="380" width="30" height="60" rx="8" fill="#1E40AF"/>
+
+      <!-- Outer Cardiac Muscle Silhouette -->
+      <path d="M 270 200 C 240 240, 240 340, 310 420 C 350 460, 420 480, 430 480 C 450 480, 560 450, 580 340 C 600 250, 560 190, 510 190 Z" fill="#7F1D1D" stroke="#DC2626" stroke-width="3"/>
+
+      <!-- Right Atrium Cavity (Blue Deoxy) -->
+      <path d="M 285 200 C 270 240, 290 280, 335 280 C 355 280, 360 230, 350 200 Z" fill="#2563EB" opacity="0.95"/>
+      <text x="315" y="240" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Right Atrium</text>
+
+      <!-- Right Ventricle Cavity (Blue Deoxy) -->
+      <path d="M 290 300 C 290 360, 330 420, 380 430 L 380 300 Z" fill="#1D4ED8"/>
+      <text x="340" y="360" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Right Ventricle</text>
+
+      <!-- Left Atrium Cavity (Red Oxygenated) -->
+      <path d="M 460 200 C 450 240, 470 280, 520 280 C 545 280, 550 230, 530 200 Z" fill="#DC2626" opacity="0.95"/>
+      <text x="500" y="240" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Left Atrium</text>
+
+      <!-- Left Ventricle Cavity (Red Oxygenated, Thick Muscle) -->
+      <path d="M 410 300 L 410 430 C 460 420, 500 370, 500 300 Z" fill="#B91C1C"/>
+      <text x="455" y="360" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Left Ventricle</text>
+
+      <!-- Interventricular Septum (Central Thick Wall) -->
+      <rect x="382" y="295" width="26" height="150" rx="6" fill="#991B1B" stroke="#450A0A" stroke-width="1.5"/>
+
+      <!-- Heart Valves (Tricuspid & Bicuspid/Mitral) -->
+      <ellipse cx="335" cy="290" rx="20" ry="6" fill="#F59E0B" stroke="#FEF3C7" stroke-width="2"/>
+      <ellipse cx="465" cy="290" rx="20" ry="6" fill="#F59E0B" stroke="#FEF3C7" stroke-width="2"/>
+
+      <!-- Programmatic Callout Badges -->
+      <g font-family="Inter, sans-serif" font-size="11.5" font-weight="700">
+        <!-- Vena Cava Callout -->
+        <line x1="290" y1="100" x2="160" y2="100" stroke="#38BDF8" stroke-width="1.5"/>
+        <circle cx="290" cy="100" r="3.5" fill="#38BDF8"/>
+        <rect x="40" y="85" width="120" height="28" rx="6" fill="#0F172A" stroke="#38BDF8" stroke-width="1.5"/>
+        <text x="100" y="103" fill="#38BDF8" text-anchor="middle">Vena Cava (Deoxy)</text>
+
+        <!-- Aorta Callout -->
+        <line x1="430" y1="50" x2="560" y2="50" stroke="#EF4444" stroke-width="1.5"/>
+        <circle cx="430" cy="50" r="3.5" fill="#EF4444"/>
+        <rect x="560" y="35" width="130" height="28" rx="6" fill="#0F172A" stroke="#EF4444" stroke-width="1.5"/>
+        <text x="625" y="53" fill="#F87171" text-anchor="middle">Aorta (120 mmHg)</text>
+
+        <!-- Pulmonary Artery Callout -->
+        <line x1="510" y1="110" x2="680" y2="110" stroke="#0284C7" stroke-width="1.5"/>
+        <circle cx="510" cy="110" r="3.5" fill="#0284C7"/>
+        <rect x="680" y="95" width="145" height="28" rx="6" fill="#0F172A" stroke="#0284C7" stroke-width="1.5"/>
+        <text x="752" y="113" fill="#38BDF8" text-anchor="middle">Pulmonary Trunk (Lungs)</text>
+
+        <!-- Tricuspid Valve Callout -->
+        <line x1="335" y1="290" x2="150" y2="290" stroke="#F59E0B" stroke-width="1.5"/>
+        <circle cx="335" cy="290" r="3.5" fill="#F59E0B"/>
+        <rect x="30" y="275" width="120" height="28" rx="6" fill="#0F172A" stroke="#F59E0B" stroke-width="1.5"/>
+        <text x="90" y="293" fill="#FDE68A" text-anchor="middle">Tricuspid Valve</text>
+
+        <!-- Bicuspid Valve Callout -->
+        <line x1="485" y1="290" x2="680" y2="290" stroke="#F59E0B" stroke-width="1.5"/>
+        <circle cx="485" cy="290" r="3.5" fill="#F59E0B"/>
+        <rect x="680" y="275" width="135" height="28" rx="6" fill="#0F172A" stroke="#F59E0B" stroke-width="1.5"/>
+        <text x="747" y="293" fill="#FDE68A" text-anchor="middle">Bicuspid / Mitral</text>
+
+        <!-- Left Ventricle Thick Wall Callout -->
+        <line x1="500" y1="380" x2="680" y2="380" stroke="#F87171" stroke-width="1.5"/>
+        <circle cx="500" cy="380" r="3.5" fill="#F87171"/>
+        <rect x="680" y="365" width="145" height="28" rx="6" fill="#0F172A" stroke="#F87171" stroke-width="1.5"/>
+        <text x="752" y="383" fill="#FCA5A5" text-anchor="middle">LV Wall (3x Thicker)</text>
+
+        <!-- Septum Callout -->
+        <line x1="395" y1="410" x2="395" y2="470" stroke="#E2E8F0" stroke-width="1.5"/>
+        <circle cx="395" cy="410" r="3.5" fill="#E2E8F0"/>
+        <rect x="315" y="470" width="160" height="28" rx="6" fill="#0F172A" stroke="#E2E8F0" stroke-width="1.5"/>
+        <text x="395" y="488" fill="#F8FAFC" text-anchor="middle">Interventricular Septum</text>
+      </g>
+    </svg>
