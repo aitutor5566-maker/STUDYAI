@@ -399,16 +399,18 @@ export function buildUniversalTeachingWorkflow(params: {
 
   const stage1 = {
     teacherGreeting: friendlyTeacherGreeting,
-    overview: `**${topic}** is a cornerstone topic in Class ${grade} ${subject} (${discipline}). It establishes the fundamental principles governing how physical, chemical, or biological entities interact, transform, and reach equilibrium.`,
+    overview: `**${topic}** is an important unit in Class ${grade} ${subject} (${discipline}). This lesson builds a clear understanding of its core concepts, key terminology, mechanisms, and curriculum applications.`,
     whatStudentWillLearn: [
       `The precise academic and textbook definition of ${topic}.`,
       `Core structural components and prerequisites required for mastery.`,
       `The complete working mechanism and step-by-step sequential processes.`,
-      `Mathematical governing equations, SI units, and worked numerical problems.`,
+      discipline === 'Physics' || discipline === 'Chemistry' || discipline === 'Mathematics'
+        ? `Governing equations, units, and worked examples for ${topic}.`
+        : `Key comparisons, real-world applications, and diagram-based explanations for ${topic}.`,
       `Common board examination traps, misconceptions, and high-yield model answers.`
     ],
-    whyItIsImportant: `Mastering ${topic} provides the essential conceptual foundation needed for advanced Class 11–12 topics, competitive assessments, and real-world scientific applications.`,
-    whereItIsUsed: `Directly applied in modern industrial engineering, medical physiology, environmental balance, and laboratory experimental procedures.`,
+    whyItIsImportant: `Mastering ${topic} provides the essential conceptual foundation needed for Class ${grade} board assessments and higher-level ${subject} topics.`,
+    whereItIsUsed: `Directly connected to everyday phenomena, laboratory observations, and ${board} Class ${grade} ${subject} applications.`,
     subjectConnection: `Forms a primary chapter pillar within the ${board} Class ${grade} ${subject} curriculum syllabus.`
   };
 
@@ -419,19 +421,17 @@ export function buildUniversalTeachingWorkflow(params: {
   const stage3ImportantDefs = buildImportantDefinitionsForTopic(topic, subject);
   const stage3Prereqs = {
     backgroundKnowledge: [
-      `Elementary Class ${grade - 1} foundational terminology of ${subject}.`,
-      `Concept of conservation of mass, energy, and momentum.`,
-      `Familiarity with standard SI metric units (meters, seconds, kilograms, Joules, Newtons).`
+      `Class ${Math.max(1, grade - 1)} foundational concepts in ${subject} related to ${topic}.`,
+      `Ability to read and interpret labeled ${discipline.toLowerCase()} diagrams and key terms.`
     ],
     basicPrinciples: [
-      `Causality: Every observed physical or biological effect has a measurable physical cause.`,
-      `Conservation: Energy and mass cannot be created or destroyed, only transformed between states.`
+      `Structure and function in ${topic} are directly linked.`,
+      `Every step in ${topic} follows a verifiable cause-and-effect sequence.`
     ],
     prerequisites: [
-      `Understanding how vectors and scalars differ.`,
-      `Basic algebraic balancing and substitution skills.`
+      `Familiarity with basic ${subject} vocabulary for Grade ${grade}.`
     ],
-    priorConceptConnections: `Directly connects prior units on foundational states of matter with advanced macroscopic mechanics and physiological regulation.`
+    priorConceptConnections: `Builds directly upon earlier Class ${Math.max(1, grade - 1)}–${grade} ${subject} units to explain ${topic} systematically.`
   };
 
   // Stage 4: Key Terminology and Full Forms
@@ -486,24 +486,25 @@ export function buildUniversalTeachingWorkflow(params: {
   };
 
   const stage7Processes = buildStepByStepProcessesForTopic(topic, subject);
+  const lastStepOutcome = stage7Processes[stage7Processes.length - 1]?.whatHappensNext || `Complete functional outcome of ${topic}.`;
   const stage7DetailedMechanisms = {
-    processTitle: `${topic} Complete Sequential Mechanism`,
-    startingConditions: `Initial physiological, physical, or chemical conditions prior to activation.`,
+    processTitle: `${topic} — Step-by-Step Mechanism`,
+    startingConditions: stage7Processes[0]?.whatHappens || `Initial conditions required for ${topic}.`,
     componentsInvolved: stage7Processes.map((p) => p.componentsInvolved).flat(),
     sequenceOfEvents: stage7Processes,
-    finalResult: `Stable terminal output and energy state achieving system equilibrium.`,
-    relationshipsBetweenStages: `Each stage's product acts as the essential substrate or electrical trigger for the succeeding stage.`,
+    finalResult: lastStepOutcome,
+    relationshipsBetweenStages: `Each stage in ${topic} prepares the necessary state or pathway for the next stage in sequence.`,
     processDiagram: processFlowDiagram8Point
   };
 
   // Stage 6 detailed working mechanism (backward compatibility)
   const stage6WorkingMech = {
-    whatHappens: `Under standard operational conditions, incoming inputs bind to or stimulate the primary functional units of ${topic}.`,
-    whyItHappens: `Driven by potential energy gradients, chemical affinity, or applied external forces seeking thermodynamic equilibrium.`,
-    howItHappens: `Through a tight series of physical deflections, chemical bond shifts, or electrical depolarizations that progress sequentially without skipping stages.`,
-    participatingComponents: [`Primary Hub`, `Transmission Vector`, `Reactive Catalyst/Transducer`, `Terminal Receptor`],
-    componentInteractions: `Component A activates Component B via mechanical force or chemical reduction, which in turn primes Component C for discharge.`,
-    finalResult: `The stable, measurable generation of target output products accompanied by clean thermal dissipation.`
+    whatHappens: stage7Processes[0]?.whatHappens || `${topic} operates through an ordered sequence of topic-specific steps.`,
+    whyItHappens: stage2.simpleMeaning || `Essential to fulfill the core curriculum function of ${topic} in ${subject}.`,
+    howItHappens: stage7Processes.map((p) => `${p.stepNumber}. ${p.stepTitle}: ${p.whatHappens}`).join(' '),
+    participatingComponents: Array.from(new Set(stage7Processes.flatMap((p) => p.componentsInvolved))).slice(0, 6),
+    componentInteractions: stage7Processes.map((p) => p.whatHappensNext).filter(Boolean).join(' ') || `Components coordinate sequentially across each stage of ${topic}.`,
+    finalResult: lastStepOutcome
   };
 
   // Stage 8: Aggregate all diagrams (All individual subtopic diagrams + process flow)

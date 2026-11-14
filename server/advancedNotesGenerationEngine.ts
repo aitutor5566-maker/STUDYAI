@@ -188,7 +188,15 @@ export function validateAcademicNotebook(note: any): { isValid: boolean; errors:
     'Products or kinetic motion reach stable target configuration with entropy dissipation',
     'Core Principle: The central axiom upon which',
     'Foundational Prerequisites: Master underlying terminology',
-    'The functional mechanism operates via a sequence of validated stages'
+    'The functional mechanism operates via a sequence of validated stages',
+    'seeking thermodynamic equilibrium',
+    'achieving system equilibrium',
+    'operate synchronously to achieve structural and functional equilibrium',
+    'Primary Hub',
+    'Transmission Vector',
+    'Initial Activation',
+    'Transformation Cascade',
+    'Terminal Equilibrium'
   ];
 
   const fullText = JSON.stringify(note).toLowerCase();
@@ -505,11 +513,23 @@ export class AdvancedNotesGenerationEngine {
     }));
 
     // 21. Assemble Full Structured JSON
+    const keyTermsGlossary = [
+      ...abbreviations.map((a) => ({
+        term: a.abbr && a.fullForm && a.abbr !== a.fullForm ? `${a.abbr} (${a.fullForm})` : (a.fullForm || a.abbr),
+        definition: a.simpleDefinition || a.roleInTopic || ''
+      })),
+      ...definitions.map((d) => ({
+        term: d.term,
+        definition: d.definition
+      }))
+    ].filter((item) => item.term && item.definition);
+
     const structured: GeneratedAcademicNote['structured'] = {
       definitions,
       keyPoints,
       importantFacts: keyPoints,
       abbreviations,
+      keyTermsGlossary,
       prerequisites,
       sections,
       images,
@@ -568,8 +588,14 @@ export class AdvancedNotesGenerationEngine {
 
     // 22. Strict Content & Image Validation
     const validation = validateAcademicNotebook(finalNote);
+    (finalNote.structured as any).validation = {
+      isValid: validation.isValid,
+      errors: validation.errors,
+      completenessStatus: validation.isValid ? 'complete' : 'incomplete'
+    };
+    (finalNote as any).validation = (finalNote.structured as any).validation;
     if (!validation.isValid) {
-      console.warn('[NOTES_ENGINE] Validation warnings detected during note synthesis:', validation.errors);
+      console.warn('[NOTES_ENGINE] Validation issues detected during note synthesis:', validation.errors);
     }
 
     return finalNote;

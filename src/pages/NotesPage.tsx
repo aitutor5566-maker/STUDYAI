@@ -126,6 +126,34 @@ export const NotesPage: React.FC = () => {
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [isFullScreenReader, setIsFullScreenReader] = useState<boolean>(false);
   const [showTocDrawer, setShowTocDrawer] = useState<boolean>(false);
+  const [failedDiagramKeys, setFailedDiagramKeys] = useState<Record<string, boolean>>({});
+  const [retryingDiagramKey, setRetryingDiagramKey] = useState<string | null>(null);
+  const [retriedDiagramUrls, setRetriedDiagramUrls] = useState<Record<string, string>>({});
+  const [fullViewDiagram, setFullViewDiagram] = useState<{ title: string; imageUrl?: string; svgXml?: string; caption?: string } | null>(null);
+
+  const handleRetryDiagram = async (key: string, diagramTopic: string, subtopicTitle: string) => {
+    setRetryingDiagramKey(key);
+    try {
+      const res = await apiFetch('/api/visual-intelligence/produce', {
+        method: 'POST',
+        body: JSON.stringify({
+          topic: diagramTopic || editTitle,
+          subtopic: subtopicTitle,
+          subject: activeNote?.subject || 'Science',
+          preferredSource: 'auto'
+        })
+      });
+      const recoveredUrl = res?.visual?.dataUrl || res?.visual?.imageUrl;
+      if (recoveredUrl) {
+        setRetriedDiagramUrls((prev) => ({ ...prev, [key]: recoveredUrl }));
+        setFailedDiagramKeys((prev) => ({ ...prev, [key]: false }));
+      }
+    } catch {
+      setFailedDiagramKeys((prev) => ({ ...prev, [key]: true }));
+    } finally {
+      setRetryingDiagramKey(null);
+    }
+  };
 
   // Synchronized Notes Audio Narration State (Prompt Requirement)
   const [notesAudioOpen, setNotesAudioOpen] = useState<boolean>(false);
@@ -2806,85 +2834,110 @@ export const NotesPage: React.FC = () => {
               </div>
 
               {/* Section B: Key Points & Core Principles */}
-              <div id="sec-section-b" style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid #EEEEEE' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#DCFCE7', color: '#15803D', padding: '3px 8px', borderRadius: 4 }}>
-                    Section B
-                  </span>
-                  <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#202124', margin: 0 }}>
-                    Key Points & Core Principles
-                  </h3>
-                </div>
-                <div style={{ display: 'grid', gap: 8 }}>
-                  {(structured.keyPoints || structured.importantFacts || structured.universalTeachingWorkflow?.sectionB_keyPoints?.corePrinciples || currentSection.keyPoints || [
-                    `${editTitle} is an essential academic curriculum unit governed by verified theoretical and empirical laws.`,
-                    `Core functional mechanisms operate synchronously to achieve structural and functional equilibrium.`,
-                    `Key components follow strict directional pathways defined in standard board textbooks.`,
-                    `Mastery requires understanding definitions, working mechanisms, and formula applications.`
-                  ]).map((kp: string, kIdx: number) => (
-                    <div key={kIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px', background: '#F9FAFB', borderRadius: 8, border: '1px solid #F3F4F6' }}>
-                      <span style={{ color: '#FF6A00', fontWeight: 900, fontSize: '1rem', lineHeight: 1 }}>•</span>
-                      <span style={{ fontSize: '0.92rem', color: '#374151', lineHeight: 1.55 }}>{kp}</span>
+              {(() => {
+                const keyPointsList: string[] = (
+                  structured.keyPoints ||
+                  structured.importantFacts ||
+                  structured.universalTeachingWorkflow?.sectionB_keyPoints?.corePrinciples ||
+                  currentSection.keyPoints ||
+                  []
+                ).filter((kp: any) => typeof kp === 'string' && kp.trim().length > 0);
+                if (keyPointsList.length === 0) return null;
+                return (
+                  <div id="sec-section-b" style={{ marginBottom: 28, paddingBottom: 20, borderBottom: '1px solid #EEEEEE' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#DCFCE7', color: '#15803D', padding: '3px 8px', borderRadius: 4 }}>
+                        Section B
+                      </span>
+                      <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary, #202124)', margin: 0 }}>
+                        Key Points & Core Principles
+                      </h3>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Section C: Key Terms & Full Forms */}
-              <div id="sec-section-c" style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid #EEEEEE' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#E0E7FF', color: '#3730A3', padding: '3px 8px', borderRadius: 4 }}>
-                    Section C
-                  </span>
-                  <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#202124', margin: 0 }}>
-                    Key Terms & Terminology
-                  </h3>
-                </div>
-              {Array.isArray(structured.abbreviations) && structured.abbreviations.length > 0 && (
-                <div id="sec-terminology" style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid #EEEEEE' }}>
-                  <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#202124', marginBottom: 12 }}>
-                    3. Important Terminology & Full Forms
-                  </h3>
-                  <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem', background: '#FFFFFF', borderRadius: 10 }}>
-                      <thead>
-                        <tr style={{ background: '#FFF7ED', color: '#9A3412', textAlign: 'left' }}>
-                          <th style={{ padding: '10px 14px', border: '1px solid #FED7AA' }}>Abbreviation / Term</th>
-                          <th style={{ padding: '10px 14px', border: '1px solid #FED7AA' }}>Full Scientific Form</th>
-                          <th style={{ padding: '10px 14px', border: '1px solid #FED7AA' }}>Definition & Curriculum Role</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {structured.abbreviations.map((abbr: any, aIdx: number) => (
-                          <tr key={aIdx}>
-                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', fontWeight: 800, color: '#C2410C' }}>{abbr.abbr}</td>
-                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', fontWeight: 700 }}>{abbr.fullForm}</td>
-                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', color: '#374151' }}>{abbr.simpleDefinition}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <div style={{ display: 'grid', gap: 8 }}>
+                      {keyPointsList.map((kp: string, kIdx: number) => (
+                        <div key={kIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px', background: '#F9FAFB', borderRadius: 8, border: '1px solid #F3F4F6' }}>
+                          <span style={{ color: '#FF6A00', fontWeight: 900, fontSize: '1rem', lineHeight: 1 }}>•</span>
+                          <span style={{ fontSize: '0.92rem', color: '#374151', lineHeight: 1.55 }}>{kp}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
-              {/* 5. Prerequisites */}
-              {Array.isArray(structured.prerequisites) && structured.prerequisites.length > 0 && (
-                <div id="sec-prerequisites" style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid #EEEEEE' }}>
-                  <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#202124', marginBottom: 12 }}>
-                    4. Fundamentals & Prerequisites
-                  </h3>
-                  <div style={{ display: 'grid', gap: 8 }}>
-                    {structured.prerequisites.map((req: string, rIdx: number) => (
-                      <div key={rIdx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#F9FAFB', borderRadius: 8, border: '1px solid #F3F4F6' }}>
-                        <span style={{ color: '#16A34A', fontWeight: 800 }}>✓</span>
-                        <span style={{ fontSize: '0.9rem', color: '#374151' }}>{req}</span>
+              {/* Section C: Key Terms & Full Forms (Never render empty!) */}
+              {(() => {
+                const abbrs = Array.isArray(structured.abbreviations) ? structured.abbreviations.filter((a: any) => a && (a.abbr || a.fullForm)) : [];
+                const glossaryTerms = Array.isArray(structured.keyTermsGlossary) && structured.keyTermsGlossary.length > 0
+                  ? structured.keyTermsGlossary
+                  : Array.isArray(structured.definitions)
+                  ? structured.definitions
+                  : [];
+                const prereqs = Array.isArray(structured.prerequisites) ? structured.prerequisites.filter(Boolean) : [];
+                if (abbrs.length === 0 && glossaryTerms.length === 0 && prereqs.length === 0) return null;
+                return (
+                  <div id="sec-section-c" style={{ marginBottom: 28, paddingBottom: 20, borderBottom: '1px solid #EEEEEE' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', background: '#E0E7FF', color: '#3730A3', padding: '3px 8px', borderRadius: 4 }}>
+                        Section C
+                      </span>
+                      <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary, #202124)', margin: 0 }}>
+                        Key Terms & Terminology
+                      </h3>
+                    </div>
+
+                    {abbrs.length > 0 && (
+                      <div id="sec-terminology" style={{ marginBottom: 20, overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem', background: '#FFFFFF', borderRadius: 10 }}>
+                          <thead>
+                            <tr style={{ background: '#FFF7ED', color: '#9A3412', textAlign: 'left' }}>
+                              <th style={{ padding: '10px 14px', border: '1px solid #FED7AA' }}>Abbreviation / Term</th>
+                              <th style={{ padding: '10px 14px', border: '1px solid #FED7AA' }}>Full Scientific Form</th>
+                              <th style={{ padding: '10px 14px', border: '1px solid #FED7AA' }}>Definition & Curriculum Role</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {abbrs.map((abbr: any, aIdx: number) => (
+                              <tr key={aIdx}>
+                                <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', fontWeight: 800, color: '#C2410C' }}>{abbr.abbr}</td>
+                                <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', fontWeight: 700 }}>{abbr.fullForm}</td>
+                                <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', color: '#374151' }}>{abbr.simpleDefinition}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
-                    ))}
+                    )}
+
+                    {glossaryTerms.length > 0 && (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10, marginBottom: prereqs.length > 0 ? 18 : 0 }}>
+                        {glossaryTerms.map((item: any, gIdx: number) => (
+                          <div key={gIdx} style={{ padding: '10px 14px', background: '#F8FAFC', borderRadius: 10, border: '1px solid #E2E8F0' }}>
+                            <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#1E293B', marginBottom: 4 }}>{item.term}</div>
+                            <div style={{ fontSize: '0.84rem', color: '#475569', lineHeight: 1.5 }}>{item.definition}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {prereqs.length > 0 && (
+                      <div id="sec-prerequisites" style={{ marginTop: 14 }}>
+                        <h4 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary, #202124)', marginBottom: 8 }}>
+                          Fundamentals & Prerequisites
+                        </h4>
+                        <div style={{ display: 'grid', gap: 8 }}>
+                          {prereqs.map((req: string, rIdx: number) => (
+                            <div key={rIdx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: '#F9FAFB', borderRadius: 8, border: '1px solid #F3F4F6' }}>
+                              <span style={{ color: '#16A34A', fontWeight: 800 }}>✓</span>
+                              <span style={{ fontSize: '0.88rem', color: '#374151' }}>{req}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-              </div>
+                );
+              })()}
 
               {/* Section D: Main Concepts and Subtopics (Each with its dedicated diagram) */}
               <div id="sec-section-d" style={{ display: 'grid', gap: 32, marginBottom: 36 }}>
@@ -2916,49 +2969,70 @@ export const NotesPage: React.FC = () => {
                     {(() => {
                       const pairedVisual = (structured.images || [])[idx] || sec.visual || sec.visualAsset;
                       if (!pairedVisual) return null;
-                      const visualDataUrl = pairedVisual.imageUrl || pairedVisual.dataUrl || (pairedVisual.svgXml ? `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(pairedVisual.svgXml)))}` : '');
+                      const diagramKey = `${activeNote?.id || 'note'}-${idx}`;
+                      const retriedUrl = retriedDiagramUrls[diagramKey];
+                      const visualDataUrl = retriedUrl || pairedVisual.imageUrl || pairedVisual.dataUrl || (pairedVisual.svgXml ? `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(pairedVisual.svgXml)))}` : '');
+                      const hasFailed = Boolean(failedDiagramKeys[diagramKey]);
 
                       return (
                         <div style={{ margin: '16px 0', borderRadius: 16, border: '1.5px solid #E2E8F0', overflow: 'hidden', background: 'var(--bg-card, #FFFFFF)', boxShadow: '0 6px 20px rgba(0,0,0,0.03)' }}>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(270px, 1fr))', gap: 0 }}>
                             {/* Diagram Visual Side */}
                             <div className="educational-visual-stage" style={{ background: '#F8FAFC', padding: 14, borderRight: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: 8 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: 8, gap: 6, flexWrap: 'wrap' }}>
                                 <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#C2410C', background: '#FFF3E8', padding: '3px 8px', borderRadius: 6 }}>
                                   {pairedVisual.diagramType || 'Curriculum Schematic'}
                                 </span>
-                                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#15803D', background: '#DCFCE7', padding: '3px 8px', borderRadius: 6 }}>
-                                  ✓ Verified Diagram
-                                </span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  {(pairedVisual.svgXml || visualDataUrl) && !hasFailed && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setFullViewDiagram({
+                                        title: pairedVisual.title || sec.heading,
+                                        svgXml: !retriedUrl ? pairedVisual.svgXml : undefined,
+                                        imageUrl: visualDataUrl,
+                                        caption: pairedVisual.caption
+                                      })}
+                                      style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: 6, border: '1px solid #CBD5E1', background: '#FFFFFF', color: '#334155', cursor: 'pointer' }}
+                                    >
+                                      🔍 Full View
+                                    </button>
+                                  )}
+                                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: hasFailed ? '#B91C1C' : '#15803D', background: hasFailed ? '#FEE2E2' : '#DCFCE7', padding: '3px 8px', borderRadius: 6 }}>
+                                    {hasFailed ? '⚠ Image Error' : '✓ Verified Diagram'}
+                                  </span>
+                                </div>
                               </div>
-                              {pairedVisual.svgXml ? (
+                              {hasFailed || (!pairedVisual.svgXml && !visualDataUrl) ? (
+                                <div style={{ padding: 20, textAlign: 'center', background: '#FEF2F2', border: '1px dashed #FCA5A5', borderRadius: 12, width: '100%' }}>
+                                  <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#991B1B', marginBottom: 8 }}>
+                                    Diagram failed to load for "{pairedVisual.title || sec.heading}"
+                                  </div>
+                                  <button
+                                    type="button"
+                                    disabled={retryingDiagramKey === diagramKey}
+                                    onClick={() => handleRetryDiagram(diagramKey, activeNote?.topic || editTitle, sec.heading)}
+                                    className="btn-orange"
+                                    style={{ fontSize: '0.76rem', padding: '6px 12px' }}
+                                  >
+                                    {retryingDiagramKey === diagramKey ? 'Retrying...' : '↻ Retry Diagram'}
+                                  </button>
+                                </div>
+                              ) : pairedVisual.svgXml && !retriedUrl ? (
                                 <div
                                   className="edu-diagram-img"
                                   dangerouslySetInnerHTML={{ __html: pairedVisual.svgXml }}
                                   style={{ width: '100%', maxHeight: 320, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 />
-                              ) : visualDataUrl ? (
+                              ) : (
                                 <img
                                   className="edu-diagram-img"
                                   src={visualDataUrl}
                                   alt={pairedVisual.title || sec.heading}
-                                  onError={(e) => {
-                                    const target = e.currentTarget;
-                                    target.style.display = 'none';
-                                    const parent = target.parentElement;
-                                    if (parent) {
-                                      const fallbackBadge = document.createElement('div');
-                                      fallbackBadge.style.padding = '24px';
-                                      fallbackBadge.style.textAlign = 'center';
-                                      fallbackBadge.style.color = '#64748B';
-                                      fallbackBadge.style.fontSize = '0.86rem';
-                                      fallbackBadge.innerText = `Verified Diagram: ${pairedVisual.title || sec.heading}`;
-                                      parent.appendChild(fallbackBadge);
-                                    }
-                                  }}
+                                  onError={() => setFailedDiagramKeys((prev) => ({ ...prev, [diagramKey]: true }))}
                                   style={{ width: '100%', maxHeight: 320, objectFit: 'contain', display: 'block', background: '#FFFFFF', borderRadius: 10 }}
                                 />
-                              ) : null}
+                              )}
                               <figcaption style={{ marginTop: 10, fontSize: '0.82rem', color: '#64748B', textAlign: 'center', lineHeight: 1.4 }}>
                                 <strong style={{ color: '#0F172A' }}>{pairedVisual.title || sec.heading}:</strong> {pairedVisual.caption}
                               </figcaption>
@@ -3688,11 +3762,11 @@ export const NotesPage: React.FC = () => {
                           </tr>
                         ))
                       ) : (
-                        (structured?.sections || []).map((sec: any, sIdx: number) => (
+                        (structured?.sections || []).filter((sec: any) => Boolean(sec.heading || sec.title)).map((sec: any, sIdx: number) => (
                           <tr key={sIdx} style={{ background: sIdx % 2 === 0 ? '#FFFFFF' : '#FAFAFA' }}>
-                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', fontWeight: 700, color: '#202124' }}>{sec.title}</td>
-                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', color: '#4B5563' }}>{sec.learningObjective || sec.content?.slice(0, 100)}</td>
-                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', color: '#EA580C', fontWeight: 600 }}>Key Board Question Section</td>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', fontWeight: 700, color: '#202124' }}>{sec.heading || sec.title}</td>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', color: '#4B5563' }}>{sec.plainExplanation || sec.learningObjective || (sec.body || sec.content || '').slice(0, 140)}</td>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', color: '#EA580C', fontWeight: 600 }}>{sec.subheading || 'Key Board Question Section'}</td>
                           </tr>
                         ))
                       )}
@@ -3703,7 +3777,7 @@ export const NotesPage: React.FC = () => {
 
               {/* High-Yield Key Points & Formulas */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-                {(structured?.sections || []).map((sec: any, idx: number) => (
+                {(structured?.sections || []).filter((sec: any) => Boolean(sec.heading || sec.title)).map((sec: any, idx: number) => (
                   <div
                     key={idx}
                     style={{
@@ -3717,13 +3791,13 @@ export const NotesPage: React.FC = () => {
                       <span style={{ fontSize: '0.74rem', fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#FF6A00', color: '#FFFFFF' }}>
                         § {idx + 1}
                       </span>
-                      <strong style={{ fontSize: '0.92rem', color: '#202124' }}>{sec.title}</strong>
+                      <strong style={{ fontSize: '0.92rem', color: '#202124' }}>{sec.heading || sec.title}</strong>
                     </div>
                     <ul style={{ margin: 0, paddingLeft: 18, fontSize: '0.84rem', color: '#4B5563', lineHeight: 1.6 }}>
-                      {(sec.keyTakeaways || []).length > 0 ? (
-                        sec.keyTakeaways.map((k: string, kIdx: number) => <li key={kIdx}>{k}</li>)
+                      {(sec.keyTakeaways || sec.keyPoints || []).length > 0 ? (
+                        (sec.keyTakeaways || sec.keyPoints).map((k: string, kIdx: number) => <li key={kIdx}>{k}</li>)
                       ) : (
-                        <li>{sec.learningObjective || sec.content?.slice(0, 140)}</li>
+                        <li>{sec.plainExplanation || sec.learningObjective || (sec.body || sec.content || '').slice(0, 180)}</li>
                       )}
                     </ul>
                   </div>
@@ -4250,11 +4324,11 @@ export const NotesPage: React.FC = () => {
                           </tr>
                         ))
                       ) : (
-                        (structured?.sections || []).map((sec: any, sIdx: number) => (
+                        (structured?.sections || []).filter((sec: any) => Boolean(sec.heading || sec.title)).map((sec: any, sIdx: number) => (
                           <tr key={sIdx} style={{ background: sIdx % 2 === 0 ? '#FFFFFF' : '#FAFAFA' }}>
-                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', fontWeight: 700, color: '#202124' }}>{sec.title}</td>
-                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', color: '#4B5563' }}>{sec.learningObjective || sec.content?.slice(0, 100)}</td>
-                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', color: '#EA580C', fontWeight: 600 }}>Key Board Question Section</td>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', fontWeight: 700, color: '#202124' }}>{sec.heading || sec.title}</td>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', color: '#4B5563' }}>{sec.plainExplanation || sec.learningObjective || (sec.body || sec.content || '').slice(0, 140)}</td>
+                            <td style={{ padding: '10px 14px', border: '1px solid #FED7AA', color: '#EA580C', fontWeight: 600 }}>{sec.subheading || 'Key Board Question Section'}</td>
                           </tr>
                         ))
                       )}
@@ -4265,7 +4339,7 @@ export const NotesPage: React.FC = () => {
 
               {/* High-Yield Key Points & Formulas */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-                {(structured?.sections || []).map((sec: any, idx: number) => (
+                {(structured?.sections || []).filter((sec: any) => Boolean(sec.heading || sec.title)).map((sec: any, idx: number) => (
                   <div
                     key={idx}
                     style={{
@@ -4279,13 +4353,13 @@ export const NotesPage: React.FC = () => {
                       <span style={{ fontSize: '0.74rem', fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: '#FF6A00', color: '#FFFFFF' }}>
                         § {idx + 1}
                       </span>
-                      <strong style={{ fontSize: '0.92rem', color: '#202124' }}>{sec.title}</strong>
+                      <strong style={{ fontSize: '0.92rem', color: '#202124' }}>{sec.heading || sec.title}</strong>
                     </div>
                     <ul style={{ margin: 0, paddingLeft: 18, fontSize: '0.84rem', color: '#4B5563', lineHeight: 1.6 }}>
-                      {(sec.keyTakeaways || []).length > 0 ? (
-                        sec.keyTakeaways.map((k: string, kIdx: number) => <li key={kIdx}>{k}</li>)
+                      {(sec.keyTakeaways || sec.keyPoints || []).length > 0 ? (
+                        (sec.keyTakeaways || sec.keyPoints).map((k: string, kIdx: number) => <li key={kIdx}>{k}</li>)
                       ) : (
-                        <li>{sec.learningObjective || sec.content?.slice(0, 140)}</li>
+                        <li>{sec.plainExplanation || sec.learningObjective || (sec.body || sec.content || '').slice(0, 180)}</li>
                       )}
                     </ul>
                   </div>
@@ -5119,6 +5193,49 @@ export const NotesPage: React.FC = () => {
             }
           }}
         />
+      )}
+
+      {/* Full View Educational Diagram Modal */}
+      {fullViewDiagram && (
+        <div
+          className="glass-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label={fullViewDiagram.title}
+          onClick={() => setFullViewDiagram(null)}
+          style={{ zIndex: 2500, padding: 16 }}
+        >
+          <div
+            className="glass-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '94vw', maxHeight: '90vh', width: 920, padding: 18, overflow: 'auto', background: '#FFFFFF' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#0F172A' }}>{fullViewDiagram.title}</h4>
+              <button
+                type="button"
+                onClick={() => setFullViewDiagram(null)}
+                style={{ border: '1px solid #E2E8F0', background: '#F8FAFC', borderRadius: 8, padding: '4px 10px', cursor: 'pointer', fontWeight: 700 }}
+              >
+                ✕ Close
+              </button>
+            </div>
+            <div style={{ background: '#F8FAFC', borderRadius: 12, padding: 12, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              {fullViewDiagram.svgXml ? (
+                <div dangerouslySetInnerHTML={{ __html: fullViewDiagram.svgXml }} style={{ width: '100%', maxHeight: '72vh' }} />
+              ) : fullViewDiagram.imageUrl ? (
+                <img
+                  src={fullViewDiagram.imageUrl}
+                  alt={fullViewDiagram.title}
+                  style={{ maxWidth: '100%', maxHeight: '72vh', objectFit: 'contain', borderRadius: 8 }}
+                />
+              ) : null}
+            </div>
+            {fullViewDiagram.caption && (
+              <p style={{ marginTop: 10, fontSize: '0.84rem', color: '#475569', textAlign: 'center' }}>{fullViewDiagram.caption}</p>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
