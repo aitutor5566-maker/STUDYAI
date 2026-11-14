@@ -149,16 +149,9 @@ export const HomePage: React.FC = () => {
       onClick: () => navigate(`/notes?topic=${encodeURIComponent(heroTopicInput || activeTopic)}&auto=true`)
     },
     {
-      label: 'Academic Games',
-      subtitle: '7 Curriculum Mastery Games',
-      tag: 'Gamified Practice',
-      iconName: 'games',
-      onClick: () => openGamesHub(heroTopicInput || activeTopic)
-    },
-    {
-      label: 'Saved Library',
-      subtitle: 'All Bookmarked Resources',
-      tag: 'Personalized Hub',
+      label: 'Saved Library & Games',
+      subtitle: 'Notes, Diagrams, Audio & Games',
+      tag: 'Central Learning Hub',
       iconName: 'library',
       onClick: () => navigate('/library')
     },

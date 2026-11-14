@@ -129,6 +129,7 @@ export const NotesPage: React.FC = () => {
   const [failedDiagramKeys, setFailedDiagramKeys] = useState<Record<string, boolean>>({});
   const [retryingDiagramKey, setRetryingDiagramKey] = useState<string | null>(null);
   const [retriedDiagramUrls, setRetriedDiagramUrls] = useState<Record<string, string>>({});
+  const [selectedDiagramPartIdx, setSelectedDiagramPartIdx] = useState<Record<string, number>>({});
   const [fullViewDiagram, setFullViewDiagram] = useState<{ title: string; imageUrl?: string; svgXml?: string; caption?: string } | null>(null);
 
   const handleRetryDiagram = async (key: string, diagramTopic: string, subtopicTitle: string) => {
@@ -3048,21 +3049,59 @@ export const NotesPage: React.FC = () => {
                                   {pairedVisual.explanation?.whatItShows || pairedVisual.walkthrough?.whatItShows || pairedVisual.caption || 'Illustrates core components, pathways, and directional interactions.'}
                                 </p>
 
-                                {Array.isArray(pairedVisual.labels || pairedVisual.explanation?.keyComponents) && (pairedVisual.labels || pairedVisual.explanation?.keyComponents).length > 0 && (
-                                  <div style={{ marginBottom: 12 }}>
-                                    <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: '#64748B', letterSpacing: '0.5px' }}>
-                                      Key Labeled Parts:
-                                    </span>
-                                    <div style={{ display: 'grid', gap: 5, marginTop: 6 }}>
-                                      {(pairedVisual.labels || pairedVisual.explanation?.keyComponents).slice(0, 4).map((lbl: any, lIdx: number) => (
-                                        <div key={lIdx} style={{ fontSize: '0.8rem', padding: '5px 8px', background: '#F8FAFC', borderRadius: 6, border: '1px solid #E2E8F0', display: 'flex', gap: 8 }}>
-                                          <strong style={{ color: '#C2410C' }}>{typeof lbl === 'string' ? lbl : lbl.label}:</strong>
-                                          <span style={{ color: '#475569' }}>{typeof lbl === 'object' ? (lbl.description || lbl.role || '') : ''}</span>
+                                {Array.isArray(pairedVisual.labels || pairedVisual.explanation?.keyComponents) && (pairedVisual.labels || pairedVisual.explanation?.keyComponents).length > 0 && (() => {
+                                  const partsList = (pairedVisual.labels || pairedVisual.explanation?.keyComponents).slice(0, 6);
+                                  const activePartIdx = selectedDiagramPartIdx[diagramKey] ?? 0;
+                                  const activePart = partsList[activePartIdx];
+                                  const nextPart = partsList[activePartIdx + 1];
+                                  return (
+                                    <div style={{ marginBottom: 12 }}>
+                                      <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: '#64748B', letterSpacing: '0.5px' }}>
+                                        Interactive Labeled Parts (Tap to Inspect):
+                                      </span>
+                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6, marginBottom: 8 }}>
+                                        {partsList.map((lbl: any, lIdx: number) => {
+                                          const labelTitle = typeof lbl === 'string' ? lbl : lbl.label;
+                                          const isSelected = lIdx === activePartIdx;
+                                          return (
+                                            <button
+                                              key={lIdx}
+                                              type="button"
+                                              onClick={() => setSelectedDiagramPartIdx((prev) => ({ ...prev, [diagramKey]: lIdx }))}
+                                              style={{
+                                                fontSize: '0.74rem',
+                                                fontWeight: 700,
+                                                padding: '4px 9px',
+                                                borderRadius: 999,
+                                                border: isSelected ? '1.5px solid #FF6A00' : '1px solid #CBD5E1',
+                                                background: isSelected ? '#FFF3E8' : '#F8FAFC',
+                                                color: isSelected ? '#C2410C' : '#334155',
+                                                cursor: 'pointer'
+                                              }}
+                                            >
+                                              {labelTitle}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                      {activePart && (
+                                        <div style={{ fontSize: '0.82rem', padding: '10px 12px', background: '#FFF7ED', borderRadius: 10, border: '1px solid #FED7AA' }}>
+                                          <div style={{ fontWeight: 800, color: '#9A3412', marginBottom: 3 }}>
+                                            {typeof activePart === 'string' ? activePart : activePart.label}
+                                          </div>
+                                          <div style={{ color: '#334155', lineHeight: 1.5 }}>
+                                            {typeof activePart === 'object' ? (activePart.description || activePart.role || 'Key labeled component in this diagram.') : 'Key labeled component.'}
+                                          </div>
+                                          {nextPart && (
+                                            <div style={{ marginTop: 5, fontSize: '0.75rem', color: '#C2410C', fontWeight: 700 }}>
+                                              Next in sequence → {typeof nextPart === 'string' ? nextPart : nextPart.label}
+                                            </div>
+                                          )}
                                         </div>
-                                      ))}
+                                      )}
                                     </div>
-                                  </div>
-                                )}
+                                  );
+                                })()}
                               </div>
 
                               <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: 10, marginTop: 8 }}>

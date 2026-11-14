@@ -337,6 +337,10 @@ export const TutorPage: React.FC = () => {
   const [messages, setMessages] = useState<any[]>([]);
   const [questionInput, setQuestionInput] = useState<string>('');
   const [attachmentNote, setAttachmentNote] = useState<string>('');
+  const [attachedImageBase64, setAttachedImageBase64] = useState<string>('');
+  const [attachedImageMime, setAttachedImageMime] = useState<string>('image/png');
+  const [attachedImageName, setAttachedImageName] = useState<string>('');
+  const [lastImageAnalysis, setLastImageAnalysis] = useState<any | null>(null);
   const [lastSubmittedQuestion, setLastSubmittedQuestion] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string>('');
@@ -872,11 +876,54 @@ export const TutorPage: React.FC = () => {
 
     // Structured Teaching Studio Mode (Default)
     try {
+      let effectiveAttachmentSummary = attachmentNote || '';
+      let effectiveTopic = topicOverride || cleanQ;
+
+      // Multimodal Image Understanding Pipeline (Part 3: analyze uploaded textbook photo / diagram)
+      if (attachedImageBase64) {
+        try {
+          const imgRes = await apiFetch('/api/images/analyze', {
+            method: 'POST',
+            body: JSON.stringify({
+              imageBase64: attachedImageBase64,
+              mimeType: attachedImageMime,
+              fileName: attachedImageName,
+              question: cleanQ,
+              subject,
+              grade
+            })
+          });
+          if (imgRes?.analysis) {
+            const a = imgRes.analysis;
+            setLastImageAnalysis(a);
+            if (a.topic && !topicOverride) effectiveTopic = a.topic;
+            effectiveAttachmentSummary = [
+              `[IMAGE ANALYSIS (${a.providerUsed}/${a.modelUsed})]: ${a.title} (${a.subject} - ${a.topic})`,
+              a.visibleLabels?.length ? `Visible Labels: ${a.visibleLabels.join(', ')}` : '',
+              a.processStages?.length ? `Process Stages: ${a.processStages.join(' -> ')}` : '',
+              a.equationsAndFormulas?.length ? `Equations: ${a.equationsAndFormulas.join(', ')}` : '',
+              a.unclearOrMissingInformation?.length ? `Unclear/Unreadable: ${a.unclearOrMissingInformation.join('; ')}` : '',
+              `Explanation: ${a.teachingExplanation}`
+            ].filter(Boolean).join('\n');
+          }
+        } catch {
+          // Non-blocking fallback to filename summary
+        }
+      } else if (lastImageAnalysis) {
+        // Retain analyzed image context during follow-up questions
+        effectiveAttachmentSummary = [
+          effectiveAttachmentSummary,
+          `[PREVIOUS ANALYZED IMAGE CONTEXT]: ${lastImageAnalysis.title} (${lastImageAnalysis.topic})`,
+          lastImageAnalysis.visibleLabels?.length ? `Labels: ${lastImageAnalysis.visibleLabels.join(', ')}` : '',
+          lastImageAnalysis.processStages?.length ? `Stages: ${lastImageAnalysis.processStages.join(' -> ')}` : ''
+        ].filter(Boolean).join('\n');
+      }
+
       const res = await apiFetch('/api/tutor/ask', {
         method: 'POST',
         body: JSON.stringify({
           conversationId: targetConvId,
-          topic: topicOverride || cleanQ,
+          topic: effectiveTopic,
           question: cleanQ,
           mode: teachingMode === 'exam' ? 'detailed' : mode,
           teachingMode,
@@ -886,7 +933,7 @@ export const TutorPage: React.FC = () => {
           subject,
           language,
           explanationLength,
-          attachmentSummary: attachmentNote || undefined,
+          attachmentSummary: effectiveAttachmentSummary || undefined,
           selectedVisualComponent: selectedVisualComponent || undefined
         })
       });
@@ -900,6 +947,8 @@ export const TutorPage: React.FC = () => {
       }
       setQuestionInput('');
       setAttachmentNote('');
+      setAttachedImageBase64('');
+      setAttachedImageName('');
       await setTopicContext(res.topic, res.subject, mode);
 
       const updatedConvs = await apiFetch<any[]>('/api/tutor/conversations');
@@ -967,6 +1016,20 @@ export const TutorPage: React.FC = () => {
       return;
     }
     setAttachmentNote(`${file.name} (${Math.round(file.size / 1024)} KB)`);
+    if (file.type.startsWith('image/')) {
+      setAttachedImageMime(file.type);
+      setAttachedImageName(file.name);
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setAttachedImageBase64(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setAttachedImageBase64('');
+      setAttachedImageName('');
+    }
   };
 
   const gradeBand = getGradeBandInfo(grade);

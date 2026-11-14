@@ -109,6 +109,7 @@ import {
 } from './educationalGamesEngine.ts';
 import { unifiedAiOrchestrator } from './unifiedAiOrchestrator.ts';
 import { centralAiOrchestrator } from './centralAiOrchestrator.ts';
+import { analyzeEducationalImage } from './imageAnalysisEngine.ts';
 import { macCompanionBridge } from './macCompanionBridge.ts';
 import { professionalTeacherEngine } from './professionalTeacherEngine.ts';
 import { voiceTeachingEngine } from './voiceTeachingEngine.ts';
@@ -1106,6 +1107,25 @@ export function createAppServer() {
       if ((pathname === '/api/admin/visual-intelligence' || pathname === '/api/v1/visuals/admin-stats') && req.method === 'GET') {
         const metrics = educationalVisualIntelligenceEngine.getVisualIntelligenceMetrics();
         sendJson(res, 200, metrics);
+        return;
+      }
+
+      if ((pathname === '/api/images/analyze' || pathname === '/api/v1/images/analyze') && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        if (!body.imageBase64) {
+          sendJson(res, 400, { error: 'imageBase64 is required for image analysis.' });
+          return;
+        }
+        const analysis = await analyzeEducationalImage({
+          imageBase64: String(body.imageBase64),
+          mimeType: sanitizeText(body.mimeType || 'image/png', 40),
+          fileName: body.fileName ? sanitizeText(body.fileName, 120) : undefined,
+          question: body.question ? sanitizeText(body.question, 1000) : undefined,
+          subject: body.subject ? sanitizeText(body.subject, 60) : undefined,
+          grade: typeof body.grade === 'number' ? body.grade : 10,
+          board: body.board ? sanitizeText(body.board, 40) : 'CBSE'
+        });
+        sendJson(res, 200, { success: true, analysis });
         return;
       }
 
