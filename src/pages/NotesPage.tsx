@@ -61,7 +61,6 @@ import {
 } from '../utils/digitalNotebookPagination';
 import { TopBrandBar } from '../components/GlassNav';
 import { FuturisticIcon } from '../components/FuturisticIcons';
-import { StudyAiAssistantCharacter } from '../components/StudyAiAssistantCharacter';
 import { EducationalMarkdownRenderer } from '../components/EducationalMarkdownRenderer';
 import { EducationalVisualLayout } from '../components/EducationalVisualLayout';
 import { AudioLessonPlayer, NoteAudioSection } from '../components/AudioLessonPlayer';
@@ -1102,40 +1101,28 @@ export const NotesPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Centre Hero: Large Intelligent Input Box (Section 3) */}
+          {/* Centre Hero: Compact Intelligent Input Box */}
           <section
             className="hero-glass-banner"
             style={{
-              padding: '36px 32px',
-              borderRadius: 28,
+              padding: '20px 18px',
+              borderRadius: 22,
               textAlign: 'center',
-              marginBottom: 36,
-              background: 'linear-gradient(180deg, #FFFFFF 0%, #FAFAFA 100%)',
+              marginBottom: 20,
+              background: 'var(--bg-card, #FFFFFF)',
               border: '1.5px solid rgba(255, 106, 0, 0.16)',
-              boxShadow: '0 20px 48px -12px rgba(255, 106, 0, 0.12)'
+              boxShadow: '0 12px 30px -10px rgba(255, 106, 0, 0.12)'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-              <StudyAiAssistantCharacter
-                size="md"
-                state={generating ? 'thinking' : 'idle'}
-                speechBubble={
-                  generating
-                    ? `Researching: ${PIPELINE_STEP_LABELS[pipelineStepIdx] || 'Synthesizing knowledge...'}`
-                    : 'Ready to research! Ask any syllabus topic or attach textbooks.'
-                }
-              />
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 9999, background: '#FFF3E8', color: '#FF6A00', fontWeight: 800, fontSize: '0.74rem', marginBottom: 8 }}>
+              <Sparkles size={13} />
+              <span>AI-Powered Curriculum Notebooks</span>
             </div>
-
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 9999, background: '#FFF3E8', color: '#FF6A00', fontWeight: 800, fontSize: '0.76rem', marginBottom: 12 }}>
-              <Sparkles size={14} />
-              <span>AI-Powered Guided Roadmaps</span>
-            </div>
-            <h2 style={{ fontSize: '2.1rem', fontWeight: 900, color: 'var(--text-primary, #202124)', letterSpacing: '-0.5px', marginBottom: 8 }}>
+            <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: 'var(--text-primary, #202124)', letterSpacing: '-0.4px', marginBottom: 6 }}>
               What would you like to learn?
             </h2>
-            <p style={{ fontSize: '0.94rem', color: 'var(--text-secondary, #6B7280)', maxWidth: 620, margin: '0 auto 24px auto' }}>
-              Enter any topic, question or instructions. Tap the plus (<span style={{ color: '#FF6A00', fontWeight: 800 }}>+</span>) button to import PDFs, textbook photos, Word docs or YouTube lectures.
+            <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary, #6B7280)', maxWidth: 580, margin: '0 auto 14px auto' }}>
+              Enter any topic or tap <span style={{ color: '#FF6A00', fontWeight: 800 }}>+</span> to attach PDFs, textbook photos, docs, or YouTube lectures.
             </p>
 
             {/* Large Intelligent Input Bar with Plus (+) and Voice Input */}
@@ -2909,11 +2896,11 @@ export const NotesPage: React.FC = () => {
                     Main Concepts & Subtopics
                   </h3>
                 </div>
-                {sections.map((sec, idx) => (
+                {sections.filter((sec) => Boolean((sec.body || sec.content || sec.plainExplanation || sec.text || '').trim())).map((sec, idx) => (
                   <article key={idx} style={{ borderBottom: '1px solid #EEEEEE', paddingBottom: 24 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-                      <h4 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#202124', margin: 0 }}>
-                        {sec.heading || `Subtopic ${idx + 1}`}
+                      <h4 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary, #202124)', margin: 0 }}>
+                        {sec.heading || `Concept ${idx + 1}`}
                       </h4>
                       {sec.citations && (
                         <span style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: 600 }}>
@@ -2921,7 +2908,7 @@ export const NotesPage: React.FC = () => {
                         </span>
                       )}
                     </div>
-                    <p style={{ fontSize: '1rem', color: '#374151', margin: '0 0 12px 0', whiteSpace: 'pre-line', lineHeight: 1.72 }}>
+                    <p style={{ fontSize: '0.98rem', color: 'var(--text-secondary, #374151)', margin: '0 0 12px 0', whiteSpace: 'pre-line', lineHeight: 1.7 }}>
                       {sec.body || sec.content || sec.plainExplanation || sec.text}
                     </p>
 
@@ -2929,28 +2916,30 @@ export const NotesPage: React.FC = () => {
                     {(() => {
                       const pairedVisual = (structured.images || [])[idx] || sec.visual || sec.visualAsset;
                       if (!pairedVisual) return null;
-                      const visualDataUrl = pairedVisual.imageUrl || pairedVisual.dataUrl || (pairedVisual.svgXml ? `data:image/svg+xml;base64,${btoa(pairedVisual.svgXml)}` : '');
+                      const visualDataUrl = pairedVisual.imageUrl || pairedVisual.dataUrl || (pairedVisual.svgXml ? `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(pairedVisual.svgXml)))}` : '');
 
                       return (
-                        <div style={{ margin: '20px 0', borderRadius: 18, border: '1.5px solid #E2E8F0', overflow: 'hidden', background: '#FFFFFF', boxShadow: '0 6px 20px rgba(0,0,0,0.03)' }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 0 }}>
+                        <div style={{ margin: '16px 0', borderRadius: 16, border: '1.5px solid #E2E8F0', overflow: 'hidden', background: 'var(--bg-card, #FFFFFF)', boxShadow: '0 6px 20px rgba(0,0,0,0.03)' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(270px, 1fr))', gap: 0 }}>
                             {/* Diagram Visual Side */}
-                            <div style={{ background: '#F8FAFC', padding: 18, borderRight: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: 10 }}>
-                                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#C2410C', background: '#FFF3E8', padding: '3px 8px', borderRadius: 6 }}>
+                            <div className="educational-visual-stage" style={{ background: '#F8FAFC', padding: 14, borderRight: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: 8 }}>
+                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#C2410C', background: '#FFF3E8', padding: '3px 8px', borderRadius: 6 }}>
                                   {pairedVisual.diagramType || 'Curriculum Schematic'}
                                 </span>
-                                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#15803D', background: '#DCFCE7', padding: '3px 8px', borderRadius: 6 }}>
+                                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#15803D', background: '#DCFCE7', padding: '3px 8px', borderRadius: 6 }}>
                                   ✓ Verified Diagram
                                 </span>
                               </div>
                               {pairedVisual.svgXml ? (
                                 <div
+                                  className="edu-diagram-img"
                                   dangerouslySetInnerHTML={{ __html: pairedVisual.svgXml }}
-                                  style={{ width: '100%', maxHeight: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
+                                  style={{ width: '100%', maxHeight: 320, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 />
                               ) : visualDataUrl ? (
                                 <img
+                                  className="edu-diagram-img"
                                   src={visualDataUrl}
                                   alt={pairedVisual.title || sec.heading}
                                   onError={(e) => {

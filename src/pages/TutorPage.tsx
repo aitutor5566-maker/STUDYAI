@@ -13,7 +13,6 @@ import {
   FileText,
   HelpCircle,
   Gamepad2,
-  Sword,
   Rocket,
   Bookmark,
   Paperclip,
@@ -43,7 +42,6 @@ import {
 import { TopBrandBar } from '../components/GlassNav';
 import { Interactive3DViewer } from '../components/Interactive3DLab';
 import { FuturisticIcon } from '../components/FuturisticIcons';
-import { StudyAiAssistantCharacter } from '../components/StudyAiAssistantCharacter';
 import { useLearning } from '../context/LearningContext';
 import { AdaptiveProfileModal } from '../components/AdaptiveProfileModal';
 import { VoiceTeacherModal } from '../components/VoiceTeacherModal';
@@ -979,31 +977,43 @@ export const TutorPage: React.FC = () => {
       <TopBrandBar showBack />
 
       {/* Main AI Tutor Studio Header & Status */}
-      <section style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <StudyAiAssistantCharacter
-            size="sm"
-            state={loading ? 'thinking' : isSpeaking ? 'speaking' : 'idle'}
-            speechBubble={loading ? 'Analyzing curriculum sources...' : isSpeaking ? 'Explaining step-by-step...' : undefined}
-          />
+      <section style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 11,
+              background: '#FFF3E8',
+              border: '1px solid rgba(255, 106, 0, 0.24)',
+              color: '#FF6A00',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}
+            aria-hidden="true"
+          >
+            <Sparkles size={18} />
+          </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <h1 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#202124', margin: 0 }}>AI Tutor</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary, #202124)', margin: 0 }}>AI Tutor</h1>
               <span
                 style={{
-                  fontSize: '0.72rem',
+                  fontSize: '0.68rem',
                   fontWeight: 800,
-                  padding: '3px 10px',
+                  padding: '2px 8px',
                   borderRadius: 999,
                   background: 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)',
                   color: '#FFFFFF'
                 }}
               >
-                Local Ollama • Qwen2.5:7b
+                Hybrid AI • Qwen 2.5 + Cloud
               </span>
             </div>
-            <p style={{ fontSize: '0.84rem', color: '#6B7280', margin: '4px 0 0 0' }}>
-              Multilingual AI Teacher • Grades 1–10 • English + Telugu + Hindi • Curriculum Diagrams &amp; Visuals
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #6B7280)', margin: '2px 0 0 0' }}>
+              Grades 1–10 • English, Telugu &amp; Hindi • Diagrams &amp; Voice
             </p>
           </div>
         </div>
@@ -2430,12 +2440,12 @@ export const TutorPage: React.FC = () => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => openGamesHub(s?.topic || activeTopic, s?.subject || subject)}
+                        onClick={() => openGamesHub(s?.topic || activeTopic, s?.subject || subject, 'space_shooter')}
                         className="btn-glass"
-                        style={{ fontSize: '0.8rem', padding: '10px 14px', justifyContent: 'center', color: '#FF6A00' }}
+                        style={{ fontSize: '0.8rem', padding: '10px 14px', justifyContent: 'center', color: '#0284C7' }}
                       >
-                        <Sword size={16} color="#FF6A00" />
-                        <span>Battle World Practice</span>
+                        <Rocket size={16} color="#0284C7" />
+                        <span>Space Battle Practice</span>
                       </button>
                     </div>
                   </div>
@@ -2835,20 +2845,20 @@ export const TutorPage: React.FC = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => openGamesHub(s?.topic || activeTopic, s?.subject || subject)}
+                    onClick={() => openGamesHub(s?.topic || activeTopic, s?.subject || subject, 'space_shooter')}
                     className="btn-glass"
                     style={{
                       justifyContent: 'flex-start',
                       fontSize: '0.82rem',
-                      background: 'linear-gradient(135deg, #FF7A1A 0%, #FF6A00 100%)',
+                      background: 'linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)',
                       color: '#FFFFFF',
                       fontWeight: 800,
                       border: 'none',
-                      boxShadow: '0 4px 12px rgba(255, 106, 0, 0.25)'
+                      boxShadow: '0 4px 12px rgba(124, 58, 237, 0.25)'
                     }}
                   >
-                    <Sword size={16} color="#FFFFFF" />
-                    <span>⚔️ Battle World for this Topic</span>
+                    <Gamepad2 size={16} color="#FFFFFF" />
+                    <span>🎮 Play Game for this Topic</span>
                   </button>
                   <button
                     type="button"

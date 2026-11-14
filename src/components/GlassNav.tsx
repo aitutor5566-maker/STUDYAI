@@ -11,7 +11,6 @@ export const GlassNav: React.FC = () => {
     { path: '/', label: 'Home', ariaLabel: 'Home Dashboard', iconName: 'home' },
     { path: '/notes', label: 'Notes', ariaLabel: 'AI Notes Studio', iconName: 'notes' },
     { path: '/tutor', label: 'AI Tutor', ariaLabel: 'AI Tutor Teaching Studio', iconName: 'tutor' },
-    { path: '/games', label: 'Games', ariaLabel: 'STUDYAI Battle World Game Center', iconName: 'games' },
     { path: '/library', label: 'Library', ariaLabel: 'Saved Learning Library', iconName: 'library' },
     { path: '/profile', label: 'Profile', ariaLabel: 'Student Profile and Parent Dashboard', iconName: 'profile' }
   ];
@@ -54,13 +53,21 @@ export const TopBrandBar: React.FC<{
   streakDays?: number;
 }> = ({ showBack = false, onBack, streakDays = 7 }) => {
   const navigate = useNavigate();
-  const { studentId, setStudentId, studentProfiles, activeTopic } = useLearning();
+  const { studentId, setStudentId, studentProfiles, activeProfile } = useLearning();
   const { theme, resolvedTheme, toggleTheme } = useTheme();
+
+  const displayName = activeProfile?.display_name || 'Vishwak Sai';
+  const initials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() || '')
+    .join('') || 'ST';
 
   return (
     <header className="glass-panel top-brand-bar-header">
-      {/* Main Top Row: Brand & Quick Action Indicators */}
       <div className="top-brand-bar-main-row">
+        {/* Left: Back + Compact Brand */}
         <div className="top-brand-bar-brand">
           {showBack && (
             <button
@@ -68,8 +75,8 @@ export const TopBrandBar: React.FC<{
               onClick={onBack ? onBack : () => navigate(-1)}
               aria-label="Go Back"
               style={{
-                width: 36,
-                height: 36,
+                width: 32,
+                height: 32,
                 borderRadius: '50%',
                 border: '1.5px solid rgba(255, 106, 0, 0.24)',
                 background: '#FFF3E8',
@@ -79,8 +86,7 @@ export const TopBrandBar: React.FC<{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                flexShrink: 0,
-                transition: 'all 0.18s ease'
+                flexShrink: 0
               }}
             >
               ←
@@ -88,144 +94,104 @@ export const TopBrandBar: React.FC<{
           )}
           <div
             onClick={() => navigate('/')}
-            style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', minWidth: 0 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', minWidth: 0 }}
           >
             <div
               style={{
-                width: 38,
-                height: 38,
-                borderRadius: 12,
+                width: 32,
+                height: 32,
+                borderRadius: 10,
                 background: '#FFF3E8',
                 border: '1px solid rgba(255, 106, 0, 0.22)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(255, 106, 0, 0.12)',
                 flexShrink: 0
               }}
             >
-              <FuturisticIcon name="logo" size={28} />
+              <FuturisticIcon name="logo" size={22} />
             </div>
-            <div style={{ minWidth: 0, flexShrink: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'nowrap' }}>
-                <span
-                  style={{
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
-                    fontWeight: 900,
-                    fontSize: '1.05rem',
-                    letterSpacing: '-0.03em',
-                    color: '#FF6A00',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0
-                  }}
-                >
-                  STUDYAI
-                </span>
-                <span
-                  style={{
-                    fontSize: '0.62rem',
-                    fontWeight: 800,
-                    padding: '2px 6px',
-                    borderRadius: 999,
-                    background: '#FFF3E8',
-                    color: '#E85D00',
-                    border: '1px solid rgba(255, 106, 0, 0.25)',
-                    letterSpacing: '0.04em',
-                    flexShrink: 0
-                  }}
-                >
-                  AI
-                </span>
-              </div>
-              <div
-                className="desktop-only-journey"
-                style={{
-                  fontSize: '0.72rem',
-                  color: '#6B7280',
-                  fontWeight: 500,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  maxWidth: 180
-                }}
-              >
-                Journey: <strong style={{ color: '#202124', fontWeight: 700 }}>{activeTopic}</strong>
-              </div>
-            </div>
+            <span
+              style={{
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontWeight: 900,
+                fontSize: '1rem',
+                letterSpacing: '-0.03em',
+                color: '#FF6A00',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              STUDYAI
+            </span>
           </div>
         </div>
 
-        {/* Right Badges & Quick Shortcuts */}
+        {/* Right: Compact Student Pill, Streak, Theme Toggle, Profile Avatar */}
         <div className="top-brand-bar-actions">
+          <select
+            aria-label="Active Student Profile"
+            value={studentId}
+            onChange={(e) => setStudentId(e.target.value)}
+            className="top-brand-student-select"
+            title="Switch active student profile"
+            style={{
+              padding: '5px 8px',
+              borderRadius: 999,
+              border: '1.5px solid rgba(255, 106, 0, 0.24)',
+              background: 'var(--bg-card, #FFFFFF)',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              color: 'var(--text-primary, #202124)',
+              cursor: 'pointer',
+              outline: 'none',
+              maxWidth: 145,
+              textOverflow: 'ellipsis'
+            }}
+          >
+            {studentProfiles && studentProfiles.length > 0 ? (
+              studentProfiles.map((p) => (
+                <option key={p.id} value={p.slug || p.id}>
+                  {p.display_name.split(' ')[0]} • {String(p.current_grade).replace(/Grade\s*/i, 'Gr ')}
+                </option>
+              ))
+            ) : (
+              <>
+                <option value="student-vishwak">Vishwak • Gr 10</option>
+                <option value="student-new">Aarav • Gr 9</option>
+              </>
+            )}
+          </select>
+
           {streakDays > 0 && (
             <div
+              className="header-streak-pill"
               title={`${streakDays}-day learning streak`}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 4,
-                padding: '5px 10px',
+                gap: 3,
+                padding: '4px 8px',
                 borderRadius: 999,
                 background: '#FFF3E8',
-                border: '1.5px solid rgba(255, 106, 0, 0.28)',
+                border: '1px solid rgba(255, 106, 0, 0.25)',
                 color: '#E85D00',
-                fontSize: '0.76rem',
-                fontWeight: 800,
-                boxShadow: '0 4px 12px rgba(255, 106, 0, 0.1)'
+                fontSize: '0.72rem',
+                fontWeight: 800
               }}
             >
-              <Flame size={14} fill="#FF6A00" color="#FF6A00" />
+              <Flame size={13} fill="#FF6A00" color="#FF6A00" />
               <span>{streakDays}d</span>
             </div>
           )}
 
           <button
             type="button"
-            onClick={() => navigate('/library')}
-            aria-label="Notifications and Saved Activity"
-            className="header-bell-btn"
-            style={{
-              position: 'relative',
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              border: '1.5px solid rgba(255, 106, 0, 0.22)',
-              background: '#FFFFFF',
-              color: '#FF6A00',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              flexShrink: 0,
-              boxShadow: '0 4px 12px rgba(255, 106, 0, 0.1)',
-              transition: 'transform 0.18s ease'
-            }}
-          >
-            <Bell size={16} />
-            <span
-              style={{
-                position: 'absolute',
-                top: 7,
-                right: 7,
-                width: 7,
-                height: 7,
-                borderRadius: '50%',
-                background: '#FF6A00',
-                boxShadow: '0 0 0 2px #FFFFFF'
-              }}
-            />
-          </button>
-
-          {/* Theme Toggle Button (Pure Light / Dark / System) */}
-          <button
-            type="button"
             onClick={toggleTheme}
             aria-label={`Toggle theme (currently ${theme})`}
-            title={`Theme: ${theme === 'system' ? 'System (' + resolvedTheme + ')' : theme}. Click to toggle.`}
+            title={`Theme: ${theme === 'system' ? 'System (' + resolvedTheme + ')' : theme}`}
             style={{
-              position: 'relative',
-              width: 36,
-              height: 36,
+              width: 32,
+              height: 32,
               borderRadius: '50%',
               border: '1.5px solid rgba(255, 106, 0, 0.25)',
               background: 'var(--bg-card)',
@@ -234,73 +200,37 @@ export const TopBrandBar: React.FC<{
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              flexShrink: 0,
-              boxShadow: '0 4px 12px rgba(255, 106, 0, 0.08)',
-              transition: 'transform 0.18s ease'
+              flexShrink: 0
             }}
           >
-            {resolvedTheme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
+            {resolvedTheme === 'dark' ? <Moon size={15} /> : <Sun size={15} />}
           </button>
 
-          <div
+          <button
+            type="button"
             onClick={() => navigate('/profile')}
-            role="button"
-            tabIndex={0}
-            aria-label="Open Student Profile"
+            aria-label={`Open Profile (${displayName})`}
+            title={`${displayName} (${activeProfile?.current_grade || 'Grade 10'} • ${activeProfile?.current_board || 'CBSE'})`}
             style={{
-              width: 36,
-              height: 36,
+              width: 32,
+              height: 32,
               borderRadius: '50%',
+              border: 'none',
               background: 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)',
               color: '#FFFFFF',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontWeight: 800,
-              fontSize: '0.78rem',
+              fontSize: '0.72rem',
               cursor: 'pointer',
               flexShrink: 0,
-              boxShadow: '0 4px 14px rgba(255, 106, 0, 0.3)'
+              boxShadow: '0 3px 10px rgba(255, 106, 0, 0.28)'
             }}
           >
-            VS
-          </div>
+            {initials}
+          </button>
         </div>
-      </div>
-
-      {/* Sub Row on Mobile / Inline on Desktop: Student Profile Selector */}
-      <div className="top-brand-bar-sub-row">
-        <select
-          aria-label="Select Student Profile Mode"
-          value={studentId}
-          onChange={(e) => setStudentId(e.target.value)}
-          className="top-brand-student-select"
-          style={{
-            padding: '6px 12px',
-            borderRadius: 999,
-            border: '1.5px solid rgba(255, 106, 0, 0.24)',
-            background: '#FFFFFF',
-            fontSize: '0.76rem',
-            fontWeight: 700,
-            color: '#202124',
-            cursor: 'pointer',
-            outline: 'none',
-            boxShadow: '0 2px 8px rgba(255, 106, 0, 0.06)'
-          }}
-        >
-          {studentProfiles && studentProfiles.length > 0 ? (
-            studentProfiles.map((p) => (
-              <option key={p.id} value={p.slug || p.id}>
-                {p.display_name} ({p.current_grade} • {p.current_board})
-              </option>
-            ))
-          ) : (
-            <>
-              <option value="student-vishwak">Vishwak Sai (Grade 10 • CBSE)</option>
-              <option value="student-new">Aarav (Grade 9 • ICSE)</option>
-            </>
-          )}
-        </select>
       </div>
     </header>
   );

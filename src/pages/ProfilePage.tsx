@@ -116,6 +116,7 @@ export const ProfilePage: React.FC = () => {
     });
     setEditingProfile(false);
     setSaveBanner('Profile & learning preferences saved to database!');
+    await refreshProfiles();
     triggerRefresh();
     setTimeout(() => setSaveBanner(''), 3000);
   };

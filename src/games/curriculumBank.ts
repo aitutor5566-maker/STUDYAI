@@ -1,4 +1,4 @@
-import type { EducationalQuestion } from './types.ts';
+import { EducationalQuestion } from './types';
 
 export const CURRICULUM_QUESTION_BANK: EducationalQuestion[] = [
   // ==========================================

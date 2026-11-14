@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import { TopBrandBar } from '../components/GlassNav';
 import { FuturisticIcon, FuturisticIconName } from '../components/FuturisticIcons';
-import { StudyAiAssistantCharacter } from '../components/StudyAiAssistantCharacter';
 import { useLearning } from '../context/LearningContext';
 
 export const HomePage: React.FC = () => {
@@ -150,11 +149,11 @@ export const HomePage: React.FC = () => {
       onClick: () => navigate(`/notes?topic=${encodeURIComponent(heroTopicInput || activeTopic)}&auto=true`)
     },
     {
-      label: 'Battle World',
-      subtitle: '3D Voxel Educational RPG',
-      tag: 'Game Center',
+      label: 'Academic Games',
+      subtitle: '7 Curriculum Mastery Games',
+      tag: 'Gamified Practice',
       iconName: 'games',
-      onClick: () => navigate('/games')
+      onClick: () => openGamesHub(heroTopicInput || activeTopic)
     },
     {
       label: 'Saved Library',
@@ -293,25 +292,6 @@ export const HomePage: React.FC = () => {
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Interactive AI Assistant Character ("Aura") */}
-          <div style={{ flex: '0 0 auto', display: 'flex', justifyContent: 'center', padding: '0 12px' }}>
-            <StudyAiAssistantCharacter
-              size="lg"
-              state={isListeningVoice ? 'thinking' : 'idle'}
-              bubbleText={assistantBubble}
-              showBubble
-              onClick={() => {
-                const quotes = [
-                  `Ready to master "${heroTopicInput || activeTopic}" with AI Tutor?`,
-                  "Click any suggestion pill to begin your lesson!",
-                  "Tip: Picture-first diagrams and voice lessons are built right into AI Tutor!",
-                  "Consistency is key — your streak is active!"
-                ];
-                setAssistantBubble(quotes[Math.floor(Math.random() * quotes.length)]);
-              }}
-            />
           </div>
         </div>
       </section>

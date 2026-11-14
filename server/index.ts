@@ -474,22 +474,23 @@ export function createAppServer() {
         return;
       }
 
-      // Unified AI Orchestrator Status
+      // Central AI Orchestrator Status (Unified Entrypoint)
       if ((pathname === '/api/v1/orchestrator/status' || pathname === '/api/orchestrator/status') && req.method === 'GET') {
-        const providers = unifiedAiOrchestrator.getProvidersHealth();
+        const providers = await centralAiOrchestrator.getHealthOverview();
         sendJson(res, 200, {
           status: 'ok',
-          architecture: 'STUDYAI Unified AI Intelligence Foundation (Phase 1)',
+          architecture: 'STUDYAI Intelligent Hybrid AI System (Qwen 2.5 7B Primary + Gemini + OpenAI + Shared Indian Knowledge)',
           timestamp: new Date().toISOString(),
+          bridge: macCompanionBridge.getStatus(),
           providers
         });
         return;
       }
 
-      // Unified AI Orchestrator Query Entrypoint
+      // Central AI Orchestrator Query Entrypoint (Normalized Part 14 Contract)
       if ((pathname === '/api/v1/orchestrator/query' || pathname === '/api/orchestrator/query') && req.method === 'POST') {
         const body = await readJsonBody(req);
-        const taskType = body.taskType || 'RESEARCH_AND_TEACH';
+        const taskType = body.taskType || 'CONCEPT_EXPLANATION';
         const topic = sanitizeText(body.topic || 'General Science', 180);
         const subject = sanitizeText(body.subject || 'Science', 60);
         const grade = typeof body.grade === 'number' ? body.grade : 10;
@@ -498,7 +499,9 @@ export function createAppServer() {
         const prompt = sanitizeText(body.prompt || topic, 4000);
         const systemPrompt = body.systemPrompt ? sanitizeText(body.systemPrompt, 2000) : undefined;
 
-        const result = await unifiedAiOrchestrator.execute({
+        const result = await centralAiOrchestrator.execute({
+          requestId: body.requestId ? sanitizeText(body.requestId, 60) : undefined,
+          conversationId: body.conversationId ? sanitizeText(body.conversationId, 60) : undefined,
           taskType,
           topic,
           subject,
@@ -507,13 +510,22 @@ export function createAppServer() {
           language,
           prompt,
           systemPrompt,
-          timeoutMs: body.timeoutMs || 9500,
+          format: body.format === 'json' ? 'json' : undefined,
+          timeoutMs: body.timeoutMs || 45000,
           temperature: body.temperature,
-          responseJsonSchema: body.responseJsonSchema,
+          forceProvider: body.forceProvider,
           studentId
         });
 
         sendJson(res, 200, result);
+        return;
+      }
+
+      // Cancel in-flight Central AI Orchestrator request
+      if ((pathname.startsWith('/api/v1/orchestrator/cancel/') || pathname.startsWith('/api/orchestrator/cancel/')) && req.method === 'POST') {
+        const requestId = pathname.split('/').pop() || '';
+        const cancelled = centralAiOrchestrator.cancelRequest(requestId);
+        sendJson(res, cancelled ? 200 : 404, { requestId, cancelled });
         return;
       }
 
@@ -6447,9 +6459,9 @@ export function createAppServer() {
 
       if (pathname === '/api/games/sessions' && req.method === 'POST') {
         const body = await readJsonBody(req);
-        const gameType = ['battle_world', 'answer_battle', 'learning_runner', 'space_shooter'].includes(body.game_type)
+        const gameType = ['answer_battle', 'learning_runner', 'space_shooter'].includes(body.game_type)
           ? body.game_type
-          : 'battle_world';
+          : 'answer_battle';
         const topic = sanitizeText(body.topic || 'Photosynthesis', 180);
         const subject = sanitizeText(body.subject || inferSubjectFromTopic(topic), 60);
         const difficulty = body.difficulty === 'easy' || body.difficulty === 'hard' ? body.difficulty : 'medium';
@@ -6961,6 +6973,20 @@ export function createAppServer() {
         const email = sanitizeText(body.email ?? existingUser.email, 120);
 
         db.prepare('UPDATE users SET name = ?, grade = ?, board = ?, email = ? WHERE id = ?').run(name, grade, board, email, studentId);
+
+        // Keep student_profiles in sync so header profile selector and Profile card always match (Section 13)
+        try {
+          db.prepare('UPDATE student_profiles SET display_name = ?, current_grade = ?, current_board = ?, updated_at = ? WHERE slug = ? OR id = ?').run(
+            name,
+            grade,
+            board,
+            new Date().toISOString(),
+            studentId,
+            studentId
+          );
+        } catch {
+          // non-blocking if student_profiles row is absent
+        }
 
         if (body.preferences) {
           const p = body.preferences;

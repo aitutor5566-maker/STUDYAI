@@ -33,11 +33,15 @@ export interface NormalizedAiRequest {
   language?: string; // English, Telugu, Hindi
   learningMode?: 'normal' | 'exam' | 'concise' | 'detailed';
   history?: Array<{ role: string; content: string }>;
+  systemPrompt?: string;
+  format?: 'json';
   temperature?: number;
   stream?: boolean;
   timeoutMs?: number;
   forceProvider?: CentralAIProviderId;
   visualAssetRequirement?: boolean;
+  abortSignal?: AbortSignal;
+  enableCollaboration?: boolean;
 }
 
 export interface NormalizedAiResponseSection {
@@ -120,10 +124,45 @@ export class QwenProviderAdapter implements BaseAiProvider {
 
   private ollamaBaseUrl: string;
   private primaryModel: string;
+  private activeInferences = 0;
+  private readonly maxConcurrentInferences = 2;
+  private waitQueue: Array<() => void> = [];
 
   constructor() {
     this.ollamaBaseUrl = process.env.OLLAMA_BASE_URL || process.env.OLLAMA_URL || 'http://127.0.0.1:11434';
     this.primaryModel = process.env.OLLAMA_MODEL || 'qwen2.5:7b';
+  }
+
+  private async acquireInferenceSlot(signal?: AbortSignal): Promise<void> {
+    if (signal?.aborted) {
+      throw new Error('REQUEST_CANCELLED');
+    }
+    if (this.activeInferences < this.maxConcurrentInferences) {
+      this.activeInferences += 1;
+      return;
+    }
+    await new Promise<void>((resolve, reject) => {
+      const onAbort = () => {
+        const idx = this.waitQueue.indexOf(releaseAndResolve);
+        if (idx >= 0) this.waitQueue.splice(idx, 1);
+        reject(new Error('REQUEST_CANCELLED'));
+      };
+      const releaseAndResolve = () => {
+        signal?.removeEventListener('abort', onAbort);
+        this.activeInferences += 1;
+        resolve();
+      };
+      if (signal) {
+        signal.addEventListener('abort', onAbort, { once: true });
+      }
+      this.waitQueue.push(releaseAndResolve);
+    });
+  }
+
+  private releaseInferenceSlot(): void {
+    this.activeInferences = Math.max(0, this.activeInferences - 1);
+    const next = this.waitQueue.shift();
+    if (next) next();
   }
 
   async isAvailable(): Promise<boolean> {
@@ -191,7 +230,7 @@ Official Textbook Source: ${retrieved.sources[0]?.title || 'NCERT / Prescribed C
   }
 
   async execute(req: NormalizedAiRequest, retrieved?: UnifiedRetrievedKnowledge | null) {
-    const systemPrompt = this.constructSystemPrompt(req, retrieved);
+    const systemPrompt = req.systemPrompt || this.constructSystemPrompt(req, retrieved);
     const messages: Array<{ role: string; content: string }> = [
       { role: 'system', content: systemPrompt }
     ];
@@ -214,8 +253,9 @@ Official Textbook Source: ${retrieved.sources[0]?.title || 'NCERT / Prescribed C
       const bridgeRes = await macCompanionBridge.dispatchJob({
         model: this.primaryModel,
         messages,
+        format: req.format,
         temperature: req.temperature ?? 0.35,
-        timeoutMs: req.timeoutMs || 25000
+        timeoutMs: req.timeoutMs || 45000
       });
 
       return {
@@ -225,24 +265,36 @@ Official Textbook Source: ${retrieved.sources[0]?.title || 'NCERT / Prescribed C
       };
     }
 
-    // Mode A: Direct Local Ollama
-    const timeoutMs = req.timeoutMs || 30000;
+    // Mode A: Direct Local Ollama with concurrency control & cancellation
+    await this.acquireInferenceSlot(req.abortSignal);
+    const timeoutMs = req.timeoutMs || 45000;
     const controller = new AbortController();
+    const onExternalAbort = () => controller.abort();
+    if (req.abortSignal) {
+      if (req.abortSignal.aborted) {
+        this.releaseInferenceSlot();
+        throw new Error('REQUEST_CANCELLED');
+      }
+      req.abortSignal.addEventListener('abort', onExternalAbort, { once: true });
+    }
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
+      const payload: any = {
+        model: this.primaryModel,
+        messages,
+        stream: false,
+        options: {
+          temperature: req.temperature ?? 0.35,
+          top_p: 0.9
+        }
+      };
+      if (req.format) payload.format = req.format;
+
       const res = await fetch(`${this.ollamaBaseUrl}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: this.primaryModel,
-          messages,
-          stream: false,
-          options: {
-            temperature: req.temperature ?? 0.35,
-            top_p: 0.9
-          }
-        }),
+        body: JSON.stringify(payload),
         signal: controller.signal
       });
 
@@ -266,7 +318,13 @@ Official Textbook Source: ${retrieved.sources[0]?.title || 'NCERT / Prescribed C
       };
     } catch (err: any) {
       clearTimeout(timer);
+      if (req.abortSignal?.aborted) {
+        throw new Error('REQUEST_CANCELLED');
+      }
       throw err;
+    } finally {
+      req.abortSignal?.removeEventListener('abort', onExternalAbort);
+      this.releaseInferenceSlot();
     }
   }
 
@@ -275,7 +333,7 @@ Official Textbook Source: ${retrieved.sources[0]?.title || 'NCERT / Prescribed C
     onToken: (token: string) => void,
     retrieved?: UnifiedRetrievedKnowledge | null
   ): Promise<{ content: string; model: string }> {
-    const systemPrompt = this.constructSystemPrompt(req, retrieved);
+    const systemPrompt = req.systemPrompt || this.constructSystemPrompt(req, retrieved);
     const messages: Array<{ role: string; content: string }> = [
       { role: 'system', content: systemPrompt }
     ];
@@ -285,8 +343,17 @@ Official Textbook Source: ${retrieved.sources[0]?.title || 'NCERT / Prescribed C
     }
     messages.push({ role: 'user', content: req.prompt });
 
-    const timeoutMs = req.timeoutMs || 35000;
+    await this.acquireInferenceSlot(req.abortSignal);
+    const timeoutMs = req.timeoutMs || 45000;
     const controller = new AbortController();
+    const onExternalAbort = () => controller.abort();
+    if (req.abortSignal) {
+      if (req.abortSignal.aborted) {
+        this.releaseInferenceSlot();
+        throw new Error('REQUEST_CANCELLED');
+      }
+      req.abortSignal.addEventListener('abort', onExternalAbort, { once: true });
+    }
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
@@ -337,7 +404,13 @@ Official Textbook Source: ${retrieved.sources[0]?.title || 'NCERT / Prescribed C
       return { content: fullContent, model: `${this.primaryModel} (Local Ollama Streaming)` };
     } catch (err: any) {
       clearTimeout(timer);
+      if (req.abortSignal?.aborted) {
+        throw new Error('REQUEST_CANCELLED');
+      }
       throw err;
+    } finally {
+      req.abortSignal?.removeEventListener('abort', onExternalAbort);
+      this.releaseInferenceSlot();
     }
   }
 }
@@ -362,8 +435,7 @@ export class GeminiProviderAdapter implements BaseAiProvider {
 
     const models = [
       process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-      'gemini-2.0-flash',
-      'gemini-1.5-flash'
+      'gemini-2.0-flash'
     ];
 
     const timeout = req.timeoutMs || 15000;
@@ -659,8 +731,10 @@ export class ResponseValidator {
     tokensUsed?: { prompt?: number; completion?: number; total?: number };
     warnings?: string[];
     fallbackUsed?: boolean;
+    errorCode?: string;
+    responseStatus?: 'success' | 'partial' | 'fallback' | 'failed';
   }): NormalizedAiResponse {
-    const { req, provider, model, rawContent, retrieved, latencyMs, tokensUsed, warnings = [], fallbackUsed } = params;
+    const { req, provider, model, rawContent, retrieved, latencyMs, tokensUsed, warnings = [], fallbackUsed, errorCode, responseStatus } = params;
 
     // Parse definitions from raw content or retrieved knowledge
     const definitions: Array<{ term: string; definition: string }> = [];
@@ -714,7 +788,7 @@ export class ResponseValidator {
       conversation_id: req.conversationId || `conv-${crypto.randomUUID().slice(0, 8)}`,
       provider,
       model,
-      response_status: fallbackUsed ? 'fallback' : 'success',
+      response_status: responseStatus || (fallbackUsed ? 'fallback' : 'success'),
       subject: req.subject,
       topic: req.topic,
       answer: rawContent,
@@ -726,6 +800,7 @@ export class ResponseValidator {
       sources,
       verification_status: retrieved?.universalNode.verifiedScientificFactCheck ? 'verified' : 'unverified',
       warnings,
+      error_code: errorCode,
       latency_ms: latencyMs,
       tokens_used: tokensUsed,
       retrieved_knowledge: retrieved
@@ -742,6 +817,7 @@ export class CentralAiOrchestrator {
   private verifier = new AcademicVerificationService();
   private validator = new ResponseValidator();
   private stats: Map<CentralAIProviderId, { requests: number; failures: number; totalLatencyMs: number }> = new Map();
+  private activeControllers: Map<string, AbortController> = new Map();
 
   constructor() {
     this.providers.set('qwen', new QwenProviderAdapter());
@@ -811,6 +887,17 @@ export class CentralAiOrchestrator {
   }
 
   /**
+   * Cancel an in-flight orchestrated AI request by requestId
+   */
+  cancelRequest(requestId: string): boolean {
+    const controller = this.activeControllers.get(requestId);
+    if (!controller) return false;
+    controller.abort();
+    this.activeControllers.delete(requestId);
+    return true;
+  }
+
+  /**
    * Main unified execution entrypoint
    */
   async execute(request: NormalizedAiRequest): Promise<NormalizedAiResponse> {
@@ -820,109 +907,154 @@ export class CentralAiOrchestrator {
     request.requestId = requestId;
     request.conversationId = conversationId;
 
-    // 1. Shared Indian Academic Knowledge Retrieval (RAG)
-    let retrieved: UnifiedRetrievedKnowledge | null = null;
-    try {
-      retrieved = await unifiedKnowledgeRetrieval.retrieveCurriculumKnowledge({
-        topic: request.topic,
-        subject: request.subject,
-        grade: request.grade,
-        board: request.board as EducationalBoard,
-        language: request.language
-      });
-    } catch {
-      // retrieval fallback safe
-    }
-
-    // 2. Discover available providers dynamically
-    const availableProviders = new Set<CentralAIProviderId>();
-    for (const [id, provider] of this.providers.entries()) {
-      if (await provider.isAvailable()) {
-        availableProviders.add(id);
+    const internalController = new AbortController();
+    this.activeControllers.set(requestId, internalController);
+    const onExternalAbort = () => internalController.abort();
+    if (request.abortSignal) {
+      if (request.abortSignal.aborted) {
+        internalController.abort();
+      } else {
+        request.abortSignal.addEventListener('abort', onExternalAbort, { once: true });
       }
     }
+    const effectiveRequest: NormalizedAiRequest = {
+      ...request,
+      abortSignal: internalController.signal
+    };
 
-    // 3. Intelligent Model Routing
-    const executionPlan = this.router.route(request, availableProviders);
-
-    let chosenProvider: CentralAIProviderId = 'local_curriculum';
-    let chosenModel = 'local';
-    let content = '';
-    let tokensUsed: any = undefined;
-    let fallbackUsed = false;
-    const warnings: string[] = [];
-
-    // 4. Provider Execution Loop with Failover
-    for (let i = 0; i < executionPlan.length; i++) {
-      const pId = executionPlan[i];
-      const provider = this.providers.get(pId);
-      if (!provider) continue;
-
-      const stat = this.stats.get(pId)!;
-      stat.requests += 1;
-      const attemptStart = Date.now();
-
+    try {
+      // 1. Shared Indian Academic Knowledge Retrieval (RAG)
+      let retrieved: UnifiedRetrievedKnowledge | null = null;
       try {
-        const res = await provider.execute(request, retrieved);
-        stat.totalLatencyMs += Date.now() - attemptStart;
-        chosenProvider = pId;
-        chosenModel = res.model;
-        content = res.content;
-        tokensUsed = res.tokensUsed;
-        fallbackUsed = i > 0;
-        break;
-      } catch (err: any) {
-        stat.failures += 1;
-        warnings.push(`Provider ${pId} failed: ${err?.message || err}. Attempted failover.`);
+        retrieved = await unifiedKnowledgeRetrieval.retrieveCurriculumKnowledge({
+          topic: request.topic,
+          subject: request.subject,
+          grade: request.grade,
+          board: request.board as EducationalBoard,
+          language: request.language
+        });
+      } catch {
+        // retrieval fallback safe
       }
-    }
 
-    // 5. Anti-Hallucination & Factual Verification
-    if (retrieved?.universalNode?.governingFormulas) {
-      const vResult = this.verifier.verifyFormulas(content, retrieved.universalNode.governingFormulas);
-      if (!vResult.verified && vResult.missingEssentialFormulas.length > 0) {
-        warnings.push(`Curriculum formulas verified with supplemental references: ${vResult.missingEssentialFormulas.join(', ')}`);
+      // 2. Discover available providers dynamically
+      const availableProviders = new Set<CentralAIProviderId>();
+      for (const [id, provider] of this.providers.entries()) {
+        if (await provider.isAvailable()) {
+          availableProviders.add(id);
+        }
       }
-    }
 
-    const latencyMs = Date.now() - startTime;
+      // 3. Intelligent Model Routing
+      const executionPlan = this.router.route(effectiveRequest, availableProviders);
 
-    // 6. Audit Logging in SQLite
-    try {
-      db.prepare(`
-        INSERT INTO ai_orchestration_audit_logs (
-          id, task_type, topic, subject, grade, board, provider, model, latency_ms, fallback_used, student_id, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        requestId,
-        request.taskType,
-        request.topic,
-        request.subject,
-        request.grade,
-        request.board || 'CBSE',
-        chosenProvider,
-        chosenModel,
+      let chosenProvider: CentralAIProviderId = 'local_curriculum';
+      let chosenModel = 'local';
+      let content = '';
+      let tokensUsed: any = undefined;
+      let fallbackUsed = false;
+      let cancelled = false;
+      const warnings: string[] = [];
+
+      // 4. Provider Execution Loop with Failover
+      for (let i = 0; i < executionPlan.length; i++) {
+        if (internalController.signal.aborted) {
+          cancelled = true;
+          break;
+        }
+        const pId = executionPlan[i];
+        const provider = this.providers.get(pId);
+        if (!provider) continue;
+
+        const stat = this.stats.get(pId)!;
+        stat.requests += 1;
+        const attemptStart = Date.now();
+
+        try {
+          const res = await provider.execute(effectiveRequest, retrieved);
+          stat.totalLatencyMs += Date.now() - attemptStart;
+          chosenProvider = pId;
+          chosenModel = res.model;
+          content = res.content;
+          tokensUsed = res.tokensUsed;
+          fallbackUsed = i > 0;
+          break;
+        } catch (err: any) {
+          if (err?.message === 'REQUEST_CANCELLED' || internalController.signal.aborted) {
+            cancelled = true;
+            warnings.push(`Request ${requestId} cancelled before completion.`);
+            break;
+          }
+          stat.failures += 1;
+          warnings.push(`Provider ${pId} failed: ${err?.message || err}. Attempted failover.`);
+        }
+      }
+
+      if (cancelled) {
+        return this.validator.normalizeResponse({
+          req: effectiveRequest,
+          provider: executionPlan[0] || 'qwen',
+          model: 'cancelled',
+          rawContent: '',
+          retrieved,
+          latencyMs: Date.now() - startTime,
+          warnings,
+          errorCode: 'REQUEST_CANCELLED',
+          responseStatus: 'failed'
+        });
+      }
+
+      // 5. Anti-Hallucination & Factual Verification
+      if (retrieved?.universalNode?.governingFormulas) {
+        const vResult = this.verifier.verifyFormulas(content, retrieved.universalNode.governingFormulas);
+        if (!vResult.verified && vResult.missingEssentialFormulas.length > 0) {
+          warnings.push(`Curriculum formulas verified with supplemental references: ${vResult.missingEssentialFormulas.join(', ')}`);
+        }
+      }
+
+      const latencyMs = Date.now() - startTime;
+
+      // 6. Audit Logging in SQLite
+      try {
+        db.prepare(`
+          INSERT INTO ai_orchestration_audit_logs (
+            id, task_type, topic, subject, grade, board, provider, model, latency_ms, fallback_used, student_id, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          requestId,
+          request.taskType,
+          request.topic,
+          request.subject,
+          request.grade,
+          request.board || 'CBSE',
+          chosenProvider,
+          chosenModel,
+          latencyMs,
+          fallbackUsed ? 1 : 0,
+          request.studentId || 'system',
+          new Date().toISOString()
+        );
+      } catch {
+        // non-blocking audit write
+      }
+
+      // 7. Strict Response Normalization (PART 14 Contract)
+      return this.validator.normalizeResponse({
+        req: effectiveRequest,
+        provider: chosenProvider,
+        model: chosenModel,
+        rawContent: content,
+        retrieved,
         latencyMs,
-        fallbackUsed ? 1 : 0,
-        request.studentId || 'system',
-        new Date().toISOString()
-      );
-    } catch {
-      // non-blocking audit write
+        tokensUsed,
+        warnings,
+        fallbackUsed,
+        errorCode: fallbackUsed ? 'PRIMARY_PROVIDER_FALLBACK' : undefined
+      });
+    } finally {
+      this.activeControllers.delete(requestId);
+      request.abortSignal?.removeEventListener('abort', onExternalAbort);
     }
-
-    // 7. Strict Response Normalization (PART 14 Contract)
-    return this.validator.normalizeResponse({
-      req: request,
-      provider: chosenProvider,
-      model: chosenModel,
-      rawContent: content,
-      retrieved,
-      latencyMs,
-      tokensUsed,
-      warnings,
-      fallbackUsed
-    });
   }
 
   /**

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Search,
   Box,
-  Sword,
+  Rocket,
   Trash2,
   ExternalLink,
   X,
@@ -803,7 +803,7 @@ export const LibraryPage: React.FC = () => {
         </button>
       </section>
 
-      {/* Battle World & 3D Lab Feature Cards */}
+      {/* Space Battle & 3D Lab Feature Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 18 }}>
         <section className="hero-glass-banner" style={{ padding: 22 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
@@ -821,21 +821,21 @@ export const LibraryPage: React.FC = () => {
                   boxShadow: '0 8px 20px rgba(255, 106, 0, 0.28)'
                 }}
               >
-                <Sword size={24} />
+                <Rocket size={24} />
               </div>
               <div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#202124' }}>STUDYAI Battle World</h3>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#202124' }}>STUDYAI Space Battle</h3>
                 <p style={{ fontSize: '0.84rem', color: '#6B7280', marginTop: 2 }}>
-                  3D voxel knowledge adventure — defeat syllabus mobs across 5 enclosed biomes
+                  Arcade knowledge challenge — target enemy ships carrying verified scientific answers
                 </p>
               </div>
             </div>
             <button
               type="button"
-              onClick={() => openGamesHub(activeTopic || 'Photosynthesis', 'Science')}
+              onClick={() => openGamesHub(activeTopic || 'Human Body', 'Biology', 'space_shooter')}
               className="btn-orange"
             >
-              <span>Play Battle World</span>
+              <span>Play Space Battle</span>
             </button>
           </div>
         </section>

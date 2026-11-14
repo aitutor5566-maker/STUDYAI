@@ -2020,6 +2020,163 @@ export const SCIENTIFIC_VECTOR_REGISTRY: Record<string, DetailedVisualAsset> = {
       <rect x="80" y="475" width="680" height="34" rx="8" fill="#1E293B" stroke="#475569" stroke-width="1.5"/>
       <text x="420" y="497" font-family="Inter, sans-serif" font-size="11.5" font-weight="700" fill="#F8FAFC" text-anchor="middle">Seismic Proof: S-wave shadow zone (&gt;105°) proves the Outer Core is molten liquid!</text>
     </svg>`
+  },
+
+  // 26. MITOSIS (6 Stages of Somatic Cell Division: Interphase -> Cytokinesis)
+  mitosis: {
+    topic: 'Mitosis (Cell Division)',
+    discipline: 'Biology',
+    visualType: 'biological_process_diagram',
+    title: 'Mitosis: Complete 6-Stage Somatic Cell Division Cycle',
+    caption: 'Equational cell division producing two genetically identical diploid (2n) daughter cells from a single parent cell.',
+    labels: [
+      { key: 'interphase', label: '1. Interphase (G1-S-G2)', description: 'DNA replicates (2n -> 4c); chromatin uncondensed inside intact nuclear envelope; centrosomes duplicate.' },
+      { key: 'prophase', label: '2. Prophase', description: 'Chromatin condenses into visible sister chromatids; nuclear membrane breaks down; spindle fibres form.' },
+      { key: 'metaphase', label: '3. Metaphase', description: 'Sister chromatids align along the equatorial metaphase plate; kinetochore microtubules attach to centromeres.' },
+      { key: 'anaphase', label: '4. Anaphase', description: 'Centromeres split; spindle fibres shorten and pull daughter chromosomes toward opposite poles.' },
+      { key: 'telophase', label: '5. Telophase', description: 'Chromosomes decondense at opposite poles; nuclear envelopes reform around two nuclei; spindle dissolves.' },
+      { key: 'cytokinesis', label: '6. Cytokinesis', description: 'Cytoplasm divides via cleavage furrow (animal) or cell plate (plant), yielding two identical 2n daughter cells.' }
+    ],
+    walkthrough: {
+      whatItShows: 'Sequential 6-stage visual progression of mitotic cell division showing chromosomal condensation, spindle fibre attachment, poleward separation, and cytoplasmic division.',
+      importantComponents: [
+        { name: 'Sister Chromatids & Centromeres', role: 'Replicated DNA copies joined at the centromere that separate equally during Anaphase.' },
+        { name: 'Mitotic Spindle & Centrosomes', role: 'Microtubule apparatus radiating from opposite poles to align and pull chromosomes apart.' },
+        { name: 'Nuclear Envelope & Cleavage Furrow', role: 'Nuclear membrane dissolves in Prophase, reforms in Telophase, and cytoplasm pinches in Cytokinesis.' }
+      ],
+      processSequence: [
+        '1. Interphase: Cell grows and duplicates DNA and centrosomes before mitosis begins.',
+        '2. Prophase: Chromosomes condense into X-shaped sister chromatids and spindle fibres emerge.',
+        '3. Metaphase: Chromosomes line up at the cell equator (metaphase plate).',
+        '4. Anaphase: Sister chromatids separate and move to opposite poles.',
+        '5. Telophase & 6. Cytokinesis: Two nuclei reform and the cell splits into two identical diploid (2n) daughter cells.'
+      ],
+      examTakeaway: 'Mnemonic PMAT (Prophase, Metaphase, Anaphase, Telophase). Mitosis maintains chromosome number (2n -> 2n), unlike Meiosis which halves it (2n -> n).'
+    },
+    svgXml: `<svg viewBox="0 0 840 520" preserveAspectRatio="xMidYMid meet" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="mitoBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#0F172A"/>
+          <stop offset="100%" stop-color="#1E293B"/>
+        </linearGradient>
+        <marker id="mitoArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#F97316"/>
+        </marker>
+      </defs>
+      <rect width="840" height="520" rx="18" fill="url(#mitoBg)"/>
+      <text x="420" y="34" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">Mitosis — 6 Stages of Equational Cell Division (2n → 2n)</text>
+      <text x="420" y="54" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#94A3B8" text-anchor="middle">Interphase → Prophase → Metaphase → Anaphase → Telophase → Cytokinesis</text>
+
+      <!-- 1. INTERPHASE -->
+      <g transform="translate(45, 78)">
+        <rect width="230" height="175" rx="14" fill="#1E293B" stroke="#334155" stroke-width="1.5"/>
+        <text x="115" y="22" font-family="Inter, sans-serif" font-size="12.5" font-weight="800" fill="#38BDF8" text-anchor="middle">1. Interphase (Prep &amp; DNA Rep.)</text>
+        <circle cx="115" cy="96" r="52" fill="#0F172A" stroke="#64748B" stroke-width="2.5"/>
+        <circle cx="115" cy="96" r="28" fill="#1E3A8A" fill-opacity="0.45" stroke="#60A5FA" stroke-width="2"/>
+        <path d="M100 92 Q112 80 124 94 T110 108 Q102 100 100 92" fill="none" stroke="#93C5FD" stroke-width="2"/>
+        <circle cx="82" cy="70" r="4" fill="#F59E0B"/>
+        <circle cx="90" cy="64" r="4" fill="#F59E0B"/>
+        <text x="115" y="164" font-family="Inter, sans-serif" font-size="10.5" fill="#CBD5E1" text-anchor="middle">Chromatin uncondensed; DNA copied (2n→4c)</text>
+      </g>
+
+      <!-- Arrow 1 -> 2 -->
+      <line x1="280" y1="165" x2="300" y2="165" stroke="#F97316" stroke-width="2.5" marker-end="url(#mitoArrow)"/>
+
+      <!-- 2. PROPHASE -->
+      <g transform="translate(305, 78)">
+        <rect width="230" height="175" rx="14" fill="#1E293B" stroke="#334155" stroke-width="1.5"/>
+        <text x="115" y="22" font-family="Inter, sans-serif" font-size="12.5" font-weight="800" fill="#A78BFA" text-anchor="middle">2. Prophase (Condensation)</text>
+        <circle cx="115" cy="96" r="52" fill="#0F172A" stroke="#64748B" stroke-width="2.5"/>
+        <circle cx="115" cy="96" r="28" fill="none" stroke="#60A5FA" stroke-width="1.8" stroke-dasharray="4 4"/>
+        <!-- X-shaped chromosomes -->
+        <path d="M100 84 L112 96 M112 84 L100 96" stroke="#F472B6" stroke-width="3.2" stroke-linecap="round"/>
+        <path d="M118 96 L130 108 M130 96 L118 108" stroke="#34D399" stroke-width="3.2" stroke-linecap="round"/>
+        <!-- Centrosomes moving apart + spindle rays -->
+        <circle cx="78" cy="84" r="4" fill="#F59E0B"/>
+        <circle cx="152" cy="108" r="4" fill="#F59E0B"/>
+        <line x1="78" y1="84" x2="98" y2="90" stroke="#FBBF24" stroke-width="1" stroke-dasharray="2 2"/>
+        <line x1="152" y1="108" x2="132" y2="102" stroke="#FBBF24" stroke-width="1" stroke-dasharray="2 2"/>
+        <text x="115" y="164" font-family="Inter, sans-serif" font-size="10.5" fill="#CBD5E1" text-anchor="middle">Chromosomes condense; nuclear env. dissolves</text>
+      </g>
+
+      <!-- Arrow 2 -> 3 -->
+      <line x1="540" y1="165" x2="560" y2="165" stroke="#F97316" stroke-width="2.5" marker-end="url(#mitoArrow)"/>
+
+      <!-- 3. METAPHASE -->
+      <g transform="translate(565, 78)">
+        <rect width="230" height="175" rx="14" fill="#1E293B" stroke="#334155" stroke-width="1.5"/>
+        <text x="115" y="22" font-family="Inter, sans-serif" font-size="12.5" font-weight="800" fill="#FBBF24" text-anchor="middle">3. Metaphase (Equator Alignment)</text>
+        <circle cx="115" cy="96" r="52" fill="#0F172A" stroke="#64748B" stroke-width="2.5"/>
+        <!-- Poles & Spindle Fibres -->
+        <circle cx="70" cy="96" r="4.5" fill="#F59E0B"/>
+        <circle cx="160" cy="96" r="4.5" fill="#F59E0B"/>
+        <line x1="70" y1="96" x2="115" y2="74" stroke="#FCD34D" stroke-width="1.4"/>
+        <line x1="160" y1="96" x2="115" y2="74" stroke="#FCD34D" stroke-width="1.4"/>
+        <line x1="70" y1="96" x2="115" y2="96" stroke="#FCD34D" stroke-width="1.4"/>
+        <line x1="160" y1="96" x2="115" y2="96" stroke="#FCD34D" stroke-width="1.4"/>
+        <line x1="70" y1="96" x2="115" y2="118" stroke="#FCD34D" stroke-width="1.4"/>
+        <line x1="160" y1="96" x2="115" y2="118" stroke="#FCD34D" stroke-width="1.4"/>
+        <!-- Aligned Chromosomes -->
+        <path d="M110 69 L120 79 M120 69 L110 79" stroke="#F472B6" stroke-width="3.2" stroke-linecap="round"/>
+        <path d="M110 91 L120 101 M120 91 L110 101" stroke="#34D399" stroke-width="3.2" stroke-linecap="round"/>
+        <path d="M110 113 L120 123 M120 113 L110 123" stroke="#60A5FA" stroke-width="3.2" stroke-linecap="round"/>
+        <text x="115" y="164" font-family="Inter, sans-serif" font-size="10.5" fill="#CBD5E1" text-anchor="middle">Chromosomes line up at metaphase plate</text>
+      </g>
+
+      <!-- 4. ANAPHASE -->
+      <g transform="translate(45, 276)">
+        <rect width="230" height="175" rx="14" fill="#1E293B" stroke="#334155" stroke-width="1.5"/>
+        <text x="115" y="22" font-family="Inter, sans-serif" font-size="12.5" font-weight="800" fill="#34D399" text-anchor="middle">4. Anaphase (Separation)</text>
+        <ellipse cx="115" cy="96" rx="58" ry="48" fill="#0F172A" stroke="#64748B" stroke-width="2.5"/>
+        <circle cx="65" cy="96" r="4.5" fill="#F59E0B"/>
+        <circle cx="165" cy="96" r="4.5" fill="#F59E0B"/>
+        <line x1="65" y1="96" x2="92" y2="78" stroke="#FCD34D" stroke-width="1.4"/>
+        <line x1="65" y1="96" x2="92" y2="114" stroke="#FCD34D" stroke-width="1.4"/>
+        <line x1="165" y1="96" x2="138" y2="78" stroke="#FCD34D" stroke-width="1.4"/>
+        <line x1="165" y1="96" x2="138" y2="114" stroke="#FCD34D" stroke-width="1.4"/>
+        <!-- Pulled V-shaped chromatids -->
+        <path d="M96 72 L88 78 L96 84" fill="none" stroke="#F472B6" stroke-width="3" stroke-linecap="round"/>
+        <path d="M96 108 L88 114 L96 120" fill="none" stroke="#34D399" stroke-width="3" stroke-linecap="round"/>
+        <path d="M134 72 L142 78 L134 84" fill="none" stroke="#F472B6" stroke-width="3" stroke-linecap="round"/>
+        <path d="M134 108 L142 114 L134 120" fill="none" stroke="#34D399" stroke-width="3" stroke-linecap="round"/>
+        <text x="115" y="164" font-family="Inter, sans-serif" font-size="10.5" fill="#CBD5E1" text-anchor="middle">Sister chromatids pulled to opposite poles</text>
+      </g>
+
+      <!-- Arrow 4 -> 5 -->
+      <line x1="280" y1="363" x2="300" y2="363" stroke="#F97316" stroke-width="2.5" marker-end="url(#mitoArrow)"/>
+
+      <!-- 5. TELOPHASE -->
+      <g transform="translate(305, 276)">
+        <rect width="230" height="175" rx="14" fill="#1E293B" stroke="#334155" stroke-width="1.5"/>
+        <text x="115" y="22" font-family="Inter, sans-serif" font-size="12.5" font-weight="800" fill="#FB923C" text-anchor="middle">5. Telophase (2 Nuclei Reform)</text>
+        <path d="M62 96 C62 60 100 54 115 74 C130 54 168 60 168 96 C168 132 130 138 115 118 C100 138 62 132 62 96 Z" fill="#0F172A" stroke="#64748B" stroke-width="2.5"/>
+        <circle cx="88" cy="96" r="18" fill="#1E3A8A" fill-opacity="0.45" stroke="#60A5FA" stroke-width="1.8" stroke-dasharray="3 2"/>
+        <circle cx="142" cy="96" r="18" fill="#1E3A8A" fill-opacity="0.45" stroke="#60A5FA" stroke-width="1.8" stroke-dasharray="3 2"/>
+        <path d="M82 92 Q88 86 94 96" fill="none" stroke="#F472B6" stroke-width="2.2"/>
+        <path d="M136 92 Q142 86 148 96" fill="none" stroke="#34D399" stroke-width="2.2"/>
+        <text x="115" y="164" font-family="Inter, sans-serif" font-size="10.5" fill="#CBD5E1" text-anchor="middle">Nuclear envelopes reform; furrow begins</text>
+      </g>
+
+      <!-- Arrow 5 -> 6 -->
+      <line x1="540" y1="363" x2="560" y2="363" stroke="#F97316" stroke-width="2.5" marker-end="url(#mitoArrow)"/>
+
+      <!-- 6. CYTOKINESIS -->
+      <g transform="translate(565, 276)">
+        <rect width="230" height="175" rx="14" fill="#1E293B" stroke="#334155" stroke-width="1.5"/>
+        <text x="115" y="22" font-family="Inter, sans-serif" font-size="12.5" font-weight="800" fill="#4ADE80" text-anchor="middle">6. Cytokinesis (2 Daughter Cells)</text>
+        <circle cx="80" cy="96" r="34" fill="#0F172A" stroke="#4ADE80" stroke-width="2.5"/>
+        <circle cx="80" cy="96" r="16" fill="#1E3A8A" fill-opacity="0.5" stroke="#60A5FA" stroke-width="1.8"/>
+        <text x="80" y="100" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#FFFFFF" text-anchor="middle">2n</text>
+        <circle cx="152" cy="96" r="34" fill="#0F172A" stroke="#4ADE80" stroke-width="2.5"/>
+        <circle cx="152" cy="96" r="16" fill="#1E3A8A" fill-opacity="0.5" stroke="#60A5FA" stroke-width="1.8"/>
+        <text x="152" y="100" font-family="Inter, sans-serif" font-size="10" font-weight="800" fill="#FFFFFF" text-anchor="middle">2n</text>
+        <text x="115" y="164" font-family="Inter, sans-serif" font-size="10.5" fill="#CBD5E1" text-anchor="middle">Two identical diploid (2n) daughter cells</text>
+      </g>
+
+      <!-- Bottom Exam Takeaway -->
+      <rect x="45" y="468" width="750" height="36" rx="10" fill="#0F172A" stroke="#F97316" stroke-width="1.5"/>
+      <text x="420" y="491" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#FDE68A" text-anchor="middle">Key Exam Rule (PMAT): Mitosis preserves chromosome number (2n → 2n) for growth, repair &amp; asexual reproduction.</text>
+    </svg>`
   }
 };
 
@@ -2048,6 +2205,9 @@ export function getDetailedScientificAsset(topicOrType: string): DetailedVisualA
   }
   if (t === 'human_brain' || /(brain|cerebr|cerebell|frontal lobe|brainstem|nervous|neuron|synapse|reflex)/.test(t)) {
     return SCIENTIFIC_VECTOR_REGISTRY.human_brain;
+  }
+  if (t === 'mitosis' || /(mitosis|cell division|prophase|metaphase|anaphase|telophase|cytokinesis|spindle fibre)/.test(t)) {
+    return SCIENTIFIC_VECTOR_REGISTRY.mitosis;
   }
   if (t === 'dna_helix' || /(dna|helix|nucleotide|watson|genetic code|chromosome|gene)/.test(t)) {
     return SCIENTIFIC_VECTOR_REGISTRY.dna_helix;
