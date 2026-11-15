@@ -1,0 +1,396 @@
+import * as THREE from 'three';
+import { GraphicsQuality, OptionId, WarriorCustomization, WorldId } from './types';
+
+function makeMesh(
+  geo: THREE.BufferGeometry,
+  color: string | number,
+  opts?: { emissive?: string | number; emissiveIntensity?: number; roughness?: number; metalness?: number }
+): THREE.Mesh {
+  const mat = new THREE.MeshStandardMaterial({
+    color,
+    roughness: opts?.roughness ?? 0.65,
+    metalness: opts?.metalness ?? 0.2,
+    emissive: opts?.emissive ?? 0x000000,
+    emissiveIntensity: opts?.emissiveIntensity ?? 0
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+export interface ShadowWarriorRig {
+  root: THREE.Group;
+  bodyPivot: THREE.Group;
+  leftArm: THREE.Group;
+  rightArm: THREE.Group;
+  leftLeg: THREE.Group;
+  rightLeg: THREE.Group;
+  cloak: THREE.Mesh;
+  blade: THREE.Mesh;
+}
+
+export function buildShadowWarrior(custom: WarriorCustomization): ShadowWarriorRig {
+  const root = new THREE.Group();
+  const bodyPivot = new THREE.Group();
+  root.add(bodyPivot);
+
+  // Legs
+  const leftLeg = new THREE.Group();
+  leftLeg.position.set(0, 0.8, -0.18);
+  const legL = makeMesh(new THREE.BoxGeometry(0.32, 0.8, 0.28), custom.armorColor, { metalness: 0.4 });
+  legL.position.y = -0.4;
+  leftLeg.add(legL);
+  bodyPivot.add(leftLeg);
+
+  const rightLeg = new THREE.Group();
+  rightLeg.position.set(0, 0.8, 0.18);
+  const legR = makeMesh(new THREE.BoxGeometry(0.32, 0.8, 0.28), custom.armorColor, { metalness: 0.4 });
+  legR.position.y = -0.4;
+  rightLeg.add(legR);
+  bodyPivot.add(rightLeg);
+
+  // Armored Torso
+  const torso = makeMesh(new THREE.BoxGeometry(0.54, 0.92, 0.72), custom.armorColor, { metalness: 0.45 });
+  torso.position.y = 1.26;
+  bodyPivot.add(torso);
+
+  // Arcane Core Emblem on chest
+  const chestCore = makeMesh(new THREE.OctahedronGeometry(0.16, 0), custom.glowColor, {
+    emissive: custom.glowColor,
+    emissiveIntensity: 1.3
+  });
+  chestCore.position.set(0.26, 1.35, 0);
+  bodyPivot.add(chestCore);
+
+  // Flowing Cloak (trails behind along -X when facing +X)
+  const cloak = makeMesh(new THREE.BoxGeometry(0.14, 1.15, 0.78), custom.cloakColor, { roughness: 0.85 });
+  cloak.position.set(-0.34, 1.12, 0);
+  cloak.rotation.z = -0.18;
+  bodyPivot.add(cloak);
+
+  // Head + Helm Style
+  const head = makeMesh(new THREE.BoxGeometry(0.46, 0.48, 0.46), '#0F172A');
+  head.position.y = 1.98;
+  bodyPivot.add(head);
+
+  // Glowing Visor Eyes (facing +X)
+  const visor = makeMesh(new THREE.BoxGeometry(0.08, 0.1, 0.34), custom.glowColor, {
+    emissive: custom.glowColor,
+    emissiveIntensity: 1.6
+  });
+  visor.position.set(0.22, 2.0, 0);
+  bodyPivot.add(visor);
+
+  if (custom.helmStyle === 'hood') {
+    const hood = makeMesh(new THREE.ConeGeometry(0.44, 0.56, 4), custom.cloakColor);
+    hood.position.set(-0.04, 2.28, 0);
+    hood.rotation.y = Math.PI / 4;
+    hood.rotation.z = 0.22;
+    bodyPivot.add(hood);
+  } else if (custom.helmStyle === 'horned') {
+    const hornL = makeMesh(new THREE.ConeGeometry(0.09, 0.42, 6), custom.glowColor, {
+      emissive: custom.glowColor,
+      emissiveIntensity: 0.8
+    });
+    hornL.position.set(0.05, 2.34, -0.22);
+    hornL.rotation.x = -0.35;
+    const hornR = hornL.clone();
+    hornR.position.z = 0.22;
+    hornR.rotation.x = 0.35;
+    bodyPivot.add(hornL, hornR);
+  } else {
+    const crest = makeMesh(new THREE.BoxGeometry(0.46, 0.26, 0.1), custom.glowColor, {
+      emissive: custom.glowColor,
+      emissiveIntensity: 0.9
+    });
+    crest.position.set(-0.04, 2.34, 0);
+    bodyPivot.add(crest);
+  }
+
+  // Left Arm
+  const leftArm = new THREE.Group();
+  leftArm.position.set(0, 1.62, -0.46);
+  const armL = makeMesh(new THREE.BoxGeometry(0.26, 0.72, 0.24), custom.armorColor);
+  armL.position.y = -0.3;
+  leftArm.add(armL);
+  bodyPivot.add(leftArm);
+
+  // Right Arm + Cyan Arcane Runeblade
+  const rightArm = new THREE.Group();
+  rightArm.position.set(0, 1.62, 0.46);
+  const armR = makeMesh(new THREE.BoxGeometry(0.26, 0.72, 0.24), custom.armorColor);
+  armR.position.y = -0.3;
+  rightArm.add(armR);
+
+  const hilt = makeMesh(new THREE.BoxGeometry(0.32, 0.1, 0.1), '#94A3B8', { metalness: 0.7 });
+  hilt.position.set(0.24, -0.58, 0);
+  const blade = makeMesh(new THREE.BoxGeometry(1.18, 0.12, 0.06), custom.glowColor, {
+    emissive: custom.glowColor,
+    emissiveIntensity: 1.25,
+    roughness: 0.2
+  });
+  blade.position.set(0.86, -0.58, 0);
+  rightArm.add(hilt, blade);
+  bodyPivot.add(rightArm);
+
+  return { root, bodyPivot, leftArm, rightArm, leftLeg, rightLeg, cloak, blade };
+}
+
+export interface AnswerSentinelRig {
+  index: number;
+  group: THREE.Group;
+  body: THREE.Mesh;
+  ring: THREE.Mesh;
+  labelMesh: THREE.Mesh;
+  canvas: HTMLCanvasElement;
+  texture: THREE.CanvasTexture;
+  optionId: OptionId;
+  optionText: string;
+}
+
+/**
+ * Builds 3 visually identical neutral Answer Sentinels so no color/shape reveals the answer.
+ */
+export function buildAnswerSentinel(index: number): AnswerSentinelRig {
+  const group = new THREE.Group();
+
+  const pedestal = makeMesh(new THREE.CylinderGeometry(0.85, 1.0, 0.28, 8), '#1E293B');
+  pedestal.position.y = 0.14;
+
+  const ringMat = new THREE.MeshBasicMaterial({
+    color: '#38BDF8',
+    transparent: true,
+    opacity: 0.35,
+    side: THREE.DoubleSide
+  });
+  const ring = new THREE.Mesh(new THREE.RingGeometry(1.05, 1.32, 24), ringMat);
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.05;
+
+  // Mystical Cloaked Sentinel
+  const body = makeMesh(new THREE.ConeGeometry(0.65, 1.65, 6), '#312E81', {
+    emissive: '#1E1B4B',
+    emissiveIntensity: 0.4
+  });
+  body.position.y = 1.1;
+
+  const head = makeMesh(new THREE.OctahedronGeometry(0.36, 0), '#64748B', {
+    emissive: '#38BDF8',
+    emissiveIntensity: 0.45
+  });
+  head.position.y = 2.18;
+
+  // Floating CanvasTexture label above sentinel
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 176;
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.minFilter = THREE.LinearFilter;
+
+  const labelMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(4.2, 1.45),
+    new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide })
+  );
+  labelMesh.position.y = 3.35;
+
+  group.add(pedestal, ring, body, head, labelMesh);
+
+  const rig: AnswerSentinelRig = {
+    index,
+    group,
+    body,
+    ring,
+    labelMesh,
+    canvas,
+    texture,
+    optionId: 'A',
+    optionText: '...'
+  };
+  updateSentinelLabel(rig, 'A', '...', false);
+  return rig;
+}
+
+export function updateSentinelLabel(
+  rig: AnswerSentinelRig,
+  optionId: OptionId,
+  optionText: string,
+  isSelected: boolean
+): void {
+  rig.optionId = optionId;
+  rig.optionText = optionText;
+
+  const mat = rig.ring.material as THREE.MeshBasicMaterial;
+  mat.opacity = isSelected ? 0.95 : 0.3;
+  mat.color.set(isSelected ? '#22D3EE' : '#64748B');
+
+  const ctx = rig.canvas.getContext('2d');
+  if (!ctx) return;
+
+  const w = rig.canvas.width;
+  const h = rig.canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  ctx.fillStyle = isSelected ? 'rgba(8, 51, 68, 0.95)' : 'rgba(15, 23, 42, 0.9)';
+  ctx.strokeStyle = isSelected ? '#22D3EE' : '#64748B';
+  ctx.lineWidth = isSelected ? 7 : 4;
+
+  ctx.beginPath();
+  ctx.roundRect(10, 10, w - 20, h - 20, 24);
+  ctx.fill();
+  ctx.stroke();
+
+  // Option badge
+  ctx.fillStyle = isSelected ? '#22D3EE' : '#334155';
+  ctx.beginPath();
+  ctx.arc(58, h / 2, 30, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = isSelected ? '#082F49' : '#F8FAFC';
+  ctx.font = 'bold 34px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(optionId, 58, h / 2 + 2);
+
+  // Word text
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 28px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'left';
+
+  const maxW = w - 120;
+  const words = optionText.split(/\s+/);
+  const lines: string[] = [];
+  let cur = '';
+  for (const wd of words) {
+    const test = cur ? `${cur} ${wd}` : wd;
+    if (ctx.measureText(test).width > maxW && cur) {
+      lines.push(cur);
+      cur = wd;
+    } else {
+      cur = test;
+    }
+  }
+  if (cur) lines.push(cur);
+
+  const vis = lines.slice(0, 2);
+  if (vis.length === 1) {
+    ctx.fillText(vis[0], 106, h / 2 + 2);
+  } else {
+    ctx.fillText(vis[0], 106, h / 2 - 18);
+    ctx.fillText(vis[1], 106, h / 2 + 20);
+  }
+
+  rig.texture.needsUpdate = true;
+}
+
+export interface PlatformBox {
+  minX: number;
+  maxX: number;
+  topY: number;
+  bottomY: number;
+}
+
+export interface WorldEnvironmentResult {
+  root: THREE.Group;
+  platforms: PlatformBox[];
+  torchLights: THREE.PointLight[];
+  skyColor: string;
+  fogColor: string;
+}
+
+export function buildWorldEnvironment(
+  scene: THREE.Scene,
+  worldId: WorldId,
+  quality: GraphicsQuality
+): WorldEnvironmentResult {
+  const root = new THREE.Group();
+  const platforms: PlatformBox[] = [];
+  const torchLights: THREE.PointLight[] = [];
+
+  const themes: Record<WorldId, { sky: string; fog: string; ground: string; stone: string; accent: string }> = {
+    moonlight_valley: { sky: '#070D1F', fog: '#0B1736', ground: '#10241E', stone: '#334155', accent: '#22D3EE' },
+    shadow_forest: { sky: '#061412', fog: '#0A241E', ground: '#0B2E1E', stone: '#3F2E21', accent: '#34D399' },
+    ancient_kingdom: { sky: '#140F26', fog: '#21193D', ground: '#1E293B', stone: '#475569', accent: '#F59E0B' },
+    crystal_caverns: { sky: '#060F24', fog: '#0B1D40', ground: '#172554', stone: '#1E3A8A', accent: '#38BDF8' },
+    sky_of_knowledge: { sky: '#0C0A24', fog: '#1E1B4B', ground: '#312E81', stone: '#4338CA', accent: '#A855F7' }
+  };
+  const theme = themes[worldId];
+
+  // Main Ground Path (x: -22 to +44)
+  const ground = makeMesh(new THREE.BoxGeometry(72, 2, 12), theme.ground, { roughness: 0.9 });
+  ground.position.set(11, -1, 0);
+  root.add(ground);
+
+  // Ancient Stone Bridge / Walkway inlay
+  const bridge = makeMesh(new THREE.BoxGeometry(68, 0.2, 4.4), theme.stone, { roughness: 0.85 });
+  bridge.position.set(11, 0.02, 0);
+  root.add(bridge);
+
+  // Raised Stone Platforms along the 2.5D path (for jumping & platforming)
+  const platformSpecs: Array<{ x: number; y: number; w: number }> = [
+    { x: -2, y: 1.8, w: 4.5 },
+    { x: 6, y: 2.6, w: 4.2 },
+    { x: 14, y: 1.9, w: 4.5 },
+    { x: 22, y: 2.8, w: 4.5 }
+  ];
+  for (const ps of platformSpecs) {
+    const plat = makeMesh(new THREE.BoxGeometry(ps.w, 0.45, 3.2), theme.stone);
+    plat.position.set(ps.x, ps.y - 0.225, 0);
+    root.add(plat);
+    platforms.push({
+      minX: ps.x - ps.w / 2,
+      maxX: ps.x + ps.w / 2,
+      topY: ps.y,
+      bottomY: ps.y - 0.45
+    });
+  }
+
+  // Giant Glowing Moon in Parallax Background
+  const moon = new THREE.Mesh(
+    new THREE.SphereGeometry(6.5, quality === 'low' ? 14 : 24, quality === 'low' ? 14 : 24),
+    new THREE.MeshBasicMaterial({ color: '#E0F2FE' })
+  );
+  moon.position.set(16, 15, -36);
+  root.add(moon);
+
+  // Distant Mountain Silhouettes
+  const mountainMat = new THREE.MeshStandardMaterial({ color: '#0F172A', roughness: 0.95 });
+  for (let i = -3; i <= 5; i++) {
+    const h = 10 + (Math.abs(i * 3) % 7);
+    const m = new THREE.Mesh(new THREE.ConeGeometry(8, h, 5), mountainMat);
+    m.position.set(i * 11, h / 2 - 2, -24 - (Math.abs(i) % 2) * 5);
+    root.add(m);
+  }
+
+  // Ruined Pillars & Warm Orange Torches
+  const pillarX = [-10, 0, 10, 20, 30];
+  for (const px of pillarX) {
+    const pillar = makeMesh(new THREE.BoxGeometry(1.1, 4.2, 1.1), theme.stone);
+    pillar.position.set(px, 2.1, -3.4);
+    root.add(pillar);
+
+    const flame = makeMesh(new THREE.BoxGeometry(0.36, 0.48, 0.36), '#FB923C', {
+      emissive: '#FF6A00',
+      emissiveIntensity: 1.6
+    });
+    flame.position.set(px, 4.45, -3.4);
+    root.add(flame);
+
+    if (quality !== 'low') {
+      const ptLight = new THREE.PointLight('#FF7A1A', 2.4, 14, 1.5);
+      ptLight.position.set(px, 4.6, -2.8);
+      root.add(ptLight);
+      torchLights.push(ptLight);
+    }
+  }
+
+  scene.add(root);
+
+  return {
+    root,
+    platforms,
+    torchLights,
+    skyColor: theme.sky,
+    fogColor: theme.fog
+  };
+}

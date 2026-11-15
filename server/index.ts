@@ -4310,6 +4310,13 @@ export function createAppServer() {
           return;
         }
 
+        const studentRow = db.prepare('SELECT grade, board FROM users WHERE id = ?').get(studentId) as any;
+        const levelStr = String(note.level || '');
+        const parsedGradeMatch = levelStr.match(/(\d+)/);
+        const resolvedGrade = parsedGradeMatch ? Number(parsedGradeMatch[1]) : (studentRow?.grade || 10);
+        const parsedBoardMatch = levelStr.match(/\(([^)]+)\)/);
+        const resolvedBoard = parsedBoardMatch ? parsedBoardMatch[1] : (studentRow?.board || 'CBSE');
+
         // Check if existing audio lesson already exists and reuse unless forceRegenerate requested
         if (!body.forceRegenerate) {
           const existing = db.prepare(`
@@ -4327,8 +4334,8 @@ export function createAppServer() {
                 userId: existing.user_id,
                 topic: note.topic,
                 subject: note.subject,
-                grade: 10,
-                board: 'CBSE',
+                grade: resolvedGrade,
+                board: resolvedBoard,
                 depth: existing.depth,
                 language: existing.language,
                 voiceName: existing.voice_name,
@@ -4354,8 +4361,8 @@ export function createAppServer() {
           userId: studentId,
           topic: note.topic,
           subject: note.subject,
-          grade: 10,
-          board: 'CBSE',
+          grade: resolvedGrade,
+          board: resolvedBoard,
           depth,
           language,
           voiceName: body.voiceName,
@@ -6887,6 +6894,182 @@ export function createAppServer() {
           stats,
           totalSessionsCompleted: sessions.filter((s) => s.status === 'completed').length
         });
+        return;
+      }
+
+      // 6. Save STUDY RUSH 3D — SURVIVAL NIGHT Run
+      if (pathname === '/api/educational-games/study-rush/save' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const now = new Date().toISOString();
+        const sessionId = `sr3d-${crypto.randomUUID().slice(0, 8)}`;
+        const score = Math.max(0, Number(body.score) || 0);
+        const accuracy = Math.min(100, Math.max(0, Number(body.accuracy) || 0));
+        const questionsAnswered = Math.max(0, Number(body.questionsAnswered) || 0);
+        const correctAnswers = Math.max(0, Number(body.correctAnswers) || 0);
+        const incorrectAnswers = Math.max(0, questionsAnswered - correctAnswers);
+        const durationSeconds = Math.max(5, Number(body.durationSeconds) || 30);
+        const subject = sanitizeText(body.subject || 'All Subjects', 60);
+        const difficulty = sanitizeText(body.difficulty || 'medium', 20);
+        const grade = Math.max(1, Math.min(12, Number(body.grade) || 9));
+        const nightsSurvived = Math.max(0, Number(body.nightsSurvived) || 0);
+        const weakTopics = Array.isArray(body.weakTopics) ? body.weakTopics.slice(0, 12) : [];
+        const masteredTopics = Array.isArray(body.masteredTopics) ? body.masteredTopics.slice(0, 12) : [];
+
+        db.prepare(`
+          INSERT INTO educational_game_sessions (
+            id, user_id, game_slug, subject, topic, difficulty, grade, language,
+            total_questions, correct_count, incorrect_count, score, accuracy_percentage,
+            duration_seconds, status, weak_concepts_json, mastered_concepts_json,
+            completed_at, created_at, updated_at
+          ) VALUES (?, ?, 'study_rush_3d', ?, ?, ?, ?, 'English', ?, ?, ?, ?, ?, ?, 'completed', ?, ?, ?, ?, ?)
+        `).run(
+          sessionId,
+          studentId,
+          subject,
+          'Survival Night',
+          difficulty,
+          grade,
+          Math.max(1, questionsAnswered),
+          correctAnswers,
+          incorrectAnswers,
+          score,
+          accuracy,
+          durationSeconds,
+          JSON.stringify(weakTopics),
+          JSON.stringify(masteredTopics),
+          now,
+          now,
+          now
+        );
+
+        db.prepare(`
+          INSERT INTO student_educational_game_stats (
+            id, user_id, game_slug, total_sessions_completed, total_questions_answered,
+            total_correct_answers, highest_score, average_accuracy, favorite_topic, last_played_at, created_at, updated_at
+          ) VALUES (?, ?, 'study_rush_3d', 1, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(user_id, game_slug) DO UPDATE SET
+            total_sessions_completed = total_sessions_completed + 1,
+            total_questions_answered = total_questions_answered + excluded.total_questions_answered,
+            total_correct_answers = total_correct_answers + excluded.total_correct_answers,
+            highest_score = MAX(highest_score, excluded.highest_score),
+            average_accuracy = ROUND((average_accuracy * 0.7) + (excluded.average_accuracy * 0.3)),
+            favorite_topic = excluded.favorite_topic,
+            last_played_at = excluded.last_played_at,
+            updated_at = excluded.updated_at
+        `).run(
+          `stat-${crypto.randomUUID().slice(0, 8)}`,
+          studentId,
+          questionsAnswered,
+          correctAnswers,
+          score,
+          accuracy,
+          subject,
+          now,
+          now,
+          now
+        );
+
+        db.prepare(`
+          INSERT INTO library_resources (id, user_id, resource_type, title, subject, topic, summary, content_json, media_url, status, created_at)
+          VALUES (?, ?, 'game', ?, ?, 'Survival Night', ?, ?, NULL, 'ready', ?)
+        `).run(
+          `res-${sessionId}`,
+          studentId,
+          `Study Rush 3D (${subject})`,
+          subject,
+          `Score: ${score} pts • Nights Survived: ${nightsSurvived} • Accuracy: ${accuracy}%`,
+          JSON.stringify({ sessionId, gameSlug: 'study_rush_3d', score, accuracy, nightsSurvived, weakTopics }),
+          now
+        );
+
+        sendJson(res, 200, { saved: true, sessionId, score, accuracy, nightsSurvived });
+        return;
+      }
+
+      // 7. Save WAR OF WORDS — STUDY RUSH 3D Run
+      if (pathname === '/api/educational-games/war-of-words/save' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const now = new Date().toISOString();
+        const sessionId = `wow3d-${crypto.randomUUID().slice(0, 8)}`;
+        const score = Math.max(0, Number(body.knowledgePoints) || 0);
+        const accuracy = Math.min(100, Math.max(0, Number(body.accuracy) || 0));
+        const totalQuestions = Math.max(1, Number(body.totalQuestions) || 1);
+        const correctAnswers = Math.max(0, Number(body.correctAnswers) || 0);
+        const incorrectAnswers = Math.max(0, Number(body.incorrectAnswers) || 0);
+        const durationSeconds = Math.max(5, Number(body.durationSeconds) || 30);
+        const category = sanitizeText(body.category || 'All Categories', 60);
+        const difficulty = sanitizeText(body.difficulty || 'medium', 20);
+        const grade = Math.max(1, Math.min(12, Number(body.grade) || 8));
+        const wordsLearned = Array.isArray(body.wordsLearned) ? body.wordsLearned.slice(0, 20) : [];
+        const missedTopics = Array.isArray(body.missedQuestionTopics) ? body.missedQuestionTopics.slice(0, 20) : [];
+
+        db.prepare(`
+          INSERT INTO educational_game_sessions (
+            id, user_id, game_slug, subject, topic, difficulty, grade, language,
+            total_questions, correct_count, incorrect_count, score, accuracy_percentage,
+            duration_seconds, status, weak_concepts_json, mastered_concepts_json,
+            completed_at, created_at, updated_at
+          ) VALUES (?, ?, 'war_of_words_3d', 'English', ?, ?, ?, 'English', ?, ?, ?, ?, ?, ?, 'completed', ?, ?, ?, ?, ?)
+        `).run(
+          sessionId,
+          studentId,
+          category,
+          difficulty,
+          grade,
+          totalQuestions,
+          correctAnswers,
+          incorrectAnswers,
+          score,
+          accuracy,
+          durationSeconds,
+          JSON.stringify(missedTopics),
+          JSON.stringify(wordsLearned),
+          now,
+          now,
+          now
+        );
+
+        db.prepare(`
+          INSERT INTO student_educational_game_stats (
+            id, user_id, game_slug, total_sessions_completed, total_questions_answered,
+            total_correct_answers, highest_score, average_accuracy, favorite_topic, last_played_at, created_at, updated_at
+          ) VALUES (?, ?, 'war_of_words_3d', 1, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(user_id, game_slug) DO UPDATE SET
+            total_sessions_completed = total_sessions_completed + 1,
+            total_questions_answered = total_questions_answered + excluded.total_questions_answered,
+            total_correct_answers = total_correct_answers + excluded.total_correct_answers,
+            highest_score = MAX(highest_score, excluded.highest_score),
+            average_accuracy = ROUND((average_accuracy * 0.7) + (excluded.average_accuracy * 0.3)),
+            favorite_topic = excluded.favorite_topic,
+            last_played_at = excluded.last_played_at,
+            updated_at = excluded.updated_at
+        `).run(
+          `stat-${crypto.randomUUID().slice(0, 8)}`,
+          studentId,
+          totalQuestions,
+          correctAnswers,
+          score,
+          accuracy,
+          category,
+          now,
+          now,
+          now
+        );
+
+        db.prepare(`
+          INSERT INTO library_resources (id, user_id, resource_type, title, subject, topic, summary, content_json, media_url, status, created_at)
+          VALUES (?, ?, 'game', ?, 'English', ?, ?, ?, NULL, 'ready', ?)
+        `).run(
+          `res-${sessionId}`,
+          studentId,
+          `War of Words: ${category}`,
+          category,
+          `Knowledge Points: ${score} • Accuracy: ${accuracy}% • Words Learned: ${wordsLearned.length}`,
+          JSON.stringify({ sessionId, gameSlug: 'war_of_words_3d', score, accuracy, wordsLearned, missedTopics }),
+          now
+        );
+
+        sendJson(res, 200, { saved: true, sessionId, score, accuracy });
         return;
       }
 

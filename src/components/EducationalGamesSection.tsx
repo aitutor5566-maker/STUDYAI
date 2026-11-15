@@ -3,6 +3,8 @@ import { Search, Play, Trophy } from 'lucide-react';
 import { useLearning } from '../context/LearningContext';
 import { EducationalGamePlayerModal } from './EducationalGamePlayerModal';
 import { KatanaGameModal } from './games/KatanaGameModal';
+import { StudyRush3DModal } from './games/StudyRush3DModal';
+import { WarOfWordsModal } from './games/WarOfWordsModal';
 
 interface GameItem {
   id: string;
@@ -32,6 +34,8 @@ export const EducationalGamesSection: React.FC = () => {
   // Modal player state
   const [activeModalGame, setActiveModalGame] = useState<{ slug: string; name: string } | null>(null);
   const [katanaOpen, setKatanaOpen] = useState<boolean>(false);
+  const [studyRushOpen, setStudyRushOpen] = useState<boolean>(false);
+  const [warOfWordsOpen, setWarOfWordsOpen] = useState<boolean>(false);
 
   // Student stats
   const [, setRecentStats] = useState<any[]>([]);
@@ -197,6 +201,138 @@ export const EducationalGamesSection: React.FC = () => {
             />
           </div>
         </div>
+      </div>
+
+      {/* WAR OF WORDS — STUDY RUSH 3D (SHADOW WARRIOR: THE LANGUAGE BATTLE) */}
+      <div
+        style={{
+          margin: '0 0 18px 0',
+          padding: 24,
+          borderRadius: 24,
+          background: 'linear-gradient(135deg, #050814 0%, #0B1D3A 52%, #083344 100%)',
+          border: '2px solid #22D3EE',
+          boxShadow: '0 16px 40px rgba(34, 211, 238, 0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 20
+        }}
+      >
+        <div style={{ flex: '1 1 360px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+            <span
+              style={{
+                background: '#0891B2',
+                color: '#FFFFFF',
+                padding: '4px 12px',
+                borderRadius: 999,
+                fontSize: '0.74rem',
+                fontWeight: 900,
+                letterSpacing: '0.05em'
+              }}
+            >
+              2.5D ENGLISH ACTION-ADVENTURE
+            </span>
+            <span style={{ color: '#67E8F9', fontSize: '0.82rem', fontWeight: 800 }}>
+              108+ Questions • 9 Categories • Moonlight Valley
+            </span>
+          </div>
+          <h3 style={{ margin: '0 0 6px 0', color: '#FFFFFF', fontSize: '1.36rem', fontWeight: 900 }}>
+            WAR OF WORDS — SHADOW WARRIOR
+          </h3>
+          <p style={{ margin: 0, color: '#CBD5E1', fontSize: '0.88rem', lineHeight: 1.5 }}>
+            Travel through Moonlight Valley as an arcane Shadow Warrior! Approach Answer Sentinels, cast cyan magic strikes, master vocabulary, synonyms, grammar & idioms with audio pronunciation.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setWarOfWordsOpen(true)}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '14px 24px',
+            borderRadius: 16,
+            background: 'linear-gradient(135deg, #06B6D4 0%, #2563EB 100%)',
+            border: 'none',
+            color: '#FFFFFF',
+            fontWeight: 900,
+            fontSize: '0.96rem',
+            cursor: 'pointer',
+            boxShadow: '0 10px 26px rgba(6, 182, 212, 0.38)'
+          }}
+        >
+          <Play size={18} fill="#FFFFFF" />
+          Launch War of Words
+        </button>
+      </div>
+
+      {/* STUDY RUSH 3D — SURVIVAL NIGHT (3D VOXEL ADVENTURE BANNER) */}
+      <div
+        style={{
+          margin: '0 0 18px 0',
+          padding: 24,
+          borderRadius: 24,
+          background: 'linear-gradient(135deg, #090D1F 0%, #1E1B4B 52%, #7C2D12 100%)',
+          border: '2px solid #FF6A00',
+          boxShadow: '0 16px 40px rgba(255, 106, 0, 0.24)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 20
+        }}
+      >
+        <div style={{ flex: '1 1 360px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+            <span
+              style={{
+                background: '#FF6A00',
+                color: '#FFFFFF',
+                padding: '4px 12px',
+                borderRadius: 999,
+                fontSize: '0.74rem',
+                fontWeight: 900,
+                letterSpacing: '0.05em'
+              }}
+            >
+              3D VOXEL SURVIVAL ADVENTURE
+            </span>
+            <span style={{ color: '#FDBA74', fontSize: '0.82rem', fontWeight: 800 }}>
+              Day/Night Cycle • Open World • Three.js Engine
+            </span>
+          </div>
+          <h3 style={{ margin: '0 0 6px 0', color: '#FFFFFF', fontSize: '1.36rem', fontWeight: 900 }}>
+            STUDY RUSH 3D — SURVIVAL NIGHT
+          </h3>
+          <p style={{ margin: 0, color: '#CBD5E1', fontSize: '0.88rem', lineHeight: 1.5 }}>
+            Explore Survival Village, Dark Forest & Crystal Cave by day; defend against night waves by casting arcane knowledge bolts at 3D Answer Shrines across 8 academic subjects!
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setStudyRushOpen(true)}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '14px 24px',
+            borderRadius: 16,
+            background: 'linear-gradient(135deg, #FF7A1A 0%, #FF5500 100%)',
+            border: 'none',
+            color: '#FFFFFF',
+            fontWeight: 900,
+            fontSize: '0.96rem',
+            cursor: 'pointer',
+            boxShadow: '0 10px 26px rgba(255, 106, 0, 0.4)'
+          }}
+        >
+          <Play size={18} fill="#FFFFFF" />
+          Launch Study Rush 3D
+        </button>
       </div>
 
       {/* KATANA: SHADOW WARRIORS — FLAGSHIP 2.5D ACTION-ADVENTURE BANNER */}
@@ -437,6 +573,19 @@ export const EducationalGamesSection: React.FC = () => {
         isOpen={katanaOpen}
         onClose={() => setKatanaOpen(false)}
         topic={gameTopic || 'Photosynthesis'}
+      />
+
+      {/* STUDY RUSH 3D — SURVIVAL NIGHT Modal */}
+      <StudyRush3DModal
+        isOpen={studyRushOpen}
+        onClose={() => setStudyRushOpen(false)}
+        initialTopic={gameTopic || 'Photosynthesis'}
+      />
+
+      {/* WAR OF WORDS — STUDY RUSH 3D Modal */}
+      <WarOfWordsModal
+        isOpen={warOfWordsOpen}
+        onClose={() => setWarOfWordsOpen(false)}
       />
     </section>
   );

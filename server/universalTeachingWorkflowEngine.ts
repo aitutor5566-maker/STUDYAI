@@ -1595,6 +1595,36 @@ function buildMainDefinitionForTopic(topic: string, subject: string) {
     };
   }
 
+  if (l.includes('mitosis') || l.includes('cell division')) {
+    return {
+      academicDefinition: 'Mitosis is an equational somatic cell division (karyokinesis followed by cytokinesis) in which a single diploid parent cell (2n) replicates its chromosomes and distributes one identical set to each of two genetically identical diploid daughter cells (2n).',
+      simpleLanguageExplanation: 'In simple words, mitosis is how one body cell copies its DNA and splits cleanly into two identical cells so you can grow taller and heal cuts.',
+      keyWordMeanings: [
+        { word: 'Chromatid', meaning: 'One of two identical longitudinal halves of a replicated chromosome joined at the centromere.' },
+        { word: 'Centromere', meaning: 'The constricted region holding sister chromatids together where spindle fibers attach.' },
+        { word: 'Spindle Fibers', meaning: 'Microtubule protein threads radiating from centrioles that align and pull chromosomes apart.' },
+        { word: 'Cytokinesis', meaning: 'The division of the cytoplasm following nuclear division to form two separate daughter cells.' }
+      ],
+      coreExample: 'When you scrape your knee, skin cells around the wound undergo mitosis to replace the damaged tissue with identical new skin cells.',
+      practicalInterpretation: 'Without mitosis, multicellular organisms could not grow from a single zygote or repair worn-out tissues.'
+    };
+  }
+
+  if (l.includes('newton') || l.includes('laws of motion') || (l.includes('force') && l.includes('motion'))) {
+    return {
+      academicDefinition: 'Newton’s Laws of Motion are three foundational axioms of classical mechanics formulated by Sir Isaac Newton describing the relationship between a body’s motion, its mass, and the net external forces acting upon it.',
+      simpleLanguageExplanation: 'In simple words, Newton’s three laws explain why things stay still or keep moving until pushed (Inertia), how harder pushes accelerate lighter objects faster (F = ma), and why every push produces an equal push back.',
+      keyWordMeanings: [
+        { word: 'Inertia', meaning: 'The natural tendency of an object to resist any change in its state of rest or uniform motion.' },
+        { word: 'Net Force (F)', meaning: 'The vector sum of all external forces acting on an object, measured in Newtons (N).' },
+        { word: 'Acceleration (a)', meaning: 'The rate of change of velocity per unit time (m/s²), directly proportional to net force.' },
+        { word: 'Action-Reaction Pair', meaning: 'Equal and opposite forces exerted simultaneously by two interacting bodies on each other.' }
+      ],
+      coreExample: 'When a bus brakes suddenly, passengers lurch forward due to inertia (First Law); kicking a soccer ball harder makes it accelerate faster (Second Law); a rocket pushes exhaust down and rises up (Third Law).',
+      practicalInterpretation: 'Engineers use Newton’s Laws to design car airbags, bridges, elevators, and spacecraft trajectories.'
+    };
+  }
+
   if (l.includes('chemical reaction') || (l.includes('equation') && l.includes('chemical'))) {
     return {
       academicDefinition: 'A chemical reaction is a process in which one or more substances (reactants) undergo chemical bond breaking and reforming to yield one or more new substances (products) with entirely distinct chemical identities, governed strictly by the Law of Conservation of Mass.',
@@ -1760,6 +1790,117 @@ function buildImportantDefinitionsForTopic(topic: string, subject: string): Impo
         simpleExplanation: 'One-way doors inside the heart that prevent blood from sloshing backward.',
         example: 'Closure of AV valves creates the first heart sound (LUB); closure of semilunar valves creates the second sound (DUB).',
         importance: 'Prevents regurgitation and produces the classic "lub-dub" heartbeat sounds.'
+      }
+    ];
+  }
+
+  if (l.includes('mitosis') || l.includes('cell division')) {
+    return [
+      {
+        term: 'Prophase',
+        academicDefinition: 'The first mitotic stage where chromatin condenses into visible sister chromatids, the nuclear envelope dissolves, and spindle fibers begin forming from centrioles.',
+        simpleExplanation: 'Chromosomes pack up tightly like neat parcels and the nuclear wall melts away.',
+        example: 'Visible X-shaped chromosomes appear under a light microscope.',
+        importance: 'Prepares DNA to move safely without tangling or breaking.'
+      },
+      {
+        term: 'Metaphase',
+        academicDefinition: 'The stage in which spindle fibers attach to kinetochores at each centromere and align all chromosomes along the cell’s equatorial metaphase plate.',
+        simpleExplanation: 'All chromosomes line up in a neat single file down the middle of the cell.',
+        example: 'Karyotyping tests photograph chromosomes during metaphase because they are maximally condensed.',
+        importance: 'Ensures each daughter cell will receive exactly one copy of every chromosome.'
+      },
+      {
+        term: 'Anaphase',
+        academicDefinition: 'The stage where centromeres split and shortening spindle fibers pull sister chromatids toward opposite poles of the cell.',
+        simpleExplanation: 'The paired chromosome halves separate and race to opposite ends of the cell.',
+        example: 'Chromatids take V- or J-shapes as they are dragged centromere-first to the poles.',
+        importance: 'Guarantees equal genetic distribution (2n to each side).'
+      },
+      {
+        term: 'Telophase & Cytokinesis',
+        academicDefinition: 'Nuclear envelopes reform around the two daughter chromosome sets as chromosomes decondense, followed by cytoplasmic cleavage (animal cells) or cell plate formation (plant cells).',
+        simpleExplanation: 'Two new nuclei form and the cell pinches in half to become two complete cells.',
+        example: 'Animal cells form a cleavage furrow; plant cells build a cell plate.',
+        importance: 'Completes cell division, yielding two genetically identical diploid daughter cells.'
+      }
+    ];
+  }
+
+  if (l.includes('newton') || l.includes('laws of motion') || (l.includes('force') && l.includes('motion'))) {
+    return [
+      {
+        term: 'First Law (Law of Inertia)',
+        academicDefinition: 'An object remains at rest or in uniform straight-line motion unless acted upon by an unbalanced net external force.',
+        simpleExplanation: 'Objects keep doing whatever they are already doing unless a push or pull changes it.',
+        example: 'A coin on a card drops straight into a glass when the card is flicked away.',
+        importance: 'Defines inertia and inertial reference frames.'
+      },
+      {
+        term: 'Second Law (F = m × a)',
+        academicDefinition: 'The rate of change of linear momentum of a body is directly proportional to the applied net force and occurs in the direction of that force (F = ma).',
+        simpleExplanation: 'Force equals mass times acceleration: heavier objects need more force to speed up.',
+        example: 'A 4 kg block pushed with 12 N accelerates at a = F/m = 3 m/s².',
+        importance: 'Provides the quantitative equation used in all dynamics numericals.'
+      },
+      {
+        term: 'Third Law (Action & Reaction)',
+        academicDefinition: 'To every action force there is always an equal in magnitude and opposite in direction reaction force acting on two different bodies.',
+        simpleExplanation: 'Whenever you push something, it pushes back on you with equal strength in the opposite direction.',
+        example: 'A swimmer pushes water backward to glide forward.',
+        importance: 'Explains propulsion, walking, and conservation of linear momentum.'
+      }
+    ];
+  }
+
+  if (l.includes('quadratic')) {
+    return [
+      {
+        term: 'Standard Quadratic Form (ax² + bx + c = 0)',
+        academicDefinition: 'A second-degree polynomial equation in one variable x where a, b, c are real numbers and a ≠ 0.',
+        simpleExplanation: 'An equation whose highest power of x is x².',
+        example: '2x² - 5x + 3 = 0 has a = 2, b = -5, c = 3.',
+        importance: 'Every quadratic must be arranged in standard form before factoring or applying the quadratic formula.'
+      },
+      {
+        term: 'Discriminant (D = b² - 4ac)',
+        academicDefinition: 'The expression under the square root in the quadratic formula that determines the nature and number of real roots.',
+        simpleExplanation: 'A quick test value telling you if the parabola crosses the x-axis twice, once, or zero times.',
+        example: 'For x² - 5x + 6 = 0, D = (-5)² - 4(1)(6) = 1 > 0, giving two distinct real roots.',
+        importance: 'D > 0 means 2 real roots; D = 0 means 1 repeated root; D < 0 means no real roots.'
+      },
+      {
+        term: 'Quadratic Formula',
+        academicDefinition: 'x = (-b ± √(b² - 4ac)) / (2a), derived by completing the square to solve any quadratic equation.',
+        simpleExplanation: 'A universal formula that finds the exact roots of any quadratic equation.',
+        example: 'Used when middle-term splitting is not obvious.',
+        importance: 'Guarantees exact solutions in algebra and projectile physics.'
+      }
+    ];
+  }
+
+  if (l.includes('french revolution')) {
+    return [
+      {
+        term: 'Ancien Régime & Three Estates',
+        academicDefinition: 'The pre-1789 French socio-political order dividing society into the First Estate (Clergy), Second Estate (Nobility), and Third Estate (Commoners, ~98% of population).',
+        simpleExplanation: 'An unfair class system where ordinary workers and peasants paid all the taxes while nobles and clergy paid almost none.',
+        example: 'The Taille (land tax) and Tithe fell heavily on the Third Estate.',
+        importance: 'Created deep economic resentment that sparked the 1789 revolution.'
+      },
+      {
+        term: 'Storming of the Bastille (14 July 1789)',
+        academicDefinition: 'The popular uprising in Paris that captured the royal fortress-prison of the Bastille, symbolizing the collapse of absolute monarchy.',
+        simpleExplanation: 'Angry citizens of Paris captured the king’s fortress, kicking off the French Revolution.',
+        example: 'Celebrated every year on July 14 as Bastille Day in France.',
+        importance: 'Marked the shift of sovereignty from King Louis XVI to the National Assembly.'
+      },
+      {
+        term: 'Declaration of the Rights of Man and Citizen (1789)',
+        academicDefinition: 'The foundational constitutional charter proclaiming that all citizens are born free and equal in rights, establishing liberty, property, and rule of law.',
+        simpleExplanation: 'A historic bill of rights declaring that governments must protect citizens’ freedom and equality.',
+        example: 'Inspired democratic constitutions across Europe and the world.',
+        importance: 'Replaced feudal privilege with modern human rights principles.'
       }
     ];
   }

@@ -1,0 +1,567 @@
+import React, { useEffect, useRef } from 'react';
+import * as THREE from 'three';
+import { WarOfWordsAudioManager } from './AudioManager';
+import { selectThreeTargets, validateWarOfWordsAnswer } from './questionBank';
+import {
+  AnswerOutcome,
+  GraphicsQuality,
+  OptionId,
+  WarriorCustomization,
+  WarWordQuestion,
+  WorldId
+} from './types';
+import {
+  AnswerSentinelRig,
+  buildAnswerSentinel,
+  buildShadowWarrior,
+  buildWorldEnvironment,
+  updateSentinelLabel
+} from './WarriorModels';
+
+export interface WarHudSnapshot {
+  selectedTargetIndex: number | null;
+  selectedOptionId: OptionId | null;
+  selectedOptionText: string | null;
+  inAttackRange: boolean;
+  playerX: number;
+  targets: Array<{ index: number; id: OptionId; text: string; x: number }>;
+}
+
+export interface WarOfWordsCanvasProps {
+  paused: boolean;
+  worldId: WorldId;
+  quality: GraphicsQuality;
+  customization: WarriorCustomization;
+  currentQuestion: WarWordQuestion;
+  audioManager: WarOfWordsAudioManager;
+  attackSignal: number;
+  selectNearestSignal: number;
+  specialSignal: number;
+  mobileInputRef: React.MutableRefObject<{
+    moveX: number;
+    jump: boolean;
+  }>;
+  onHudUpdate: (hud: WarHudSnapshot) => void;
+  onAnswerEvaluated: (outcome: AnswerOutcome) => void;
+  onSpecialPulse: () => void;
+  onPauseRequested: () => void;
+}
+
+interface Particle {
+  mesh: THREE.Mesh;
+  vel: THREE.Vector3;
+  life: number;
+  maxLife: number;
+}
+
+const TARGET_POSITIONS_X = [4, 13, 22];
+
+export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
+  paused,
+  worldId,
+  quality,
+  customization,
+  currentQuestion,
+  audioManager,
+  attackSignal,
+  selectNearestSignal,
+  specialSignal,
+  mobileInputRef,
+  onHudUpdate,
+  onAnswerEvaluated,
+  onSpecialPulse,
+  onPauseRequested
+}) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
+
+  const questionRef = useRef(currentQuestion);
+  questionRef.current = currentQuestion;
+
+  const callbacksRef = useRef({
+    onHudUpdate,
+    onAnswerEvaluated,
+    onSpecialPulse,
+    onPauseRequested
+  });
+  callbacksRef.current = {
+    onHudUpdate,
+    onAnswerEvaluated,
+    onSpecialPulse,
+    onPauseRequested
+  };
+
+  const sentinelsRef = useRef<AnswerSentinelRig[]>([]);
+  const evaluatedIdsRef = useRef<Set<string>>(new Set());
+  const triggerAttackRef = useRef<(() => void) | null>(null);
+  const triggerSelectNearestRef = useRef<(() => void) | null>(null);
+  const triggerSpecialRef = useRef<(() => void) | null>(null);
+  const resetPlayerForQuestionRef = useRef<(() => void) | null>(null);
+
+  // Sync new question options onto the 3 Answer Sentinels
+  useEffect(() => {
+    const sentinels = sentinelsRef.current;
+    if (sentinels.length !== 3) return;
+    const chosen = selectThreeTargets(currentQuestion);
+    sentinels.forEach((rig, idx) => {
+      const opt = chosen[idx] || { id: 'A' as OptionId, text: '...' };
+      rig.group.visible = true;
+      rig.group.scale.setScalar(1);
+      updateSentinelLabel(rig, opt.id, opt.text, false);
+    });
+    resetPlayerForQuestionRef.current?.();
+  }, [currentQuestion]);
+
+  useEffect(() => {
+    if (attackSignal > 0) triggerAttackRef.current?.();
+  }, [attackSignal]);
+
+  useEffect(() => {
+    if (selectNearestSignal > 0) triggerSelectNearestRef.current?.();
+  }, [selectNearestSignal]);
+
+  useEffect(() => {
+    if (specialSignal > 0) triggerSpecialRef.current?.();
+  }, [specialSignal]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const scene = new THREE.Scene();
+    const w = container.clientWidth || window.innerWidth;
+    const h = container.clientHeight || window.innerHeight;
+    const camera = new THREE.PerspectiveCamera(48, w / h, 0.2, 160);
+    camera.position.set(-4, 4.2, 13.5);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: quality !== 'low', powerPreference: 'high-performance' });
+    renderer.setSize(w, h);
+    const maxDpr = quality === 'high' ? 2 : quality === 'medium' ? 1.5 : 1;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxDpr));
+    renderer.shadowMap.enabled = quality !== 'low';
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    const env = buildWorldEnvironment(scene, worldId, quality);
+    scene.background = new THREE.Color(env.skyColor);
+    scene.fog = new THREE.FogExp2(env.fogColor, 0.022);
+
+    // Cinematic Blue Moonlight + Ambient
+    const ambient = new THREE.HemisphereLight('#93C5FD', '#0F172A', 0.72);
+    scene.add(ambient);
+
+    const moonLight = new THREE.DirectionalLight('#BAE6FD', 1.55);
+    moonLight.position.set(12, 22, 12);
+    moonLight.castShadow = quality !== 'low';
+    const shadowSize = quality === 'high' ? 1024 : 512;
+    moonLight.shadow.mapSize.width = shadowSize;
+    moonLight.shadow.mapSize.height = shadowSize;
+    moonLight.shadow.camera.left = -28;
+    moonLight.shadow.camera.right = 28;
+    moonLight.shadow.camera.top = 18;
+    moonLight.shadow.camera.bottom = -12;
+    scene.add(moonLight);
+
+    // Build Shadow Warrior
+    const warrior = buildShadowWarrior(customization);
+    warrior.root.position.set(-7, 0, 0);
+    scene.add(warrior.root);
+
+    // Build 3 Answer Sentinels
+    const sentinels = TARGET_POSITIONS_X.map((tx, idx) => {
+      const rig = buildAnswerSentinel(idx);
+      rig.group.position.set(tx, 0, 0);
+      scene.add(rig.group);
+      return rig;
+    });
+    sentinelsRef.current = sentinels;
+
+    // Initial options setup
+    const initOpts = selectThreeTargets(questionRef.current);
+    sentinels.forEach((rig, idx) => {
+      const opt = initOpts[idx];
+      if (opt) updateSentinelLabel(rig, opt.id, opt.text, false);
+    });
+
+    // Gameplay Physics & Animation State
+    let playerX = -7;
+    let playerY = 0;
+    let velX = 0;
+    let velY = 0;
+    let facing = 1; // 1 = right (+X), -1 = left (-X)
+    let isGrounded = true;
+    let selectedTargetIdx: number | null = null;
+    let attackAnimTimer = 0;
+    let blockedAnimTimer = 0;
+    let walkPhase = 0;
+    let footstepTimer = 0;
+    let hudTimer = 0;
+    const particles: Particle[] = [];
+    const keys: Record<string, boolean> = {};
+
+    const spawnBurst = (origin: THREE.Vector3, colorHex: string, count: number) => {
+      const actualCount = quality === 'low' ? Math.ceil(count / 2) : count;
+      const geo = new THREE.BoxGeometry(0.22, 0.22, 0.22);
+      const mat = new THREE.MeshBasicMaterial({ color: colorHex });
+      for (let i = 0; i < actualCount; i++) {
+        const m = new THREE.Mesh(geo, mat);
+        m.position.copy(origin);
+        scene.add(m);
+        particles.push({
+          mesh: m,
+          vel: new THREE.Vector3((Math.random() - 0.5) * 8, Math.random() * 6 + 1.5, (Math.random() - 0.5) * 6),
+          life: 0,
+          maxLife: 0.55 + Math.random() * 0.3
+        });
+      }
+    };
+
+    const getNearestSentinel = (): { index: number; dist: number } => {
+      let bestIdx = 0;
+      let bestDist = Infinity;
+      sentinels.forEach((s, idx) => {
+        if (!s.group.visible) return;
+        const d = Math.abs(s.group.position.x - playerX);
+        if (d < bestDist) {
+          bestDist = d;
+          bestIdx = idx;
+        }
+      });
+      return { index: bestIdx, dist: bestDist };
+    };
+
+    const selectTarget = (idx: number | null) => {
+      if (idx !== selectedTargetIdx) {
+        selectedTargetIdx = idx;
+        sentinels.forEach((rig, i) => {
+          updateSentinelLabel(rig, rig.optionId, rig.optionText, i === selectedTargetIdx);
+        });
+        if (idx !== null) {
+          audioManager.playTargetSelect();
+        }
+      }
+    };
+
+    resetPlayerForQuestionRef.current = () => {
+      playerX = -7;
+      playerY = 0;
+      velX = 0;
+      velY = 0;
+      facing = 1;
+      selectTarget(null);
+    };
+
+    triggerSelectNearestRef.current = () => {
+      if (pausedRef.current) return;
+      audioManager.unlock();
+      const nearest = getNearestSentinel();
+      if (nearest.dist <= 6.5) {
+        selectTarget(nearest.index);
+      }
+    };
+
+    triggerSpecialRef.current = () => {
+      if (pausedRef.current) return;
+      audioManager.unlock();
+      audioManager.playMagicAttack();
+      spawnBurst(new THREE.Vector3(playerX, playerY + 1.4, 0), customization.glowColor, 14);
+      callbacksRef.current.onSpecialPulse();
+    };
+
+    triggerAttackRef.current = () => {
+      if (pausedRef.current) return;
+      audioManager.unlock();
+
+      const nearest = getNearestSentinel();
+      const targetIdx = selectedTargetIdx !== null ? selectedTargetIdx : nearest.index;
+      const targetSentinel = sentinels[targetIdx];
+      if (!targetSentinel || !targetSentinel.group.visible) return;
+
+      const dist = Math.abs(targetSentinel.group.position.x - playerX);
+      if (dist > 3.9) {
+        // Must approach within attack range!
+        selectTarget(targetIdx);
+        return;
+      }
+
+      const q = questionRef.current;
+      const validation = validateWarOfWordsAnswer(q, targetSentinel.optionId, evaluatedIdsRef.current);
+      if (!validation.accepted) return; // Duplicate-attack guard
+
+      attackAnimTimer = 0.42;
+      audioManager.playMagicAttack();
+
+      const impactPos = targetSentinel.group.position.clone().add(new THREE.Vector3(0, 1.4, 0));
+
+      if (validation.isCorrect) {
+        audioManager.playCorrectAnswer();
+        spawnBurst(impactPos, customization.glowColor, 20);
+        targetSentinel.group.visible = false;
+      } else {
+        blockedAnimTimer = 0.45;
+        velX = -facing * 6;
+        audioManager.playShieldBlock();
+        spawnBurst(impactPos, '#F59E0B', 14);
+      }
+
+      callbacksRef.current.onAnswerEvaluated({
+        questionId: q.id,
+        selectedOptionId: targetSentinel.optionId,
+        correctOptionId: q.correctOptionId,
+        isCorrect: validation.isCorrect,
+        pointsAwarded: validation.pointsAwarded,
+        question: q
+      });
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      keys[e.code] = true;
+      if (e.code === 'Escape') {
+        callbacksRef.current.onPauseRequested();
+        return;
+      }
+      if (pausedRef.current) return;
+      audioManager.unlock();
+
+      if (e.code === 'Space' && isGrounded) {
+        velY = 10.6;
+        isGrounded = false;
+        audioManager.playJump();
+      }
+      if (e.code === 'KeyE') {
+        triggerSelectNearestRef.current?.();
+      }
+      if (e.code === 'KeyQ') {
+        triggerSpecialRef.current?.();
+      }
+    };
+
+    const onKeyUp = (e: KeyboardEvent) => {
+      keys[e.code] = false;
+    };
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (pausedRef.current) return;
+      if (e.button === 0) {
+        triggerAttackRef.current?.();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    renderer.domElement.addEventListener('mousedown', onMouseDown);
+
+    const resizeObs = new ResizeObserver(() => {
+      if (!container) return;
+      const cw = container.clientWidth || window.innerWidth;
+      const ch = container.clientHeight || window.innerHeight;
+      camera.aspect = cw / ch;
+      camera.updateProjectionMatrix();
+      renderer.setSize(cw, ch);
+    });
+    resizeObs.observe(container);
+
+    let animId = 0;
+    let lastTime = performance.now();
+
+    const animate = (now: number) => {
+      animId = requestAnimationFrame(animate);
+      const dt = Math.min(0.05, (now - lastTime) / 1000);
+      lastTime = now;
+
+      if (!pausedRef.current) {
+        // 1. Horizontal Movement with Smooth Acceleration & Deceleration
+        let inputX = 0;
+        if (keys['KeyD'] || keys['ArrowRight']) inputX += 1;
+        if (keys['KeyA'] || keys['ArrowLeft']) inputX -= 1;
+        if (Math.abs(mobileInputRef.current.moveX) > 0.1) {
+          inputX += mobileInputRef.current.moveX;
+        }
+        if (mobileInputRef.current.jump && isGrounded) {
+          velY = 10.6;
+          isGrounded = false;
+          mobileInputRef.current.jump = false;
+          audioManager.playJump();
+        }
+
+        const sprinting = keys['ShiftLeft'] || keys['ShiftRight'];
+        const maxSpeed = sprinting ? 11.2 : 7.8;
+        const targetVelX = THREE.MathUtils.clamp(inputX, -1, 1) * maxSpeed;
+        const accel = Math.abs(targetVelX) > 0.1 ? 38 : 28;
+        velX = THREE.MathUtils.lerp(velX, targetVelX, 1 - Math.exp(-accel * dt));
+
+        let nextX = THREE.MathUtils.clamp(playerX + velX * dt, -14, 30);
+
+        // Prevent passing through Sentinel cores (soft separation)
+        for (const s of sentinels) {
+          if (!s.group.visible) continue;
+          const dx = nextX - s.group.position.x;
+          if (Math.abs(dx) < 0.95 && playerY < 2.2) {
+            nextX = s.group.position.x + (dx >= 0 ? 0.95 : -0.95);
+          }
+        }
+        playerX = nextX;
+
+        if (Math.abs(inputX) > 0.1) {
+          facing = inputX > 0 ? 1 : -1;
+        }
+
+        // 2. Vertical Gravity & Platform Collision
+        const prevY = playerY;
+        velY -= 25 * dt;
+        playerY += velY * dt;
+
+        let landed = false;
+        // Raised stone platforms
+        for (const plat of env.platforms) {
+          if (
+            playerX >= plat.minX - 0.3 &&
+            playerX <= plat.maxX + 0.3 &&
+            prevY >= plat.topY - 0.15 &&
+            playerY <= plat.topY &&
+            velY <= 0
+          ) {
+            playerY = plat.topY;
+            velY = 0;
+            landed = true;
+            break;
+          }
+        }
+        // Ground plane
+        if (playerY <= 0) {
+          playerY = 0;
+          velY = 0;
+          landed = true;
+        }
+        if (landed && !isGrounded) {
+          audioManager.playLand();
+        }
+        isGrounded = landed;
+
+        // 3. Warrior Model Transform & Event-Driven Animations
+        warrior.root.position.set(playerX, playerY, 0);
+        warrior.root.rotation.y = facing > 0 ? 0 : Math.PI;
+
+        const speedAbs = Math.abs(velX);
+        if (speedAbs > 0.6 && isGrounded) {
+          walkPhase += dt * (sprinting ? 14 : 9.5);
+          footstepTimer -= dt;
+          if (footstepTimer <= 0) {
+            footstepTimer = sprinting ? 0.24 : 0.36;
+            audioManager.playFootstep();
+          }
+        } else {
+          walkPhase = 0;
+        }
+
+        const swing = speedAbs > 0.6 && isGrounded ? Math.sin(walkPhase) * 0.72 : 0;
+        warrior.leftLeg.rotation.z = swing;
+        warrior.rightLeg.rotation.z = -swing;
+        warrior.leftArm.rotation.z = -swing * 0.7;
+
+        if (attackAnimTimer > 0) {
+          attackAnimTimer -= dt;
+          warrior.rightArm.rotation.z = 1.45;
+          warrior.bodyPivot.rotation.z = -0.18;
+        } else if (blockedAnimTimer > 0) {
+          blockedAnimTimer -= dt;
+          warrior.bodyPivot.rotation.z = 0.2;
+        } else {
+          warrior.rightArm.rotation.z = swing * 0.7;
+          warrior.bodyPivot.rotation.z = !isGrounded ? -0.08 : 0;
+        }
+        warrior.cloak.rotation.z = -0.18 - Math.min(0.45, speedAbs * 0.04);
+
+        // 4. Sentinels Idle Bob & Proximity Auto-Highlight
+        const nearest = getNearestSentinel();
+        if (nearest.dist <= 3.9) {
+          selectTarget(nearest.index);
+        } else if (selectedTargetIdx !== null && Math.abs(sentinels[selectedTargetIdx].group.position.x - playerX) > 6.5) {
+          selectTarget(null);
+        }
+
+        sentinels.forEach((s, idx) => {
+          s.body.rotation.y += dt * 0.9;
+          s.ring.rotation.z += dt * (idx === selectedTargetIdx ? 2.2 : 0.6);
+        });
+
+        // 5. Torch Flicker & Particles
+        env.torchLights.forEach((tl, i) => {
+          tl.intensity = 2.2 + Math.sin(now * 0.01 + i * 2) * 0.35;
+        });
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.life += dt;
+          if (p.life >= p.maxLife) {
+            scene.remove(p.mesh);
+            particles.splice(i, 1);
+          } else {
+            p.vel.y -= 12 * dt;
+            p.mesh.position.addScaledVector(p.vel, dt);
+            p.mesh.scale.setScalar(Math.max(0.05, 1 - p.life / p.maxLife));
+          }
+        }
+
+        // 6. Smooth Side-Follow Camera
+        const targetCamX = playerX + facing * 3.5;
+        const targetCamY = Math.max(3.8, playerY + 3.6);
+        camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetCamX, 1 - Math.exp(-6 * dt));
+        camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetCamY, 1 - Math.exp(-6 * dt));
+        camera.lookAt(camera.position.x + facing * 1.2, playerY + 1.8, 0);
+
+        // 7. Throttled HUD Sync
+        hudTimer += dt;
+        if (hudTimer >= 0.08) {
+          hudTimer = 0;
+          const sel = selectedTargetIdx !== null ? sentinels[selectedTargetIdx] : null;
+          const inRange = sel ? Math.abs(sel.group.position.x - playerX) <= 3.9 : false;
+          callbacksRef.current.onHudUpdate({
+            selectedTargetIndex: selectedTargetIdx,
+            selectedOptionId: sel ? sel.optionId : null,
+            selectedOptionText: sel ? sel.optionText : null,
+            inAttackRange: inRange,
+            playerX,
+            targets: sentinels.map((s, idx) => ({
+              index: idx,
+              id: s.optionId,
+              text: s.optionText,
+              x: s.group.position.x
+            }))
+          });
+        }
+      }
+
+      renderer.render(scene, camera);
+    };
+
+    animId = requestAnimationFrame(animate);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      resizeObs.disconnect();
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      renderer.domElement.removeEventListener('mousedown', onMouseDown);
+      renderer.dispose();
+      if (renderer.domElement.parentNode === container) {
+        container.removeChild(renderer.domElement);
+      }
+      sentinelsRef.current = [];
+    };
+  }, [worldId, quality, customization, audioManager, mobileInputRef]);
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+        touchAction: 'none'
+      }}
+    />
+  );
+};

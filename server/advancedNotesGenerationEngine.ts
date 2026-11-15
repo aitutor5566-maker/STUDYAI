@@ -27,6 +27,7 @@ import { getSubtopicDiagramsForTopic, type SubtopicDiagramItem } from './subtopi
 import { getDetailedScientificAsset, SCIENTIFIC_VECTOR_REGISTRY } from './scientificVectorLibrary.ts';
 import { StudyAiPersonalTeacherEngine, type NumericalSolution } from './studyAiPersonalTeacherEngine.ts';
 import { responseValidationLayer } from './responseValidationLayer.ts';
+import { centralAiOrchestrator } from './centralAiOrchestrator.ts';
 
 export interface NotesGenerationRequest {
   topic: string;
@@ -196,7 +197,11 @@ export function validateAcademicNotebook(note: any): { isValid: boolean; errors:
     'Transmission Vector',
     'Initial Activation',
     'Transformation Cascade',
-    'Terminal Equilibrium'
+    'Terminal Equilibrium',
+    'Primary Operational Unit',
+    'Structural Blueprint & Input Elements',
+    'Step-by-Step Dynamic Working Mechanism',
+    'governing mechanism wherein specific structural inputs'
   ];
 
   const fullText = JSON.stringify(note).toLowerCase();
@@ -312,6 +317,96 @@ export class AdvancedNotesGenerationEngine {
       board: resolvedBoard,
       studentName: req.studentName || 'Student'
     });
+
+    // 4b. If workflow used generic fallback templates (novel/uncached topic), synthesize genuine AI teaching content
+    const wfText = JSON.stringify(workflow);
+    const isGenericFallback =
+      wfText.includes('Primary Operational Unit') ||
+      wfText.includes('Structural Blueprint & Input Elements') ||
+      wfText.includes('governing mechanism wherein specific structural inputs') ||
+      (workflow.stage5_mainConceptsAndSubtopics || []).length < 3;
+
+    if (isGenericFallback) {
+      try {
+        const aiPrompt = `You are an expert ${resolvedBoard} Class ${resolvedGrade} ${resolvedSubject} teacher.
+Create a thorough, accurate, student-friendly teaching lesson on "${cleanTopic}".
+Respond ONLY with valid JSON matching this exact structure (no markdown fences):
+{
+  "definitions": [
+    { "term": "string", "formalDefinition": "string", "simpleMeaning": "string", "everydayAnalogy": "string" }
+  ],
+  "keyPoints": ["string", "string", "string", "string"],
+  "subtopics": [
+    {
+      "name": "string (specific subtopic of ${cleanTopic})",
+      "whatItIs": "string (clear 2-3 sentence explanation)",
+      "howItWorks": "string (step-by-step mechanism or rule)",
+      "structureOrComponents": "string (key parts, formulas, or historical actors)",
+      "whyItIsImportant": "string (real-world & exam significance)"
+    }
+  ],
+  "misconceptions": ["string", "string"],
+  "examQuestions": [
+    { "question": "string", "marks": 3, "modelAnswer": "string" }
+  ]
+}
+Provide at least 3 definitions, 4 keyPoints, 3 subtopics, 2 misconceptions, and 2 examQuestions. Never use generic filler.`;
+
+        const aiRes = await centralAiOrchestrator.execute({
+          taskType: 'STRUCTURED_NOTES',
+          topic: cleanTopic,
+          subject: resolvedSubject,
+          grade: resolvedGrade,
+          board: resolvedBoard,
+          language: resolvedLang === 'te' ? 'Telugu' : resolvedLang === 'hi' ? 'Hindi' : 'English',
+          prompt: aiPrompt,
+          timeoutMs: 22000
+        });
+
+        const rawJson = (aiRes.text || '').replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+        const firstBrace = rawJson.indexOf('{');
+        const lastBrace = rawJson.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace > firstBrace) {
+          const parsed = JSON.parse(rawJson.slice(firstBrace, lastBrace + 1));
+          if (Array.isArray(parsed.definitions) && parsed.definitions.length >= 2) {
+            workflow.stage3_coreDefinitions = parsed.definitions.map((d: any) => ({
+              term: String(d.term || cleanTopic),
+              formalDefinition: String(d.formalDefinition || ''),
+              simpleMeaning: String(d.simpleMeaning || d.formalDefinition || ''),
+              everydayAnalogy: String(d.everydayAnalogy || '')
+            }));
+          }
+          if (Array.isArray(parsed.keyPoints) && parsed.keyPoints.length >= 2) {
+            workflow.stage4_keyPoints = parsed.keyPoints.map((k: any) => String(k));
+          }
+          if (Array.isArray(parsed.subtopics) && parsed.subtopics.length >= 3) {
+            workflow.stage5_mainConceptsAndSubtopics = parsed.subtopics.map((s: any, i: number) => ({
+              id: `ai-sub-${i + 1}`,
+              name: String(s.name || `${cleanTopic} Concept ${i + 1}`),
+              whatItIs: String(s.whatItIs || ''),
+              howItWorks: String(s.howItWorks || ''),
+              structureOrComponents: String(s.structureOrComponents || ''),
+              whyItIsImportant: String(s.whyItIsImportant || ''),
+              characteristics: [],
+              importance: String(s.whyItIsImportant || '')
+            }));
+          }
+          if (Array.isArray(parsed.misconceptions) && parsed.misconceptions.length >= 1) {
+            workflow.stage10_commonMistakesAndMisconceptions = parsed.misconceptions.map((m: any) => String(m));
+          }
+          if (Array.isArray(parsed.examQuestions) && parsed.examQuestions.length >= 1) {
+            workflow.stage9_examQuestions = parsed.examQuestions.map((q: any) => ({
+              question: String(q.question || ''),
+              marks: Number(q.marks) || 3,
+              modelAnswer: String(q.modelAnswer || ''),
+              boardTip: `Class ${resolvedGrade} ${resolvedBoard} standard expectation`
+            }));
+          }
+        }
+      } catch (aiErr: any) {
+        console.warn('[NOTES_ENGINE] AI enrichment fallback notice:', aiErr?.message);
+      }
+    }
 
     // 5. Retrieve Dedicated Multi-Diagram Subtopic Assets
     const subtopicDiagramDefs = getSubtopicDiagramsForTopic(cleanTopic, resolvedSubject);
