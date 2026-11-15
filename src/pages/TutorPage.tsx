@@ -39,7 +39,7 @@ import {
   ThumbsDown,
   RefreshCw
 } from 'lucide-react';
-import { TopBrandBar } from '../components/GlassNav';
+import { ThreeGameSelectorPanel } from '../components/games/ThreeGameSelectorPanel';
 import { Interactive3DViewer } from '../components/Interactive3DLab';
 import { FuturisticIcon } from '../components/FuturisticIcons';
 import { useLearning } from '../context/LearningContext';
@@ -334,6 +334,9 @@ export const TutorPage: React.FC = () => {
   const [conversations, setConversations] = useState<any[]>([]);
   const [activeConvId, setActiveConvId] = useState<string>('');
   const [showSavedChatsDrawer, setShowSavedChatsDrawer] = useState<boolean>(false);
+  const [showLessonSettings, setShowLessonSettings] = useState<boolean>(false);
+  const [showTutorGamePanel, setShowTutorGamePanel] = useState<boolean>(false);
+  const [tutorGameTopic, setTutorGameTopic] = useState<string>('');
   const [messages, setMessages] = useState<any[]>([]);
   const [questionInput, setQuestionInput] = useState<string>('');
   const [attachmentNote, setAttachmentNote] = useState<string>('');
@@ -1036,19 +1039,26 @@ export const TutorPage: React.FC = () => {
   const suggestedList = getSuggestedQuestions(grade, language);
 
   return (
-    <div className="studyai-container">
-      <TopBrandBar showBack />
-
-      {/* Main AI Tutor Studio Header & Status */}
-      <section style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+    <div className="studyai-container" style={{ paddingTop: 10 }}>
+      {/* Compact AI Tutor Header */}
+      <section
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 8,
+          marginBottom: 8
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
           <div
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 11,
+              width: 30,
+              height: 30,
+              borderRadius: 9,
               background: '#FFF3E8',
-              border: '1px solid rgba(255, 106, 0, 0.24)',
+              border: '1px solid rgba(255, 106, 0, 0.25)',
               color: '#FF6A00',
               display: 'flex',
               alignItems: 'center',
@@ -1057,59 +1067,37 @@ export const TutorPage: React.FC = () => {
             }}
             aria-hidden="true"
           >
-            <Sparkles size={18} />
+            <Sparkles size={15} />
           </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary, #202124)', margin: 0 }}>AI Tutor</h1>
-              <span
-                style={{
-                  fontSize: '0.68rem',
-                  fontWeight: 800,
-                  padding: '2px 8px',
-                  borderRadius: 999,
-                  background: 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)',
-                  color: '#FFFFFF'
-                }}
-              >
-                Hybrid AI • Qwen 2.5 + Cloud
-              </span>
-            </div>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #6B7280)', margin: '2px 0 0 0' }}>
-              Grades 1–10 • English, Telugu &amp; Hindi • Diagrams &amp; Voice
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <h1 style={{ fontSize: '1.08rem', fontWeight: 900, color: 'var(--text-primary, #202124)', margin: 0 }}>
+              AI Tutor
+            </h1>
+            <span
+              style={{
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                padding: '2px 8px',
+                borderRadius: 999,
+                background: '#FFF7ED',
+                color: '#C2410C',
+                border: '1px solid rgba(255, 106, 0, 0.22)'
+              }}
+            >
+              Grade {grade} • {subject}
+            </span>
           </div>
         </div>
 
-        {/* Backend & Model Status Indicator */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div
-            title="Local Ollama Qwen2.5:7b Connection Status"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              background: '#F0FDF4',
-              border: '1px solid #BBF7D0',
-              padding: '6px 14px',
-              borderRadius: 999,
-              fontSize: '0.76rem',
-              fontWeight: 700,
-              color: '#15803D'
-            }}
-          >
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22C55E', display: 'inline-block' }} />
-            <span>AI Tutor: Local &amp; Private</span>
-          </div>
-
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           <button
             type="button"
             onClick={() => setShowSavedChatsDrawer(true)}
             title="Browse past conversations and saved study sessions"
             className="btn-glass"
-            style={{ fontSize: '0.78rem', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: 6 }}
+            style={{ fontSize: '0.75rem', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 5 }}
           >
-            <Folder size={14} color="#FF6A00" />
+            <Folder size={13} color="#FF6A00" />
             <span>Saved Chats ({conversations.length})</span>
           </button>
 
@@ -1118,63 +1106,57 @@ export const TutorPage: React.FC = () => {
             onClick={handleResetConversation}
             title="Start a clean, fresh AI Tutor chat"
             className="btn-glass"
-            style={{ fontSize: '0.78rem', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: 6 }}
+            style={{ fontSize: '0.75rem', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 5 }}
           >
-            <Plus size={14} color="#FF6A00" />
+            <Plus size={13} color="#FF6A00" />
             <span>New Chat</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowLessonSettings((prev) => !prev)}
+            aria-expanded={showLessonSettings}
+            className="btn-glass"
+            style={{
+              fontSize: '0.75rem',
+              padding: '5px 10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              borderColor: showLessonSettings ? '#FF6A00' : undefined,
+              color: showLessonSettings ? '#EA580C' : undefined
+            }}
+          >
+            <Sliders size={13} color="#FF6A00" />
+            <span>Settings</span>
           </button>
         </div>
       </section>
 
-      {/* =========================================================================
-          PERMANENT TOP-LEVEL LEARNING MODE SELECTOR (PART 2 MANDATORY REQUIREMENT)
-          Visually prominent, responsive, accessible at all times while scrolling
-          ========================================================================= */}
-      <section className="tutor-mode-selector-wrap">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-          <div
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: 12,
-              background: teachingMode === 'normal'
-                ? 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)'
-                : 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#FFFFFF',
-              boxShadow: teachingMode === 'normal' ? '0 4px 14px rgba(255, 106, 0, 0.35)' : '0 4px 14px rgba(2, 132, 199, 0.35)',
-              fontSize: '1.2rem',
-              flexShrink: 0
-            }}
-          >
-            {teachingMode === 'normal' ? '✨' : '⚡'}
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em', color: teachingMode === 'normal' ? '#EA580C' : '#0284C7' }}>
-              TEACHING MODE
-            </div>
-            <div style={{ fontSize: '0.92rem', fontWeight: 900, color: '#1F2937', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {teachingMode === 'normal'
-                ? 'Normal Mode (Concepts & Visuals)'
-                : 'Exam Prep (Definitions & Practice)'}
-            </div>
-          </div>
-        </div>
-
-        {/* PROMINENT SEGMENTED CONTROL */}
+      {/* Always-Visible Compact Teaching Controls */}
+      <section
+        className="glass-card"
+        style={{
+          padding: '8px 12px',
+          marginBottom: 10,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 8,
+          border: '1px solid rgba(255, 106, 0, 0.22)'
+        }}
+      >
+        {/* Normal / Exam Mode */}
         <div
           role="tablist"
-          aria-label="Teaching Mode Selector"
-          className="tutor-mode-tablist"
+          aria-label="Tutor Teaching Mode"
           style={{
             display: 'flex',
-            background: '#FFF3E8',
+            background: '#F1F5F9',
             padding: 3,
             borderRadius: 999,
-            border: '1.5px solid rgba(255, 106, 0, 0.35)',
-            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.04)'
+            border: '1px solid #E2E8F0'
           }}
         >
           <button
@@ -1185,33 +1167,20 @@ export const TutorPage: React.FC = () => {
               if (teachingMode === 'normal') return;
               setTeachingMode('normal');
               setMode('simple');
-              setActionToast('Switched to NORMAL LEARNING MODE: Simple language, teacher-style explanations & visual diagrams.');
-              setTimeout(() => setActionToast(''), 3500);
             }}
             style={{
-              padding: '8px 16px',
+              padding: '5px 12px',
               borderRadius: 999,
               border: 'none',
-              background: teachingMode === 'normal'
-                ? 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)'
-                : 'transparent',
-              color: teachingMode === 'normal' ? '#FFFFFF' : '#6B7280',
+              background: teachingMode === 'normal' ? 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)' : 'transparent',
+              color: teachingMode === 'normal' ? '#FFFFFF' : '#475569',
               fontWeight: 800,
-              fontSize: '0.82rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              boxShadow: teachingMode === 'normal' ? '0 4px 12px rgba(255,106,0,0.35)' : 'none',
-              transition: 'all 0.2s ease',
-              flex: '1 1 0',
-              justifyContent: 'center'
+              fontSize: '0.76rem',
+              cursor: 'pointer'
             }}
           >
-            <span>✨</span>
-            <span>Normal Mode</span>
+            ✨ Normal
           </button>
-
           <button
             type="button"
             role="tab"
@@ -1220,58 +1189,54 @@ export const TutorPage: React.FC = () => {
               if (teachingMode === 'exam') return;
               setTeachingMode('exam');
               setMode('detailed');
-              setActionToast('Switched to EXAM PREPARATION MODE: Formal definitions, scientific symbols & model answer guidance.');
-              setTimeout(() => setActionToast(''), 3500);
             }}
             style={{
-              padding: '8px 16px',
+              padding: '5px 12px',
               borderRadius: 999,
               border: 'none',
-              background: teachingMode === 'exam'
-                ? 'linear-gradient(135deg, #FF6A00 0%, #E85D00 100%)'
-                : 'transparent',
-              color: teachingMode === 'exam' ? '#FFFFFF' : '#6B7280',
+              background: teachingMode === 'exam' ? 'linear-gradient(135deg, #FF6A00 0%, #E85D00 100%)' : 'transparent',
+              color: teachingMode === 'exam' ? '#FFFFFF' : '#475569',
               fontWeight: 800,
-              fontSize: '0.82rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              boxShadow: teachingMode === 'exam' ? '0 6px 16px rgba(255,106,0,0.32)' : 'none',
-              transition: 'all 0.2s ease',
-              flex: '1 1 0',
-              justifyContent: 'center'
+              fontSize: '0.76rem',
+              cursor: 'pointer'
             }}
           >
-            <span>⚡</span>
-            <span>Exam Mode</span>
+            ⚡ Exam
           </button>
         </div>
 
-        {/* Action Shortcuts */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={() => setShowAdaptiveModal(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '7px 14px',
-              borderRadius: 999,
-              background: '#FFFFFF',
-              border: '1.5px solid rgba(255, 106, 0, 0.35)',
-              color: '#E85D00',
-              fontWeight: 800,
-              fontSize: '0.78rem',
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(255, 106, 0, 0.1)'
-            }}
-          >
-            <Sliders size={14} color="#FF6A00" />
-            <span>Profile</span>
-          </button>
+        {/* Compact Language Selector */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#F8FAFC', padding: 3, borderRadius: 999, border: '1px solid #E2E8F0' }}>
+          {(
+            [
+              { id: 'English', label: 'EN' },
+              { id: 'Telugu', label: 'తె' },
+              { id: 'Hindi', label: 'हि' }
+            ] as const
+          ).map((l) => (
+            <button
+              key={l.id}
+              type="button"
+              onClick={() => setLanguage(l.id)}
+              title={l.id}
+              style={{
+                padding: '4px 9px',
+                borderRadius: 999,
+                border: 'none',
+                background: language === l.id ? '#0F172A' : 'transparent',
+                color: language === l.id ? '#FFFFFF' : '#475569',
+                fontSize: '0.74rem',
+                fontWeight: 800,
+                cursor: 'pointer'
+              }}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
 
+        {/* Voice Lesson & Play a Game on This Topic */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           <button
             type="button"
             onClick={() => {
@@ -1286,235 +1251,229 @@ export const TutorPage: React.FC = () => {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
-              padding: '7px 14px',
+              gap: 5,
+              padding: '6px 12px',
               borderRadius: 999,
               border: 'none',
               background: 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)',
               color: '#FFFFFF',
               fontWeight: 800,
-              fontSize: '0.78rem',
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(255, 106, 0, 0.35)'
+              fontSize: '0.75rem',
+              cursor: 'pointer'
             }}
           >
-            <Mic size={14} color="#FFFFFF" />
+            <Mic size={13} color="#FFFFFF" />
             <span>Voice Lesson</span>
           </button>
-        </div>
-      </section>
-
-      {/* Multilingual, Multi-Grade & Pedagogical Controls Bar */}
-      <section
-        className="glass-card"
-        style={{
-          padding: '12px 18px',
-          marginBottom: 16,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 12,
-          border: '1.5px solid rgba(255, 106, 0, 0.25)'
-        }}
-      >
-        {/* Explanation Depth Selector */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Sparkles size={16} color="#FF6A00" />
-          <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#202124' }}>Depth:</span>
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.9)', padding: 3, borderRadius: 999, border: '1px solid rgba(255,106,0,0.2)' }}>
-            {(
-              [
-                { id: 'concise', label: '⚡ Concise' },
-                { id: 'balanced', label: '⚖️ Balanced' },
-                { id: 'detailed', label: '🔍 Detailed' }
-              ] as const
-            ).map((len) => (
-              <button
-                key={len.id}
-                type="button"
-                onClick={() => {
-                  setExplanationLength(len.id);
-                  setActionToast(`Explanation depth set to: ${len.label}`);
-                  setTimeout(() => setActionToast(''), 3000);
-                }}
-                style={{
-                  border: 'none',
-                  padding: '4px 12px',
-                  borderRadius: 999,
-                  background: explanationLength === len.id ? 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)' : 'transparent',
-                  color: explanationLength === len.id ? '#FFFFFF' : '#4B5563',
-                  fontWeight: 700,
-                  fontSize: '0.76rem',
-                  cursor: 'pointer'
-                }}
-              >
-                {len.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        {/* 1. Language Selector (English, Telugu, Hindi) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Globe size={16} color="#FF6A00" />
-          <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#202124' }}>Language:</span>
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.9)', padding: 3, borderRadius: 999, border: '1px solid rgba(255,106,0,0.2)' }}>
-            {(
-              [
-                { id: 'English', label: 'English' },
-                { id: 'Telugu', label: 'తెలుగు' },
-                { id: 'Hindi', label: 'हिंदी' }
-              ] as const
-            ).map((l) => (
-              <button
-                key={l.id}
-                type="button"
-                onClick={() => setLanguage(l.id)}
-                style={{
-                  padding: '5px 12px',
-                  borderRadius: 999,
-                  border: 'none',
-                  background: language === l.id ? 'linear-gradient(135deg, #FF6A00 0%, #EA580C 100%)' : 'transparent',
-                  color: language === l.id ? '#FFFFFF' : '#4B5563',
-                  fontSize: '0.78rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {l.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 2. Grade Selector (Grades 1 to 10) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <GraduationCap size={16} color="#FF6A00" />
-          <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#202124' }}>Grade:</span>
-          <select
-            aria-label="Select School Grade"
-            value={grade}
-            onChange={(e) => setGrade(parseInt(e.target.value, 10))}
-            style={{
-              padding: '6px 12px',
-              borderRadius: 999,
-              border: '1.5px solid rgba(255, 106, 0, 0.35)',
-              background: '#FFFFFF',
-              fontSize: '0.82rem',
-              fontWeight: 800,
-              color: '#202124',
-              cursor: 'pointer'
-            }}
-          >
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((g) => (
-              <option key={g} value={g}>
-                Grade {g}
-              </option>
-            ))}
-          </select>
-          <span
-            style={{
-              fontSize: '0.73rem',
-              fontWeight: 700,
-              color: '#EA580C',
-              background: '#FFF7ED',
-              padding: '3px 8px',
-              borderRadius: 999,
-              border: '1px solid rgba(255, 106, 0, 0.2)'
-            }}
-          >
-            {gradeBand.band}
-          </span>
-        </div>
-
-        {/* 3. Subject Selector */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <BookOpen size={16} color="#FF6A00" />
-          <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#202124' }}>Subject:</span>
-          <select
-            aria-label="Select Subject"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            style={{
-              padding: '6px 12px',
-              borderRadius: 999,
-              border: '1.5px solid rgba(255, 106, 0, 0.35)',
-              background: '#FFFFFF',
-              fontSize: '0.82rem',
-              fontWeight: 800,
-              color: '#202124',
-              cursor: 'pointer'
-            }}
-          >
-            {['Science', 'Maths', 'English', 'Telugu', 'Hindi', 'Social Studies', 'Computer Science'].map((sub) => (
-              <option key={sub} value={sub}>
-                {sub}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* 4. Teaching Depth & Stream Toggles */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.9)', padding: 3, borderRadius: 999, border: '1px solid rgba(255,106,0,0.2)' }}>
-            {[
-              { id: 'simple', label: '🌿 Conceptual' },
-              { id: 'detailed', label: '🎯 Exam Depth' }
-            ].map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => {
-                  setMode(m.id as any);
-                  if (m.id === 'detailed') {
-                    setTeachingMode('exam');
-                    setActionToast('Switched to EXAM PREPARATION MODE');
-                  } else {
-                    setTeachingMode('normal');
-                    setActionToast('Switched to NORMAL LEARNING MODE');
-                  }
-                  setTimeout(() => setActionToast(''), 3000);
-                }}
-                style={{
-                  padding: '5px 12px',
-                  borderRadius: 999,
-                  border: 'none',
-                  background: mode === m.id ? '#FF6A00' : 'transparent',
-                  color: mode === m.id ? '#FFFFFF' : '#6B7280',
-                  fontSize: '0.76rem',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                {m.label}
-              </button>
-            ))}
-          </div>
 
           <button
             type="button"
-            onClick={() => setStreamingMode(!streamingMode)}
-            title="Toggle Live SSE Token Streaming"
+            onClick={() => {
+              setTutorGameTopic(activeTopic || 'General Knowledge');
+              setShowTutorGamePanel((prev) => !prev);
+            }}
             style={{
-              padding: '5px 12px',
-              borderRadius: 999,
-              border: '1px solid rgba(255, 106, 0, 0.3)',
-              background: streamingMode ? '#FFF7ED' : '#FFFFFF',
-              color: streamingMode ? '#EA580C' : '#6B7280',
-              fontSize: '0.76rem',
-              fontWeight: 800,
-              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: 4
+              gap: 5,
+              padding: '6px 12px',
+              borderRadius: 999,
+              border: '1px solid #0284C7',
+              background: showTutorGamePanel ? '#0284C7' : '#EFF6FF',
+              color: showTutorGamePanel ? '#FFFFFF' : '#0369A1',
+              fontWeight: 800,
+              fontSize: '0.75rem',
+              cursor: 'pointer'
             }}
           >
-            <Radio size={12} color={streamingMode ? '#FF6A00' : '#9CA3AF'} />
-            <span>{streamingMode ? 'Live Stream' : 'Studio Mode'}</span>
+            <Gamepad2 size={13} />
+            <span>Play a Game on This Topic</span>
           </button>
         </div>
       </section>
+
+      {/* Collapsible Lesson Settings Panel */}
+      {showLessonSettings && (
+        <section
+          className="glass-card"
+          style={{
+            padding: '12px 14px',
+            marginBottom: 12,
+            borderRadius: 16,
+            border: '1px solid rgba(255, 106, 0, 0.25)',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: 12
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#334155' }}>Depth:</span>
+            <div style={{ display: 'flex', background: '#F8FAFC', padding: 2, borderRadius: 999, border: '1px solid #E2E8F0' }}>
+              {(
+                [
+                  { id: 'concise', label: 'Concise' },
+                  { id: 'balanced', label: 'Balanced' },
+                  { id: 'detailed', label: 'Detailed' }
+                ] as const
+              ).map((len) => (
+                <button
+                  key={len.id}
+                  type="button"
+                  onClick={() => setExplanationLength(len.id)}
+                  style={{
+                    border: 'none',
+                    padding: '4px 10px',
+                    borderRadius: 999,
+                    background: explanationLength === len.id ? '#FF6A00' : 'transparent',
+                    color: explanationLength === len.id ? '#FFFFFF' : '#475569',
+                    fontWeight: 700,
+                    fontSize: '0.73rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {len.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#334155' }}>Grade:</span>
+            <select
+              aria-label="Select School Grade"
+              value={grade}
+              onChange={(e) => setGrade(parseInt(e.target.value, 10))}
+              style={{ padding: '4px 10px', borderRadius: 999, border: '1px solid #CBD5E1', background: '#FFFFFF', fontSize: '0.76rem', fontWeight: 700 }}
+            >
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((g) => (
+                <option key={g} value={g}>
+                  Grade {g}
+                </option>
+              ))}
+            </select>
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#EA580C' }}>{gradeBand.band}</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#334155' }}>Subject:</span>
+            <select
+              aria-label="Select Subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              style={{ padding: '4px 10px', borderRadius: 999, border: '1px solid #CBD5E1', background: '#FFFFFF', fontSize: '0.76rem', fontWeight: 700 }}
+            >
+              {['Science', 'Maths', 'English', 'Telugu', 'Hindi', 'Social Studies', 'Computer Science'].map((sub) => (
+                <option key={sub} value={sub}>
+                  {sub}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button
+              type="button"
+              onClick={() => {
+                const next = mode === 'simple' ? 'detailed' : 'simple';
+                setMode(next);
+                setTeachingMode(next === 'detailed' ? 'exam' : 'normal');
+              }}
+              style={{
+                padding: '4px 10px',
+                borderRadius: 999,
+                border: '1px solid #CBD5E1',
+                background: '#FFFFFF',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              {mode === 'simple' ? '🌿 Conceptual' : '🎯 Exam Depth'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setStreamingMode(!streamingMode)}
+              style={{
+                padding: '4px 10px',
+                borderRadius: 999,
+                border: '1px solid #CBD5E1',
+                background: streamingMode ? '#FFF7ED' : '#FFFFFF',
+                color: streamingMode ? '#EA580C' : '#475569',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              {streamingMode ? 'Live Stream' : 'Studio Mode'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowAdaptiveModal(true)}
+              style={{
+                padding: '4px 10px',
+                borderRadius: 999,
+                border: '1px solid rgba(255, 106, 0, 0.35)',
+                background: '#FFF7ED',
+                color: '#C2410C',
+                fontSize: '0.74rem',
+                fontWeight: 800,
+                cursor: 'pointer'
+              }}
+            >
+              Learning Profile
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* Compact Topic-Based 3-Game Selection Panel */}
+      {showTutorGamePanel && (
+        <section
+          className="glass-card"
+          style={{
+            padding: 14,
+            marginBottom: 12,
+            borderRadius: 16,
+            border: '1.5px solid rgba(2, 132, 199, 0.3)',
+            background: '#FFFFFF'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 8 }}>
+            <div style={{ fontSize: '0.86rem', fontWeight: 900, color: '#0F172A' }}>
+              🎮 Play a Game on: <span style={{ color: '#0284C7' }}>{tutorGameTopic || activeTopic}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowTutorGamePanel(false)}
+              style={{
+                background: '#F1F5F9',
+                border: 'none',
+                borderRadius: 8,
+                padding: '4px 10px',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                color: '#475569'
+              }}
+            >
+              Close
+            </button>
+          </div>
+          <ThreeGameSelectorPanel
+            launchingPage="ai_tutor"
+            topic={tutorGameTopic || activeTopic}
+            subject={subject}
+            language={language}
+            grade={grade}
+            difficulty={teachingMode === 'exam' ? 'hard' : 'medium'}
+            compact
+            onAfterLaunch={() => setShowTutorGamePanel(false)}
+          />
+        </section>
+      )}
 
       {actionToast && (
         <div
@@ -1542,76 +1501,36 @@ export const TutorPage: React.FC = () => {
           <div
             className="glass-card"
             style={{
-              padding: '36px 28px',
-              textAlign: 'center',
-              maxWidth: 720,
-              margin: '0 auto',
-              borderRadius: 24,
-              border: '1px solid var(--glass-border, rgba(255, 106, 0, 0.2))',
-              background: 'var(--glass-card-bg, #FFFFFF)',
-              boxShadow: 'var(--glass-shadow, 0 12px 36px rgba(255, 106, 0, 0.08))'
+              padding: '16px 18px',
+              textAlign: 'left',
+              borderRadius: 16,
+              border: '1px solid var(--glass-border, rgba(255, 106, 0, 0.18))',
+              background: 'var(--glass-card-bg, #FFFFFF)'
             }}
           >
-            <div
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #FFF3E8 0%, #FFE4CC 100%)',
-                border: '2px solid #FF6A00',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 16px auto',
-                boxShadow: '0 8px 20px rgba(255, 106, 0, 0.18)'
-              }}
-            >
-              <Bot size={34} color="#FF6A00" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  background: '#FFF3E8',
+                  border: '1.5px solid #FF6A00',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}
+              >
+                <Bot size={18} color="#FF6A00" />
+              </div>
+              <h2 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary, #1E293B)', margin: 0 }}>
+                What would you like to learn today?
+              </h2>
             </div>
 
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '4px 14px',
-                borderRadius: 999,
-                background: 'rgba(255, 106, 0, 0.1)',
-                border: '1px solid rgba(255, 106, 0, 0.3)',
-                color: '#FF6A00',
-                fontSize: '0.78rem',
-                fontWeight: 800,
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-                marginBottom: 12
-              }}
-            >
-              <Sparkles size={13} />
-              <span>STUDYAI AI Tutor</span>
-            </div>
-
-            <h2
-              style={{
-                fontSize: '1.45rem',
-                fontWeight: 800,
-                color: 'var(--text-primary, #1E293B)',
-                margin: '0 0 10px 0',
-                lineHeight: 1.3
-              }}
-            >
-              Hey! I'm your STUDYAI teacher. What would you like to learn today?
-            </h2>
-
-            <p
-              style={{
-                fontSize: '0.92rem',
-                color: 'var(--text-secondary, #64748B)',
-                maxWidth: 580,
-                margin: '0 auto 22px auto',
-                lineHeight: 1.5
-              }}
-            >
-              Ask any educational question, curriculum concept, or formula. I will explain it step by step with clear definitions, real-life examples, and simple educational diagrams.
+            <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary, #64748B)', margin: '0 0 12px 0', lineHeight: 1.45 }}>
+              Ask any question, concept, or formula for step-by-step explanations, diagrams, and voice lessons.
             </p>
 
             <div style={{ marginTop: 8 }}>
@@ -2503,12 +2422,16 @@ export const TutorPage: React.FC = () => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => openGamesHub(s?.topic || activeTopic, s?.subject || subject, 'space_shooter')}
+                        onClick={() => {
+                          setTutorGameTopic(s?.topic || activeTopic || 'General Knowledge');
+                          setShowTutorGamePanel(true);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
                         className="btn-glass"
                         style={{ fontSize: '0.8rem', padding: '10px 14px', justifyContent: 'center', color: '#0284C7' }}
                       >
-                        <Rocket size={16} color="#0284C7" />
-                        <span>Space Battle Practice</span>
+                        <Gamepad2 size={16} color="#0284C7" />
+                        <span>Play a Game on This Topic</span>
                       </button>
                     </div>
                   </div>
@@ -2908,7 +2831,11 @@ export const TutorPage: React.FC = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => openGamesHub(s?.topic || activeTopic, s?.subject || subject, 'space_shooter')}
+                    onClick={() => {
+                      setTutorGameTopic(s?.topic || activeTopic || 'General Knowledge');
+                      setShowTutorGamePanel(true);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
                     className="btn-glass"
                     style={{
                       justifyContent: 'flex-start',
@@ -2921,7 +2848,7 @@ export const TutorPage: React.FC = () => {
                     }}
                   >
                     <Gamepad2 size={16} color="#FFFFFF" />
-                    <span>🎮 Play Game for this Topic</span>
+                    <span>🎮 Play a Game on This Topic</span>
                   </button>
                   <button
                     type="button"

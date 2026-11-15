@@ -7,6 +7,7 @@ import { AudioLessonBar } from './components/AudioLessonBar';
 import { Interactive3DLabModal } from './components/Interactive3DLab';
 import { ImageGenerationModal, VideoGenerationModal } from './components/MediaStudios';
 import { EducationalGamesModal } from './components/EducationalGamesModal';
+import { GlobalThreeGameHost } from './components/games/GlobalThreeGameHost';
 import { QuizModal } from './components/QuizModal';
 import { ExaminationModal } from './components/ExaminationModal';
 import { useLearning } from './context/LearningContext';
@@ -101,6 +102,7 @@ export const App: React.FC = () => {
               <ImageGenerationModal />
               <VideoGenerationModal />
               <EducationalGamesModal />
+              <GlobalThreeGameHost />
               <QuizModal />
               <GlobalExaminationModal />
 

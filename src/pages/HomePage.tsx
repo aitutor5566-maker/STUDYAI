@@ -149,8 +149,8 @@ export const HomePage: React.FC = () => {
       onClick: () => navigate(`/notes?topic=${encodeURIComponent(heroTopicInput || activeTopic)}&auto=true`)
     },
     {
-      label: 'Saved Library & Games',
-      subtitle: 'Notes, Diagrams, Audio & Games',
+      label: 'Saved Library',
+      subtitle: 'Notes, Diagrams & Audio',
       tag: 'Central Learning Hub',
       iconName: 'library',
       onClick: () => navigate('/library')

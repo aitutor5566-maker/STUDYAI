@@ -3165,14 +3165,14 @@ export const NotesPage: React.FC = () => {
                 <div style={{ display: 'grid', gap: 12 }}>
                   {(structured.universalTeachingWorkflow?.stage7_stepByStepProcesses || structured.processes || sections.slice(0, 3).map((s: any, sIdx: number) => ({
                     stepNumber: sIdx + 1,
-                    title: s.heading || `Stage ${sIdx + 1}`,
+                    title: s.heading || `Step ${sIdx + 1}`,
                     whatHappens: s.plainExplanation || s.body || s.content,
-                    whereItHappens: `${editSubject} Standard System`
+                    whereItHappens: editTopic || `${editSubject} context`
                   }))).map((st: any, sIdx: number) => (
                     <div key={sIdx} style={{ padding: '14px 18px', background: '#F8FAFC', borderRadius: 12, border: '1px solid #E2E8F0' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                         <span style={{ padding: '2px 8px', borderRadius: 4, background: '#0F766E', color: '#FFFFFF', fontWeight: 800, fontSize: '0.72rem' }}>
-                          Stage {st.stepNumber || sIdx + 1}
+                          Step {st.stepNumber || sIdx + 1}
                         </span>
                         <strong style={{ fontSize: '0.96rem', color: '#0F172A' }}>{st.title}</strong>
                       </div>

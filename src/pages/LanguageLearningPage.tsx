@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { TopBrandBar } from '../components/GlassNav';
 import { useLearning } from '../context/LearningContext';
+import { ThreeGameSelectorPanel } from '../components/games/ThreeGameSelectorPanel';
 
 interface Language {
   code: string;
@@ -130,6 +131,7 @@ export const LanguageLearningPage: React.FC = () => {
     'picture_to_word' | 'listen_and_select' | 'speak_the_word' | 'missing_letters' | 'word_matching' | 'sentence_builder' | 'conversation_challenge'
   >('picture_to_word');
   const [gameDifficulty, setGameDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+  const [langGameObjective, setLangGameObjective] = useState<string>('Vocabulary');
   const [gameScore, setGameScore] = useState<number>(0);
   const [gameStreak, setGameStreak] = useState<number>(0);
   const [gameRoundIndex, setGameRoundIndex] = useState<number>(0);
@@ -1781,6 +1783,58 @@ export const LanguageLearningPage: React.FC = () => {
          ===================================================================== */}
       {activeTab === 'games' && (
         <div>
+          <section
+            style={{
+              marginBottom: 20,
+              padding: 18,
+              borderRadius: 20,
+              background: 'linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%)',
+              border: '1.5px solid rgba(255, 106, 0, 0.24)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900, color: '#0F172A' }}>
+                  🚀 3D Fullscreen Featured Games ({currentLang.name})
+                </h3>
+                <p style={{ margin: '2px 0 0', fontSize: '0.82rem', color: '#475569' }}>
+                  Choose your learning objective and launch War of Words, Study Rush 3D, or Katana in fullscreen.
+                </p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <select
+                  value={langGameObjective}
+                  onChange={(e) => setLangGameObjective(e.target.value)}
+                  style={{ padding: '7px 12px', borderRadius: 10, border: '1px solid rgba(255,106,0,0.28)', background: '#FFFFFF', color: '#0F172A', fontWeight: 800, fontSize: '0.82rem' }}
+                >
+                  <option value="Vocabulary">Objective: Vocabulary</option>
+                  <option value="Synonyms">Objective: Synonyms</option>
+                  <option value="Grammar">Objective: Grammar</option>
+                  <option value="Idioms">Objective: Idioms</option>
+                  <option value="Speaking">Objective: Speaking</option>
+                </select>
+                <select
+                  value={gameDifficulty}
+                  onChange={(e) => setGameDifficulty(e.target.value as any)}
+                  style={{ padding: '7px 12px', borderRadius: 10, border: '1px solid rgba(255,106,0,0.28)', background: '#FFFFFF', color: '#0F172A', fontWeight: 800, fontSize: '0.82rem' }}
+                >
+                  <option value="easy">Easy</option>
+                  <option value="medium">Medium</option>
+                  <option value="hard">Hard</option>
+                </select>
+              </div>
+            </div>
+            <ThreeGameSelectorPanel
+              launchingPage="language_learning"
+              topic={`${currentLang.name} ${langGameObjective}`}
+              subject="Language"
+              language={currentLang.name}
+              difficulty={gameDifficulty}
+              learningObjective={langGameObjective}
+              compact
+            />
+          </section>
+
           <section style={{ marginBottom: 18 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
               <div>

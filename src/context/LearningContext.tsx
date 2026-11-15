@@ -1,4 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import {
+  GameLaunchRequest,
+  GameLaunchResult,
+  requestGameLaunch
+} from '../services/gameAccessService';
 
 export interface AudioLessonState {
   id: string;
@@ -71,6 +76,9 @@ export interface LearningContextType {
   modalGames: { open: boolean; topic: string; subject: string; initialGame?: 'answer_battle' | 'learning_runner' | 'space_shooter' };
   openGamesHub: (topic?: string, subject?: string, initialGame?: 'answer_battle' | 'learning_runner' | 'space_shooter') => void;
   closeGamesHub: () => void;
+  activeAuthorisedGame: GameLaunchRequest | null;
+  launchAuthorisedGame: (req: Omit<GameLaunchRequest, 'studentId'> & { studentId?: string }) => GameLaunchResult;
+  closeAuthorisedGame: () => void;
   modalQuiz: { open: boolean; topic: string; subject: string };
   openQuizModal: (topic?: string, subject?: string) => void;
   closeQuizModal: () => void;
@@ -301,6 +309,22 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
   const closeGamesHub = () => setModalGames((prev) => ({ ...prev, open: false }));
 
+  const [activeAuthorisedGame, setActiveAuthorisedGame] = useState<GameLaunchRequest | null>(null);
+  const launchAuthorisedGame = useCallback(
+    (req: Omit<GameLaunchRequest, 'studentId'> & { studentId?: string }): GameLaunchResult => {
+      const result = requestGameLaunch({
+        ...req,
+        studentId: req.studentId || studentId
+      });
+      if (result.authorized && result.request) {
+        setActiveAuthorisedGame(result.request);
+      }
+      return result;
+    },
+    [studentId]
+  );
+  const closeAuthorisedGame = useCallback(() => setActiveAuthorisedGame(null), []);
+
   const openQuizModal = (topic?: string, subject?: string) => {
     setModalQuiz({
       open: true,
@@ -349,6 +373,9 @@ export const LearningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         modalGames,
         openGamesHub,
         closeGamesHub,
+        activeAuthorisedGame,
+        launchAuthorisedGame,
+        closeAuthorisedGame,
         modalQuiz,
         openQuizModal,
         closeQuizModal,

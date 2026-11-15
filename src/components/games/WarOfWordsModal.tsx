@@ -1,10 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Award,
   BookOpen,
   ChevronLeft,
   ChevronRight,
   Lock,
+  Maximize2,
+  Minimize2,
   Pause,
   Play,
   RotateCcw,
@@ -39,10 +42,15 @@ import {
   WorldId
 } from '../../games/warOfWords/types';
 import { WarHudSnapshot, WarOfWordsCanvas } from '../../games/warOfWords/WarOfWordsCanvas';
+import { enterElementFullscreen, exitBrowserFullscreen, isBrowserFullscreenActive } from '../../utils/fullscreenGame';
 
 export interface WarOfWordsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialTopic?: string;
+  initialLanguage?: string;
+  learningObjective?: string;
+  difficulty?: DifficultyLevel;
 }
 
 const CATEGORIES: EnglishCategory[] = [
@@ -81,14 +89,22 @@ const GAME_MODES: Array<{ id: GameModeId; label: string; desc: string }> = [
 const MISSED_STORAGE_KEY = 'studyai_war_of_words_missed_v1';
 const UNLOCKED_WORLDS_KEY = 'studyai_war_of_words_worlds_v1';
 
-export const WarOfWordsModal: React.FC<WarOfWordsModalProps> = ({ isOpen, onClose }) => {
+export const WarOfWordsModal: React.FC<WarOfWordsModalProps> = ({
+  isOpen,
+  onClose,
+  initialTopic,
+  learningObjective,
+  difficulty: propDifficulty
+}) => {
   const { activeProfile, apiFetch, triggerRefresh } = useLearning();
   const audioManager = useMemo(() => new WarOfWordsAudioManager(), []);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const [screen, setScreen] = useState<'menu' | 'playing' | 'paused' | 'results'>('menu');
   const [mode, setMode] = useState<GameModeId>('word_quest');
   const [category, setCategory] = useState<EnglishCategory>('All Categories');
-  const [difficulty, setDifficulty] = useState<DifficultyLevel>('medium');
+  const [difficulty, setDifficulty] = useState<DifficultyLevel>(propDifficulty || 'medium');
   const [grade, setGrade] = useState<number>(activeProfile?.grade || 8);
   const [worldId, setWorldId] = useState<WorldId>('moonlight_valley');
   const [quality, setQuality] = useState<GraphicsQuality>('medium');
@@ -160,8 +176,57 @@ export const WarOfWordsModal: React.FC<WarOfWordsModalProps> = ({ isOpen, onClos
   useEffect(() => {
     if (!isOpen) {
       audioManager.stopAmbience();
+      exitBrowserFullscreen();
+      return;
     }
-  }, [isOpen, audioManager]);
+    const obj = (learningObjective || initialTopic || '').toLowerCase();
+    if (obj.includes('synonym')) {
+      setMode('synonym_battle');
+      setCategory('Synonym Battle');
+    } else if (obj.includes('antonym')) {
+      setMode('antonym_battle');
+      setCategory('Antonym Battle');
+    } else if (obj.includes('grammar')) {
+      setMode('grammar_challenge');
+      setCategory('Grammar Battle');
+    } else if (obj.includes('idiom')) {
+      setMode('word_quest');
+      setCategory('Idioms & Phrases');
+    } else if (obj.includes('sentence')) {
+      setMode('sentence_master');
+      setCategory('Sentence Formation');
+    } else if (obj.includes('spelling')) {
+      setMode('spelling_arena');
+      setCategory('Spelling Challenge');
+    }
+    if (propDifficulty) setDifficulty(propDifficulty);
+  }, [isOpen, audioManager, initialTopic, learningObjective, propDifficulty]);
+
+  useEffect(() => {
+    const syncFs = () => setIsFullscreen(isBrowserFullscreenActive());
+    document.addEventListener('fullscreenchange', syncFs);
+    document.addEventListener('webkitfullscreenchange', syncFs);
+    return () => {
+      document.removeEventListener('fullscreenchange', syncFs);
+      document.removeEventListener('webkitfullscreenchange', syncFs);
+    };
+  }, []);
+
+  const toggleFullscreen = async () => {
+    if (isBrowserFullscreenActive()) {
+      await exitBrowserFullscreen();
+      setIsFullscreen(false);
+    } else {
+      const ok = await enterElementFullscreen(rootRef.current);
+      setIsFullscreen(ok);
+    }
+  };
+
+  const handleExitGame = async () => {
+    audioManager.stopAmbience();
+    await exitBrowserFullscreen();
+    onClose();
+  };
 
   const completeRun = useCallback(
     async (
@@ -288,6 +353,7 @@ export const WarOfWordsModal: React.FC<WarOfWordsModalProps> = ({ isOpen, onClos
     setSavedNotice(null);
     startTimeRef.current = Date.now();
     setScreen('playing');
+    enterElementFullscreen(rootRef.current).then((ok) => setIsFullscreen(ok));
   };
 
   const handleAnswerEvaluated = useCallback((outcome: AnswerOutcome) => {
@@ -320,17 +386,22 @@ export const WarOfWordsModal: React.FC<WarOfWordsModalProps> = ({ isOpen, onClos
 
   if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <div
+      ref={rootRef}
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 1250,
+        width: '100vw',
+        height: '100dvh',
+        zIndex: 99999,
         background: '#050814',
         color: '#F8FAFC',
         display: 'flex',
         flexDirection: 'column',
-        fontFamily: 'Inter, system-ui, sans-serif'
+        fontFamily: 'Inter, system-ui, sans-serif',
+        touchAction: screen === 'playing' ? 'none' : 'auto',
+        overflow: 'hidden'
       }}
     >
       {/* ==================== MAIN MENU ==================== */}
@@ -371,7 +442,7 @@ export const WarOfWordsModal: React.FC<WarOfWordsModalProps> = ({ isOpen, onClos
               </div>
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleExitGame}
                 style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)', color: '#E2E8F0', borderRadius: 12, padding: 8, cursor: 'pointer' }}
                 aria-label="Close War of Words"
               >
@@ -601,8 +672,17 @@ export const WarOfWordsModal: React.FC<WarOfWordsModalProps> = ({ isOpen, onClos
             )}
           </div>
 
-          {/* TOP-RIGHT: Pause & Settings */}
+          {/* TOP-RIGHT: Fullscreen, Sound & Pause */}
           <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              style={{ padding: 9, borderRadius: 11, background: 'rgba(15,23,42,0.86)', border: '1px solid rgba(255,255,255,0.2)', color: '#FFF', cursor: 'pointer' }}
+              aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+              title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+            >
+              {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </button>
             <button
               type="button"
               onClick={() => setAudioSettings((s) => ({ ...s, muted: !s.muted }))}
@@ -890,7 +970,7 @@ export const WarOfWordsModal: React.FC<WarOfWordsModalProps> = ({ isOpen, onClos
             {savedNotice && <div style={{ fontSize: '0.8rem', color: '#34D399', fontWeight: 800, marginBottom: 14 }}>✅ {savedNotice}</div>}
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-              <button type="button" onClick={onClose} style={{ padding: '11px 16px', borderRadius: 12, background: '#1E293B', border: '1px solid #334155', color: '#FFF', fontWeight: 800, cursor: 'pointer' }}>Back to Library</button>
+              <button type="button" onClick={handleExitGame} style={{ padding: '11px 16px', borderRadius: 12, background: '#1E293B', border: '1px solid #334155', color: '#FFF', fontWeight: 800, cursor: 'pointer' }}>Exit Game</button>
               {summary.missedQuestions.length > 0 && (
                 <button type="button" onClick={() => startBattle('revision_mode')} style={{ padding: '11px 16px', borderRadius: 12, background: '#D97706', border: 'none', color: '#FFF', fontWeight: 900, cursor: 'pointer' }}>Practice Missed Words</button>
               )}
@@ -903,4 +983,6 @@ export const WarOfWordsModal: React.FC<WarOfWordsModalProps> = ({ isOpen, onClos
       )}
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };

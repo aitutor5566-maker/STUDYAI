@@ -5,6 +5,7 @@ import { EducationalGamePlayerModal } from './EducationalGamePlayerModal';
 import { KatanaGameModal } from './games/KatanaGameModal';
 import { StudyRush3DModal } from './games/StudyRush3DModal';
 import { WarOfWordsModal } from './games/WarOfWordsModal';
+import { SpeakingPracticeGameModal } from './games/SpeakingPracticeGameModal';
 
 interface GameItem {
   id: string;
@@ -23,12 +24,13 @@ interface GameItem {
 }
 
 export const EducationalGamesSection: React.FC = () => {
-  const { apiFetch, activeTopic, studentId } = useLearning();
+  const { apiFetch, activeTopic, studentId, openGamesHub } = useLearning();
 
   const [games, setGames] = useState<GameItem[]>([]);
   const [, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [hubTab, setHubTab] = useState<'all' | '3d_worlds' | 'battle_action' | 'space' | 'subject_brain' | 'language_speaking'>('all');
   const [gameTopic, setGameTopic] = useState<string>(activeTopic || 'Photosynthesis');
 
   // Modal player state
@@ -36,6 +38,7 @@ export const EducationalGamesSection: React.FC = () => {
   const [katanaOpen, setKatanaOpen] = useState<boolean>(false);
   const [studyRushOpen, setStudyRushOpen] = useState<boolean>(false);
   const [warOfWordsOpen, setWarOfWordsOpen] = useState<boolean>(false);
+  const [speakingOpen, setSpeakingOpen] = useState<boolean>(false);
 
   // Student stats
   const [, setRecentStats] = useState<any[]>([]);
@@ -134,14 +137,14 @@ export const EducationalGamesSection: React.FC = () => {
                   letterSpacing: '0.04em'
                 }}
               >
-                7 INTERACTIVE GAMES
+                7+ CORE + 3D &amp; SPEAKING ARENAS
               </span>
               <span style={{ fontSize: '0.78rem', color: '#E85D00', fontWeight: 800 }}>
-                Universal Shared Game Engine
+                Unified All-Games Hub
               </span>
             </div>
             <h2 style={{ fontSize: '1.38rem', fontWeight: 900, color: '#202124', letterSpacing: '-0.02em', margin: '0 0 4px 0' }}>
-              Educational Games Library
+              All Educational Games Hub
             </h2>
             <p style={{ fontSize: '0.88rem', color: '#6B7280', margin: 0 }}>
               Play, learn, and master academic concepts across all subjects.
@@ -203,7 +206,226 @@ export const EducationalGamesSection: React.FC = () => {
         </div>
       </div>
 
+      {/* Unified Hub Category Tabs */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
+        {[
+          { id: 'all', label: '🌟 All Games' },
+          { id: '3d_worlds', label: '🧊 3D Worlds' },
+          { id: 'battle_action', label: '⚔️ Battle & Action' },
+          { id: 'space', label: '🚀 Space Games' },
+          { id: 'language_speaking', label: '🗣️ Language & Speaking' },
+          { id: 'subject_brain', label: '🧠 Subject & Brain (7)' }
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setHubTab(tab.id as typeof hubTab)}
+            style={{
+              padding: '8px 14px',
+              borderRadius: 999,
+              border: hubTab === tab.id ? '1.5px solid #FF6A00' : '1px solid #E2E8F0',
+              background: hubTab === tab.id ? '#FFF3E8' : '#FFFFFF',
+              color: hubTab === tab.id ? '#C2410C' : '#334155',
+              fontSize: '0.82rem',
+              fontWeight: 800,
+              cursor: 'pointer'
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Special 3D, Space & Speaking Arenas Grid */}
+      {(hubTab === 'all' || hubTab === 'battle_action' || hubTab === 'space' || hubTab === 'language_speaking' || hubTab === '3d_worlds') && (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+            gap: 14,
+            marginBottom: 20
+          }}
+        >
+          {(hubTab === 'all' || hubTab === 'space') && (
+            <div
+              style={{
+                padding: 18,
+                borderRadius: 20,
+                background: 'linear-gradient(135deg, #090D24, #1E1B4B)',
+                border: '1.5px solid #818CF8',
+                color: '#FFFFFF',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                gap: 12
+              }}
+            >
+              <div>
+                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#A5B4FC', marginBottom: 4 }}>SPACE 3D SHOOTER</div>
+                <h4 style={{ margin: '0 0 6px', fontSize: '1.05rem', fontWeight: 800 }}>🚀 Space Answer Shooter 3D</h4>
+                <p style={{ margin: 0, fontSize: '0.82rem', color: '#CBD5E1', lineHeight: 1.45 }}>
+                  Pilot your starfighter through 3D asteroid waves and blast the asteroid carrying the correct answer.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => openGamesHub(gameTopic || 'Photosynthesis', 'Science', 'space_shooter')}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 12,
+                  border: 'none',
+                  background: '#6366F1',
+                  color: '#FFFFFF',
+                  fontWeight: 800,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6
+                }}
+              >
+                <Play size={15} fill="#FFFFFF" /> Launch Space Shooter
+              </button>
+            </div>
+          )}
+
+          {(hubTab === 'all' || hubTab === 'battle_action') && (
+            <div
+              style={{
+                padding: 18,
+                borderRadius: 20,
+                background: 'linear-gradient(135deg, #1F122B, #4C1D95)',
+                border: '1.5px solid #C084FC',
+                color: '#FFFFFF',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                gap: 12
+              }}
+            >
+              <div>
+                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#E9D5FF', marginBottom: 4 }}>3D BATTLE ARENA</div>
+                <h4 style={{ margin: '0 0 6px', fontSize: '1.05rem', fontWeight: 800 }}>🎯 Answer Battle Arena 3D</h4>
+                <p style={{ margin: 0, fontSize: '0.82rem', color: '#E2E8F0', lineHeight: 1.45 }}>
+                  Aim and fire energy bolts at 3D floating answer targets in a fast-paced curriculum arena.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => openGamesHub(gameTopic || 'Photosynthesis', 'Science', 'answer_battle')}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 12,
+                  border: 'none',
+                  background: '#9333EA',
+                  color: '#FFFFFF',
+                  fontWeight: 800,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6
+                }}
+              >
+                <Play size={15} fill="#FFFFFF" /> Launch Answer Battle
+              </button>
+            </div>
+          )}
+
+          {(hubTab === 'all' || hubTab === '3d_worlds') && (
+            <div
+              style={{
+                padding: 18,
+                borderRadius: 20,
+                background: 'linear-gradient(135deg, #064E3B, #0F766E)',
+                border: '1.5px solid #34D399',
+                color: '#FFFFFF',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                gap: 12
+              }}
+            >
+              <div>
+                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#A7F3D0', marginBottom: 4 }}>3D ENDLESS RUNNER</div>
+                <h4 style={{ margin: '0 0 6px', fontSize: '1.05rem', fontWeight: 800 }}>🏃 3D Learning Runner</h4>
+                <p style={{ margin: 0, fontSize: '0.82rem', color: '#D1FAE5', lineHeight: 1.45 }}>
+                  Dash across 3D lanes and steer through the gate showing the correct answer on your topic.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => openGamesHub(gameTopic || 'Photosynthesis', 'Science', 'learning_runner')}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 12,
+                  border: 'none',
+                  background: '#10B981',
+                  color: '#FFFFFF',
+                  fontWeight: 800,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6
+                }}
+              >
+                <Play size={15} fill="#FFFFFF" /> Launch 3D Runner
+              </button>
+            </div>
+          )}
+
+          {(hubTab === 'all' || hubTab === 'language_speaking') && (
+            <div
+              style={{
+                padding: 18,
+                borderRadius: 20,
+                background: 'linear-gradient(135deg, #7C2D12, #EA580C)',
+                border: '1.5px solid #FDBA74',
+                color: '#FFFFFF',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                gap: 12
+              }}
+            >
+              <div>
+                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#FFEDD5', marginBottom: 4 }}>VOICE &amp; PRONUNCIATION</div>
+                <h4 style={{ margin: '0 0 6px', fontSize: '1.05rem', fontWeight: 800 }}>🗣️ Speaking &amp; Pronunciation Arena</h4>
+                <p style={{ margin: 0, fontSize: '0.82rem', color: '#FFEDD5', lineHeight: 1.45 }}>
+                  Listen to native pronunciation and speak aloud in English, Telugu, Hindi, Japanese, French &amp; German.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSpeakingOpen(true)}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 12,
+                  border: 'none',
+                  background: '#FFFFFF',
+                  color: '#C2410C',
+                  fontWeight: 900,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6
+                }}
+              >
+                <Play size={15} fill="#C2410C" /> Start Speaking Practice
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* WAR OF WORDS — STUDY RUSH 3D (SHADOW WARRIOR: THE LANGUAGE BATTLE) */}
+      {(hubTab === 'all' || hubTab === 'battle_action' || hubTab === 'language_speaking') && (
       <div
         style={{
           margin: '0 0 18px 0',
@@ -270,6 +492,7 @@ export const EducationalGamesSection: React.FC = () => {
       </div>
 
       {/* STUDY RUSH 3D — SURVIVAL NIGHT (3D VOXEL ADVENTURE BANNER) */}
+      {(hubTab === 'all' || hubTab === '3d_worlds') && (
       <div
         style={{
           margin: '0 0 18px 0',
@@ -582,10 +805,19 @@ export const EducationalGamesSection: React.FC = () => {
         initialTopic={gameTopic || 'Photosynthesis'}
       />
 
+      )}
+
       {/* WAR OF WORDS — STUDY RUSH 3D Modal */}
       <WarOfWordsModal
         isOpen={warOfWordsOpen}
         onClose={() => setWarOfWordsOpen(false)}
+      />
+
+      {/* Speaking & Pronunciation Arena Modal */}
+      <SpeakingPracticeGameModal
+        isOpen={speakingOpen}
+        onClose={() => setSpeakingOpen(false)}
+        initialTopic={gameTopic || 'Conversation'}
       />
     </section>
   );

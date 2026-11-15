@@ -23,7 +23,6 @@ import { TopBrandBar } from '../components/GlassNav';
 import { FuturisticIcon, FuturisticIconName } from '../components/FuturisticIcons';
 import { useLearning } from '../context/LearningContext';
 import { LanguageLearningSection } from '../components/LanguageLearningSection';
-import { EducationalGamesSection } from '../components/EducationalGamesSection';
 
 /**
  * Generates a real topic-specific SVG educational illustration data URL on the client
@@ -230,8 +229,6 @@ export const LibraryPage: React.FC = () => {
       startAudioLesson({ topic: item.topic, text: item.content?.text, voice: item.content?.voice, speed: item.content?.speed });
     } else if (item.resource_type === 'quiz') {
       openQuizModal(item.topic, item.subject);
-    } else if (item.resource_type === 'game') {
-      openGamesHub(item.topic, item.subject, item.content?.gameType);
     } else {
       navigate(`/tutor?topic=${encodeURIComponent(item.topic)}`);
     }
@@ -740,12 +737,9 @@ export const LibraryPage: React.FC = () => {
       </section>
 
       {/* SECTION 2: SPEAKING SKILLS & MULTILINGUAL LANGUAGE LEARNING */}
-      <LanguageLearningSection />
+      <LanguageLearningSection allowGameLaunch={false} />
 
-      {/* SECTION 3: EDUCATIONAL GAMES LIBRARY (7 CORE GAMES) */}
-      <EducationalGamesSection />
-
-      {/* SECTION 4: WEEKLY EXAMINATIONS & 3D LAB / SPACE BATTLE CARDS */}
+      {/* SECTION 3: WEEKLY EXAMINATIONS & 3D LAB */}
       <section
         className="glass-card"
         style={{
@@ -803,43 +797,8 @@ export const LibraryPage: React.FC = () => {
         </button>
       </section>
 
-      {/* Space Battle & 3D Lab Feature Cards */}
+      {/* 3D Lab Feature Card */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 18 }}>
-        <section className="hero-glass-banner" style={{ padding: 22 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div
-                style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: 16,
-                  background: 'linear-gradient(135deg, #FF7A1A 0%, #FF6A00 100%)',
-                  color: '#FFFFFF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 8px 20px rgba(255, 106, 0, 0.28)'
-                }}
-              >
-                <Rocket size={24} />
-              </div>
-              <div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#202124' }}>STUDYAI Space Battle</h3>
-                <p style={{ fontSize: '0.84rem', color: '#6B7280', marginTop: 2 }}>
-                  Arcade knowledge challenge — target enemy ships carrying verified scientific answers
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => openGamesHub(activeTopic || 'Human Body', 'Biology', 'space_shooter')}
-              className="btn-orange"
-            >
-              <span>Play Space Battle</span>
-            </button>
-          </div>
-        </section>
-
         <section className="hero-glass-banner" style={{ padding: 22 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   BookOpen,
@@ -7,6 +8,8 @@ import {
   Heart,
   HelpCircle,
   Layers,
+  Maximize2,
+  Minimize2,
   Pause,
   Play,
   RotateCcw,
@@ -26,6 +29,7 @@ import { useLearning } from '../../context/LearningContext';
 import { StudyRushAudioManager } from '../../games/studyRush3d/AudioManager';
 import { buildQuestionDeck, STUDY_RUSH_ACHIEVEMENTS } from '../../games/studyRush3d/questionBank';
 import { LiveHudSnapshot, StudyRush3DCanvas } from '../../games/studyRush3d/StudyRush3DCanvas';
+import { enterElementFullscreen, exitBrowserFullscreen, isBrowserFullscreenActive } from '../../utils/fullscreenGame';
 import {
   AchievementMeta,
   AnswerOutcomeEvent,
@@ -47,6 +51,8 @@ export interface StudyRush3DModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialTopic?: string;
+  initialSubject?: string;
+  difficulty?: DifficultyLevel;
 }
 
 const SUBJECT_LIST: SubjectCategory[] = [
@@ -75,16 +81,24 @@ const ZONE_LABELS: Record<string, string> = {
   science_kingdom: 'Science Kingdom (South)'
 };
 
-export const StudyRush3DModal: React.FC<StudyRush3DModalProps> = ({ isOpen, onClose }) => {
+export const StudyRush3DModal: React.FC<StudyRush3DModalProps> = ({
+  isOpen,
+  onClose,
+  initialTopic,
+  initialSubject,
+  difficulty: propDifficulty
+}) => {
   const { activeProfile, apiFetch, triggerRefresh } = useLearning();
   const navigate = useNavigate();
 
   const audioManager = useMemo(() => new StudyRushAudioManager(), []);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Screen & Setup State
   const [screen, setScreen] = useState<GameScreenState>('menu');
   const [subject, setSubject] = useState<SubjectCategory>('All Subjects');
-  const [difficulty, setDifficulty] = useState<DifficultyLevel>('medium');
+  const [difficulty, setDifficulty] = useState<DifficultyLevel>(propDifficulty || 'medium');
   const [grade, setGrade] = useState<number>(activeProfile?.grade || 9);
   const [customization, setCustomization] = useState<PlayerCustomization>({
     ...DEFAULT_PLAYER_CUSTOMIZATION,
@@ -226,6 +240,56 @@ export const StudyRush3DModal: React.FC<StudyRush3DModalProps> = ({ isOpen, onCl
     ]
   );
 
+  // Sync subject/difficulty from AI Tutor / Language Learning context & handle fullscreen
+  useEffect(() => {
+    if (!isOpen) {
+      exitBrowserFullscreen();
+      return;
+    }
+    const hint = `${initialSubject || ''} ${initialTopic || ''}`.toLowerCase();
+    if (hint.includes('math') || hint.includes('algebra') || hint.includes('quadratic') || hint.includes('geometry')) {
+      setSubject('Mathematics');
+    } else if (hint.includes('physic') || hint.includes('newton') || hint.includes('force') || hint.includes('circuit')) {
+      setSubject('Physics');
+    } else if (hint.includes('chem') || hint.includes('atom') || hint.includes('bond')) {
+      setSubject('Chemistry');
+    } else if (hint.includes('bio') || hint.includes('mitosis') || hint.includes('photosynthesis') || hint.includes('heart')) {
+      setSubject('Biology');
+    } else if (hint.includes('hist') || hint.includes('revolution') || hint.includes('war')) {
+      setSubject('History');
+    } else if (hint.includes('geog') || hint.includes('tectonic') || hint.includes('water cycle')) {
+      setSubject('Geography');
+    } else if (hint.includes('english') || hint.includes('grammar') || hint.includes('vocab') || hint.includes('language')) {
+      setSubject('English');
+    }
+    if (propDifficulty) setDifficulty(propDifficulty);
+  }, [isOpen, initialTopic, initialSubject, propDifficulty]);
+
+  useEffect(() => {
+    const syncFs = () => setIsFullscreen(isBrowserFullscreenActive());
+    document.addEventListener('fullscreenchange', syncFs);
+    document.addEventListener('webkitfullscreenchange', syncFs);
+    return () => {
+      document.removeEventListener('fullscreenchange', syncFs);
+      document.removeEventListener('webkitfullscreenchange', syncFs);
+    };
+  }, []);
+
+  const toggleFullscreen = async () => {
+    if (isBrowserFullscreenActive()) {
+      await exitBrowserFullscreen();
+      setIsFullscreen(false);
+    } else {
+      const ok = await enterElementFullscreen(rootRef.current);
+      setIsFullscreen(ok);
+    }
+  };
+
+  const handleExitGame = async () => {
+    await exitBrowserFullscreen();
+    onClose();
+  };
+
   // Auto-end run if Player HP or Village HP drops to 0
   useEffect(() => {
     if (screen === 'playing' && (playerHp <= 0 || villageHp <= 0)) {
@@ -253,6 +317,7 @@ export const StudyRush3DModal: React.FC<StudyRush3DModalProps> = ({ isOpen, onCl
     setMasteredTopics([]);
     setResources({ wood: 4, stone: 4, crystal: 1, knowledgeOrbs: 1 });
     setUpgrades({ wallLevel: 1, towerLevel: 0, lanternLevel: 0, libraryLevel: 0 });
+    enterElementFullscreen(rootRef.current).then((ok) => setIsFullscreen(ok));
     setFeedbackBanner(null);
     setSavedNotice(null);
     setSessionSummary(null);
@@ -378,17 +443,22 @@ export const StudyRush3DModal: React.FC<StudyRush3DModalProps> = ({ isOpen, onCl
 
   if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <div
+      ref={rootRef}
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 1200,
+        width: '100vw',
+        height: '100dvh',
+        zIndex: 99999,
         background: '#090D1F',
         color: '#F8FAFC',
         display: 'flex',
         flexDirection: 'column',
-        fontFamily: 'Inter, system-ui, sans-serif'
+        fontFamily: 'Inter, system-ui, sans-serif',
+        touchAction: screen === 'playing' ? 'none' : 'auto',
+        overflow: 'hidden'
       }}
     >
       {/* ==================== MAIN MENU ==================== */}
@@ -803,6 +873,22 @@ export const StudyRush3DModal: React.FC<StudyRush3DModalProps> = ({ isOpen, onCl
                 aria-label="Toggle Sound"
               >
                 {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+              </button>
+              <button
+                type="button"
+                onClick={toggleFullscreen}
+                style={{
+                  padding: '7px 10px',
+                  borderRadius: 10,
+                  background: 'rgba(15,23,42,0.84)',
+                  border: '1px solid rgba(255,255,255,0.18)',
+                  color: '#FFF',
+                  cursor: 'pointer'
+                }}
+                aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+                title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+              >
+                {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
               </button>
               <button
                 type="button"
@@ -1385,10 +1471,10 @@ export const StudyRush3DModal: React.FC<StudyRush3DModalProps> = ({ isOpen, onCl
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleExitGame}
                 style={{ padding: '11px 18px', borderRadius: 12, background: '#1E293B', border: '1px solid #334155', color: '#FFF', fontWeight: 800, cursor: 'pointer' }}
               >
-                Back to Library
+                Exit Game
               </button>
               <button
                 type="button"
@@ -1403,4 +1489,6 @@ export const StudyRush3DModal: React.FC<StudyRush3DModalProps> = ({ isOpen, onCl
       )}
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };

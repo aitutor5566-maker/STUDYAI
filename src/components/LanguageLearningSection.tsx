@@ -27,7 +27,9 @@ interface LanguageOption {
   script_name: string;
 }
 
-export const LanguageLearningSection: React.FC = () => {
+export const LanguageLearningSection: React.FC<{ allowGameLaunch?: boolean }> = ({
+  allowGameLaunch = true
+}) => {
   const navigate = useNavigate();
   const { apiFetch, studentId } = useLearning();
 
@@ -385,6 +387,7 @@ export const LanguageLearningSection: React.FC = () => {
           </div>
         </div>
 
+        {allowGameLaunch && (
         <div
           onClick={() => navigate('/languages?tab=games')}
           className="glass-card-interactive"
@@ -416,13 +419,14 @@ export const LanguageLearningSection: React.FC = () => {
           </div>
           <div>
             <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#202124' }}>
-              7 Interactive Games
+              3D Language &amp; Speaking Games
             </div>
             <div style={{ fontSize: '0.76rem', color: '#6B7280' }}>
-              Matching, sentence builder &amp; voice games
+              War of Words, Study Rush 3D &amp; Katana
             </div>
           </div>
         </div>
+        )}
 
         <div
           onClick={() => navigate('/languages?tab=curriculum')}

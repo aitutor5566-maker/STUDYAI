@@ -478,7 +478,7 @@ export function buildUniversalTeachingWorkflow(params: {
     point2_labelledParts: processFlowDiagramSpec.explanation.importantParts,
     point3_componentFunctions: processFlowDiagramSpec.explanation.partFunctions,
     point4_componentRelationships: processFlowDiagramSpec.explanation.howPartsConnect,
-    point5_directionOfMovementOrProcess: 'Directional sequential flow: Stage 1 (Inputs) → Stage 2 (Mechanism) → Stage 3 (Final Output).',
+    point5_directionOfMovementOrProcess: 'Directional sequential flow: Initial Inputs → Core Mechanism → Final Output.',
     point6_stepByStepInterpretation: processFlowDiagramSpec.explanation.processStages,
     point7_learningOutcome: processFlowDiagramSpec.explanation.whyItMatters,
     point8_whatToRemember: processFlowDiagramSpec.explanation.whatToRemember,
@@ -623,9 +623,9 @@ export function buildUniversalTeachingWorkflow(params: {
       id: `q3-${topic.slice(0, 4)}`,
       type: 'Short Answer' as const,
       marks: 3,
-      question: `Describe the 3-step sequential process of ${topic} and explain what happens if Stage 2 fails.`,
+      question: `Describe the 3-step sequential process of ${topic} and explain what happens if the intermediate step fails.`,
       correctAnswer: stage7Processes.map((s) => s.title).join('; '),
-      modelAnswer: `The 3 stages are:\n1. ${stage7Processes[0]?.title}: ${stage7Processes[0]?.whatHappens}\n2. ${stage7Processes[1]?.title}: ${stage7Processes[1]?.whatHappens}\n3. ${stage7Processes[2]?.title}: ${stage7Processes[2]?.whatHappens}\nIf Stage 2 fails, transformation cannot proceed and the system stalls without producing output.`,
+      modelAnswer: `The 3 steps are:\n1. ${stage7Processes[0]?.title}: ${stage7Processes[0]?.whatHappens}\n2. ${stage7Processes[1]?.title}: ${stage7Processes[1]?.whatHappens}\n3. ${stage7Processes[2]?.title}: ${stage7Processes[2]?.whatHappens}\nIf the intermediate step fails, transformation cannot proceed and the system stalls without producing output.`,
       explanation: 'Present in clear numbered points with mechanistic cause-and-effect reasoning.'
     },
     {
@@ -844,27 +844,27 @@ export function buildSinglePageDigitalTextbookMarkdown(workflow: UniversalTeachi
 - [Section J: Final Revision Section](#section-j-revision)
 
 ### Complete Chapter Outline
-1. [Stage 1 — Topic Introduction](#stage-1--topic-introduction)
-2. [Stage 2 — Definition and Meaning](#stage-2--definition-and-meaning)
-3. [Stage 3 — Fundamentals and Prerequisites](#stage-3--fundamentals-and-prerequisites)
-4. [Stage 4 — Important Terminology & Full Forms](#stage-4--important-terminology--full-forms)
-5. [Stage 5 — Main Concepts & Components](#stage-5--main-concepts--components)
-6. [Stage 6 — Detailed Working Mechanism](#stage-6--detailed-working-mechanism)
-7. [Stage 7 — Step-by-Step Processes](#stage-7--step-by-step-processes)
-8. [Stage 8 — Diagrams & Visual Explanations](#stage-8--diagrams--visual-explanations)
-9. [Stage 9 — Examples & Applications](#stage-9--examples--applications)
-10. [Stage 10 — Formulas, Equations & Problem Solving](#stage-10--formulas-equations--problem-solving)
-11. [Stage 11 — Comparisons & Relationships](#stage-11--comparisons--relationships)
-12. [Stage 12 — Important Facts & Misconceptions](#stage-12--important-facts--misconceptions)
-13. [Stage 13 — Complete Topic Recap](#stage-13--complete-topic-recap)
-14. [Stage 14 — Knowledge Assessment & Self-Test](#stage-14--knowledge-assessment--self-test)
+1. [Topic Introduction](#topic-introduction)
+2. [Definition and Meaning](#definition-and-meaning)
+3. [Fundamentals and Prerequisites](#fundamentals-and-prerequisites)
+4. [Important Terminology & Full Forms](#important-terminology--full-forms)
+5. [Main Concepts & Components](#main-concepts--components)
+6. [Detailed Working Mechanism](#detailed-working-mechanism)
+7. [Step-by-Step Processes](#step-by-step-processes)
+8. [Diagrams & Visual Explanations](#diagrams--visual-explanations)
+9. [Examples & Applications](#examples--applications)
+10. [Formulas, Equations & Problem Solving](#formulas-equations--problem-solving)
+11. [Comparisons & Relationships](#comparisons--relationships)
+12. [Important Facts & Misconceptions](#important-facts--misconceptions)
+13. [Complete Topic Recap](#complete-topic-recap)
+14. [Knowledge Assessment & Self-Test](#knowledge-assessment--self-test)
 
 ---
 
 ## Section A: Definitions & Academic Meaning
 <a id="section-a-definitions"></a>
 
-## Stage 1 — Topic Introduction
+## Topic Introduction
 
 > **Personal Teacher Introduction:**  
 > ${w.stage1_topicIntroduction.teacherGreeting || w.stage1_topicIntroduction.overview}
@@ -882,7 +882,7 @@ ${w.stage1_topicIntroduction.whereItIsUsed}
 
 ---
 
-## Stage 2 — Definition and Meaning
+## Definition and Meaning
 
 > **Academic Textbook Definition:**  
 > ${w.stage2_definitionAndMeaning.academicDefinition}
@@ -901,7 +901,7 @@ ${w.stage2_definitionAndMeaning.practicalInterpretation}
 
 ---
 
-## Stage 3 — Fundamentals and Prerequisites
+## Fundamentals and Prerequisites
 
 Before diving into advanced mechanisms, master these foundational prerequisites and definitions:
 
@@ -941,7 +941,7 @@ ${w.stage13_completeTopicRecap.comprehensiveSummary.map((s) => `• ${s}`).join(
 ## Section C: Key Terms & Terminology
 <a id="section-c-terminology"></a>
 
-## Stage 4 — Important Terminology & Full Forms
+## Important Terminology & Full Forms
 
 Never use abbreviations without understanding their scientific meaning:
 
@@ -954,7 +954,7 @@ ${w.stage4_importantTerminology.map((t) => `| **${t.term}** | ${t.fullForm || t.
 ## Section D: Main Concepts & Subtopics
 <a id="section-d-subtopics"></a>
 
-## Stage 5 — Main Concepts & Components
+## Main Concepts & Components
 
 *Strict Multi-Image Requirement: Every subtopic below is presented alongside its own dedicated, verified educational diagram with full 8-point breakdown.*
 
@@ -986,7 +986,7 @@ ${sub.diagram.point6_stepByStepInterpretation.map((st) => `   ${st}`).join('\n')
 ---
 `).join('\n')}
 
-## Stage 8 — Diagrams & Visual Explanations
+## Diagrams & Visual Explanations
 
 ### Complete Visual Gallery & 8-Point Scientific Analysis
 
@@ -1012,7 +1012,7 @@ ${diag.point6_stepByStepInterpretation.map((st) => `   ${st}`).join('\n')}
 ## Section E: Key Differences & Comparisons
 <a id="section-e-comparisons"></a>
 
-## Stage 11 — Comparisons & Relationships
+## Comparisons & Relationships
 
 ### ${w.stage6_differencesAndComparisons.title}
 
@@ -1030,7 +1030,7 @@ ${w.stage6_differencesAndComparisons.summaryTakeaway ? `> **Summary Takeaway:** 
 ## Section F: Important Processes & Mechanisms
 <a id="section-f-processes"></a>
 
-## Stage 6 — Detailed Working Mechanism
+## Detailed Working Mechanism
 
 ### How ${w.topic} Actually Works
 ${w.stage6_detailedWorkingMechanism.whatHappens}
@@ -1043,14 +1043,14 @@ ${w.stage6_detailedWorkingMechanism.whatHappens}
 
 ---
 
-## Stage 7 — Step-by-Step Processes
+## Step-by-Step Processes
 
-${w.stage7_stepByStepProcesses.map((s) => `### Stage ${s.stepNumber}: ${s.title}
+${w.stage7_stepByStepProcesses.map((s) => `### Step ${s.stepNumber}: ${s.title}
 - **What Happens:** ${s.whatHappens}
 - **Where It Happens:** ${s.whereItHappens}
 - **Components Involved:** ${s.componentsInvolved.join(', ')}
 - **Why It Happens:** ${s.whyItHappens}
-- **Next Stage:** ${s.whatHappensNext}
+- **Next Step:** ${s.whatHappensNext}
 `).join('\n')}
 
 ---
@@ -1058,7 +1058,7 @@ ${w.stage7_stepByStepProcesses.map((s) => `### Stage ${s.stepNumber}: ${s.title}
 ## Section G: Formulas & Equations
 <a id="section-g-formulas"></a>
 
-## Stage 10 — Formulas, Equations & Problem Solving
+## Formulas, Equations & Problem Solving
 
 ${w.stage10_formulasAndProblemSolving.hasFormulas ? `### Primary Governing Equation
 $$\\mathbf{${w.stage10_formulasAndProblemSolving.primaryEquation}}^*$$
@@ -1089,7 +1089,7 @@ ${num.step6_stepByStepCalculations.map((c) => `   ${c}`).join('\n')}
 
 ---
 
-## Stage 9 — Examples & Applications
+## Examples & Applications
 
 ### 1. Simple Everyday Example:
 - **Scenario:** ${w.stage9_examplesAndApplications.simpleExample.scenario}
@@ -1154,7 +1154,7 @@ ${probSection.practiceProblemsWithAnswers.map((pp) => `#### Practice Problem ${p
 ## Section I: Exam-Oriented Preparation
 <a id="section-i-exam-prep"></a>
 
-## Stage 14 — Knowledge Assessment & Self-Test
+## Knowledge Assessment & Self-Test
 
 Test your understanding with these curriculum-calibrated practice questions across all standard examination formats:
 
@@ -1190,7 +1190,7 @@ ${q.explanation}
 ## Section J: Final Revision Section
 <a id="section-j-revision"></a>
 
-## Stage 12 — Important Facts & Misconceptions
+## Important Facts & Misconceptions
 
 ### Critical Facts to Remember:
 ${w.stage12_importantFactsAndMisconceptions.importantFacts.map((f) => `• ${f}`).join('\n')}
@@ -1206,7 +1206,7 @@ ${w.stage12_importantFactsAndMisconceptions.boardTraps.map((bt) => `⚠️ **Tra
 
 ---
 
-## Stage 13 — Complete Topic Recap
+## Complete Topic Recap
 
 ### Comprehensive Revision Takeaways:
 ${w.stage13_completeTopicRecap.comprehensiveSummary.map((s) => `${s}`).join('\n\n')}
@@ -1526,7 +1526,7 @@ export function buildProblemSolvingMethodsForTopic(
           requiredQuantity: 'Physiological consequence and diagnostic manifestation',
           formulaSelected: 'Cause → Intermediate Disruption → Final System Output',
           formulaSelectionReason: 'Biological mechanisms operate as tightly linked sequential pathways.',
-          substitution: 'Disruption at Stage 2 halts Stage 3 output.',
+          substitution: 'Disruption at the intermediate step halts final system output.',
           stepByStepCalculations: topic.toLowerCase().includes('heart')
             ? [
                 'Step 1: Identify normal valve role: Bicuspid valve prevents retrograde backflow from left ventricle into left atrium during systole.',

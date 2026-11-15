@@ -201,7 +201,11 @@ export function validateAcademicNotebook(note: any): { isValid: boolean; errors:
     'Primary Operational Unit',
     'Structural Blueprint & Input Elements',
     'Step-by-Step Dynamic Working Mechanism',
-    'governing mechanism wherein specific structural inputs'
+    'governing mechanism wherein specific structural inputs',
+    'Stage 1 —',
+    'Stage 2 —',
+    'Stage 3 —',
+    'General Science Standard System'
   ];
 
   const fullText = JSON.stringify(note).toLowerCase();

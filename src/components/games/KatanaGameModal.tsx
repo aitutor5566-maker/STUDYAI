@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import * as THREE from 'three';
-import { X, Trophy, Shield, Swords, RotateCcw, Award, Sparkles, Volume2, VolumeX, Eye } from 'lucide-react';
+import { X, Trophy, Shield, Swords, RotateCcw, Award, Sparkles, Volume2, VolumeX, Eye, Maximize2, Minimize2 } from 'lucide-react';
 import { useLearning } from '../../context/LearningContext';
+import { enterElementFullscreen, exitBrowserFullscreen, isBrowserFullscreenActive } from '../../utils/fullscreenGame';
 
 interface KatanaQuestion {
   id: string;
@@ -93,10 +95,13 @@ export const KatanaGameModal: React.FC<{
   topic?: string;
   subject?: string;
   stageIndex?: number;
+  difficulty?: string;
 }> = ({ isOpen, onClose, topic = 'Photosynthesis', subject = 'Science', stageIndex = 1 }) => {
   const { apiFetch, triggerRefresh } = useLearning();
 
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const mountRef = useRef<HTMLDivElement | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Gameplay State
   const [loading, setLoading] = useState<boolean>(true);
@@ -374,8 +379,10 @@ export const KatanaGameModal: React.FC<{
 
     // 3. Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    renderer.setSize(width, height);
+    renderer.setSize(width || window.innerWidth, height || window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
     container.innerHTML = '';
@@ -875,21 +882,28 @@ export const KatanaGameModal: React.FC<{
 
     frameIdRef.current = requestAnimationFrame(animate);
 
-    // Window Resize Handler
+    // Window + Container ResizeObserver Handler (fixes half-screen & fullscreen resize)
     const handleResize = () => {
       if (!mountRef.current || !rendererRef.current || !cameraRef.current) return;
-      const w = mountRef.current.clientWidth;
-      const h = mountRef.current.clientHeight;
+      const w = mountRef.current.clientWidth || window.innerWidth;
+      const h = mountRef.current.clientHeight || window.innerHeight;
+      if (w <= 0 || h <= 0) return;
       cameraRef.current.aspect = w / h;
       cameraRef.current.updateProjectionMatrix();
-      rendererRef.current.setSize(w, h);
+      rendererRef.current.setSize(w, h, false);
+      rendererRef.current.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     };
 
+    const resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(container);
     window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
 
     return () => {
       if (frameIdRef.current) cancelAnimationFrame(frameIdRef.current);
+      resizeObserver.disconnect();
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
       renderer.dispose();
     };
   }, [isOpen, currentEnvironment, switchEnvironment]);
@@ -1037,25 +1051,60 @@ export const KatanaGameModal: React.FC<{
     }
   };
 
+  useEffect(() => {
+    const syncFs = () => setIsFullscreen(isBrowserFullscreenActive());
+    document.addEventListener('fullscreenchange', syncFs);
+    document.addEventListener('webkitfullscreenchange', syncFs);
+    return () => {
+      document.removeEventListener('fullscreenchange', syncFs);
+      document.removeEventListener('webkitfullscreenchange', syncFs);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      exitBrowserFullscreen();
+    }
+  }, [isOpen]);
+
+  const toggleFullscreen = async () => {
+    if (isBrowserFullscreenActive()) {
+      await exitBrowserFullscreen();
+      setIsFullscreen(false);
+    } else {
+      const ok = await enterElementFullscreen(rootRef.current);
+      setIsFullscreen(ok);
+    }
+  };
+
+  const handleExitGame = async () => {
+    await exitBrowserFullscreen();
+    onClose();
+  };
+
   if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <div
+      ref={rootRef}
       style={{
         position: 'fixed',
         inset: 0,
+        width: '100vw',
+        height: '100dvh',
         zIndex: 99999,
         background: '#060B19',
         overflow: 'hidden',
-        userSelect: 'none'
+        userSelect: 'none',
+        touchAction: 'none'
       }}
     >
       {/* 1. Full 3D WebGL Three.js Canvas Container */}
       <div
         ref={mountRef}
         style={{
-          width: '100vw',
-          height: '100vh',
+          width: '100%',
+          height: '100%',
           position: 'absolute',
           top: 0,
           left: 0
@@ -1163,6 +1212,26 @@ export const KatanaGameModal: React.FC<{
           >
             {/* Environment Tabs */}
             <div style={{ display: 'flex', gap: 4 }}>
+              <button
+                type="button"
+                onClick={toggleFullscreen}
+                style={{
+                  background: 'rgba(255,255,255,0.12)',
+                  border: 'none',
+                  borderRadius: 999,
+                  padding: '4px 10px',
+                  color: '#FFFFFF',
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4
+                }}
+                title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+              >
+                {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+              </button>
               {(Object.keys(ENVIRONMENTS) as EnvironmentType[]).map((envKey) => {
                 const conf = ENVIRONMENTS[envKey];
                 const isActive = currentEnvironment === envKey;
@@ -1264,7 +1333,7 @@ export const KatanaGameModal: React.FC<{
             {/* Exit Modal */}
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleExitGame}
               style={{
                 pointerEvents: 'auto',
                 background: 'rgba(15, 23, 42, 0.85)',
@@ -1517,7 +1586,7 @@ export const KatanaGameModal: React.FC<{
             <div style={{ display: 'flex', gap: 14 }}>
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleExitGame}
                 style={{
                   flex: 1,
                   padding: '14px 20px',
@@ -1530,7 +1599,7 @@ export const KatanaGameModal: React.FC<{
                   cursor: 'pointer'
                 }}
               >
-                Back to Library
+                Back to Learning
               </button>
               <button
                 type="button"
@@ -1556,4 +1625,6 @@ export const KatanaGameModal: React.FC<{
       )}
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };
