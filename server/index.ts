@@ -7073,6 +7073,95 @@ export function createAppServer() {
         return;
       }
 
+      if (pathname === '/api/educational-games/sky-striker/save' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const now = new Date().toISOString();
+        const sessionId = `sky3d-${crypto.randomUUID().slice(0, 8)}`;
+        const score = Math.max(0, Number(body.knowledgePoints) || 0);
+        const accuracy = Math.min(100, Math.max(0, Number(body.accuracy) || 0));
+        const totalQuestions = Math.max(1, Number(body.totalQuestions) || 1);
+        const correctAnswers = Math.max(0, Number(body.correctAnswers) || 0);
+        const incorrectAnswers = Math.max(0, Number(body.incorrectAnswers) || 0);
+        const durationSeconds = Math.max(5, Number(body.durationSeconds) || 30);
+        const subject = sanitizeText(body.subject || 'Science', 60);
+        const topic = sanitizeText(body.topic || subject, 80);
+        const difficulty = sanitizeText(body.difficulty || 'medium', 20);
+        const grade = Math.max(1, Math.min(12, Number(body.grade) || 8));
+        const masteredTopics = Array.isArray(body.masteredTopics) ? body.masteredTopics.slice(0, 20) : [];
+        const missedTopics = Array.isArray(body.missedTopics) ? body.missedTopics.slice(0, 20) : [];
+
+        db.prepare(`
+          INSERT INTO educational_game_sessions (
+            id, user_id, game_slug, subject, topic, difficulty, grade, language,
+            total_questions, correct_count, incorrect_count, score, accuracy_percentage,
+            duration_seconds, status, weak_concepts_json, mastered_concepts_json,
+            completed_at, created_at, updated_at
+          ) VALUES (?, ?, 'sky_striker_3d', ?, ?, ?, ?, 'English', ?, ?, ?, ?, ?, ?, 'completed', ?, ?, ?, ?, ?)
+        `).run(
+          sessionId,
+          studentId,
+          subject,
+          topic,
+          difficulty,
+          grade,
+          totalQuestions,
+          correctAnswers,
+          incorrectAnswers,
+          score,
+          accuracy,
+          durationSeconds,
+          JSON.stringify(missedTopics),
+          JSON.stringify(masteredTopics),
+          now,
+          now,
+          now
+        );
+
+        db.prepare(`
+          INSERT INTO student_educational_game_stats (
+            id, user_id, game_slug, total_sessions_completed, total_questions_answered,
+            total_correct_answers, highest_score, average_accuracy, favorite_topic, last_played_at, created_at, updated_at
+          ) VALUES (?, ?, 'sky_striker_3d', 1, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(user_id, game_slug) DO UPDATE SET
+            total_sessions_completed = total_sessions_completed + 1,
+            total_questions_answered = total_questions_answered + excluded.total_questions_answered,
+            total_correct_answers = total_correct_answers + excluded.total_correct_answers,
+            highest_score = MAX(highest_score, excluded.highest_score),
+            average_accuracy = ROUND((average_accuracy * 0.7) + (excluded.average_accuracy * 0.3)),
+            favorite_topic = excluded.favorite_topic,
+            last_played_at = excluded.last_played_at,
+            updated_at = excluded.updated_at
+        `).run(
+          `stat-${crypto.randomUUID().slice(0, 8)}`,
+          studentId,
+          totalQuestions,
+          correctAnswers,
+          score,
+          accuracy,
+          topic,
+          now,
+          now,
+          now
+        );
+
+        db.prepare(`
+          INSERT INTO library_resources (id, user_id, resource_type, title, subject, topic, summary, content_json, media_url, status, created_at)
+          VALUES (?, ?, 'game', ?, ?, ?, ?, ?, NULL, 'ready', ?)
+        `).run(
+          `res-${sessionId}`,
+          studentId,
+          `Sky Striker: ${topic}`,
+          subject,
+          topic,
+          `Knowledge Points: ${score} • Accuracy: ${accuracy}% • Level: ${body.levelReached || 1}`,
+          JSON.stringify({ sessionId, gameSlug: 'sky_striker_3d', score, accuracy, masteredTopics, missedTopics }),
+          now
+        );
+
+        sendJson(res, 200, { saved: true, sessionId, score, accuracy });
+        return;
+      }
+
       // -----------------------------------------------------------------------
       // KATANA: SHADOW WARRIORS — THE WISDOM BATTLE API Endpoints
       // -----------------------------------------------------------------------

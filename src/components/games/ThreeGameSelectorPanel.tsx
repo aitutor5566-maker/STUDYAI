@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Sparkles, Shield, Swords, BookOpen, AlertCircle } from 'lucide-react';
+import { Play, Sparkles, Shield, Swords, BookOpen, AlertCircle, Plane } from 'lucide-react';
 import { useLearning } from '../../context/LearningContext';
 import {
   THREE_FEATURED_GAMES,
@@ -37,12 +37,14 @@ export const ThreeGameSelectorPanel: React.FC<ThreeGameSelectorPanelProps> = ({
   const getIcon = (id: AuthorisedGameId) => {
     if (id === 'war_of_words') return <BookOpen size={18} color="#22D3EE" />;
     if (id === 'study_rush_3d') return <Shield size={18} color="#FF6A00" />;
+    if (id === 'sky_striker') return <Plane size={18} color="#38BDF8" />;
     return <Swords size={18} color="#F59E0B" />;
   };
 
   const getGradient = (id: AuthorisedGameId) => {
     if (id === 'war_of_words') return 'linear-gradient(135deg, #050814 0%, #0B1D3A 55%, #083344 100%)';
     if (id === 'study_rush_3d') return 'linear-gradient(135deg, #090D1F 0%, #1E1B4B 55%, #7C2D12 100%)';
+    if (id === 'sky_striker') return 'linear-gradient(135deg, #050814 0%, #0C2340 55%, #075985 100%)';
     return 'linear-gradient(135deg, #0A1128 0%, #1C2541 55%, #0B525B 100%)';
   };
 

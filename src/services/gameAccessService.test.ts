@@ -2,11 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { requestGameLaunch, THREE_FEATURED_GAMES } from './gameAccessService';
 
 describe('Centralised Game Access Service', () => {
-  it('preserves exactly the three featured games', () => {
+  it('preserves the featured games including Sky Striker', () => {
     expect(THREE_FEATURED_GAMES.map((g) => g.id)).toEqual([
       'war_of_words',
       'study_rush_3d',
-      'katana_wisdom'
+      'katana_wisdom',
+      'sky_striker'
     ]);
   });
 

@@ -1,4 +1,4 @@
-export type AuthorisedGameId = 'war_of_words' | 'study_rush_3d' | 'katana_wisdom';
+export type AuthorisedGameId = 'war_of_words' | 'study_rush_3d' | 'katana_wisdom' | 'sky_striker';
 
 export type GameLaunchOrigin =
   | 'ai_tutor'
@@ -71,6 +71,17 @@ export const THREE_FEATURED_GAMES: GameMetadata[] = [
       'Master your academic curriculum in real-time samurai combat. Unleash wisdom strikes, charge your spirit katana gauge, and defeat shadow warlords.',
     badge: '2.5D Wisdom Combat',
     accentColor: '#F59E0B',
+    supportedSubjects: ['Science', 'Biology', 'Physics', 'Chemistry', 'Mathematics', 'History', 'Geography', 'English', 'General'],
+    supportsPronunciation: false
+  },
+  {
+    id: 'sky_striker',
+    name: 'Sky Striker — Fighter Jet: Knowledge Flight',
+    subtitle: '50+ Questions • 5 Aerial Worlds • Three.js Flight Engine',
+    description:
+      'Pilot a twin-engine futuristic fighter jet through Desert Storm and beyond, lock onto holographic answer targets, and fire energy pulses.',
+    badge: '3D Aerial Flight Adventure',
+    accentColor: '#38BDF8',
     supportedSubjects: ['Science', 'Biology', 'Physics', 'Chemistry', 'Mathematics', 'History', 'Geography', 'English', 'General'],
     supportsPronunciation: false
   }

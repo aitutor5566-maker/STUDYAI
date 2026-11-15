@@ -3,6 +3,7 @@ import { useLearning } from '../../context/LearningContext';
 import { WarOfWordsModal } from './WarOfWordsModal';
 import { StudyRush3DModal } from './StudyRush3DModal';
 import { KatanaGameModal } from './KatanaGameModal';
+import { SkyStrikerModal } from './SkyStrikerModal';
 
 export const GlobalThreeGameHost: React.FC = () => {
   const { activeAuthorisedGame, closeAuthorisedGame } = useLearning();
@@ -36,6 +37,15 @@ export const GlobalThreeGameHost: React.FC = () => {
           onClose={closeAuthorisedGame}
           topic={activeAuthorisedGame.topic || 'Photosynthesis'}
           subject={activeAuthorisedGame.subject}
+          difficulty={activeAuthorisedGame.difficulty}
+        />
+      )}
+      {activeAuthorisedGame.gameId === 'sky_striker' && (
+        <SkyStrikerModal
+          isOpen={true}
+          onClose={closeAuthorisedGame}
+          initialTopic={activeAuthorisedGame.topic}
+          initialSubject={activeAuthorisedGame.subject}
           difficulty={activeAuthorisedGame.difficulty}
         />
       )}
