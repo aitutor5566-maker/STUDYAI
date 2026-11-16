@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { getPbrTextureSet } from '../engine/PbrTextureFactory';
 import { AircraftSkin } from './types';
 
 export interface FighterJetRig {
@@ -8,39 +9,49 @@ export interface FighterJetRig {
   leftExhaust: THREE.Mesh;
   rightExhaust: THREE.Mesh;
   exhaustLight: THREE.PointLight;
+  landingGearGroup: THREE.Group;
+  portStrobe: THREE.Mesh;
+  starboardStrobe: THREE.Mesh;
 }
 
 export function buildFighterJet(skin: AircraftSkin): FighterJetRig {
   const root = new THREE.Group();
+  const metalPbr = typeof document !== 'undefined' ? getPbrTextureSet('metal', 2, 2) : null;
 
   const bodyMat = new THREE.MeshStandardMaterial({
     color: skin.fuselageHex,
-    metalness: 0.72,
-    roughness: 0.28
+    metalness: 0.78,
+    roughness: 0.24,
+    normalMap: metalPbr?.normalMap ?? null,
+    roughnessMap: metalPbr?.roughnessMap ?? null,
+    normalScale: new THREE.Vector2(0.45, 0.45)
   });
 
   const accentMat = new THREE.MeshStandardMaterial({
     color: skin.wingAccentHex,
-    metalness: 0.55,
-    roughness: 0.3,
+    metalness: 0.62,
+    roughness: 0.28,
     emissive: new THREE.Color(skin.wingAccentHex),
-    emissiveIntensity: 0.16
+    emissiveIntensity: 0.22
   });
 
   const darkTrimMat = new THREE.MeshStandardMaterial({
     color: 0x0f172a,
-    metalness: 0.65,
-    roughness: 0.4
+    metalness: 0.7,
+    roughness: 0.35
   });
 
-  const canopyMat = new THREE.MeshStandardMaterial({
+  const canopyMat = new THREE.MeshPhysicalMaterial({
     color: skin.canopyHex,
-    metalness: 0.25,
-    roughness: 0.08,
+    metalness: 0.15,
+    roughness: 0.06,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.06,
+    ior: 1.48,
     transparent: true,
-    opacity: 0.78,
+    opacity: 0.82,
     emissive: new THREE.Color(skin.canopyHex),
-    emissiveIntensity: 0.18
+    emissiveIntensity: 0.2
   });
 
   const exhaustMat = new THREE.MeshBasicMaterial({
@@ -174,12 +185,49 @@ export function buildFighterJet(skin: AircraftSkin): FighterJetRig {
   exhaustLight.position.set(0, 0, 3.2);
   root.add(exhaustLight);
 
+  // Wingtip Navigation Beacons (Port = Red, Starboard = Green)
+  const portStrobe = new THREE.Mesh(
+    new THREE.SphereGeometry(0.09, 8, 8),
+    new THREE.MeshBasicMaterial({ color: 0xef4444 })
+  );
+  portStrobe.position.set(-3.55, 0.06, 1.55);
+  root.add(portStrobe);
+
+  const starboardStrobe = new THREE.Mesh(
+    new THREE.SphereGeometry(0.09, 8, 8),
+    new THREE.MeshBasicMaterial({ color: 0x22c55e })
+  );
+  starboardStrobe.position.set(3.55, 0.06, 1.55);
+  root.add(starboardStrobe);
+
+  // Retractable Tricycle Landing Gear
+  const landingGearGroup = new THREE.Group();
+  const strutGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.68, 8);
+  const wheelGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.1, 12);
+  wheelGeo.rotateZ(Math.PI / 2);
+
+  for (const [gx, gz] of [
+    [0, -2.0],
+    [-0.95, 0.65],
+    [0.95, 0.65]
+  ] as const) {
+    const strut = new THREE.Mesh(strutGeo, darkTrimMat);
+    strut.position.set(gx, -0.52, gz);
+    const wheel = new THREE.Mesh(wheelGeo, darkTrimMat);
+    wheel.position.set(gx, -0.84, gz);
+    landingGearGroup.add(strut, wheel);
+  }
+  root.add(landingGearGroup);
+
   return {
     root,
     leftAileron,
     rightAileron,
     leftExhaust,
     rightExhaust,
-    exhaustLight
+    exhaustLight,
+    landingGearGroup,
+    portStrobe,
+    starboardStrobe
   };
 }

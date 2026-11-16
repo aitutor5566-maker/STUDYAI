@@ -1,17 +1,32 @@
 import * as THREE from 'three';
+import { getPbrTextureSet, PbrMaterialKind } from '../engine/PbrTextureFactory';
+import { createContactShadowMesh, createVolumetricLightShafts } from '../engine/VisualMasterpieceEngine';
 import { GraphicsQuality, OptionId, WarriorCustomization, WorldId } from './types';
 
 function makeMesh(
   geo: THREE.BufferGeometry,
   color: string | number,
-  opts?: { emissive?: string | number; emissiveIntensity?: number; roughness?: number; metalness?: number }
+  opts?: {
+    emissive?: string | number;
+    emissiveIntensity?: number;
+    roughness?: number;
+    metalness?: number;
+    pbr?: PbrMaterialKind;
+    repeat?: number;
+  }
 ): THREE.Mesh {
+  const pbrSet = opts?.pbr && typeof document !== 'undefined'
+    ? getPbrTextureSet(opts.pbr, opts.repeat ?? 1, opts.repeat ?? 1)
+    : null;
   const mat = new THREE.MeshStandardMaterial({
     color,
-    roughness: opts?.roughness ?? 0.65,
-    metalness: opts?.metalness ?? 0.2,
+    roughness: opts?.roughness ?? 0.6,
+    metalness: opts?.metalness ?? 0.22,
     emissive: opts?.emissive ?? 0x000000,
-    emissiveIntensity: opts?.emissiveIntensity ?? 0
+    emissiveIntensity: opts?.emissiveIntensity ?? 0,
+    normalMap: pbrSet?.normalMap ?? null,
+    roughnessMap: pbrSet?.roughnessMap ?? null,
+    normalScale: pbrSet ? new THREE.Vector2(0.55, 0.55) : undefined
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.castShadow = true;
@@ -32,6 +47,7 @@ export interface ShadowWarriorRig {
 
 export function buildShadowWarrior(custom: WarriorCustomization): ShadowWarriorRig {
   const root = new THREE.Group();
+  root.add(createContactShadowMesh(0.8));
   const bodyPivot = new THREE.Group();
   root.add(bodyPivot);
 
@@ -123,14 +139,17 @@ export function buildShadowWarrior(custom: WarriorCustomization): ShadowWarriorR
   armR.position.y = -0.3;
   rightArm.add(armR);
 
-  const hilt = makeMesh(new THREE.BoxGeometry(0.32, 0.1, 0.1), '#94A3B8', { metalness: 0.7 });
+  const hilt = makeMesh(new THREE.BoxGeometry(0.32, 0.1, 0.1), '#94A3B8', { metalness: 0.78, pbr: 'metal' });
   hilt.position.set(0.24, -0.58, 0);
-  const blade = makeMesh(new THREE.BoxGeometry(1.18, 0.12, 0.06), custom.glowColor, {
+  const blade = makeMesh(new THREE.BoxGeometry(1.24, 0.12, 0.06), custom.glowColor, {
     emissive: custom.glowColor,
-    emissiveIntensity: 1.25,
-    roughness: 0.2
+    emissiveIntensity: 1.65,
+    roughness: 0.15,
+    metalness: 0.5
   });
-  blade.position.set(0.86, -0.58, 0);
+  blade.position.set(0.88, -0.58, 0);
+  const bladeLight = new THREE.PointLight(custom.glowColor, 0.85, 5.5);
+  blade.add(bladeLight);
   rightArm.add(hilt, blade);
   bodyPivot.add(rightArm);
 
@@ -154,8 +173,13 @@ export interface AnswerSentinelRig {
  */
 export function buildAnswerSentinel(index: number): AnswerSentinelRig {
   const group = new THREE.Group();
+  group.add(createContactShadowMesh(1.05));
 
-  const pedestal = makeMesh(new THREE.CylinderGeometry(0.85, 1.0, 0.28, 8), '#1E293B');
+  const pedestal = makeMesh(new THREE.CylinderGeometry(0.85, 1.0, 0.28, 12), '#1E293B', {
+    pbr: 'stone',
+    metalness: 0.28,
+    roughness: 0.58
+  });
   pedestal.position.y = 0.14;
 
   const ringMat = new THREE.MeshBasicMaterial({
@@ -316,15 +340,28 @@ export function buildWorldEnvironment(
   };
   const theme = themes[worldId];
 
-  // Main Ground Path (x: -22 to +44)
-  const ground = makeMesh(new THREE.BoxGeometry(72, 2, 12), theme.ground, { roughness: 0.9 });
+  // Main Ground Path (x: -22 to +44) with PBR stone/earth normal map
+  const ground = makeMesh(new THREE.BoxGeometry(72, 2, 12), theme.ground, { roughness: 0.88, pbr: 'grass', repeat: 8 });
   ground.position.set(11, -1, 0);
   root.add(ground);
 
-  // Ancient Stone Bridge / Walkway inlay
-  const bridge = makeMesh(new THREE.BoxGeometry(68, 0.2, 4.4), theme.stone, { roughness: 0.85 });
+  // Ancient Stone Bridge / Walkway inlay with PBR stone
+  const bridge = makeMesh(new THREE.BoxGeometry(68, 0.2, 4.4), theme.stone, { roughness: 0.72, metalness: 0.18, pbr: 'stone', repeat: 10 });
   bridge.position.set(11, 0.02, 0);
   root.add(bridge);
+
+  if (quality !== 'low') {
+    const shafts = createVolumetricLightShafts(
+      [
+        { x: -3, y: 11, z: -4, rotZ: -0.22, scale: 0.9 },
+        { x: 9, y: 12, z: -5, rotZ: -0.18, scale: 1.0 },
+        { x: 21, y: 11, z: -4, rotZ: -0.24, scale: 0.9 }
+      ],
+      theme.accent,
+      0.06
+    );
+    root.add(shafts);
+  }
 
   // Raised Stone Platforms along the 2.5D path (for jumping & platforming)
   const platformSpecs: Array<{ x: number; y: number; w: number }> = [

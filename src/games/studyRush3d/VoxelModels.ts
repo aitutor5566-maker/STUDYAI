@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { getPbrTextureSet, PbrMaterialKind } from '../engine/PbrTextureFactory';
+import { createContactShadowMesh } from '../engine/VisualMasterpieceEngine';
 import { EnemyType, OptionId, PlayerCustomization } from './types';
 
 function makeBox(
@@ -6,15 +8,25 @@ function makeBox(
   h: number,
   d: number,
   color: string | number,
-  opts?: { emissive?: string | number; emissiveIntensity?: number; roughness?: number; metalness?: number }
+  opts?: {
+    emissive?: string | number;
+    emissiveIntensity?: number;
+    roughness?: number;
+    metalness?: number;
+    pbr?: PbrMaterialKind;
+  }
 ): THREE.Mesh {
   const geo = new THREE.BoxGeometry(w, h, d);
+  const pbrSet = opts?.pbr ? getPbrTextureSet(opts.pbr, 1, 1) : null;
   const mat = new THREE.MeshStandardMaterial({
     color,
-    roughness: opts?.roughness ?? 0.78,
-    metalness: opts?.metalness ?? 0.08,
+    roughness: opts?.roughness ?? 0.72,
+    metalness: opts?.metalness ?? 0.12,
     emissive: opts?.emissive ?? 0x000000,
-    emissiveIntensity: opts?.emissiveIntensity ?? 0
+    emissiveIntensity: opts?.emissiveIntensity ?? 0,
+    normalMap: pbrSet?.normalMap ?? null,
+    roughnessMap: pbrSet?.roughnessMap ?? null,
+    normalScale: pbrSet ? new THREE.Vector2(0.55, 0.55) : undefined
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.castShadow = true;
@@ -36,6 +48,7 @@ export interface VoxelPlayerRig {
 
 export function buildVoxelPlayer(customization: PlayerCustomization): VoxelPlayerRig {
   const group = new THREE.Group();
+  group.add(createContactShadowMesh(0.75));
   const bodyPivot = new THREE.Group();
   group.add(bodyPivot);
 
@@ -127,17 +140,20 @@ export function buildVoxelPlayer(customization: PlayerCustomization): VoxelPlaye
   rightArmMesh.position.y = -0.32;
   rightArm.add(rightArmMesh);
 
-  const staffRod = makeBox(0.1, 1.45, 0.1, '#78350F');
+  const staffRod = makeBox(0.1, 1.45, 0.1, '#78350F', { pbr: 'wood', roughness: 0.65 });
   staffRod.position.set(0, -0.25, 0.35);
   staffRod.rotation.x = Math.PI / 4;
   rightArm.add(staffRod);
 
-  const staffOrb = makeBox(0.26, 0.26, 0.26, '#38BDF8', {
+  const staffOrb = makeBox(0.28, 0.28, 0.28, '#38BDF8', {
     emissive: '#0EA5E9',
-    emissiveIntensity: 1.1,
-    roughness: 0.2
+    emissiveIntensity: 1.5,
+    roughness: 0.15,
+    metalness: 0.3
   });
   staffOrb.position.set(0, 0.28, 0.88);
+  const staffGlow = new THREE.PointLight('#38BDF8', 0.9, 6.5);
+  staffOrb.add(staffGlow);
   rightArm.add(staffOrb);
   bodyPivot.add(rightArm);
 

@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { getPbrTextureSet } from '../engine/PbrTextureFactory';
+import { createAtmosphericSkyDome } from '../engine/VisualMasterpieceEngine';
 import { GraphicsQuality, WorldId } from './types';
 
 export interface WorldConfig {
@@ -90,9 +92,23 @@ export function buildSkyEnvironment(
   const cfg = SKY_WORLDS.find((w) => w.id === worldId) || SKY_WORLDS[0];
 
   scene.background = new THREE.Color(cfg.skyColor);
-  scene.fog = new THREE.FogExp2(cfg.fogColor, 0.0038);
+  scene.fog = new THREE.FogExp2(cfg.fogColor, 0.0036);
 
   const group = new THREE.Group();
+
+  // Procedural Atmospheric Sky Dome with Sun/Moon Halo & Starfield
+  if (typeof document !== 'undefined') {
+    const skyDome = createAtmosphericSkyDome({
+      radius: 460,
+      topColor: worldId === 'future_city' ? 0x020617 : cfg.skyColor,
+      horizonColor: cfg.fogColor,
+      bottomColor: cfg.terrainColor,
+      sunColor: cfg.sunColor,
+      sunDirection: new THREE.Vector3(0.45, 0.42, -0.78),
+      starIntensity: worldId === 'future_city' || worldId === 'sky_kingdom' ? 0.78 : 0.12
+    });
+    group.add(skyDome.mesh);
+  }
 
   // Lighting
   const ambient = new THREE.HemisphereLight(cfg.ambientColor, cfg.terrainColor, 0.95);
@@ -128,11 +144,18 @@ export function buildSkyEnvironment(
   }
   terrainGeo.computeVertexNormals();
 
+  const terrainPbr =
+    typeof document !== 'undefined'
+      ? getPbrTextureSet(worldId === 'ocean_frontier' ? 'water' : 'stone', 18, 18)
+      : null;
   const terrainMat = new THREE.MeshStandardMaterial({
     color: cfg.terrainColor,
-    roughness: worldId === 'ocean_frontier' ? 0.18 : 0.88,
-    metalness: worldId === 'ocean_frontier' ? 0.55 : 0.06,
-    flatShading: true
+    roughness: worldId === 'ocean_frontier' ? 0.14 : 0.86,
+    metalness: worldId === 'ocean_frontier' ? 0.62 : 0.08,
+    normalMap: terrainPbr?.normalMap ?? null,
+    roughnessMap: terrainPbr?.roughnessMap ?? null,
+    normalScale: new THREE.Vector2(0.55, 0.55),
+    flatShading: worldId !== 'ocean_frontier'
   });
   const terrain = new THREE.Mesh(terrainGeo, terrainMat);
   terrain.receiveShadow = true;

@@ -10,6 +10,7 @@ export const GlassNav: React.FC = () => {
   const items: Array<{ path: string; label: string; ariaLabel: string; iconName: FuturisticIconName }> = [
     { path: '/', label: 'Home', ariaLabel: 'Home Dashboard', iconName: 'home' },
     { path: '/notes', label: 'Notes', ariaLabel: 'AI Notes Studio', iconName: 'notes' },
+    { path: '/lesson-map', label: 'Lesson Map', ariaLabel: 'Interactive Lesson Map & Exam Roadmap', iconName: 'atlas' },
     { path: '/tutor', label: 'AI Tutor', ariaLabel: 'AI Tutor Teaching Studio', iconName: 'tutor' },
     { path: '/library', label: 'Library', ariaLabel: 'Saved Learning Library', iconName: 'library' },
     { path: '/profile', label: 'Profile', ariaLabel: 'Student Profile and Parent Dashboard', iconName: 'profile' }

@@ -4,6 +4,7 @@ import { WarOfWordsModal } from './WarOfWordsModal';
 import { StudyRush3DModal } from './StudyRush3DModal';
 import { KatanaGameModal } from './KatanaGameModal';
 import { SkyStrikerModal } from './SkyStrikerModal';
+import { ShadowNinjaRealmsModal } from './ShadowNinjaRealmsModal';
 
 export const GlobalThreeGameHost: React.FC = () => {
   const { activeAuthorisedGame, closeAuthorisedGame } = useLearning();
@@ -47,6 +48,14 @@ export const GlobalThreeGameHost: React.FC = () => {
           initialTopic={activeAuthorisedGame.topic}
           initialSubject={activeAuthorisedGame.subject}
           difficulty={activeAuthorisedGame.difficulty}
+        />
+      )}
+      {activeAuthorisedGame.gameId === 'shadow_ninja_realms' && (
+        <ShadowNinjaRealmsModal
+          isOpen={true}
+          onClose={closeAuthorisedGame}
+          initialTopic={activeAuthorisedGame.topic}
+          initialSubject={activeAuthorisedGame.subject}
         />
       )}
     </>

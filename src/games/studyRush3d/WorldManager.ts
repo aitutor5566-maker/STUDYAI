@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { getPbrTextureSet } from '../engine/PbrTextureFactory';
+import { createVolumetricLightShafts } from '../engine/VisualMasterpieceEngine';
 import {
   AnswerShrineRig,
   buildAnswerShrine,
@@ -51,6 +53,8 @@ export interface WorldHandles {
   towerGroup: THREE.Group;
   lanternGroup: THREE.Group;
   libraryGroup: THREE.Group;
+  waterNormalMap?: THREE.Texture;
+  volumetricShafts?: THREE.Group;
 }
 
 function addBoxCollider(colliders: ColliderBox[], cx: number, cz: number, halfW: number, halfD: number): void {
@@ -102,31 +106,110 @@ export function buildStudyRushWorld(scene: THREE.Scene): WorldHandles {
   const resources: WorldResourceEntity[] = [];
   const villagers: WorldVillagerEntity[] = [];
 
-  // 1. Voxel Ground Terrain with procedural tile texture
-  const grassTex = createVoxelTileTexture('#4ADE80', '#22C55E', 30);
+  // 1. Voxel Ground Terrain with procedural PBR grass & stone textures
+  const grassPbr = typeof document !== 'undefined' ? getPbrTextureSet('grass', 28, 28) : null;
   const groundGeo = new THREE.BoxGeometry(120, 1, 120);
   const groundMat = new THREE.MeshStandardMaterial({
-    color: grassTex ? '#FFFFFF' : '#4ADE80',
-    map: grassTex || undefined,
-    roughness: 0.92
+    color: grassPbr ? '#86EFAC' : '#4ADE80',
+    map: grassPbr?.map ?? undefined,
+    normalMap: grassPbr?.normalMap ?? undefined,
+    roughnessMap: grassPbr?.roughnessMap ?? undefined,
+    normalScale: new THREE.Vector2(0.7, 0.7),
+    roughness: 0.9
   });
   const ground = new THREE.Mesh(groundGeo, groundMat);
   ground.position.y = -0.5;
   ground.receiveShadow = true;
   root.add(ground);
 
-  // Village Cobblestone Plaza
-  const cobbleTex = createVoxelTileTexture('#CBD5E1', '#94A3B8', 10);
+  // Village Cobblestone Plaza with PBR stone normal/roughness
+  const stonePbr = typeof document !== 'undefined' ? getPbrTextureSet('stone', 10, 10) : null;
   const plazaGeo = new THREE.BoxGeometry(34, 0.14, 34);
   const plazaMat = new THREE.MeshStandardMaterial({
-    color: cobbleTex ? '#FFFFFF' : '#CBD5E1',
-    map: cobbleTex || undefined,
-    roughness: 0.85
+    color: stonePbr ? '#E2E8F0' : '#CBD5E1',
+    map: stonePbr?.map ?? undefined,
+    normalMap: stonePbr?.normalMap ?? undefined,
+    roughnessMap: stonePbr?.roughnessMap ?? undefined,
+    normalScale: new THREE.Vector2(0.65, 0.65),
+    roughness: 0.82
   });
   const plaza = new THREE.Mesh(plazaGeo, plazaMat);
   plaza.position.set(0, 0.02, 0);
   plaza.receiveShadow = true;
   root.add(plaza);
+
+  // Reflective Knowledge Fountain Pool + Instanced Meadow Grass
+  let waterNormalMap: THREE.Texture | undefined;
+  let volumetricShafts: THREE.Group | undefined;
+  if (typeof document !== 'undefined') {
+    const waterPbr = getPbrTextureSet('water', 3, 3);
+    waterNormalMap = waterPbr.normalMap;
+    const poolBasin = new THREE.Mesh(
+      new THREE.CylinderGeometry(3.2, 3.5, 0.35, 24),
+      new THREE.MeshStandardMaterial({
+        color: '#64748B',
+        normalMap: stonePbr?.normalMap ?? undefined,
+        roughness: 0.75
+      })
+    );
+    poolBasin.position.set(0, 0.16, 4.5);
+    poolBasin.receiveShadow = true;
+    poolBasin.castShadow = true;
+    root.add(poolBasin);
+
+    const waterMesh = new THREE.Mesh(
+      new THREE.CircleGeometry(2.85, 24),
+      new THREE.MeshPhysicalMaterial({
+        color: '#0EA5E9',
+        normalMap: waterNormalMap,
+        normalScale: new THREE.Vector2(0.45, 0.45),
+        roughness: 0.08,
+        metalness: 0.15,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.08,
+        transparent: true,
+        opacity: 0.86
+      })
+    );
+    waterMesh.rotation.x = -Math.PI / 2;
+    waterMesh.position.set(0, 0.35, 4.5);
+    root.add(waterMesh);
+
+    // InstancedMesh grass tufts outside the cobblestone plaza (single draw call)
+    const tuftGeo = new THREE.ConeGeometry(0.14, 0.55, 5);
+    tuftGeo.translate(0, 0.275, 0);
+    const tuftMat = new THREE.MeshStandardMaterial({ color: '#22C55E', roughness: 0.88 });
+    const tuftCount = 240;
+    const grassInstances = new THREE.InstancedMesh(tuftGeo, tuftMat, tuftCount);
+    const dummy = new THREE.Object3D();
+    let placed = 0;
+    for (let i = 0; i < 420 && placed < tuftCount; i++) {
+      const gx = (Math.sin(i * 12.9898) * 43758.5453 % 1) * 44;
+      const gz = (Math.cos(i * 78.233) * 24634.6345 % 1) * 44;
+      if (Math.abs(gx) < 18 && Math.abs(gz) < 18) continue;
+      dummy.position.set(gx, 0.02, gz);
+      dummy.rotation.y = (i * 1.7) % (Math.PI * 2);
+      const s = 0.7 + ((i * 7) % 10) * 0.06;
+      dummy.scale.set(s, s, s);
+      dummy.updateMatrix();
+      grassInstances.setMatrixAt(placed, dummy.matrix);
+      placed++;
+    }
+    grassInstances.count = placed;
+    grassInstances.instanceMatrix.needsUpdate = true;
+    root.add(grassInstances);
+
+    volumetricShafts = createVolumetricLightShafts(
+      [
+        { x: -7, y: 12, z: -7, rotZ: -0.2, scale: 0.9 },
+        { x: 0, y: 13, z: -9, rotZ: -0.15, scale: 1.05 },
+        { x: 7, y: 12, z: -7, rotZ: -0.22, scale: 0.9 }
+      ],
+      '#BAE6FD',
+      0.065
+    );
+    root.add(volumetricShafts);
+  }
 
   // Dark Forest Mossy Floor (West: x < -22)
   const forestFloor = new THREE.Mesh(
@@ -390,7 +473,9 @@ export function buildStudyRushWorld(scene: THREE.Scene): WorldHandles {
     wallGroup,
     towerGroup,
     lanternGroup,
-    libraryGroup
+    libraryGroup,
+    waterNormalMap,
+    volumetricShafts
   };
 }
 

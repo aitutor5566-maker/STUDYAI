@@ -28,6 +28,7 @@ import { NotesPage } from './pages/NotesPage';
 import { TutorPage } from './pages/TutorPage';
 import { LibraryPage } from './pages/LibraryPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { LessonMapPage } from './pages/LessonMapPage';
 import { SuperAdminPage } from './pages/SuperAdminPage';
 import { AdminPage } from './pages/AdminPage';
 import { LanguageLearningPage } from './pages/LanguageLearningPage';
@@ -86,6 +87,7 @@ export const App: React.FC = () => {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/notes" element={<NotesPage />} />
                 <Route path="/tutor" element={<TutorPage />} />
+                <Route path="/lesson-map" element={<LessonMapPage />} />
                 <Route path="/library" element={<LibraryPage />} />
                 <Route path="/languages" element={<LanguageLearningPage />} />
                 <Route path="/diagrams3d" element={<Diagrams3DPage />} />

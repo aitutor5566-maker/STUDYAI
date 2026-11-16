@@ -1,5 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import {
+  AdaptivePostProcessingPipeline,
+  AtmosphericParticleSystem,
+  buildAtmosphericEnvMap,
+  CinematicCameraController,
+  disposeThreeScene
+} from '../engine/VisualMasterpieceEngine';
 import { buildFighterJet } from './AircraftModel';
 import { buildSkyEnvironment } from './EnvironmentManager';
 import { SkyStrikerAudioManager } from './AudioManager';
@@ -132,6 +139,38 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
     container.appendChild(renderer.domElement);
 
     const env = buildSkyEnvironment(scene, worldId, quality);
+
+    // AAA Visual Masterpiece Engine: IBL Sky Reflections + Bloom + Slipstream Particles + Dynamic FOV Camera
+    const envTexture = buildAtmosphericEnvMap(
+      renderer,
+      worldId === 'future_city' ? '#090D24' : '#38BDF8',
+      worldId === 'desert_storm' ? '#FDBA74' : '#BAE6FD',
+      '#0F172A'
+    );
+    scene.environment = envTexture;
+
+    const postPipeline = new AdaptivePostProcessingPipeline(
+      renderer,
+      scene,
+      camera,
+      w,
+      h,
+      quality,
+      { strength: 0.44, radius: 0.56, threshold: 0.78 }
+    );
+
+    const slipstreamParticles = new AtmosphericParticleSystem({
+      count: quality === 'low' ? 45 : 130,
+      bounds: { x: 44, y: 20, z: 68 },
+      center: new THREE.Vector3(0, 6, -24),
+      color: '#E0F2FE',
+      size: 0.3,
+      opacity: 0.55,
+      driftVel: new THREE.Vector3(0, 0, 26)
+    });
+    scene.add(slipstreamParticles.points);
+
+    const camController = new CinematicCameraController(58, 1.2);
 
     const skin = AIRCRAFT_SKINS.find((s) => s.id === skinId) || AIRCRAFT_SKINS[0];
     const jet = buildFighterJet(skin);
@@ -288,6 +327,7 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
 
       if (activeBeam) effectsGroup.remove(activeBeam.mesh);
       activeBeam = { mesh: beamMesh, life: 0.35 };
+      camController.addShake(0.32);
 
       const isCorrect = target.answerId === q.correctAnswerId;
       if (isCorrect) {
@@ -353,7 +393,7 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
       if (cw <= 0 || ch <= 0) return;
       camera.aspect = cw / ch;
       camera.updateProjectionMatrix();
-      renderer.setSize(cw, ch, false);
+      postPipeline.resize(cw, ch);
     };
     const resizeObs = new ResizeObserver(handleResize);
     resizeObs.observe(container);
@@ -387,11 +427,13 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
           (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0) +
           mob.moveY;
         const isBoosting = Boolean(keys['ShiftLeft'] || keys['ShiftRight'] || mob.boost);
+        const isBraking = Boolean(keys['ControlLeft'] || keys['ControlRight']);
+        const yawInput = (keys['KeyQ'] ? 1 : 0) - (keys['KeyE'] ? 1 : 0);
 
-        const clampedX = Math.max(-1, Math.min(1, steerX));
+        const clampedX = Math.max(-1, Math.min(1, steerX - yawInput * 0.4));
         const clampedY = Math.max(-1, Math.min(1, steerY));
 
-        // Arcade Flight Physics
+        // Smooth Flight Physics (Acceleration, Deceleration & Banking)
         const targetVx = clampedX * 26;
         const targetVy = clampedY * 18;
         jetVel.x += (targetVx - jetVel.x) * Math.min(1, dt * 6.5);
@@ -406,18 +448,24 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
         bankAngle += (targetBank - bankAngle) * Math.min(1, dt * 7);
         pitchAngle += (targetPitch - pitchAngle) * Math.min(1, dt * 7);
 
-        const targetSpeed = isBoosting ? 84 : 50;
+        const targetSpeed = isBoosting ? 84 : isBraking ? 30 : 50;
         forwardSpeed += (targetSpeed - forwardSpeed) * Math.min(1, dt * 4);
-        audioManager.setEnginePitch((forwardSpeed - 45) / 40, isBoosting);
+        audioManager.setEnginePitch((forwardSpeed - 30) / 55, isBoosting);
 
         // Gentle atmospheric turbulence
         const turbY = reducedMotionRef.current ? 0 : Math.sin(now * 0.004) * 0.12;
         jet.root.position.set(jetPos.x, jetPos.y + turbY, jetPos.z);
         jet.root.rotation.set(pitchAngle, -clampedX * 0.12, bankAngle);
 
-        // Animated control surfaces & twin exhaust glow
+        // Animated control surfaces, landing gear retraction, wingtip strobes & twin exhaust glow
         jet.leftAileron.rotation.x = clampedX * 0.45;
         jet.rightAileron.rotation.x = -clampedX * 0.45;
+        const gearTarget = jetPos.y < 1.2 ? 1 : 0.001;
+        jet.landingGearGroup.scale.y += (gearTarget - jet.landingGearGroup.scale.y) * Math.min(1, dt * 5);
+        jet.landingGearGroup.visible = jet.landingGearGroup.scale.y > 0.05;
+        const strobeOn = Math.floor(now / 420) % 2 === 0;
+        jet.portStrobe.visible = strobeOn;
+        jet.starboardStrobe.visible = strobeOn;
         const exhaustScale = isBoosting ? 1.75 + Math.sin(now * 0.04) * 0.25 : 0.95 + Math.sin(now * 0.03) * 0.1;
         jet.leftExhaust.scale.set(1, 1, exhaustScale);
         jet.rightExhaust.scale.set(1, 1, exhaustScale);
@@ -472,18 +520,41 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
           t.group.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), dt * 8);
         });
 
-        // Third-person rear chase camera
+        // Third-person rear chase camera with Dynamic FOV boost & slipstream particles
+        slipstreamParticles.update(dt * (isBoosting ? 1.8 : 1.0), now * 0.001, new THREE.Vector3(jetPos.x, jetPos.y + 1, -24));
+
         const mode = cameraModeRef.current;
         const camFollowFactor = mode === 'reduced' ? 0.25 : mode === 'cinematic' ? 0.62 : 0.45;
         const camDistZ = isBoosting ? 14.6 : 13.2;
-        const desiredCamX = jetPos.x * camFollowFactor;
-        const desiredCamY = jetPos.y + (mode === 'cinematic' ? 3.8 : 4.2);
-        camera.position.x += (desiredCamX - camera.position.x) * Math.min(1, dt * 6);
-        camera.position.y += (desiredCamY - camera.position.y) * Math.min(1, dt * 6);
-        camera.position.z += (camDistZ - camera.position.z) * Math.min(1, dt * 5);
+        let desiredCamPos = new THREE.Vector3(
+          jetPos.x * camFollowFactor,
+          jetPos.y + (mode === 'cinematic' ? 3.8 : 4.2),
+          camDistZ
+        );
+        let lookTarget = new THREE.Vector3(jetPos.x * 0.65, jetPos.y + 1.2, -28);
 
-        const lookTarget = new THREE.Vector3(jetPos.x * 0.65, jetPos.y + 1.2, -28);
-        camera.lookAt(lookTarget);
+        if (mode === 'cockpit') {
+          desiredCamPos = new THREE.Vector3(jetPos.x, jetPos.y + 0.85, jetPos.z - 1.35);
+          lookTarget = new THREE.Vector3(jetPos.x * 0.9, jetPos.y + 0.6, -40);
+        } else if (mode === 'side') {
+          desiredCamPos = new THREE.Vector3(jetPos.x + 11.5, jetPos.y + 2.2, jetPos.z + 2.5);
+          lookTarget = new THREE.Vector3(jetPos.x, jetPos.y + 0.4, jetPos.z - 4);
+        }
+
+        if (isBoosting && !reducedMotionRef.current) {
+          camController.setTargetFov(66);
+        } else {
+          camController.resetFov();
+        }
+
+        camController.update(
+          camera,
+          desiredCamPos,
+          lookTarget,
+          dt,
+          mode === 'cockpit' ? 16 : 6.5,
+          mode === 'cockpit' ? 16 : 8.5
+        );
         if (mode === 'cinematic' && !reducedMotionRef.current) {
           camera.rotation.z = bankAngle * 0.14;
         }
@@ -549,7 +620,7 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
         }
       }
 
-      renderer.render(scene, camera);
+      postPipeline.render(dt);
     };
 
     rafId = requestAnimationFrame(animate);
@@ -561,7 +632,7 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
       window.removeEventListener('orientationchange', handleResize);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
-      renderer.dispose();
+      disposeThreeScene(scene, renderer, postPipeline, envTexture);
     };
   }, [worldId, quality, skinId, audioManager, mobileInputRef]);
 

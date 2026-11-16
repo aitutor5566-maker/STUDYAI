@@ -2,12 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { requestGameLaunch, THREE_FEATURED_GAMES } from './gameAccessService';
 
 describe('Centralised Game Access Service', () => {
-  it('preserves the featured games including Sky Striker', () => {
+  it('preserves the featured games including Sky Striker and Shadow Ninja Realms', () => {
     expect(THREE_FEATURED_GAMES.map((g) => g.id)).toEqual([
       'war_of_words',
       'study_rush_3d',
       'katana_wisdom',
-      'sky_striker'
+      'sky_striker',
+      'shadow_ninja_realms'
     ]);
   });
 

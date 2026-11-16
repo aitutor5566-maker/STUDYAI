@@ -1,5 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import {
+  AdaptivePostProcessingPipeline,
+  AtmosphericParticleSystem,
+  buildAtmosphericEnvMap,
+  CinematicCameraController,
+  createAtmosphericSkyDome,
+  disposeThreeScene
+} from '../engine/VisualMasterpieceEngine';
 import { WarOfWordsAudioManager } from './AudioManager';
 import { selectThreeTargets, validateWarOfWordsAnswer } from './questionBank';
 import {
@@ -145,7 +153,45 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
 
     const env = buildWorldEnvironment(scene, worldId, quality);
     scene.background = new THREE.Color(env.skyColor);
-    scene.fog = new THREE.FogExp2(env.fogColor, 0.022);
+    scene.fog = new THREE.FogExp2(env.fogColor, 0.02);
+
+    // AAA Visual Masterpiece Engine: IBL Environment + Sky Dome + Bloom + Arcane Embers + Cinematic Camera
+    const envTexture = buildAtmosphericEnvMap(renderer, env.skyColor, env.fogColor, '#020617');
+    scene.environment = envTexture;
+
+    const skyDome = createAtmosphericSkyDome({
+      radius: 140,
+      topColor: env.skyColor,
+      horizonColor: env.fogColor,
+      bottomColor: '#020617',
+      sunColor: '#E0F2FE',
+      sunDirection: new THREE.Vector3(0.35, 0.4, -0.85),
+      starIntensity: 0.75
+    });
+    scene.add(skyDome.mesh);
+
+    const postPipeline = new AdaptivePostProcessingPipeline(
+      renderer,
+      scene,
+      camera,
+      w,
+      h,
+      quality,
+      { strength: 0.45, radius: 0.55, threshold: 0.76 }
+    );
+
+    const arcaneParticles = new AtmosphericParticleSystem({
+      count: quality === 'low' ? 40 : 120,
+      bounds: { x: 42, y: 12, z: 18 },
+      center: new THREE.Vector3(8, 5, -2),
+      color: customization.glowColor,
+      size: 0.32,
+      opacity: 0.72,
+      driftVel: new THREE.Vector3(0.18, 0.38, 0.08)
+    });
+    scene.add(arcaneParticles.points);
+
+    const camController = new CinematicCameraController(48, 1.3);
 
     // Cinematic Blue Moonlight + Ambient
     const ambient = new THREE.HemisphereLight('#93C5FD', '#0F172A', 0.72);
@@ -291,6 +337,7 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
 
       attackAnimTimer = 0.42;
       audioManager.playMagicAttack();
+      camController.addShake(0.38);
 
       const impactPos = targetSentinel.group.position.clone().add(new THREE.Vector3(0, 1.4, 0));
 
@@ -358,7 +405,7 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
       const ch = container.clientHeight || window.innerHeight;
       camera.aspect = cw / ch;
       camera.updateProjectionMatrix();
-      renderer.setSize(cw, ch);
+      postPipeline.resize(cw, ch);
     });
     resizeObs.observe(container);
 
@@ -504,12 +551,20 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
           }
         }
 
-        // 6. Smooth Side-Follow Camera
+        // 6. Smooth Side-Follow Cinematic Camera + Atmospheric Particles
+        skyDome.update({ time: now * 0.001 });
+        arcaneParticles.update(dt, now * 0.001, new THREE.Vector3(playerX, playerY + 4, 0));
+
         const targetCamX = playerX + facing * 3.5;
         const targetCamY = Math.max(3.8, playerY + 3.6);
-        camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetCamX, 1 - Math.exp(-6 * dt));
-        camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetCamY, 1 - Math.exp(-6 * dt));
-        camera.lookAt(camera.position.x + facing * 1.2, playerY + 1.8, 0);
+        camController.update(
+          camera,
+          new THREE.Vector3(targetCamX, targetCamY, 13.5),
+          new THREE.Vector3(targetCamX + facing * 1.2, playerY + 1.8, 0),
+          dt,
+          6.5,
+          9.0
+        );
 
         // 7. Throttled HUD Sync
         hudTimer += dt;
@@ -533,7 +588,7 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
         }
       }
 
-      renderer.render(scene, camera);
+      postPipeline.render(dt);
     };
 
     animId = requestAnimationFrame(animate);
@@ -544,7 +599,7 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       renderer.domElement.removeEventListener('mousedown', onMouseDown);
-      renderer.dispose();
+      disposeThreeScene(scene, renderer, postPipeline, envTexture);
       if (renderer.domElement.parentNode === container) {
         container.removeChild(renderer.domElement);
       }

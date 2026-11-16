@@ -1,5 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import {
+  AdaptivePostProcessingPipeline,
+  AtmosphericParticleSystem,
+  buildAtmosphericEnvMap,
+  CinematicCameraController,
+  createAtmosphericSkyDome,
+  disposeThreeScene
+} from '../engine/VisualMasterpieceEngine';
 import { StudyRushAudioManager } from './AudioManager';
 import { DayNightManager } from './DayNightManager';
 import { selectArenaOptions, validateStudyRushAnswer } from './questionBank';
@@ -218,8 +226,44 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    renderer.toneMappingExposure = 1.08;
     container.appendChild(renderer.domElement);
+
+    // AAA Visual Masterpiece Engine: IBL Environment + Sky Dome + Bloom + Particles + Cinematic Camera
+    const envTexture = buildAtmosphericEnvMap(renderer, '#38BDF8', '#E0F2FE', '#1E293B');
+    scene.environment = envTexture;
+
+    const skyDome = createAtmosphericSkyDome({
+      radius: 170,
+      topColor: '#0284C7',
+      horizonColor: '#BAE6FD',
+      bottomColor: '#1E293B',
+      sunColor: '#FFFBEB',
+      starIntensity: 0
+    });
+    scene.add(skyDome.mesh);
+
+    const postPipeline = new AdaptivePostProcessingPipeline(
+      renderer,
+      scene,
+      camera,
+      width,
+      height,
+      'high',
+      { strength: 0.36, radius: 0.52, threshold: 0.82 }
+    );
+
+    const atmosphericParticles = new AtmosphericParticleSystem({
+      count: 140,
+      bounds: { x: 48, y: 12, z: 48 },
+      color: '#FDE68A',
+      size: 0.34,
+      opacity: 0.45,
+      driftVel: new THREE.Vector3(0.22, 0.25, 0.14)
+    });
+    scene.add(atmosphericParticles.points);
+
+    const camController = new CinematicCameraController(62, 1.5);
 
     // Lighting
     const ambientLight = new THREE.HemisphereLight('#E0F2FE', '#334155', 0.8);
@@ -551,7 +595,7 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
       const h = container.clientHeight || window.innerHeight;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
+      postPipeline.resize(w, h);
     });
     resizeObserver.observe(container);
 
@@ -578,6 +622,20 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
         sunLight.position.copy(snap.sunDirection);
         ambientLight.intensity = snap.ambientIntensity;
         (world.stars.material as THREE.PointsMaterial).opacity = snap.starOpacity;
+        skyDome.update({
+          topColor: snap.phase === 'night' ? '#020617' : snap.phase === 'sunset' ? '#7C2D12' : '#0284C7',
+          horizonColor: snap.skyColor,
+          bottomColor: '#0F172A',
+          sunDirection: snap.sunDirection,
+          starIntensity: snap.starOpacity,
+          time: now * 0.001
+        });
+        atmosphericParticles.setOpacity(snap.phase === 'night' ? 0.85 : 0.35);
+        atmosphericParticles.update(dt, now * 0.001, playerPos);
+        if (world.waterNormalMap) {
+          world.waterNormalMap.offset.x = (now * 0.00004) % 1;
+          world.waterNormalMap.offset.y = (now * 0.00003) % 1;
+        }
         world.torchLights.forEach((tl, idx) => {
           const flicker = 0.92 + Math.sin(now * 0.009 + idx) * 0.08;
           tl.intensity = 2.6 * snap.torchMultiplier * flicker;
@@ -587,6 +645,7 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
         if (cycleEvent.enteredNight && dayNightRef.current.nightCount > lastSpawnNight) {
           lastSpawnNight = dayNightRef.current.nightCount;
           audioManager.playWaveStart();
+          camController.addShake(0.45);
           spawnWaveEnemies(lastSpawnNight);
         }
 
@@ -828,9 +887,8 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
         desiredCamPos.x = THREE.MathUtils.clamp(desiredCamPos.x, -56, 56);
         desiredCamPos.z = THREE.MathUtils.clamp(desiredCamPos.z, -56, 56);
 
-        camera.position.lerp(desiredCamPos, 1 - Math.exp(-12 * dt));
         const lookAtTarget = playerPos.clone().add(new THREE.Vector3(0, 1.9, 0)).add(shoulderOffset.multiplyScalar(0.5));
-        camera.lookAt(lookAtTarget);
+        camController.update(camera, desiredCamPos, lookAtTarget, dt, 11.5, 13.0);
 
         // 10. Throttled HUD Sync (~10Hz)
         hudSyncTimer += dt;
@@ -871,7 +929,7 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
         }
       }
 
-      renderer.render(scene, camera);
+      postPipeline.render(dt);
     };
 
     animId = requestAnimationFrame(animate);
@@ -885,7 +943,7 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
       window.removeEventListener('mouseup', onMouseUp);
       window.removeEventListener('mousemove', onMouseMove);
       renderer.domElement.removeEventListener('dblclick', onDoubleClick);
-      renderer.dispose();
+      disposeThreeScene(scene, renderer, postPipeline, envTexture);
       if (renderer.domElement.parentNode === container) {
         container.removeChild(renderer.domElement);
       }

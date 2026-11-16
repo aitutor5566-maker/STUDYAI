@@ -1,4 +1,4 @@
-export type AuthorisedGameId = 'war_of_words' | 'study_rush_3d' | 'katana_wisdom' | 'sky_striker';
+export type AuthorisedGameId = 'war_of_words' | 'study_rush_3d' | 'katana_wisdom' | 'sky_striker' | 'shadow_ninja_realms';
 
 export type GameLaunchOrigin =
   | 'ai_tutor'
@@ -82,6 +82,17 @@ export const THREE_FEATURED_GAMES: GameMetadata[] = [
       'Pilot a twin-engine futuristic fighter jet through Desert Storm and beyond, lock onto holographic answer targets, and fire energy pulses.',
     badge: '3D Aerial Flight Adventure',
     accentColor: '#38BDF8',
+    supportedSubjects: ['Science', 'Biology', 'Physics', 'Chemistry', 'Mathematics', 'History', 'Geography', 'English', 'General'],
+    supportsPronunciation: false
+  },
+  {
+    id: 'shadow_ninja_realms',
+    name: 'Shadow Ninja : Minecraft Realms',
+    subtitle: '2 Worlds • Moving Clouds • Temple & Voxel Building',
+    description:
+      'Switch between Shadow Ninja (ancient temples, bamboo groves & waterfalls) and Minecraft Realms (voxel biomes & live 3D block building).',
+    badge: 'Dual-World 3D Adventure',
+    accentColor: '#10B981',
     supportedSubjects: ['Science', 'Biology', 'Physics', 'Chemistry', 'Mathematics', 'History', 'Geography', 'English', 'General'],
     supportsPronunciation: false
   }

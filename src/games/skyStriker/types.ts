@@ -16,7 +16,7 @@ export type WorldId =
   | 'future_city'
   | 'sky_kingdom';
 
-export type CameraMode = 'standard' | 'cinematic' | 'reduced';
+export type CameraMode = 'standard' | 'cinematic' | 'cockpit' | 'side' | 'reduced';
 export type GraphicsQuality = 'low' | 'medium' | 'high';
 export type GameModeId = 'knowledge_flight' | 'revision_flight';
 

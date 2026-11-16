@@ -109,6 +109,8 @@ import {
 } from './educationalGamesEngine.ts';
 import { unifiedAiOrchestrator } from './unifiedAiOrchestrator.ts';
 import { centralAiOrchestrator } from './centralAiOrchestrator.ts';
+import { multiModelAiTeacherEngine } from './multiModelAiTeacherEngine.ts';
+import { lessonMapEngine } from './lessonMapEngine.ts';
 import { analyzeEducationalImage } from './imageAnalysisEngine.ts';
 import { macCompanionBridge } from './macCompanionBridge.ts';
 import { professionalTeacherEngine } from './professionalTeacherEngine.ts';
@@ -987,6 +989,93 @@ export function createAppServer() {
         });
 
         sendJson(res, 200, { success: true, analysis });
+        return;
+      }
+
+      if (pathname === '/api/lesson-map/graph' && req.method === 'GET') {
+        const subject = sanitizeText(parsedUrl.searchParams.get('subject') || 'Physics', 60);
+        const grade = Number(parsedUrl.searchParams.get('grade') || 10);
+        const graph = lessonMapEngine.getSubjectGraph(studentId, subject, grade);
+        sendJson(res, 200, graph);
+        return;
+      }
+
+      if (pathname === '/api/lesson-map/lesson-detail' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const lessonId = sanitizeText(body.lessonId || '', 80);
+        if (!lessonId) {
+          sendJson(res, 400, { error: 'lessonId is required' });
+          return;
+        }
+        const detail = await lessonMapEngine.getLessonDetail(
+          studentId,
+          lessonId,
+          sanitizeText(body.board || 'CBSE', 40),
+          typeof body.grade === 'number' ? body.grade : 10
+        );
+        sendJson(res, 200, detail);
+        return;
+      }
+
+      if (pathname === '/api/lesson-map/assess' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const lessonId = sanitizeText(body.lessonId || '', 80);
+        const scorePercent = typeof body.scorePercent === 'number' ? body.scorePercent : 0;
+        const timeSpentSec = typeof body.timeSpentSec === 'number' ? body.timeSpentSec : 90;
+        if (!lessonId) {
+          sendJson(res, 400, { error: 'lessonId is required' });
+          return;
+        }
+        const result = lessonMapEngine.recordAssessment(studentId, lessonId, scorePercent, timeSpentSec);
+        sendJson(res, 200, { success: true, result });
+        return;
+      }
+
+      if (pathname === '/api/lesson-map/exam-roadmap' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const roadmap = lessonMapEngine.generateExamRoadmap(studentId, {
+          subject: sanitizeText(body.subject || 'Physics', 60),
+          grade: typeof body.grade === 'number' ? body.grade : 10,
+          board: sanitizeText(body.board || 'CBSE', 40),
+          examName: sanitizeText(body.examName || 'Board Examination', 120),
+          examDate: sanitizeText(body.examDate || new Date(Date.now() + 21 * 86400_000).toISOString().slice(0, 10), 40)
+        });
+        sendJson(res, 200, roadmap);
+        return;
+      }
+
+      if (pathname === '/api/lesson-map/progress-summary' && req.method === 'GET') {
+        const summary = lessonMapEngine.getParentTeacherSummary(studentId);
+        sendJson(res, 200, summary);
+        return;
+      }
+
+      if (pathname === '/api/ai-teacher/modules/status' && req.method === 'GET') {
+        const status = await multiModelAiTeacherEngine.getModuleStatus();
+        sendJson(res, 200, status);
+        return;
+      }
+
+      if ((pathname === '/api/ai-teacher/ask' || pathname === '/api/v1/ai-teacher/ask') && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const question = sanitizeText(body.question || body.prompt || '', 2000);
+        if (!question) {
+          sendJson(res, 400, { error: 'Please provide a question for the AI Teacher.' });
+          return;
+        }
+        const result = await multiModelAiTeacherEngine.teach({
+          question,
+          topic: sanitizeText(body.topic || '', 180) || undefined,
+          subject: sanitizeText(body.subject || '', 60) || undefined,
+          grade: typeof body.grade === 'number' ? body.grade : 10,
+          board: sanitizeText(body.board || 'CBSE', 40),
+          language: sanitizeText(body.language || 'English', 30),
+          mode: body.mode,
+          examMarks: body.examMarks,
+          studentId,
+          history: Array.isArray(body.history) ? body.history : undefined
+        });
+        sendJson(res, 200, { success: true, teaching: result });
         return;
       }
 
