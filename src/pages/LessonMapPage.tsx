@@ -18,6 +18,7 @@ import {
   ZoomOut
 } from 'lucide-react';
 import { useLearning } from '../context/LearningContext';
+import { DeepLessonRenderer } from '../components/DeepLessonRenderer';
 
 type NodeStatus = 'locked' | 'available' | 'in_progress' | 'completed' | 'needs_revision' | 'mastered';
 
@@ -121,6 +122,7 @@ export const LessonMapPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
   const [companionPrompt, setCompanionPrompt] = useState('');
   const [companionReply, setCompanionReply] = useState<string | null>(null);
   const [companionLoading, setCompanionLoading] = useState(false);
+  const [deepLessonOpen, setDeepLessonOpen] = useState(false);
 
   // Exam Roadmap state
   const [examName, setExamName] = useState('Final Board Examination');
@@ -534,6 +536,13 @@ export const LessonMapPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
                     </span>
                   </div>
 
+                  <button
+                    onClick={() => setDeepLessonOpen(true)}
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 text-slate-950 font-black text-xs shadow-lg"
+                  >
+                    Open 17-Section Deep Mastery Lesson
+                  </button>
+
                   {selectedNode.status === 'locked' && (
                     <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 text-xs text-amber-200 flex items-start gap-2">
                       <Lock className="w-4 h-4 shrink-0 mt-0.5" />
@@ -844,6 +853,17 @@ export const LessonMapPage: React.FC<{ embedded?: boolean }> = ({ embedded = fal
           </div>
         )}
       </div>
+      {selectedNode && (
+        <DeepLessonRenderer
+          isOpen={deepLessonOpen}
+          onClose={() => setDeepLessonOpen(false)}
+          topic={selectedNode.title}
+          subject={selectedNode.subject}
+          chapter={selectedNode.chapter}
+          lessonId={selectedNode.id}
+          onMasteryUpdated={() => loadGraph(subject)}
+        />
+      )}
     </div>
   );
 };

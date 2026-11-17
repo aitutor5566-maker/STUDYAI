@@ -111,6 +111,7 @@ import { unifiedAiOrchestrator } from './unifiedAiOrchestrator.ts';
 import { centralAiOrchestrator } from './centralAiOrchestrator.ts';
 import { multiModelAiTeacherEngine } from './multiModelAiTeacherEngine.ts';
 import { lessonMapEngine } from './lessonMapEngine.ts';
+import { deepConceptMasteryEngine } from './deepConceptMasteryEngine.ts';
 import { analyzeEducationalImage } from './imageAnalysisEngine.ts';
 import { macCompanionBridge } from './macCompanionBridge.ts';
 import { professionalTeacherEngine } from './professionalTeacherEngine.ts';
@@ -1072,6 +1073,44 @@ export function createAppServer() {
       if (pathname === '/api/lesson-map/custom' && req.method === 'GET') {
         const maps = lessonMapEngine.listCustomLessonMaps(studentId);
         sendJson(res, 200, { maps });
+        return;
+      }
+
+      if (pathname === '/api/deep-lesson/generate' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const topic = sanitizeText(body.topic || '', 180);
+        if (!topic) {
+          sendJson(res, 400, { error: 'topic is required' });
+          return;
+        }
+        const deepLesson = await deepConceptMasteryEngine.generateDeepLesson({
+          topic,
+          subject: sanitizeText(body.subject || 'Science', 60),
+          chapter: sanitizeText(body.chapter || topic, 120),
+          grade: typeof body.grade === 'number' ? body.grade : 10,
+          board: sanitizeText(body.board || 'CBSE', 40),
+          depthLevel: body.depthLevel
+        });
+        sendJson(res, 200, { success: true, deepLesson });
+        return;
+      }
+
+      if (pathname === '/api/deep-lesson/interact' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const topic = sanitizeText(body.topic || '', 180);
+        const action = sanitizeText(body.action || '', 600);
+        if (!topic || !action) {
+          sendJson(res, 400, { error: 'topic and action are required' });
+          return;
+        }
+        const interaction = await deepConceptMasteryEngine.interactWithLesson({
+          topic,
+          subject: sanitizeText(body.subject || 'Science', 60),
+          grade: typeof body.grade === 'number' ? body.grade : 10,
+          board: sanitizeText(body.board || 'CBSE', 40),
+          action
+        });
+        sendJson(res, 200, { success: true, interaction });
         return;
       }
 
