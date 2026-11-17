@@ -1054,6 +1054,15 @@ export const KatanaGameModal: React.FC<{
               setGameOver(true);
               setIsVictory(false);
             }, 800);
+          } else if (strike.nextQuestion) {
+            setTimeout(() => {
+              const nq = strike.nextQuestion;
+              if (nq.options.length < 4) {
+                const pad = ['All of the above', 'None of the above', 'Equilibrium'];
+                while (nq.options.length < 4 && pad.length > 0) nq.options.push(pad.shift()!);
+              }
+              setCurrentQuestion(nq);
+            }, 1100);
           }
         }
       }, 550);

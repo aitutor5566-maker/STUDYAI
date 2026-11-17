@@ -35,6 +35,11 @@ import {
   VoxelCharacterId,
   WeatherType
 } from '../../games/shadowNinjaRealms/types';
+import { enterElementFullscreen } from '../../utils/fullscreenGame';
+import {
+  QuestionProgressionMachine,
+  detectRecommendedGraphicsQuality
+} from '../../games/ProgressionController';
 
 export interface ShadowNinjaRealmsModalProps {
   isOpen: boolean;
@@ -49,9 +54,13 @@ export const ShadowNinjaRealmsModal: React.FC<ShadowNinjaRealmsModalProps> = ({
   initialTopic,
   initialSubject
 }) => {
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const [phase, setPhase] = useState<'menu' | 'playing' | 'paused'>('menu');
   const [mode, setMode] = useState<AdventureMode>('shadow_ninja');
-  const [graphicsTier, setGraphicsTier] = useState<GraphicsTier>('high');
+  const [graphicsTier, setGraphicsTier] = useState<GraphicsTier>(() => detectRecommendedGraphicsQuality());
+  const [levelNum, setLevelNum] = useState(1);
+  const progressionRef = useRef(new QuestionProgressionMachine({ questionsPerLevel: 4 }));
+  const feedbackTimerRef = useRef<number | null>(null);
   const [weather, setWeather] = useState<WeatherType>('clear');
   const [ninjaChar, setNinjaChar] = useState<NinjaCharacterId>('kage_obsidian');
   const [voxelChar, setVoxelChar] = useState<VoxelCharacterId>('builder_steve');
@@ -129,20 +138,45 @@ export const ShadowNinjaRealmsModal: React.FC<ShadowNinjaRealmsModalProps> = ({
   });
 
   const handleAnswerEvaluated = useCallback((outcome: RealmsAnswerOutcome) => {
+    const evalResult = progressionRef.current.submitAnswer({
+      questionId: outcome.question.id,
+      selectedAnswerId: outcome.isCorrect ? outcome.question.correctOptionId : '__wrong__',
+      correctAnswerId: outcome.question.correctOptionId,
+      basePoints: 120
+    });
+    if (!evalResult.accepted) return;
+
     if (outcome.isCorrect) {
-      setXp((v) => v + 120);
+      setXp((v) => v + evalResult.pointsAwarded);
       setStreak((s) => s + 1);
       setFeedbackBanner({ ok: true, text: `Correct! ${outcome.question.explanation}` });
-      setTimeout(() => {
-        setQIndex((i) => i + 1);
-      }, 900);
     } else {
       setStreak(0);
       setHp((h) => Math.max(10, h - 8));
       setFeedbackBanner({ ok: false, text: `Hint: ${outcome.question.hint}` });
     }
-    setTimeout(() => setFeedbackBanner(null), 3200);
-  }, []);
+
+    if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current);
+    feedbackTimerRef.current = window.setTimeout(() => {
+      feedbackTimerRef.current = null;
+      setFeedbackBanner(null);
+      const nextState = progressionRef.current.advance();
+      if (nextState === 'LEVEL_COMPLETE') {
+        const nextLvl = progressionRef.current.startNextLevel();
+        setLevelNum(nextLvl);
+        const realmOrder: NinjaRealmId[] = ['bamboo_temple', 'sakura_sanctuary', 'misty_waterfall_peaks'];
+        setNinjaRealm((prev) => realmOrder[(realmOrder.indexOf(prev) + 1) % realmOrder.length]);
+        const biomeOrder: MinecraftBiomeId[] = ['emerald_forest', 'alpine_snow_peaks', 'desert_oasis'];
+        setMinecraftBiome((prev) => biomeOrder[(biomeOrder.indexOf(prev) + 1) % biomeOrder.length]);
+      }
+      const nextIdx = qIndex + 1;
+      const nextQ = questions[nextIdx % questions.length];
+      if (nextQ) {
+        progressionRef.current.activateQuestion(nextQ.id);
+      }
+      setQIndex(nextIdx);
+    }, 1100);
+  }, [qIndex, questions]);
 
   const handleItemCollected = useCallback((kind: 'wood' | 'stone' | 'crystal' | 'scroll') => {
     setXp((v) => v + 35);
@@ -164,6 +198,7 @@ export const ShadowNinjaRealmsModal: React.FC<ShadowNinjaRealmsModalProps> = ({
 
   return (
     <div
+      ref={rootRef}
       style={{
         position: 'fixed',
         inset: 0,
@@ -364,11 +399,17 @@ export const ShadowNinjaRealmsModal: React.FC<ShadowNinjaRealmsModalProps> = ({
               <button
                 onClick={() => {
                   audioRef.current?.unlock();
+                  progressionRef.current.reset(1);
+                  setLevelNum(1);
+                  if (questions[0]) {
+                    progressionRef.current.activateQuestion(questions[0].id);
+                  }
                   setPhase('playing');
+                  enterElementFullscreen(rootRef.current);
                 }}
                 className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-black text-sm shadow-lg shadow-cyan-500/25"
               >
-                <Play className="w-4 h-4 fill-current" /> ENTER 3D REALM
+                <Play className="w-4 h-4 fill-current" /> ENTER 3D REALM (LVL {levelNum})
               </button>
             </div>
           </div>

@@ -134,3 +134,270 @@ export class ProgressionController {
     this.questionsInCurrentLevel = 0;
   }
 }
+
+export type QuestionProgressionState =
+  | 'READY'
+  | 'QUESTION_ACTIVE'
+  | 'ANSWER_SELECTED'
+  | 'ANSWER_VALIDATED'
+  | 'FEEDBACK'
+  | 'NEXT_QUESTION'
+  | 'LEVEL_COMPLETE';
+
+export type AdaptiveGraphicsQuality = 'low' | 'medium' | 'high' | 'ultra';
+
+export interface DeviceCapabilityHints {
+  hardwareConcurrency?: number;
+  deviceMemory?: number;
+  devicePixelRatio?: number;
+  viewportWidth?: number;
+  isTouchDevice?: boolean;
+  prefersReducedMotion?: boolean;
+}
+
+/**
+ * Automatically selects an appropriate 3D graphics quality tier for the current device
+ * while still allowing the user to override it in Settings.
+ */
+export function detectRecommendedGraphicsQuality(
+  hints?: DeviceCapabilityHints
+): AdaptiveGraphicsQuality {
+  const nav = typeof navigator !== 'undefined' ? (navigator as any) : undefined;
+  const win = typeof window !== 'undefined' ? window : undefined;
+
+  const prefersReducedMotion =
+    hints?.prefersReducedMotion ??
+    Boolean(win?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+  if (prefersReducedMotion) return 'low';
+
+  const cores = hints?.hardwareConcurrency ?? nav?.hardwareConcurrency ?? 4;
+  const memory = hints?.deviceMemory ?? nav?.deviceMemory ?? 4;
+  const dpr = hints?.devicePixelRatio ?? win?.devicePixelRatio ?? 1;
+  const width = hints?.viewportWidth ?? win?.innerWidth ?? 1280;
+  const isTouch =
+    hints?.isTouchDevice ??
+    Boolean(
+      win &&
+        (('ontouchstart' in win) || (nav?.maxTouchPoints ?? 0) > 0) &&
+        width < 1024
+    );
+
+  if (memory <= 2 || cores <= 2) return 'low';
+  if (isTouch) {
+    return memory >= 6 && cores >= 6 ? 'medium' : 'low';
+  }
+  if (cores >= 8 && memory >= 8 && dpr >= 1.5 && width >= 1280) {
+    return 'ultra';
+  }
+  if (cores >= 6 && memory >= 4) {
+    return 'high';
+  }
+  return 'medium';
+}
+
+export interface ProgressionSnapshot {
+  state: QuestionProgressionState;
+  level: number;
+  questionIndex: number;
+  questionsAnsweredInLevel: number;
+  questionsPerLevel: number;
+  correctInLevel: number;
+  totalCorrect: number;
+  totalAnswered: number;
+  streak: number;
+  bestStreak: number;
+  score: number;
+  activeQuestionId: string | null;
+  lastOutcome: {
+    questionId: string;
+    selectedAnswerId: string;
+    isCorrect: boolean;
+    pointsAwarded: number;
+  } | null;
+}
+
+/**
+ * Centralized 7-state question progression machine:
+ * READY -> QUESTION_ACTIVE -> ANSWER_SELECTED -> ANSWER_VALIDATED -> FEEDBACK -> NEXT_QUESTION -> LEVEL_COMPLETE
+ * Prevents duplicate scoring, enforces subject/topic consistency when configured, and manages multi-level advancement.
+ */
+export class QuestionProgressionMachine {
+  private state: QuestionProgressionState = 'READY';
+  private level: number = 1;
+  private questionIndex: number = 0;
+  private questionsPerLevel: number;
+  private questionsAnsweredInLevel: number = 0;
+  private correctInLevel: number = 0;
+  private totalCorrect: number = 0;
+  private totalAnswered: number = 0;
+  private streak: number = 0;
+  private bestStreak: number = 0;
+  private score: number = 0;
+  private activeQuestionId: string | null = null;
+  private evaluatedQuestionKeys: Set<string> = new Set();
+  private lastOutcome: ProgressionSnapshot['lastOutcome'] = null;
+  private expectedSubject?: string;
+  private expectedTopic?: string;
+
+  constructor(options: {
+    startingLevel?: number;
+    questionsPerLevel?: number;
+    expectedSubject?: string;
+    expectedTopic?: string;
+  } = {}) {
+    this.level = Math.max(1, options.startingLevel ?? 1);
+    this.questionsPerLevel = Math.max(1, options.questionsPerLevel ?? 5);
+    this.expectedSubject = options.expectedSubject?.trim().toLowerCase();
+    this.expectedTopic = options.expectedTopic?.trim().toLowerCase();
+  }
+
+  public getState(): QuestionProgressionState {
+    return this.state;
+  }
+
+  public getSnapshot(): ProgressionSnapshot {
+    return {
+      state: this.state,
+      level: this.level,
+      questionIndex: this.questionIndex,
+      questionsAnsweredInLevel: this.questionsAnsweredInLevel,
+      questionsPerLevel: this.questionsPerLevel,
+      correctInLevel: this.correctInLevel,
+      totalCorrect: this.totalCorrect,
+      totalAnswered: this.totalAnswered,
+      streak: this.streak,
+      bestStreak: this.bestStreak,
+      score: this.score,
+      activeQuestionId: this.activeQuestionId,
+      lastOutcome: this.lastOutcome ? { ...this.lastOutcome } : null
+    };
+  }
+
+  public isQuestionConsistent(subject?: string, topic?: string): boolean {
+    if (this.expectedSubject && subject) {
+      if (subject.trim().toLowerCase() !== this.expectedSubject) return false;
+    }
+    if (this.expectedTopic && topic) {
+      if (!topic.trim().toLowerCase().includes(this.expectedTopic) && !this.expectedTopic.includes(topic.trim().toLowerCase())) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public activateQuestion(questionId: string): boolean {
+    if (!questionId) return false;
+    if (this.state !== 'READY' && this.state !== 'NEXT_QUESTION' && this.state !== 'FEEDBACK') {
+      return false;
+    }
+    this.activeQuestionId = questionId;
+    this.state = 'QUESTION_ACTIVE';
+    return true;
+  }
+
+  public submitAnswer(params: {
+    questionId: string;
+    selectedAnswerId: string;
+    correctAnswerId: string;
+    basePoints?: number;
+  }): {
+    accepted: boolean;
+    isCorrect: boolean;
+    pointsAwarded: number;
+    levelCompleted: boolean;
+  } {
+    const evalKey = `${this.level}:${this.questionIndex}:${params.questionId}`;
+    if (
+      this.state !== 'QUESTION_ACTIVE' ||
+      this.activeQuestionId !== params.questionId ||
+      this.evaluatedQuestionKeys.has(evalKey)
+    ) {
+      return {
+        accepted: false,
+        isCorrect: false,
+        pointsAwarded: 0,
+        levelCompleted: this.state === 'LEVEL_COMPLETE'
+      };
+    }
+
+    this.state = 'ANSWER_SELECTED';
+    this.evaluatedQuestionKeys.add(evalKey);
+
+    const isCorrect =
+      String(params.selectedAnswerId).trim().toUpperCase() ===
+      String(params.correctAnswerId).trim().toUpperCase();
+
+    this.state = 'ANSWER_VALIDATED';
+    this.totalAnswered += 1;
+    this.questionsAnsweredInLevel += 1;
+
+    let pointsAwarded = 0;
+    if (isCorrect) {
+      this.totalCorrect += 1;
+      this.correctInLevel += 1;
+      this.streak += 1;
+      this.bestStreak = Math.max(this.bestStreak, this.streak);
+      pointsAwarded = (params.basePoints ?? 100) + (this.streak - 1) * 20;
+      this.score += pointsAwarded;
+    } else {
+      this.streak = 0;
+    }
+
+    this.lastOutcome = {
+      questionId: params.questionId,
+      selectedAnswerId: params.selectedAnswerId,
+      isCorrect,
+      pointsAwarded
+    };
+
+    this.state = 'FEEDBACK';
+    const levelCompleted = this.questionsAnsweredInLevel >= this.questionsPerLevel;
+    return {
+      accepted: true,
+      isCorrect,
+      pointsAwarded,
+      levelCompleted
+    };
+  }
+
+  public advance(): QuestionProgressionState {
+    if (this.state === 'FEEDBACK') {
+      if (this.questionsAnsweredInLevel >= this.questionsPerLevel) {
+        this.state = 'LEVEL_COMPLETE';
+        return this.state;
+      }
+      this.questionIndex += 1;
+      this.activeQuestionId = null;
+      this.state = 'NEXT_QUESTION';
+      return this.state;
+    }
+    return this.state;
+  }
+
+  public startNextLevel(): number {
+    this.level += 1;
+    this.questionsAnsweredInLevel = 0;
+    this.correctInLevel = 0;
+    this.questionIndex += 1;
+    this.activeQuestionId = null;
+    this.lastOutcome = null;
+    this.state = 'READY';
+    return this.level;
+  }
+
+  public reset(startingLevel = 1): void {
+    this.level = Math.max(1, startingLevel);
+    this.questionIndex = 0;
+    this.questionsAnsweredInLevel = 0;
+    this.correctInLevel = 0;
+    this.totalCorrect = 0;
+    this.totalAnswered = 0;
+    this.streak = 0;
+    this.bestStreak = 0;
+    this.score = 0;
+    this.activeQuestionId = null;
+    this.evaluatedQuestionKeys.clear();
+    this.lastOutcome = null;
+    this.state = 'READY';
+  }
+}

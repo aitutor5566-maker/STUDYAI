@@ -30,6 +30,7 @@ import { StudyRushAudioManager } from '../../games/studyRush3d/AudioManager';
 import { buildQuestionDeck, STUDY_RUSH_ACHIEVEMENTS } from '../../games/studyRush3d/questionBank';
 import { LiveHudSnapshot, StudyRush3DCanvas } from '../../games/studyRush3d/StudyRush3DCanvas';
 import { enterElementFullscreen, exitBrowserFullscreen, isBrowserFullscreenActive } from '../../utils/fullscreenGame';
+import { QuestionProgressionMachine } from '../../games/ProgressionController';
 import {
   AchievementMeta,
   AnswerOutcomeEvent,
@@ -152,6 +153,7 @@ export const StudyRush3DModal: React.FC<StudyRush3DModalProps> = ({
 
   const startTimestampRef = useRef<number>(Date.now());
   const mobileInputRef = useRef({ moveX: 0, moveY: 0, jump: false, interact: false });
+  const progressionRef = useRef(new QuestionProgressionMachine({ questionsPerLevel: 5 }));
 
   const [hud, setHud] = useState<LiveHudSnapshot>({
     phase: 'day',
@@ -321,13 +323,31 @@ export const StudyRush3DModal: React.FC<StudyRush3DModalProps> = ({
     setFeedbackBanner(null);
     setSavedNotice(null);
     setSessionSummary(null);
+    progressionRef.current.reset(1);
+    if (deck[0]) {
+      progressionRef.current.activateQuestion(deck[0].id);
+    }
     startTimestampRef.current = Date.now();
     setScreen('playing');
   };
 
   const handleAnswerSubmitted = useCallback((ev: AnswerOutcomeEvent) => {
+    const activeQ = deck[qIndex % deck.length];
+    const qId = activeQ?.id || `sr-${qIndex}`;
+    const evalResult = progressionRef.current.submitAnswer({
+      questionId: qId,
+      selectedAnswerId: ev.isCorrect ? ev.correctOptionId : '__wrong__',
+      correctAnswerId: ev.correctOptionId,
+      basePoints: ev.pointsEarned
+    });
+    if (!evalResult.accepted) return;
+
     setQuestionsAnswered((n) => n + 1);
     setShowHint(false);
+
+    const nextState = progressionRef.current.advance();
+    const leveledUp = nextState === 'LEVEL_COMPLETE';
+    const nextLevel = leveledUp ? progressionRef.current.startNextLevel() : progressionRef.current.getSnapshot().level;
 
     if (ev.isCorrect) {
       setCorrectAnswers((n) => n + 1);
@@ -336,15 +356,20 @@ export const StudyRush3DModal: React.FC<StudyRush3DModalProps> = ({
         setBestStreak((b) => Math.max(b, next));
         return next;
       });
-      const bonus = ev.pointsEarned + streak * 25;
+      const bonus = ev.pointsEarned + streak * 25 + (leveledUp ? 150 : 0);
       setScore((sc) => sc + bonus);
-      setXp((x) => x + 35);
+      setXp((x) => x + 35 + (leveledUp ? 60 : 0));
       setWavesCleared((w) => w + 1);
       setResources((r) => ({ ...r, knowledgeOrbs: r.knowledgeOrbs + 1 }));
       setMasteredTopics((prev) => [...prev, ev.topic]);
+      if (leveledUp) {
+        setPlayerHp((h) => Math.min(100, h + 15));
+      }
       setFeedbackBanner({
         isCorrect: true,
-        title: `✨ Arcane Strike! +${bonus} pts`,
+        title: leveledUp
+          ? `🏆 Level ${nextLevel} Unlocked! +${bonus} pts`
+          : `✨ Arcane Strike! +${bonus} pts`,
         detail: ev.explanation
       });
     } else {
@@ -352,13 +377,20 @@ export const StudyRush3DModal: React.FC<StudyRush3DModalProps> = ({
       setWeakTopics((prev) => [...prev, ev.topic]);
       setFeedbackBanner({
         isCorrect: false,
-        title: `🛡️ Knowledge Shield Absorbed (Correct: ${ev.correctOptionId})`,
+        title: leveledUp
+          ? `🛡️ Level ${nextLevel} Reached (Correct: ${ev.correctOptionId})`
+          : `🛡️ Knowledge Shield Absorbed (Correct: ${ev.correctOptionId})`,
         detail: ev.explanation
       });
     }
 
-    setQIndex((i) => i + 1);
-  }, [streak]);
+    const nextIdx = qIndex + 1;
+    const nextQ = deck[nextIdx % deck.length];
+    if (nextQ) {
+      progressionRef.current.activateQuestion(nextQ.id);
+    }
+    setQIndex(nextIdx);
+  }, [deck, qIndex, streak]);
 
   const handleResourceCollected = useCallback((delta: Partial<ResourceInventory>, label: string) => {
     setResources((r) => ({

@@ -43,6 +43,10 @@ import {
 } from '../../games/warOfWords/types';
 import { WarHudSnapshot, WarOfWordsCanvas } from '../../games/warOfWords/WarOfWordsCanvas';
 import { enterElementFullscreen, exitBrowserFullscreen, isBrowserFullscreenActive } from '../../utils/fullscreenGame';
+import {
+  QuestionProgressionMachine,
+  detectRecommendedGraphicsQuality
+} from '../../games/ProgressionController';
 
 export interface WarOfWordsModalProps {
   isOpen: boolean;
@@ -107,7 +111,12 @@ export const WarOfWordsModal: React.FC<WarOfWordsModalProps> = ({
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(propDifficulty || 'medium');
   const [grade, setGrade] = useState<number>(activeProfile?.grade || 8);
   const [worldId, setWorldId] = useState<WorldId>('moonlight_valley');
-  const [quality, setQuality] = useState<GraphicsQuality>('medium');
+  const [quality, setQuality] = useState<GraphicsQuality>(() => {
+    const rec = detectRecommendedGraphicsQuality();
+    return rec === 'ultra' ? 'high' : rec;
+  });
+  const progressionRef = useRef(new QuestionProgressionMachine({ questionsPerLevel: 4 }));
+  const autoAdvanceTimerRef = useRef<number | null>(null);
   const [customization, setCustomization] = useState<WarriorCustomization>(DEFAULT_WARRIOR_CUSTOMIZATION);
   const [audioSettings, setAudioSettings] = useState<AudioSettings>(DEFAULT_AUDIO_SETTINGS);
 
@@ -351,12 +360,53 @@ export const WarOfWordsModal: React.FC<WarOfWordsModalProps> = ({
     setTimeRemaining(90);
     setSummary(null);
     setSavedNotice(null);
+    if (autoAdvanceTimerRef.current) {
+      window.clearTimeout(autoAdvanceTimerRef.current);
+      autoAdvanceTimerRef.current = null;
+    }
+    progressionRef.current.reset(1);
+    if (newDeck[0]) {
+      progressionRef.current.activateQuestion(newDeck[0].id);
+    }
     startTimeRef.current = Date.now();
     setScreen('playing');
     enterElementFullscreen(rootRef.current).then((ok) => setIsFullscreen(ok));
   };
 
+  const advanceToNextQuestion = useCallback(() => {
+    if (autoAdvanceTimerRef.current) {
+      window.clearTimeout(autoAdvanceTimerRef.current);
+      autoAdvanceTimerRef.current = null;
+    }
+    setLearningPanel(null);
+    setHintBanner(null);
+    const nextState = progressionRef.current.advance();
+    if (qIndex + 1 >= deck.length) {
+      completeRun(correctCount, incorrectCount, knowledgePoints, bestStreak, wordsLearned, runMissed);
+    } else {
+      if (nextState === 'LEVEL_COMPLETE') {
+        progressionRef.current.startNextLevel();
+        const nextWorld: WorldId = worldId === 'moonlight_valley' ? 'shadow_forest' : 'moonlight_valley';
+        setWorldId(nextWorld);
+        setUnlockedWorlds((prev) => (prev.includes(nextWorld) ? prev : [...prev, nextWorld]));
+      }
+      const nextQ = deck[qIndex + 1];
+      if (nextQ) {
+        progressionRef.current.activateQuestion(nextQ.id);
+      }
+      setQIndex((i) => i + 1);
+    }
+  }, [bestStreak, completeRun, correctCount, deck, incorrectCount, knowledgePoints, qIndex, runMissed, wordsLearned, worldId]);
+
   const handleAnswerEvaluated = useCallback((outcome: AnswerOutcome) => {
+    const evalResult = progressionRef.current.submitAnswer({
+      questionId: outcome.question.id,
+      selectedAnswerId: outcome.chosenOptionId,
+      correctAnswerId: outcome.question.correctOptionId,
+      basePoints: outcome.pointsAwarded || 100
+    });
+    if (!evalResult.accepted) return;
+
     setLearningPanel(outcome);
     if (outcome.isCorrect) {
       setCorrectCount((c) => c + 1);
@@ -372,17 +422,11 @@ export const WarOfWordsModal: React.FC<WarOfWordsModalProps> = ({
       setStreak(0);
       setRunMissed((m) => [...m, outcome.question]);
     }
-  }, []);
-
-  const advanceToNextQuestion = () => {
-    setLearningPanel(null);
-    setHintBanner(null);
-    if (qIndex + 1 >= deck.length) {
-      completeRun(correctCount, incorrectCount, knowledgePoints, bestStreak, wordsLearned, runMissed);
-    } else {
-      setQIndex((i) => i + 1);
-    }
-  };
+    if (autoAdvanceTimerRef.current) window.clearTimeout(autoAdvanceTimerRef.current);
+    autoAdvanceTimerRef.current = window.setTimeout(() => {
+      advanceToNextQuestion();
+    }, 1450);
+  }, [advanceToNextQuestion]);
 
   if (!isOpen) return null;
 

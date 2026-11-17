@@ -17,7 +17,7 @@ export type WorldId =
   | 'sky_kingdom';
 
 export type CameraMode = 'standard' | 'cinematic' | 'cockpit' | 'side' | 'reduced';
-export type GraphicsQuality = 'low' | 'medium' | 'high';
+export type GraphicsQuality = 'low' | 'medium' | 'high' | 'ultra';
 export type GameModeId = 'knowledge_flight' | 'revision_flight';
 
 export type AircraftSkinId =

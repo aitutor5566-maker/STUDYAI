@@ -5,7 +5,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { getContactShadowTexture, getSoftGlowTexture } from './PbrTextureFactory';
 
-export type VisualQualityTier = 'low' | 'medium' | 'high';
+export type VisualQualityTier = 'low' | 'medium' | 'high' | 'ultra';
 
 export interface BloomConfig {
   strength?: number;
@@ -48,14 +48,16 @@ export class AdaptivePostProcessingPipeline {
     if (this.bloomEnabled) {
       try {
         const composer = new EffectComposer(renderer);
-        composer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality === 'high' ? 2 : 1.35));
+        composer.setPixelRatio(
+          Math.min(window.devicePixelRatio || 1, quality === 'ultra' ? 2 : quality === 'high' ? 1.75 : 1.35)
+        );
         composer.setSize(Math.max(1, width), Math.max(1, height));
 
         const renderPass = new RenderPass(scene, camera);
         composer.addPass(renderPass);
 
         const bloomStrength =
-          bloomConfig.strength ?? (quality === 'high' ? 0.42 : 0.28);
+          bloomConfig.strength ?? (quality === 'ultra' ? 0.48 : quality === 'high' ? 0.40 : 0.28);
         const bloomRadius = bloomConfig.radius ?? 0.55;
         const bloomThreshold = bloomConfig.threshold ?? 0.78;
         const bloomPass = new UnrealBloomPass(

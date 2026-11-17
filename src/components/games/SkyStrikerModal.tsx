@@ -43,6 +43,10 @@ import {
   WorldId
 } from '../../games/skyStriker/types';
 import { enterElementFullscreen, exitBrowserFullscreen, isBrowserFullscreenActive } from '../../utils/fullscreenGame';
+import {
+  QuestionProgressionMachine,
+  detectRecommendedGraphicsQuality
+} from '../../games/ProgressionController';
 
 export interface SkyStrikerModalProps {
   isOpen: boolean;
@@ -92,7 +96,9 @@ export const SkyStrikerModal: React.FC<SkyStrikerModalProps> = ({
   const [worldId, setWorldId] = useState<WorldId>('desert_storm');
   const [skinId, setSkinId] = useState<AircraftSkinId>('cyan_viper');
   const [cameraMode, setCameraMode] = useState<CameraMode>('standard');
-  const [quality, setQuality] = useState<GraphicsQuality>('medium');
+  const [quality, setQuality] = useState<GraphicsQuality>(() => detectRecommendedGraphicsQuality());
+  const progressionRef = useRef(new QuestionProgressionMachine({ questionsPerLevel: 5 }));
+  const feedbackTimerRef = useRef<number | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [audioSettings, setAudioSettings] = useState<SkyStrikerAudioSettings>(DEFAULT_SKY_AUDIO);
   const [showSettings, setShowSettings] = useState(false);
@@ -324,6 +330,14 @@ export const SkyStrikerModal: React.FC<SkyStrikerModalProps> = ({
     setShowHint(false);
     setSummary(null);
     setSavedNotice(null);
+    if (feedbackTimerRef.current) {
+      window.clearTimeout(feedbackTimerRef.current);
+      feedbackTimerRef.current = null;
+    }
+    progressionRef.current.reset(nextLevel);
+    if (newDeck[0]) {
+      progressionRef.current.activateQuestion(newDeck[0].questionId);
+    }
     startTimeRef.current = Date.now();
     setScreen('playing');
     enterElementFullscreen(rootRef.current).then((ok) => setIsFullscreen(ok));
@@ -333,14 +347,22 @@ export const SkyStrikerModal: React.FC<SkyStrikerModalProps> = ({
     (answerId: string) => {
       if (!currentQuestion || feedbackBanner) return;
 
-      const isCorrect = answerId === currentQuestion.correctAnswerId;
+      const evalResult = progressionRef.current.submitAnswer({
+        questionId: currentQuestion.questionId,
+        selectedAnswerId: answerId,
+        correctAnswerId: currentQuestion.correctAnswerId,
+        basePoints: 100
+      });
+      if (!evalResult.accepted) return;
+
+      const isCorrect = evalResult.isCorrect;
       const correctOpt = currentQuestion.options.find((o) => o.answerId === currentQuestion.correctAnswerId);
 
       const nextCorrect = isCorrect ? correctCount + 1 : correctCount;
       const nextIncorrect = isCorrect ? incorrectCount : incorrectCount + 1;
       const nextStreak = isCorrect ? streak + 1 : 0;
       const nextBestStreak = Math.max(bestStreak, nextStreak);
-      const nextPoints = isCorrect ? knowledgePoints + 100 : knowledgePoints;
+      const nextPoints = isCorrect ? knowledgePoints + evalResult.pointsAwarded : knowledgePoints;
       const nextMastered = isCorrect
         ? Array.from(new Set([...masteredTopics, currentQuestion.topic]))
         : masteredTopics;
@@ -366,15 +388,41 @@ export const SkyStrikerModal: React.FC<SkyStrikerModalProps> = ({
         explanation: currentQuestion.explanation
       });
 
-      setTimeout(() => {
+      if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current);
+      feedbackTimerRef.current = window.setTimeout(() => {
+        feedbackTimerRef.current = null;
         setFeedbackBanner(null);
         setShowHint(false);
+        const nextState = progressionRef.current.advance();
         if (qIndex + 1 >= deck.length) {
           completeRun(nextCorrect, nextIncorrect, nextPoints, nextBestStreak, nextMastered, nextMissed);
         } else {
+          if (nextState === 'LEVEL_COMPLETE') {
+            const nextLvl = progressionRef.current.startNextLevel();
+            setLevelNum(nextLvl);
+            const order: WorldId[] = ['desert_storm', 'frozen_horizon', 'ocean_frontier', 'future_city', 'sky_kingdom'];
+            const nextWorld = order[(order.indexOf(worldId) + 1) % order.length];
+            if (nextWorld) {
+              setWorldId(nextWorld);
+              setUnlockedWorlds((prev) => {
+                if (prev.includes(nextWorld)) return prev;
+                const updated = [...prev, nextWorld];
+                try {
+                  localStorage.setItem(UNLOCKED_WORLDS_KEY, JSON.stringify(updated));
+                } catch {
+                  // ignore
+                }
+                return updated;
+              });
+            }
+          }
+          const nextQ = deck[qIndex + 1];
+          if (nextQ) {
+            progressionRef.current.activateQuestion(nextQ.questionId);
+          }
           setQIndex((prev) => prev + 1);
         }
-      }, 2400);
+      }, 1500);
     },
     [
       currentQuestion,
@@ -388,7 +436,8 @@ export const SkyStrikerModal: React.FC<SkyStrikerModalProps> = ({
       runMissed,
       audioManager,
       qIndex,
-      deck.length,
+      deck,
+      worldId,
       completeRun
     ]
   );
@@ -1227,6 +1276,7 @@ export const SkyStrikerModal: React.FC<SkyStrikerModalProps> = ({
                   <option value="low">Low (Battery Saver)</option>
                   <option value="medium">Medium (Balanced)</option>
                   <option value="high">High (Dynamic Shadows)</option>
+                  <option value="ultra">Ultra (Full Bloom & 2x DPR)</option>
                 </select>
               </label>
 
