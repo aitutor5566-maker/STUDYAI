@@ -112,6 +112,7 @@ import { centralAiOrchestrator } from './centralAiOrchestrator.ts';
 import { multiModelAiTeacherEngine } from './multiModelAiTeacherEngine.ts';
 import { lessonMapEngine } from './lessonMapEngine.ts';
 import { deepConceptMasteryEngine } from './deepConceptMasteryEngine.ts';
+import { routeIntelligentTutorMessage } from './intelligentTeachingRouter.ts';
 import { analyzeEducationalImage } from './imageAnalysisEngine.ts';
 import { macCompanionBridge } from './macCompanionBridge.ts';
 import { professionalTeacherEngine } from './professionalTeacherEngine.ts';
@@ -2393,7 +2394,61 @@ export function createAppServer() {
           ? (db.prepare('SELECT * FROM tutor_conversations WHERE id = ? AND user_id = ?').get(convId, studentId) as any)
           : null;
 
-        const effectiveTopic = resolveQuestionTopic(question, existingConv?.topic || topic);
+        const routed = await routeIntelligentTutorMessage({
+          message: question,
+          previousTopic: existingConv?.topic || null,
+          subject: body.subject || existingConv?.subject,
+          grade,
+          board: resolvedBoard,
+          language,
+          studentName,
+          maximumDetailRequested: body.maximumDetail === true || rawMode === 'maximum_detail',
+          hasAttachment: Boolean(attachmentSummary)
+        });
+
+        if (routed.handledDirectly) {
+          const preservedTopic = existingConv?.topic || routed.classification.preservedTopic || 'General Chat';
+          const preservedSubject = existingConv?.subject || sanitizeText(body.subject || 'General', 60);
+          if (!existingConv) {
+            convId = `conv-${crypto.randomUUID().slice(0, 8)}`;
+            db.prepare(`
+              INSERT INTO tutor_conversations (id, user_id, topic, subject, level, mode, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(convId, studentId, preservedTopic, preservedSubject, level, mode, now, now);
+          }
+          const userMsgId = `msg-${crypto.randomUUID().slice(0, 8)}`;
+          const assistantMsgId = `msg-${crypto.randomUUID().slice(0, 8)}`;
+          db.prepare(`INSERT INTO tutor_messages (id, conversation_id, role, content, structured_json, media_json, created_at) VALUES (?, ?, 'user', ?, NULL, NULL, ?)`).run(userMsgId, convId, question, now);
+          db.prepare(`INSERT INTO tutor_messages (id, conversation_id, role, content, structured_json, media_json, created_at) VALUES (?, ?, 'assistant', ?, ?, NULL, ?)`).run(
+            assistantMsgId,
+            convId,
+            routed.reply || '',
+            JSON.stringify({
+              intentClassification: routed.classification,
+              pronunciationGuide: (routed as any).pronunciationGuide,
+              lineByLineBreakdown: (routed as any).lineByLineBreakdown,
+              deepLesson: (routed as any).deepLesson
+            }),
+            new Date().toISOString()
+          );
+          sendJson(res, 200, {
+            conversationId: convId,
+            topic: preservedTopic,
+            subject: preservedSubject,
+            answer: routed.reply,
+            assistantMessage: { id: assistantMsgId, role: 'assistant', content: routed.reply },
+            intentClassification: routed.classification,
+            pronunciationGuide: (routed as any).pronunciationGuide,
+            lineByLineBreakdown: (routed as any).lineByLineBreakdown,
+            deepLesson: (routed as any).deepLesson
+          });
+          return;
+        }
+
+        const effectiveTopic =
+          routed.classification.intent === 'continue_lesson' && existingConv?.topic
+            ? existingConv.topic
+            : resolveQuestionTopic(question, existingConv?.topic || topic);
         const subject = sanitizeText(body.subject || inferSubjectFromTopic(effectiveTopic + ' ' + question), 60);
 
         if (!existingConv) {

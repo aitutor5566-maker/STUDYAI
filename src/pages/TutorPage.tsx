@@ -362,6 +362,7 @@ export const TutorPage: React.FC = () => {
   const [selectedVisualComponent, setSelectedVisualComponent] = useState<{ id: string; label: string; role?: string } | null>(null);
   const [revealedQuestions, setRevealedQuestions] = useState<Record<string, boolean>>({});
   const [explanationLength, setExplanationLength] = useState<'concise' | 'balanced' | 'detailed'>('balanced');
+  const [maximumDetailMode, setMaximumDetailMode] = useState(false);
   const [showAdaptiveModal, setShowAdaptiveModal] = useState<boolean>(false);
   const [showVoiceModal, setShowVoiceModal] = useState<boolean>(false);
   const [voiceLessonTutorStructured, setVoiceLessonTutorStructured] = useState<any | null>(null);
@@ -936,13 +937,18 @@ export const TutorPage: React.FC = () => {
           subject,
           language,
           explanationLength,
+          maximumDetail: maximumDetailMode,
           attachmentSummary: effectiveAttachmentSummary || undefined,
           selectedVisualComponent: selectedVisualComponent || undefined
         })
       });
 
       setActiveConvId(res.conversationId);
-      const nextMsgs = res.messages || [];
+      const nextMsgs = Array.isArray(res.messages) && res.messages.length > 0
+        ? res.messages
+        : res.assistantMessage
+        ? [...messages, { id: `u-${Date.now()}`, role: 'user', content: cleanQ }, res.assistantMessage]
+        : messages;
       setMessages(nextMsgs);
       const latestAssistant = [...nextMsgs].reverse().find((m: any) => m.role === 'assistant');
       if (latestAssistant) {
@@ -1335,6 +1341,25 @@ export const TutorPage: React.FC = () => {
                   {len.label}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setMaximumDetailMode((v) => !v);
+                  setExplanationLength('detailed');
+                }}
+                style={{
+                  border: 'none',
+                  padding: '4px 10px',
+                  borderRadius: 999,
+                  background: maximumDetailMode ? '#0EA5E9' : 'transparent',
+                  color: maximumDetailMode ? '#FFFFFF' : '#0284C7',
+                  fontWeight: 800,
+                  fontSize: '0.73rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Explain in Maximum Detail
+              </button>
             </div>
           </div>
 
