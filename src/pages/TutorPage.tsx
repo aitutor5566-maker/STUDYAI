@@ -363,6 +363,8 @@ export const TutorPage: React.FC = () => {
   const [revealedQuestions, setRevealedQuestions] = useState<Record<string, boolean>>({});
   const [explanationLength, setExplanationLength] = useState<'concise' | 'balanced' | 'detailed'>('balanced');
   const [maximumDetailMode, setMaximumDetailMode] = useState(false);
+  const [tutorLessonMapOpen, setTutorLessonMapOpen] = useState(false);
+  const [tutorLessonMap, setTutorLessonMap] = useState<any>(null);
   const [showAdaptiveModal, setShowAdaptiveModal] = useState<boolean>(false);
   const [showVoiceModal, setShowVoiceModal] = useState<boolean>(false);
   const [voiceLessonTutorStructured, setVoiceLessonTutorStructured] = useState<any | null>(null);
@@ -1360,8 +1362,65 @@ export const TutorPage: React.FC = () => {
               >
                 Explain in Maximum Detail
               </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const nextOpen = !tutorLessonMapOpen;
+                  setTutorLessonMapOpen(nextOpen);
+                  if (nextOpen) {
+                    const res = await apiFetch<any>('/api/tutor/topic-lesson-map', {
+                      method: 'POST',
+                      body: JSON.stringify({ topic: activeTopic || topicInput || 'Photosynthesis', subject, grade, board: 'CBSE' })
+                    });
+                    setTutorLessonMap(res);
+                  }
+                }}
+                style={{
+                  border: 'none',
+                  padding: '4px 10px',
+                  borderRadius: 999,
+                  background: tutorLessonMapOpen ? '#10B981' : 'transparent',
+                  color: tutorLessonMapOpen ? '#FFFFFF' : '#059669',
+                  fontWeight: 800,
+                  fontSize: '0.73rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Lesson Map
+              </button>
             </div>
           </div>
+
+          {tutorLessonMapOpen && tutorLessonMap && (
+            <div style={{ width: '100%', padding: '10px 14px', borderRadius: 14, background: '#F8FAFC', border: '1px solid #CBD5E1', marginTop: 6 }}>
+              <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#0F172A', marginBottom: 6 }}>
+                Lesson Map: {tutorLessonMap.topic} ({tutorLessonMap.subject}) • ~{tutorLessonMap.estimatedMinutes} min estimate
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {(tutorLessonMap.subtopics || []).map((st: any) => (
+                  <button
+                    key={st.id}
+                    type="button"
+                    onClick={() => {
+                      setInput(`Explain "${st.title}" in the context of ${tutorLessonMap.topic}`);
+                    }}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: 999,
+                      border: '1px solid #94A3B8',
+                      background: '#FFFFFF',
+                      color: '#1E293B',
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {st.order}. {st.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#334155' }}>Grade:</span>

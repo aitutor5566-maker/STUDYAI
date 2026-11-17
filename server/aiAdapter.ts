@@ -165,12 +165,88 @@ export function getProviderStatus(): ProviderStatus {
   };
 }
 
+export interface TopicIdentityLock {
+  requestedTopic: string;
+  subject: string;
+  academicDomain: string;
+  grade: number;
+  board: string;
+  language: string;
+  isHistoricalOrSocial: boolean;
+}
+
+export function buildTopicIdentityLock(opts: {
+  question: string;
+  previousTopic?: string;
+  uiSubject?: string;
+  grade?: number;
+  board?: string;
+  language?: string;
+}): TopicIdentityLock {
+  const requestedTopic = resolveQuestionTopic(opts.question, opts.previousTopic);
+  const combined = `${requestedTopic} ${opts.question}`.toLowerCase();
+  const inferred = inferSubjectFromTopic(combined);
+
+  // Explicit question domain ALWAYS overrides stale UI dropdowns (e.g., History overrides Physics/Science)
+  const hasStrongDomainMatch =
+    /(war|revolt|1857|independence|history|revolution|empire|constitution|geography|monsoon)/.test(combined) ||
+    /(quadratic|equation|algebra|trigonometry|calculus|polynomial|pythagor)/.test(combined) ||
+    /(newton|force|velocity|acceleration|ohm|circuit|photosynthesis|chloroplast|heart|mitosis|atom|acid|base)/.test(combined) ||
+    /(grammar|tense|synonym|poem|literature|algorithm|python|computer network)/.test(combined);
+
+  const subject = hasStrongDomainMatch
+    ? inferred
+    : opts.uiSubject && opts.uiSubject !== 'Science'
+    ? opts.uiSubject
+    : inferred;
+
+  const isHistoricalOrSocial =
+    subject === 'Social Studies' ||
+    subject === 'History' ||
+    /(war|revolt|1857|independence|revolution|treaty|empire|dynasty)/.test(combined);
+
+  return {
+    requestedTopic,
+    subject,
+    academicDomain: isHistoricalOrSocial ? 'History & Social Studies' : subject,
+    grade: opts.grade || 10,
+    board: opts.board || 'CBSE',
+    language: opts.language || 'English',
+    isHistoricalOrSocial
+  };
+}
+
+/**
+ * Prevents cross-subject contamination (e.g., Newton's Laws leaking into 1857 Revolt).
+ */
+export function validateTopicConsistency(lock: TopicIdentityLock, structured: any): any {
+  if (!structured || typeof structured !== 'object') return structured;
+  if (lock.isHistoricalOrSocial) {
+    const physicsLeakRegex = /(newton['’]?s\s+(three\s+)?laws|free-body\s+diagram|f\s*=\s*m\s*[·*×]?\s*a|m\/s²|kg·m\/s²)/i;
+    structured.formula = null;
+    structured.model3dType = null;
+    if (structured.diagramType === 'newton_physics') {
+      structured.diagramType = 'concept_diagram';
+    }
+    if (physicsLeakRegex.test(String(structured.introduction || ''))) {
+      structured.introduction = `**${lock.requestedTopic}** is a landmark topic in **${lock.subject}** (Grade ${lock.grade}, ${lock.board}). Let us examine its historical causes, major events, leaders, and lasting significance.`;
+    }
+    if (Array.isArray(structured.keySteps)) {
+      structured.keySteps = structured.keySteps.filter((s: string) => !physicsLeakRegex.test(String(s)));
+    }
+    if (Array.isArray(structured.keywords)) {
+      structured.keywords = structured.keywords.filter((k: string) => !physicsLeakRegex.test(String(k)));
+    }
+  }
+  return structured;
+}
+
 export function inferSubjectFromTopic(topic: string): string {
   const t = topic.toLowerCase();
   if (/(quadratic|equation|fraction|algebra|calculus|triangle|geometry|trigonometry|matrix|probability|number|math|polynomial|parabola|theorem|pythagor|integral|derivative|vector|ratio)/.test(t)) {
     return 'Maths';
   }
-  if (/(war|history|empire|revolution|constitution|democracy|geography|climate|continent|civilization|independence|dynasty|world war|industrial|cold war|french|indian|government)/.test(t)) {
+  if (/(war|revolt|1857|sepoy|east india company|mangal pandey|rani lakshmibai|history|empire|revolution|constitution|democracy|geography|climate|monsoon|continent|civilization|independence|dynasty|world war|industrial|cold war|french|indian|government)/.test(t)) {
     return 'Social Studies';
   }
   if (/(grammar|verb|noun|tense|shakespeare|poem|essay|literature|clause|voice|english|synonym|metaphor|adjective|adverb|punctuation)/.test(t)) {
@@ -1061,9 +1137,17 @@ async function generateTutorExplanationInner(input: TutorRequestInput) {
   if (isWeakSubject) {
     adaptiveDirective += `\nFOUNDATIONAL PREREQUISITE BRIDGE: The student finds this subject challenging. Clearly explain the foundational background concept first in simple terms before moving to advanced steps.`;
   }
-  // Resolve the true topic from the user's question so asking about a new topic never stays stuck on "Photosynthesis"
-  const effectiveTopic = resolveQuestionTopic(cleanQuestion, input.topic);
-  const subject = input.subject && input.subject !== 'Science' ? input.subject : inferSubjectFromTopic(effectiveTopic + ' ' + cleanQuestion);
+  // Resolve the true topic & subject via Topic Identity Lock so stale dropdowns never override explicit intent
+  const topicLock = buildTopicIdentityLock({
+    question: cleanQuestion,
+    previousTopic: input.topic,
+    uiSubject: input.subject,
+    grade: input.grade,
+    board: 'CBSE',
+    language: input.language
+  });
+  const effectiveTopic = topicLock.requestedTopic;
+  const subject = topicLock.subject;
   const isDetailed = input.mode === 'detailed';
   const priorTurns = input.history || [];
   const isFollowUp = priorTurns.length > 0;
@@ -1865,6 +1949,55 @@ ${visualComponentContext}${
     };
   }
 
+  if (/\b(first war of independence|first war of indian independence|1857|sepoy mutiny|revolt of 1857|mangal pandey|rani lakshmibai|bahadur shah zafar)\b/.test(lower)) {
+    return validateTopicConsistency(topicLock, {
+      topic: 'First War of Indian Independence (1857)',
+      subject: 'Social Studies',
+      mode: input.mode,
+      introduction: `${contextPrefix}**The First War of Indian Independence (1857)**—also known as the Revolt of 1857—was the first large-scale armed uprising against the rule of the **British East India Company** across northern and central India. Triggered at Meerut on **10 May 1857**, it united sepoys, displaced rulers, peasants, and artisans in a decisive challenge to colonial domination.`,
+      keySteps: [
+        'Political Causes (Doctrine of Lapse & Annexations) — Lord Dalhousie’s Doctrine of Lapse annexed Satara, Jhansi, and Nagpur, while the 1856 annexation of Awadh alienated local rulers and taluqdars.',
+        'Economic Exploitation — Heavy land revenue demands, destruction of traditional Indian handicrafts through British tariffs, and impoverishment of peasants fueled widespread anger.',
+        'Social, Religious & Military Grievances — General Service Enlistment Act (1856), unequal pay for Indian sepoys, and the immediate spark: greased Enfield rifle cartridges rumoured to use cow and pig fat.',
+        'Major Centres & Leaders — Mangal Pandey (Barrackpore), Bahadur Shah Zafar (Delhi), Rani Lakshmibai (Jhansi), Nana Sahib & Tatya Tope (Kanpur), Kunwar Singh (Bihar), and Begum Hazrat Mahal (Lucknow).',
+        'Consequences & Significance — Although suppressed due to lack of unified coordination and modern weaponry, the revolt ended East India Company rule via the **Government of India Act 1858**, transferring power to the British Crown and inspiring India’s later freedom struggle.'
+      ],
+      formula: null,
+      definitions: [
+        { term: 'Doctrine of Lapse', definition: 'Annexation policy under Lord Dalhousie whereby Indian princely states without a natural male heir were absorbed into British territory.' },
+        { term: 'Sepoy', definition: 'An Indian soldier serving in the British East India Company army.' },
+        { term: 'Government of India Act 1858', definition: 'British parliamentary act that abolished East India Company rule and placed India directly under the British Crown.' },
+        { term: 'Enfield Rifle Cartridge', definition: 'The immediate trigger of 1857; soldiers had to bite the greased paper cartridge, offending both Hindu and Muslim religious beliefs.' }
+      ],
+      keywords: ['Revolt of 1857', 'British East India Company', 'Doctrine of Lapse', 'Mangal Pandey', 'Rani Lakshmibai', 'Bahadur Shah Zafar', 'Meerut (10 May 1857)', 'Government of India Act 1858'],
+      differences: {
+        titleA: 'Before 1857 (East India Company Rule)',
+        titleB: 'After 1858 (British Crown Rule)',
+        rows: [
+          { aspect: 'Governing Authority', itemA: 'British East India Company', itemB: 'Direct British Crown via Secretary of State & Viceroy' },
+          { aspect: 'Annexation Policy', itemA: 'Aggressive Doctrine of Lapse annexations', itemB: 'Doctrine of Lapse formally abandoned; princely rights assured' },
+          { aspect: 'Military Structure', itemA: 'High ratio of Indian sepoys to European troops', itemB: 'Reorganized army with higher European ratio and artillery control' }
+        ]
+      },
+      analogies: 'Think of the 1857 Revolt like dry timber stacked over decades—political annexations, heavy taxes, and military humiliation were the dry wood, and the greased Enfield cartridge was the single spark that ignited the fire.',
+      misconceptions: [
+        'It was not merely a localized military mutiny; peasants, artisans, and regional rulers participated widely across Awadh, Delhi, Bundelkhand, and Bihar.',
+        'Historical revolutions are analyzed through political, economic, social, and military causality—not physics or mathematical formulas.'
+      ],
+      recap: 'The First War of Indian Independence (1857) united diverse Indian groups against East India Company misrule, led by figures like Rani Lakshmibai and Mangal Pandey, ending Company rule in 1858.',
+      diagramType: 'concept_diagram',
+      model3dType: null,
+      imageUrl: visualAsset.dataUrl,
+      imageCaption: 'Historical causes, major centres (Delhi, Meerut, Kanpur, Jhansi, Lucknow), leaders, and 1858 consequences of the 1857 Revolt',
+      suggestedFollowUps: [
+        'Explain the economic causes of the 1857 Revolt in detail',
+        'What role did Rani Lakshmibai and Tatya Tope play?',
+        'Why did the First War of Indian Independence fail to achieve immediate victory?'
+      ],
+      providerMode: 'local_curriculum_engine'
+    });
+  }
+
   if (/\b(french revolution|bastille|louis xvi|third estate|reign of terror|robespierre|national assembly)\b/.test(lower)) {
     return {
       topic: 'The French Revolution (1789–1799)',
@@ -1913,9 +2046,9 @@ ${visualComponentContext}${
     };
   }
 
-  // General adaptive response for any student topic
+  // General adaptive response for any student topic (validated against Topic Identity Lock)
   const displayTopic = effectiveTopic.charAt(0).toUpperCase() + effectiveTopic.slice(1);
-  return {
+  return validateTopicConsistency(topicLock, {
     topic: displayTopic,
     subject,
     mode: input.mode,
@@ -1966,7 +2099,7 @@ ${visualComponentContext}${
       `Explain ${displayTopic} in ${input.mode === 'simple' ? 'detailed' : 'simple'} mode`
     ],
     providerMode: 'local_curriculum_engine'
-  };
+  });
 }
 
 export interface NoteGenInput {

@@ -23,6 +23,7 @@ import {
   inferSubjectFromTopic,
   infer3DModelType,
   resolveQuestionTopic,
+  buildTopicIdentityLock,
   processNotebookSource,
   answerNotebookQuestionFromSources,
   exportNotebookDocument,
@@ -991,6 +992,57 @@ export function createAppServer() {
         });
 
         sendJson(res, 200, { success: true, analysis });
+        return;
+      }
+
+      if (pathname === '/api/tutor/topic-lesson-map' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const rawTopic = sanitizeText(body.topic || 'Photosynthesis', 180);
+        const lock = buildTopicIdentityLock({
+          question: rawTopic,
+          uiSubject: body.subject,
+          grade: typeof body.grade === 'number' ? body.grade : 10,
+          board: sanitizeText(body.board || 'CBSE', 40)
+        });
+        const lower = lock.requestedTopic.toLowerCase();
+        const subtopics = /(1857|first war|revolt|independence)/.test(lower)
+          ? [
+              'Historical background & British East India Company expansion',
+              'Political causes (Doctrine of Lapse & Awadh annexation)',
+              'Economic exploitation & peasant grievances',
+              'Social, religious & military causes (Enfield cartridges)',
+              'Major centres & leaders (Mangal Pandey, Rani Lakshmibai, Bahadur Shah Zafar)',
+              'Course of the revolt & reasons for failure',
+              'Government of India Act 1858 & historical significance'
+            ]
+          : /(newton|laws of motion)/.test(lower)
+          ? [
+              'Concept of Force & Inertia (First Law)',
+              'Momentum & Second Law (ΣF = ma)',
+              'Action-Reaction Pairs (Third Law)',
+              'Free-Body Diagrams & Friction',
+              'Numerical Problem Solving & SI Units'
+            ]
+          : [
+              `Foundations & Prerequisites of ${lock.requestedTopic}`,
+              `Core Definition & Terminology`,
+              `Step-by-Step Working / Mechanism`,
+              `Real-World Examples & Applications`,
+              `Exam Preparation & Practice Check`
+            ];
+        sendJson(res, 200, {
+          topic: lock.requestedTopic,
+          subject: lock.subject,
+          grade: lock.grade,
+          board: lock.board,
+          estimatedMinutes: subtopics.length * 6,
+          subtopics: subtopics.map((title, idx) => ({
+            id: `tlm-${idx + 1}`,
+            order: idx + 1,
+            title,
+            estimatedMinutes: 6
+          }))
+        });
         return;
       }
 
@@ -2445,11 +2497,19 @@ export function createAppServer() {
           return;
         }
 
+        const topicLock = buildTopicIdentityLock({
+          question,
+          previousTopic: existingConv?.topic || topic,
+          uiSubject: body.subject,
+          grade,
+          board: resolvedBoard,
+          language
+        });
         const effectiveTopic =
           routed.classification.intent === 'continue_lesson' && existingConv?.topic
             ? existingConv.topic
-            : resolveQuestionTopic(question, existingConv?.topic || topic);
-        const subject = sanitizeText(body.subject || inferSubjectFromTopic(effectiveTopic + ' ' + question), 60);
+            : topicLock.requestedTopic;
+        const subject = topicLock.subject;
 
         if (!existingConv) {
           convId = `conv-${crypto.randomUUID().slice(0, 8)}`;
