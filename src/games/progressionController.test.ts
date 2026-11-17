@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   QuestionProgressionMachine,
-  detectRecommendedGraphicsQuality
+  detectRecommendedGraphicsQuality,
+  loadGameProgress,
+  saveGameProgress
 } from './ProgressionController';
+import { getStudyRushLevelTheme } from './studyRush3d/WorldManager';
 
 describe('QuestionProgressionMachine', () => {
   it('enforces the 7-state lifecycle and prevents duplicate scoring', () => {
@@ -99,5 +102,62 @@ describe('detectRecommendedGraphicsQuality', () => {
         isTouchDevice: false
       })
     ).toBe('ultra');
+  });
+});
+
+describe('Multi-level transitions & saved progress', () => {
+  it('progresses consecutively through levels 1 -> 2 -> 3 with distinct Magic Village themes', () => {
+    const machine = new QuestionProgressionMachine({ startingLevel: 1, questionsPerLevel: 2 });
+    const levelNames: string[] = [];
+
+    for (let lvl = 1; lvl <= 3; lvl++) {
+      levelNames.push(getStudyRushLevelTheme(machine.getSnapshot().level).name);
+      expect(machine.activateQuestion(`q-${lvl}-1`)).toBe(true);
+      expect(
+        machine.submitAnswer({ questionId: `q-${lvl}-1`, selectedAnswerId: 'A', correctAnswerId: 'A' }).accepted
+      ).toBe(true);
+      expect(machine.advance()).toBe('NEXT_QUESTION');
+
+      expect(machine.activateQuestion(`q-${lvl}-2`)).toBe(true);
+      const res = machine.submitAnswer({ questionId: `q-${lvl}-2`, selectedAnswerId: 'B', correctAnswerId: 'B' });
+      expect(res.levelCompleted).toBe(true);
+      expect(machine.advance()).toBe('LEVEL_COMPLETE');
+      machine.startNextLevel();
+    }
+
+    expect(levelNames).toEqual(['Science Village', 'Physics Laboratory', 'Nature Kingdom']);
+    expect(machine.getSnapshot().level).toBe(4);
+  });
+
+  it('persists and isolates student game progress across reloads', () => {
+    localStorage.clear();
+
+    saveGameProgress({
+      gameId: 'sky_striker',
+      profileId: 'student-a',
+      currentLevel: 2,
+      completedLevels: [1],
+      bestScore: 540,
+      totalCorrect: 5,
+      totalAttempts: 6
+    });
+
+    saveGameProgress({
+      gameId: 'sky_striker',
+      profileId: 'student-a',
+      currentLevel: 3,
+      completedLevels: [2],
+      bestScore: 420 // lower score must not overwrite higher bestScore
+    });
+
+    const loadedA = loadGameProgress('sky_striker', 'student-a');
+    expect(loadedA.currentLevel).toBe(3);
+    expect(loadedA.highestUnlockedLevel).toBe(3);
+    expect(loadedA.completedLevels).toEqual([1, 2]);
+    expect(loadedA.bestScore).toBe(540);
+
+    const loadedB = loadGameProgress('sky_striker', 'student-b');
+    expect(loadedB.currentLevel).toBe(1);
+    expect(loadedB.bestScore).toBe(0);
   });
 });

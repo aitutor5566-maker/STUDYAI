@@ -104,21 +104,90 @@ function createVoxelTileTexture(baseHex: string, accentHex: string, repeat: numb
   return tex;
 }
 
-export function buildStudyRushWorld(scene: THREE.Scene): WorldHandles {
+export interface StudyRushLevelTheme {
+  level: number;
+  name: string;
+  groundKind: 'grass' | 'stone' | 'sand' | 'snow';
+  groundColor: string;
+  plazaColor: string;
+  skyTop: string;
+  skyHorizon: string;
+}
+
+export function getStudyRushLevelTheme(levelNum = 1): StudyRushLevelTheme {
+  const idx = ((Math.max(1, levelNum) - 1) % 5) + 1;
+  switch (idx) {
+    case 2:
+      return {
+        level: levelNum,
+        name: 'Physics Laboratory',
+        groundKind: 'stone',
+        groundColor: '#64748B',
+        plazaColor: '#94A3B8',
+        skyTop: '#0369A1',
+        skyHorizon: '#BAE6FD'
+      };
+    case 3:
+      return {
+        level: levelNum,
+        name: 'Nature Kingdom',
+        groundKind: 'grass',
+        groundColor: '#34D399',
+        plazaColor: '#D6D3D1',
+        skyTop: '#047857',
+        skyHorizon: '#A7F3D0'
+      };
+    case 4:
+      return {
+        level: levelNum,
+        name: 'Mathematics Oasis',
+        groundKind: 'sand',
+        groundColor: '#EAB308',
+        plazaColor: '#FDE68A',
+        skyTop: '#B45309',
+        skyHorizon: '#FDE68A'
+      };
+    case 5:
+      return {
+        level: levelNum,
+        name: 'Frost Learning Citadel',
+        groundKind: 'snow',
+        groundColor: '#E2E8F0',
+        plazaColor: '#CBD5E1',
+        skyTop: '#1E3A8A',
+        skyHorizon: '#E0F2FE'
+      };
+    default:
+      return {
+        level: levelNum,
+        name: 'Science Village',
+        groundKind: 'grass',
+        groundColor: '#86EFAC',
+        plazaColor: '#E2E8F0',
+        skyTop: '#0284C7',
+        skyHorizon: '#BAE6FD'
+      };
+  }
+}
+
+export function buildStudyRushWorld(scene: THREE.Scene, levelNum = 1): WorldHandles {
+  const theme = getStudyRushLevelTheme(levelNum);
   const root = new THREE.Group();
   const colliders: ColliderBox[] = [];
   const torchLights: THREE.PointLight[] = [];
   const resources: WorldResourceEntity[] = [];
   const villagers: WorldVillagerEntity[] = [];
 
-  // 1. Voxel Ground Terrain with procedural PBR grass & stone textures
-  const grassPbr = typeof document !== 'undefined' ? getPbrTextureSet('grass', 28, 28) : null;
+  // 1. Voxel Ground Terrain with level-themed procedural PBR textures
+  const grassPbr = typeof document !== 'undefined' ? getPbrTextureSet(theme.groundKind, 28, 28) : null;
   const groundGeo = new THREE.BoxGeometry(120, 1, 120);
   const groundMat = new THREE.MeshStandardMaterial({
-    color: grassPbr ? '#86EFAC' : '#4ADE80',
+    color: theme.groundColor,
     map: grassPbr?.map ?? undefined,
     normalMap: grassPbr?.normalMap ?? undefined,
     roughnessMap: grassPbr?.roughnessMap ?? undefined,
+    aoMap: grassPbr?.aoMap ?? undefined,
+    aoMapIntensity: 0.4,
     normalScale: new THREE.Vector2(0.7, 0.7),
     roughness: 0.9
   });
@@ -131,10 +200,11 @@ export function buildStudyRushWorld(scene: THREE.Scene): WorldHandles {
   const stonePbr = typeof document !== 'undefined' ? getPbrTextureSet('stone', 10, 10) : null;
   const plazaGeo = new THREE.BoxGeometry(34, 0.14, 34);
   const plazaMat = new THREE.MeshStandardMaterial({
-    color: stonePbr ? '#E2E8F0' : '#CBD5E1',
+    color: theme.plazaColor,
     map: stonePbr?.map ?? undefined,
     normalMap: stonePbr?.normalMap ?? undefined,
     roughnessMap: stonePbr?.roughnessMap ?? undefined,
+    aoMap: stonePbr?.aoMap ?? undefined,
     normalScale: new THREE.Vector2(0.65, 0.65),
     roughness: 0.82
   });

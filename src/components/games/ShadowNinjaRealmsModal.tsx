@@ -38,7 +38,9 @@ import {
 import { enterElementFullscreen } from '../../utils/fullscreenGame';
 import {
   QuestionProgressionMachine,
-  detectRecommendedGraphicsQuality
+  detectRecommendedGraphicsQuality,
+  loadGameProgress,
+  saveGameProgress
 } from '../../games/ProgressionController';
 
 export interface ShadowNinjaRealmsModalProps {
@@ -58,7 +60,7 @@ export const ShadowNinjaRealmsModal: React.FC<ShadowNinjaRealmsModalProps> = ({
   const [phase, setPhase] = useState<'menu' | 'playing' | 'paused'>('menu');
   const [mode, setMode] = useState<AdventureMode>('shadow_ninja');
   const [graphicsTier, setGraphicsTier] = useState<GraphicsTier>(() => detectRecommendedGraphicsQuality());
-  const [levelNum, setLevelNum] = useState(1);
+  const [levelNum, setLevelNum] = useState(() => loadGameProgress('shadow_ninja_realms').currentLevel);
   const progressionRef = useRef(new QuestionProgressionMachine({ questionsPerLevel: 4 }));
   const feedbackTimerRef = useRef<number | null>(null);
   const [weather, setWeather] = useState<WeatherType>('clear');
@@ -164,6 +166,13 @@ export const ShadowNinjaRealmsModal: React.FC<ShadowNinjaRealmsModalProps> = ({
       if (nextState === 'LEVEL_COMPLETE') {
         const nextLvl = progressionRef.current.startNextLevel();
         setLevelNum(nextLvl);
+        saveGameProgress({
+          gameId: 'shadow_ninja_realms',
+          currentLevel: nextLvl,
+          highestUnlockedLevel: nextLvl,
+          completedLevels: [nextLvl - 1],
+          bestScore: xp
+        });
         const realmOrder: NinjaRealmId[] = ['bamboo_temple', 'sakura_sanctuary', 'misty_waterfall_peaks'];
         setNinjaRealm((prev) => realmOrder[(realmOrder.indexOf(prev) + 1) % realmOrder.length]);
         const biomeOrder: MinecraftBiomeId[] = ['emerald_forest', 'alpine_snow_peaks', 'desert_oasis'];
@@ -399,8 +408,7 @@ export const ShadowNinjaRealmsModal: React.FC<ShadowNinjaRealmsModalProps> = ({
               <button
                 onClick={() => {
                   audioRef.current?.unlock();
-                  progressionRef.current.reset(1);
-                  setLevelNum(1);
+                  progressionRef.current.reset(levelNum);
                   if (questions[0]) {
                     progressionRef.current.activateQuestion(questions[0].id);
                   }

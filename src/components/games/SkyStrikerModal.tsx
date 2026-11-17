@@ -45,7 +45,9 @@ import {
 import { enterElementFullscreen, exitBrowserFullscreen, isBrowserFullscreenActive } from '../../utils/fullscreenGame';
 import {
   QuestionProgressionMachine,
-  detectRecommendedGraphicsQuality
+  detectRecommendedGraphicsQuality,
+  loadGameProgress,
+  saveGameProgress
 } from '../../games/ProgressionController';
 
 export interface SkyStrikerModalProps {
@@ -104,7 +106,9 @@ export const SkyStrikerModal: React.FC<SkyStrikerModalProps> = ({
   const [showSettings, setShowSettings] = useState(false);
   const [showHangar, setShowHangar] = useState(false);
   const [showHint, setShowHint] = useState(false);
-  const [levelNum, setLevelNum] = useState(1);
+  const [levelNum, setLevelNum] = useState(() =>
+    loadGameProgress('sky_striker', activeProfile?.id || 'default').currentLevel
+  );
 
   const [unlockedWorlds, setUnlockedWorlds] = useState<WorldId[]>(() => {
     try {
@@ -400,6 +404,16 @@ export const SkyStrikerModal: React.FC<SkyStrikerModalProps> = ({
           if (nextState === 'LEVEL_COMPLETE') {
             const nextLvl = progressionRef.current.startNextLevel();
             setLevelNum(nextLvl);
+            saveGameProgress({
+              gameId: 'sky_striker',
+              profileId: activeProfile?.id || 'default',
+              currentLevel: nextLvl,
+              highestUnlockedLevel: nextLvl,
+              completedLevels: [nextLvl - 1],
+              bestScore: nextPoints,
+              totalCorrect: nextCorrect,
+              totalAttempts: nextCorrect + nextIncorrect
+            });
             const order: WorldId[] = ['desert_storm', 'frozen_horizon', 'ocean_frontier', 'future_city', 'sky_kingdom'];
             const nextWorld = order[(order.indexOf(worldId) + 1) % order.length];
             if (nextWorld) {

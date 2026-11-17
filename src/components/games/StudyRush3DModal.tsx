@@ -30,7 +30,12 @@ import { StudyRushAudioManager } from '../../games/studyRush3d/AudioManager';
 import { buildQuestionDeck, STUDY_RUSH_ACHIEVEMENTS } from '../../games/studyRush3d/questionBank';
 import { LiveHudSnapshot, StudyRush3DCanvas } from '../../games/studyRush3d/StudyRush3DCanvas';
 import { enterElementFullscreen, exitBrowserFullscreen, isBrowserFullscreenActive } from '../../utils/fullscreenGame';
-import { QuestionProgressionMachine } from '../../games/ProgressionController';
+import {
+  QuestionProgressionMachine,
+  loadGameProgress,
+  saveGameProgress
+} from '../../games/ProgressionController';
+import { getStudyRushLevelTheme } from '../../games/studyRush3d/WorldManager';
 import {
   AchievementMeta,
   AnswerOutcomeEvent,
@@ -153,7 +158,10 @@ export const StudyRush3DModal: React.FC<StudyRush3DModalProps> = ({
 
   const startTimestampRef = useRef<number>(Date.now());
   const mobileInputRef = useRef({ moveX: 0, moveY: 0, jump: false, interact: false });
-  const progressionRef = useRef(new QuestionProgressionMachine({ questionsPerLevel: 5 }));
+  const [levelNum, setLevelNum] = useState<number>(() =>
+    loadGameProgress('study_rush_3d', activeProfile?.id || 'default').currentLevel
+  );
+  const progressionRef = useRef(new QuestionProgressionMachine({ questionsPerLevel: 5, startingLevel: levelNum }));
 
   const [hud, setHud] = useState<LiveHudSnapshot>({
     phase: 'day',
@@ -348,6 +356,20 @@ export const StudyRush3DModal: React.FC<StudyRush3DModalProps> = ({
     const nextState = progressionRef.current.advance();
     const leveledUp = nextState === 'LEVEL_COMPLETE';
     const nextLevel = leveledUp ? progressionRef.current.startNextLevel() : progressionRef.current.getSnapshot().level;
+    const nextTheme = getStudyRushLevelTheme(nextLevel);
+    if (leveledUp) {
+      setLevelNum(nextLevel);
+      saveGameProgress({
+        gameId: 'study_rush_3d',
+        profileId: activeProfile?.id || 'default',
+        currentLevel: nextLevel,
+        highestUnlockedLevel: nextLevel,
+        completedLevels: [nextLevel - 1],
+        bestScore: score + ev.pointsEarned + 150,
+        totalCorrect: correctAnswers + (ev.isCorrect ? 1 : 0),
+        totalAttempts: questionsAnswered + 1
+      });
+    }
 
     if (ev.isCorrect) {
       setCorrectAnswers((n) => n + 1);
@@ -368,7 +390,7 @@ export const StudyRush3DModal: React.FC<StudyRush3DModalProps> = ({
       setFeedbackBanner({
         isCorrect: true,
         title: leveledUp
-          ? `🏆 Level ${nextLevel} Unlocked! +${bonus} pts`
+          ? `🏆 Level ${nextLevel}: ${nextTheme.name} Unlocked! +${bonus} pts`
           : `✨ Arcane Strike! +${bonus} pts`,
         detail: ev.explanation
       });
@@ -683,6 +705,7 @@ export const StudyRush3DModal: React.FC<StudyRush3DModalProps> = ({
             currentQuestion={currentQuestion}
             villageUpgrades={upgrades}
             audioManager={audioManager}
+            levelNum={levelNum}
             quickCastSignal={quickCastSignal}
             skipToNightSignal={skipToNightSignal}
             mobileInputRef={mobileInputRef}

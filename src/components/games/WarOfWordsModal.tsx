@@ -45,7 +45,8 @@ import { WarHudSnapshot, WarOfWordsCanvas } from '../../games/warOfWords/WarOfWo
 import { enterElementFullscreen, exitBrowserFullscreen, isBrowserFullscreenActive } from '../../utils/fullscreenGame';
 import {
   QuestionProgressionMachine,
-  detectRecommendedGraphicsQuality
+  detectRecommendedGraphicsQuality,
+  saveGameProgress
 } from '../../games/ProgressionController';
 
 export interface WarOfWordsModalProps {
@@ -385,10 +386,20 @@ export const WarOfWordsModal: React.FC<WarOfWordsModalProps> = ({
       completeRun(correctCount, incorrectCount, knowledgePoints, bestStreak, wordsLearned, runMissed);
     } else {
       if (nextState === 'LEVEL_COMPLETE') {
-        progressionRef.current.startNextLevel();
+        const nextLvl = progressionRef.current.startNextLevel();
         const nextWorld: WorldId = worldId === 'moonlight_valley' ? 'shadow_forest' : 'moonlight_valley';
         setWorldId(nextWorld);
         setUnlockedWorlds((prev) => (prev.includes(nextWorld) ? prev : [...prev, nextWorld]));
+        saveGameProgress({
+          gameId: 'war_of_words',
+          profileId: activeProfile?.id || 'default',
+          currentLevel: nextLvl,
+          highestUnlockedLevel: nextLvl,
+          completedLevels: [nextLvl - 1],
+          bestScore: knowledgePoints,
+          totalCorrect: correctCount,
+          totalAttempts: correctCount + incorrectCount
+        });
       }
       const nextQ = deck[qIndex + 1];
       if (nextQ) {

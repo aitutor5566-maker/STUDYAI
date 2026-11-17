@@ -27,6 +27,7 @@ import { buildVoxelEnemy, buildVoxelPlayer, updateShrineLabel, VoxelEnemyRig } f
 import {
   buildStudyRushWorld,
   ColliderBox,
+  getStudyRushLevelTheme,
   getZoneAtPosition,
   syncVillageUpgradeMeshes,
   WorldHandles
@@ -49,6 +50,7 @@ export interface StudyRush3DCanvasProps {
   currentQuestion: StudyRushQuestion;
   villageUpgrades: VillageUpgradeState;
   audioManager: StudyRushAudioManager;
+  levelNum?: number;
   quickCastSignal: { index: number; seq: number } | null;
   skipToNightSignal: number;
   mobileInputRef: React.MutableRefObject<{
@@ -116,6 +118,7 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
   currentQuestion,
   villageUpgrades,
   audioManager,
+  levelNum = 1,
   quickCastSignal,
   skipToNightSignal,
   mobileInputRef,
@@ -232,13 +235,14 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
     container.appendChild(renderer.domElement);
 
     // AAA Visual Masterpiece Engine: IBL Environment + Sky Dome + Bloom + Particles + Cinematic Camera
-    const envTexture = buildAtmosphericEnvMap(renderer, '#38BDF8', '#E0F2FE', '#1E293B');
+    const levelTheme = getStudyRushLevelTheme(levelNum ?? 1);
+    const envTexture = buildAtmosphericEnvMap(renderer, levelTheme.skyHorizon, '#E0F2FE', '#1E293B');
     scene.environment = envTexture;
 
     const skyDome = createAtmosphericSkyDome({
       radius: 170,
-      topColor: '#0284C7',
-      horizonColor: '#BAE6FD',
+      topColor: levelTheme.skyTop,
+      horizonColor: levelTheme.skyHorizon,
       bottomColor: '#1E293B',
       sunColor: '#FFFBEB',
       starIntensity: 0
@@ -286,7 +290,7 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
     scene.add(sunLight);
 
     // World & Player
-    const world = buildStudyRushWorld(scene);
+    const world = buildStudyRushWorld(scene, levelNum ?? 1);
     worldRef.current = world;
     syncVillageUpgradeMeshes(world, upgradesRef.current);
 
@@ -985,7 +989,7 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
       }
       worldRef.current = null;
     };
-  }, [customization, audioManager, mobileInputRef]);
+  }, [customization, audioManager, mobileInputRef, levelNum]);
 
   return (
     <div

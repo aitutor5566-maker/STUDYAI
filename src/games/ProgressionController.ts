@@ -401,3 +401,96 @@ export class QuestionProgressionMachine {
     this.state = 'READY';
   }
 }
+
+export interface SavedGameProgress {
+  gameId: string;
+  profileId: string;
+  currentLevel: number;
+  highestUnlockedLevel: number;
+  completedLevels: number[];
+  bestScore: number;
+  totalCorrect: number;
+  totalAttempts: number;
+  totalTimePlayedSec: number;
+  lastSavedAt: string;
+}
+
+const PROGRESS_STORAGE_PREFIX = 'studyai_game_progress_v2';
+
+function getProgressKey(gameId: string, profileId = 'default'): string {
+  return `${PROGRESS_STORAGE_PREFIX}:${profileId}:${gameId}`;
+}
+
+export function loadGameProgress(gameId: string, profileId = 'default'): SavedGameProgress {
+  const fallback: SavedGameProgress = {
+    gameId,
+    profileId,
+    currentLevel: 1,
+    highestUnlockedLevel: 1,
+    completedLevels: [],
+    bestScore: 0,
+    totalCorrect: 0,
+    totalAttempts: 0,
+    totalTimePlayedSec: 0,
+    lastSavedAt: new Date(0).toISOString()
+  };
+
+  if (typeof localStorage === 'undefined') return fallback;
+  try {
+    const raw = localStorage.getItem(getProgressKey(gameId, profileId));
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as Partial<SavedGameProgress>;
+    return {
+      ...fallback,
+      ...parsed,
+      gameId,
+      profileId,
+      currentLevel: Math.max(1, Number(parsed.currentLevel || 1)),
+      highestUnlockedLevel: Math.max(1, Number(parsed.highestUnlockedLevel || 1)),
+      completedLevels: Array.isArray(parsed.completedLevels) ? parsed.completedLevels : [],
+      bestScore: Math.max(0, Number(parsed.bestScore || 0)),
+      totalCorrect: Math.max(0, Number(parsed.totalCorrect || 0)),
+      totalAttempts: Math.max(0, Number(parsed.totalAttempts || 0)),
+      totalTimePlayedSec: Math.max(0, Number(parsed.totalTimePlayedSec || 0))
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+export function saveGameProgress(
+  update: Partial<SavedGameProgress> & { gameId: string; profileId?: string }
+): SavedGameProgress {
+  const profileId = update.profileId || 'default';
+  const prev = loadGameProgress(update.gameId, profileId);
+
+  const mergedCompleted = Array.from(
+    new Set([...prev.completedLevels, ...(update.completedLevels || [])])
+  ).sort((a, b) => a - b);
+
+  const next: SavedGameProgress = {
+    gameId: update.gameId,
+    profileId,
+    currentLevel: Math.max(1, update.currentLevel ?? prev.currentLevel),
+    highestUnlockedLevel: Math.max(
+      prev.highestUnlockedLevel,
+      update.highestUnlockedLevel ?? prev.highestUnlockedLevel,
+      update.currentLevel ?? 1
+    ),
+    completedLevels: mergedCompleted,
+    bestScore: Math.max(prev.bestScore, update.bestScore ?? 0),
+    totalCorrect: Math.max(prev.totalCorrect, update.totalCorrect ?? prev.totalCorrect),
+    totalAttempts: Math.max(prev.totalAttempts, update.totalAttempts ?? prev.totalAttempts),
+    totalTimePlayedSec: prev.totalTimePlayedSec + Math.max(0, update.totalTimePlayedSec ?? 0),
+    lastSavedAt: new Date().toISOString()
+  };
+
+  if (typeof localStorage !== 'undefined') {
+    try {
+      localStorage.setItem(getProgressKey(update.gameId, profileId), JSON.stringify(next));
+    } catch {
+      // Ignore quota errors
+    }
+  }
+  return next;
+}

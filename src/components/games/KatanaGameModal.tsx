@@ -11,6 +11,7 @@ import {
   createAtmosphericSkyDome
 } from '../../games/engine/VisualMasterpieceEngine';
 import { getPbrTextureSet } from '../../games/engine/PbrTextureFactory';
+import { saveGameProgress } from '../../games/ProgressionController';
 
 interface KatanaQuestion {
   id: string;
@@ -1117,6 +1118,11 @@ export const KatanaGameModal: React.FC<{
     setGameOver(true);
     setIsVictory(true);
     animStateRef.current.warriorAction = 'victory';
+    saveGameProgress({
+      gameId: 'katana_wisdom',
+      profileId: activeProfile?.id || 'default',
+      bestScore: score
+    });
 
     try {
       const summary = await apiFetch('/api/katana/session/complete', {
@@ -1703,6 +1709,31 @@ export const KatanaGameModal: React.FC<{
               >
                 Battle Again
               </button>
+              {isVictory && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const order: EnvironmentType[] = ['moonlit_bamboo_forest', 'ancient_stone_fortress', 'mist_mountain_ridge'];
+                    const nextEnv = order[(order.indexOf(currentEnvironment) + 1) % order.length];
+                    switchEnvironment(nextEnv);
+                    loadSession();
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '14px 20px',
+                    borderRadius: 14,
+                    background: 'linear-gradient(135deg, #10B981, #059669)',
+                    border: 'none',
+                    color: '#FFFFFF',
+                    fontWeight: 800,
+                    fontSize: '0.94rem',
+                    cursor: 'pointer',
+                    boxShadow: '0 6px 20px rgba(16, 185, 129, 0.4)'
+                  }}
+                >
+                  Next Arena →
+                </button>
+              )}
             </div>
           </div>
         </div>
