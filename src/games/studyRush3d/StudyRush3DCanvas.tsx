@@ -8,6 +8,7 @@ import {
   createAtmosphericSkyDome,
   disposeThreeScene
 } from '../engine/VisualMasterpieceEngine';
+import { createEnemyAiAgent, EnemyAiAgent, stepEnemyAi } from '../engine/EnemyAiController';
 import { StudyRushAudioManager } from './AudioManager';
 import { DayNightManager } from './DayNightManager';
 import { selectArenaOptions, validateStudyRushAnswer } from './questionBank';
@@ -70,6 +71,7 @@ interface ActiveEnemy {
   id: string;
   type: EnemyType;
   rig: VoxelEnemyRig;
+  ai: EnemyAiAgent;
   hp: number;
   maxHp: number;
   speed: number;
@@ -373,19 +375,31 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
         scene.add(rig.group);
 
         const maxHp = type === 'obsidian_golem' ? 120 : type === 'void_wisp' ? 50 : 65;
-        enemies.push({
+        const archetype = type === 'obsidian_golem' ? 'boss' : type === 'void_wisp' ? 'ranged' : 'basic';
+        const ai = createEnemyAiAgent({
           id: `enemy-${Date.now()}-${i}`,
+          archetype,
+          x: sp.x,
+          z: sp.z,
+          hp: maxHp
+        });
+        enemies.push({
+          id: ai.id,
           type,
           rig,
+          ai,
           hp: maxHp,
           maxHp,
-          speed: type === 'obsidian_golem' ? 2.1 : type === 'void_wisp' ? 3.5 : 3.0,
+          speed: ai.speed,
           state: 'approaching',
           stunTimer: 0,
           attackCooldown: 0
         });
       }
     };
+
+    // Spawn 2 patrolling frontier guardians during daytime so exploration has active AI
+    spawnWaveEnemies(0);
 
     const castAtShrine = (shrineIdx: number) => {
       if (pausedRef.current) return;
@@ -582,8 +596,18 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
       renderer.domElement.requestPointerLock?.();
     };
 
+    const clearInputs = () => {
+      Object.keys(keys).forEach((k) => {
+        keys[k] = false;
+      });
+      isDraggingLook = false;
+    };
+
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', clearInputs);
+    document.addEventListener('visibilitychange', clearInputs);
+    document.addEventListener('fullscreenchange', clearInputs);
     renderer.domElement.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mouseup', onMouseUp);
     window.addEventListener('mousemove', onMouseMove);
@@ -809,38 +833,46 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
 
         for (let i = enemies.length - 1; i >= 0; i--) {
           const e = enemies[i];
-          const pos = e.rig.group.position;
-
+          e.ai.hp = e.hp;
           if (e.state === 'stunned') {
+            e.ai.state = 'stunned';
+            e.ai.stateTimer = e.stunTimer;
             e.stunTimer -= dt;
-            if (e.stunTimer <= 0) e.state = 'approaching';
+            if (e.stunTimer <= 0) {
+              e.state = 'approaching';
+              e.ai.state = 'approach';
+            }
             continue;
           }
 
-          // Target either player (if close) or Village Center (0,0,0)
-          const distToPlayer = pos.distanceTo(playerPos);
-          const targetGoal = distToPlayer < 10 ? playerPos : new THREE.Vector3(0, 0, 2);
-          const dir = targetGoal.clone().sub(pos);
-          dir.y = 0;
-          const dist = dir.length();
+          const ev = stepEnemyAi(e.ai, {
+            playerX: playerPos.x,
+            playerZ: playerPos.z,
+            fallbackTargetX: snap.phase === 'night' ? 0 : undefined,
+            fallbackTargetZ: snap.phase === 'night' ? 2 : undefined,
+            obstacles: world.colliders,
+            dt
+          });
 
-          if (dist > 2.2) {
-            e.state = 'approaching';
-            dir.normalize();
-            pos.addScaledVector(dir, e.speed * dt);
-            e.rig.group.lookAt(targetGoal.x, 0, targetGoal.z);
+          e.rig.group.position.set(e.ai.x, 0, e.ai.z);
+          e.rig.group.rotation.y = e.ai.facingAngle;
+
+          // Visual telegraph during prepare_attack windup
+          if (e.ai.state === 'prepare_attack') {
+            e.rig.group.scale.setScalar(1.08 + Math.sin(now * 0.03) * 0.05);
           } else {
-            e.state = 'attacking_gate';
-            e.attackCooldown -= dt;
-            if (e.attackCooldown <= 0) {
-              e.attackCooldown = 2.2;
-              if (distToPlayer < 2.8) {
-                callbacksRef.current.onPlayerDamaged(8);
-              } else {
-                const wallReduction = Math.min(0.6, upgradesRef.current.wallLevel * 0.15);
-                callbacksRef.current.onVillageDamaged(Math.round(10 * (1 - wallReduction)));
-              }
-            }
+            e.rig.group.scale.setScalar(1);
+          }
+
+          if (ev.firedRangedProjectile) {
+            spawnParticles(e.rig.group.position.clone().add(new THREE.Vector3(0, 1.3, 0)), '#A855F7', 6);
+          }
+          if (ev.hitPlayer) {
+            camController.addShake(0.32);
+            callbacksRef.current.onPlayerDamaged(ev.damageAmount);
+          } else if (ev.hitFallbackTarget) {
+            const wallReduction = Math.min(0.6, upgradesRef.current.wallLevel * 0.15);
+            callbacksRef.current.onVillageDamaged(Math.round(ev.damageAmount * (1 - wallReduction)));
           }
         }
 
@@ -939,6 +971,9 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
       resizeObserver.disconnect();
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', clearInputs);
+      document.removeEventListener('visibilitychange', clearInputs);
+      document.removeEventListener('fullscreenchange', clearInputs);
       renderer.domElement.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mouseup', onMouseUp);
       window.removeEventListener('mousemove', onMouseMove);

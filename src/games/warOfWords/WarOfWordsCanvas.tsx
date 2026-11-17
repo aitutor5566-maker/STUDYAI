@@ -395,18 +395,35 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
       }
     };
 
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
-    renderer.domElement.addEventListener('mousedown', onMouseDown);
+    const clearInputs = () => {
+      Object.keys(keys).forEach((k) => {
+        keys[k] = false;
+      });
+    };
 
-    const resizeObs = new ResizeObserver(() => {
+    const handleResize = () => {
       if (!container) return;
       const cw = container.clientWidth || window.innerWidth;
       const ch = container.clientHeight || window.innerHeight;
+      if (cw <= 0 || ch <= 0) return;
       camera.aspect = cw / ch;
       camera.updateProjectionMatrix();
       postPipeline.resize(cw, ch);
-    });
+    };
+
+    const onFullscreenOrBlur = () => {
+      clearInputs();
+      handleResize();
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', clearInputs);
+    document.addEventListener('visibilitychange', clearInputs);
+    document.addEventListener('fullscreenchange', onFullscreenOrBlur);
+    renderer.domElement.addEventListener('mousedown', onMouseDown);
+
+    const resizeObs = new ResizeObserver(handleResize);
     resizeObs.observe(container);
 
     let animId = 0;
@@ -598,6 +615,9 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
       resizeObs.disconnect();
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', clearInputs);
+      document.removeEventListener('visibilitychange', clearInputs);
+      document.removeEventListener('fullscreenchange', onFullscreenOrBlur);
       renderer.domElement.removeEventListener('mousedown', onMouseDown);
       disposeThreeScene(scene, renderer, postPipeline, envTexture);
       if (renderer.domElement.parentNode === container) {

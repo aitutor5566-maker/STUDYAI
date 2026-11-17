@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { X, Trophy, Shield, Swords, RotateCcw, Award, Sparkles, Volume2, VolumeX, Eye, Maximize2, Minimize2 } from 'lucide-react';
 import { useLearning } from '../../context/LearningContext';
 import { enterElementFullscreen, exitBrowserFullscreen, isBrowserFullscreenActive } from '../../utils/fullscreenGame';
+import { createEnemyAiAgent, EnemyAiAgent, stepEnemyAi } from '../../games/engine/EnemyAiController';
 
 interface KatanaQuestion {
   id: string;
@@ -687,6 +688,16 @@ export const KatanaGameModal: React.FC<{
     enemyGroupsRef.current = enemyGroups;
     enemyRingsRef.current = enemyRings;
 
+    const enemyAiAgents: EnemyAiAgent[] = enemyGroups.map((eg, i) =>
+      createEnemyAiAgent({
+        id: `katana-enemy-${i}`,
+        archetype: i === 3 ? 'boss' : i === 1 ? 'ranged' : i === 2 ? 'defensive' : 'basic',
+        x: eg.position.x,
+        z: eg.position.z,
+        hp: 100
+      })
+    );
+
     // 8. Fireflies Ambient Particle System
     const fireflyCount = 45;
     const fireflyGeo = new THREE.BufferGeometry();
@@ -752,12 +763,32 @@ export const KatanaGameModal: React.FC<{
         posAttr.needsUpdate = true;
       }
 
-      // Idle Bobbing for 4 Enemies
+      // Active Enemy AI State Machine (Patrol -> Detect -> Approach -> Telegraph -> Attack -> Cooldown)
+      const wPos = warriorGroupRef.current?.position;
+      const px = wPos ? wPos.x : 0;
+      const pz = wPos ? wPos.z : 3.2;
       enemyGroupsRef.current.forEach((eg, i) => {
-        if (eg.visible) {
-          eg.position.y = Math.sin(state.time * 2.8 + i * 1.2) * 0.06;
-          // Look towards player warrior
-          eg.lookAt(0, eg.position.y + 0.9, 3.2);
+        if (!eg.visible) return;
+        const ai = enemyAiAgents[i];
+        if (!ai) return;
+        const ev = stepEnemyAi(ai, {
+          playerX: px,
+          playerZ: pz,
+          obstacles: [],
+          dt
+        });
+        // Keep enemies within the 2.5D clearing bounds while patrolling/approaching
+        ai.x = THREE.MathUtils.clamp(ai.x, -6.5, 6.5);
+        ai.z = THREE.MathUtils.clamp(ai.z, -5.2, 2.2);
+        eg.position.set(ai.x, Math.sin(state.time * 2.8 + i * 1.2) * 0.06, ai.z);
+        eg.rotation.y = ai.facingAngle;
+        if (ai.state === 'prepare_attack') {
+          eg.scale.setScalar(1.08 + Math.sin(state.time * 24) * 0.05);
+        } else {
+          eg.scale.setScalar(1);
+        }
+        if (ev.hitPlayer && state.warriorAction === 'idle') {
+          setPlayerHp((hp) => Math.max(0, hp - Math.round(ev.damageAmount * 0.5)));
         }
       });
 
@@ -898,12 +929,14 @@ export const KatanaGameModal: React.FC<{
     resizeObserver.observe(container);
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize);
+    document.addEventListener('fullscreenchange', handleResize);
 
     return () => {
       if (frameIdRef.current) cancelAnimationFrame(frameIdRef.current);
       resizeObserver.disconnect();
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', handleResize);
+      document.removeEventListener('fullscreenchange', handleResize);
       renderer.dispose();
     };
   }, [isOpen, currentEnvironment, switchEnvironment]);
