@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { EducationalQuestion, GameFeedback, OptionId } from '../../games/types';
 import { LevelInfo } from '../../games/ProgressionController';
+import { buildAtmosphericEnvMap } from '../../games/engine/VisualMasterpieceEngine';
+import { getPbrTextureSet } from '../../games/engine/PbrTextureFactory';
 
 interface AnswerRunner3DProps {
   question: EducationalQuestion | null;
@@ -63,27 +65,36 @@ export const AnswerRunner3D: React.FC<AnswerRunner3DProps> = ({
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+    scene.environment = buildAtmosphericEnvMap(renderer, '#1e3a8a', '#0f172a', '#020617');
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     // 2. Lighting
-    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+    const ambient = new THREE.HemisphereLight(0x93c5fd, 0x0f172a, 0.78);
     scene.add(ambient);
 
-    const dirLight = new THREE.DirectionalLight(0xffedd5, 1.0);
+    const dirLight = new THREE.DirectionalLight(0xffedd5, 1.35);
     dirLight.position.set(0, 15, 10);
     dirLight.castShadow = true;
     scene.add(dirLight);
 
-    // 3. 3-Lane Highway
+    // 3. 3-Lane Highway with PBR stone/asphalt surface
+    const roadPbr = getPbrTextureSet('stone', 2, 16, 256);
     const roadWidth = 12;
     const roadLength = 120;
     const roadGeo = new THREE.PlaneGeometry(roadWidth, roadLength, 1, 30);
     const roadMat = new THREE.MeshStandardMaterial({
-      color: 0x1e293b,
-      roughness: 0.6,
-      metalness: 0.2
+      color: 0x334155,
+      map: roadPbr.map,
+      normalMap: roadPbr.normalMap,
+      roughnessMap: roadPbr.roughnessMap,
+      aoMap: roadPbr.aoMap,
+      roughness: 0.7,
+      metalness: 0.15
     });
 
     const road = new THREE.Mesh(roadGeo, roadMat);

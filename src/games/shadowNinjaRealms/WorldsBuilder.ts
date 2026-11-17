@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { getPbrTextureSet } from '../engine/PbrTextureFactory';
-import { createVolumetricLightShafts } from '../engine/VisualMasterpieceEngine';
+import {
+  createAnimatedWaterSurface,
+  createVolumetricLightShafts
+} from '../engine/VisualMasterpieceEngine';
 import {
   AdventureMode,
   GraphicsTier,
@@ -46,6 +49,7 @@ export interface BuiltRealmsWorld {
   collectibles: CollectibleNode[];
   waterNormalMap?: THREE.Texture;
   waterfallTexture?: THREE.Texture;
+  updateWater?: (elapsedSeconds: number) => void;
   lanternLights: THREE.PointLight[];
   birds: Array<{ group: THREE.Group; radius: number; speed: number; phase: number; baseY: number }>;
   floatingIslands: THREE.Group[];
@@ -233,10 +237,18 @@ export function buildRealmsWorld(
   const collectibles: CollectibleNode[] = [];
   const lanternLights: THREE.PointLight[] = [];
 
-  const grassPbr = typeof document !== 'undefined' ? getPbrTextureSet('grass', 24, 24) : null;
-  const stonePbr = typeof document !== 'undefined' ? getPbrTextureSet('stone', 12, 12) : null;
-  const woodPbr = typeof document !== 'undefined' ? getPbrTextureSet('wood', 4, 4) : null;
-  const waterPbr = typeof document !== 'undefined' ? getPbrTextureSet('water', 6, 6) : null;
+  const texRes: 128 | 256 | 512 =
+    graphicsTier === 'low' ? 128 : graphicsTier === 'ultra' || graphicsTier === 'high' ? 512 : 256;
+  const groundKind =
+    isVoxel && minecraftBiome === 'desert_oasis'
+      ? 'sand'
+      : isVoxel && minecraftBiome === 'alpine_snow_peaks'
+      ? 'snow'
+      : 'grass';
+  const grassPbr = typeof document !== 'undefined' ? getPbrTextureSet(groundKind, 24, 24, texRes) : null;
+  const stonePbr = typeof document !== 'undefined' ? getPbrTextureSet('stone', 12, 12, texRes) : null;
+  const woodPbr = typeof document !== 'undefined' ? getPbrTextureSet('wood', 4, 4, texRes) : null;
+  const waterPbr = typeof document !== 'undefined' ? getPbrTextureSet('water', 6, 6, texRes) : null;
 
   const groundColor = !isVoxel
     ? ninjaRealm === 'sakura_sanctuary'
@@ -257,6 +269,8 @@ export function buildRealmsWorld(
       map: grassPbr?.map ?? undefined,
       normalMap: grassPbr?.normalMap ?? undefined,
       roughnessMap: grassPbr?.roughnessMap ?? undefined,
+      aoMap: grassPbr?.aoMap ?? undefined,
+      aoMapIntensity: 0.45,
       normalScale: new THREE.Vector2(0.75, 0.75),
       roughness: 0.88
     })
@@ -265,23 +279,17 @@ export function buildRealmsWorld(
   ground.receiveShadow = true;
   root.add(ground);
 
-  const river = new THREE.Mesh(
-    new THREE.PlaneGeometry(120, 9),
-    new THREE.MeshPhysicalMaterial({
-      color: '#0284C7',
-      normalMap: waterPbr?.normalMap ?? undefined,
-      normalScale: new THREE.Vector2(0.55, 0.55),
-      roughness: 0.06,
-      metalness: 0.18,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.06,
-      transparent: true,
-      opacity: 0.88
-    })
-  );
-  river.rotation.x = -Math.PI / 2;
-  river.position.set(0, 0.04, -18);
-  root.add(river);
+  const animatedWater = createAnimatedWaterSurface({
+    width: 120,
+    depth: 9,
+    segments: graphicsTier === 'low' ? 16 : 36,
+    deepColor: 0x0369a1,
+    shallowColor: 0x38bdf8,
+    skyColor: 0xbae6fd,
+    waveHeight: 0.11
+  });
+  animatedWater.mesh.position.set(0, 0.05, -18);
+  root.add(animatedWater.mesh);
 
   const bridge = new THREE.Mesh(
     new THREE.BoxGeometry(6.5, 0.35, 11),
@@ -647,6 +655,7 @@ export function buildRealmsWorld(
     collectibles,
     waterNormalMap: waterPbr?.normalMap,
     waterfallTexture: waterfallTex,
+    updateWater: animatedWater.update,
     lanternLights,
     birds,
     floatingIslands,

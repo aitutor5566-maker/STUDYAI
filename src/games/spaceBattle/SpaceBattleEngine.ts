@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { EducationalQuestion, OptionId } from '../types';
 import { SpaceBattleAudio } from './SpaceBattleAudio';
 import { SpacecraftModels, PlayerCraftMeshResult, EnemyCraftMeshResult } from './SpacecraftModels';
+import { buildAtmosphericEnvMap } from '../engine/VisualMasterpieceEngine';
 
 export interface SpaceBattleEngineCallbacks {
   onAnswerChosen: (optionId: OptionId, isCorrect: boolean) => void;
@@ -124,6 +125,7 @@ export class SpaceBattleEngine {
       this.renderer.outputColorSpace = THREE.SRGBColorSpace;
       this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
       this.renderer.toneMappingExposure = 1.25;
+      this.scene.environment = buildAtmosphericEnvMap(this.renderer, '#0ea5e9', '#1e1b4b', '#020617');
     } catch {
       // Graceful fallback for mock environments
     }

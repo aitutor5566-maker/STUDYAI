@@ -5,6 +5,12 @@ import { X, Trophy, Shield, Swords, RotateCcw, Award, Sparkles, Volume2, VolumeX
 import { useLearning } from '../../context/LearningContext';
 import { enterElementFullscreen, exitBrowserFullscreen, isBrowserFullscreenActive } from '../../utils/fullscreenGame';
 import { createEnemyAiAgent, EnemyAiAgent, stepEnemyAi } from '../../games/engine/EnemyAiController';
+import {
+  buildAtmosphericEnvMap,
+  createAnimatedWaterSurface,
+  createAtmosphericSkyDome
+} from '../../games/engine/VisualMasterpieceEngine';
+import { getPbrTextureSet } from '../../games/engine/PbrTextureFactory';
 
 interface KatanaQuestion {
   id: string;
@@ -390,7 +396,21 @@ export const KatanaGameModal: React.FC<{
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // 4. Lights
+    // 4. Lights + IBL Environment + Atmospheric Sky Dome
+    const envTexture = buildAtmosphericEnvMap(renderer, env.skyColor, env.fogColor, '#020617');
+    scene.environment = envTexture;
+
+    const skyDome = createAtmosphericSkyDome({
+      radius: 75,
+      topColor: env.skyColor,
+      horizonColor: env.fogColor,
+      bottomColor: '#020617',
+      sunColor: env.dirLightColor,
+      sunDirection: new THREE.Vector3(0.4, 0.55, -0.7),
+      starIntensity: 0.7
+    });
+    scene.add(skyDome.mesh);
+
     const ambientLight = new THREE.AmbientLight(env.ambientColor, env.ambientIntensity);
     ambientLightRef.current = ambientLight;
     scene.add(ambientLight);
@@ -398,26 +418,47 @@ export const KatanaGameModal: React.FC<{
     const dirLight = new THREE.DirectionalLight(env.dirLightColor, env.dirLightIntensity);
     dirLight.position.set(4, 9, 5);
     dirLight.castShadow = true;
+    dirLight.shadow.mapSize.set(1024, 1024);
     dirLightRef.current = dirLight;
     scene.add(dirLight);
 
     // Rim light from behind enemies
-    const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.8);
+    const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.85);
     rimLight.position.set(-2, 4, -8);
     scene.add(rimLight);
 
-    // 5. Arena Ground
+    // 5. PBR Stone Arena Ground + Moonlit Reflection Pool
+    const stonePbr = getPbrTextureSet('stone', 8, 8, 512);
     const groundGeo = new THREE.PlaneGeometry(36, 36);
     const groundMat = new THREE.MeshStandardMaterial({
       color: env.groundColor,
-      roughness: 0.75,
-      metalness: 0.25
+      map: stonePbr.map,
+      normalMap: stonePbr.normalMap,
+      roughnessMap: stonePbr.roughnessMap,
+      aoMap: stonePbr.aoMap,
+      aoMapIntensity: 0.45,
+      roughness: 0.72,
+      metalness: 0.18
     });
     const groundMesh = new THREE.Mesh(groundGeo, groundMat);
     groundMesh.rotation.x = -Math.PI / 2;
     groundMesh.position.y = 0;
+    groundMesh.receiveShadow = true;
     groundMeshRef.current = groundMesh;
     scene.add(groundMesh);
+
+    const katanaWater = createAnimatedWaterSurface({
+      width: 44,
+      depth: 18,
+      segments: 28,
+      deepColor: 0x0f172a,
+      shallowColor: 0x1e3a8a,
+      skyColor: env.skyColor,
+      waveHeight: 0.08,
+      opacity: 0.86
+    });
+    katanaWater.mesh.position.set(0, 0.02, -16);
+    scene.add(katanaWater.mesh);
 
     const grid = new THREE.GridHelper(30, 24, env.groundGridColor, 0x1e293b);
     grid.position.y = 0.01;
@@ -908,6 +949,7 @@ export const KatanaGameModal: React.FC<{
 
       setProjectedBadges(badges);
 
+      katanaWater.update(performance.now() * 0.001);
       renderer.render(scene, camera);
     };
 

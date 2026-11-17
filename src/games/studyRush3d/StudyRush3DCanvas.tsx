@@ -656,6 +656,7 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
         });
         atmosphericParticles.setOpacity(snap.phase === 'night' ? 0.85 : 0.35);
         atmosphericParticles.update(dt, now * 0.001, playerPos);
+        world.updateAtmosphere?.(now * 0.001, dt);
         if (world.waterNormalMap) {
           world.waterNormalMap.offset.x = (now * 0.00004) % 1;
           world.waterNormalMap.offset.y = (now * 0.00003) % 1;

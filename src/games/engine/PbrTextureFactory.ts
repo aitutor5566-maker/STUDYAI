@@ -7,12 +7,18 @@ export type PbrMaterialKind =
   | 'metal'
   | 'fabric'
   | 'water'
-  | 'arcane';
+  | 'arcane'
+  | 'sand'
+  | 'snow'
+  | 'bark'
+  | 'roof';
 
 export interface PbrTextureSet {
   map: THREE.CanvasTexture;
   normalMap: THREE.CanvasTexture;
   roughnessMap: THREE.CanvasTexture;
+  aoMap: THREE.CanvasTexture;
+  metalnessMap?: THREE.CanvasTexture;
 }
 
 const textureSetCache = new Map<string, PbrTextureSet>();
@@ -115,13 +121,14 @@ function finalizeColorTexture(
 export function getPbrTextureSet(
   kind: PbrMaterialKind,
   repeatX = 1,
-  repeatY = 1
+  repeatY = 1,
+  resolution: 128 | 256 | 512 = 256
 ): PbrTextureSet {
-  const key = `${kind}:${repeatX}:${repeatY}`;
+  const key = `${kind}:${repeatX}:${repeatY}:${resolution}`;
   const cached = textureSetCache.get(key);
   if (cached) return cached;
 
-  const size = 256;
+  const size = resolution;
   const rand = makeSeededRandom(
     kind.split('').reduce((acc, ch) => acc * 31 + ch.charCodeAt(0), 17)
   );
@@ -277,6 +284,84 @@ export function getPbrTextureSet(
         heightCtx.fillRect(x, y, 1, 1);
       }
     }
+  } else if (kind === 'sand') {
+    diffCtx.fillStyle = '#d6b47a';
+    diffCtx.fillRect(0, 0, size, size);
+    heightCtx.fillStyle = '#808080';
+    heightCtx.fillRect(0, 0, size, size);
+    roughCtx.fillStyle = '#d8d8d8';
+    roughCtx.fillRect(0, 0, size, size);
+
+    for (let y = 0; y < size; y += 6) {
+      const wave = Math.sin((y / size) * Math.PI * 6) * 8;
+      diffCtx.fillStyle = `rgba(194,154,92,${0.12 + rand() * 0.1})`;
+      diffCtx.fillRect(0, y, size, 3);
+      heightCtx.fillStyle = `rgb(${120 + wave},${120 + wave},${120 + wave})`;
+      heightCtx.fillRect(0, y, size, 4);
+    }
+    for (let i = 0; i < 650; i++) {
+      const x = rand() * size;
+      const y = rand() * size;
+      diffCtx.fillStyle = rand() > 0.5 ? 'rgba(255,245,220,0.18)' : 'rgba(130,96,52,0.16)';
+      diffCtx.fillRect(x, y, 2, 2);
+    }
+  } else if (kind === 'snow') {
+    diffCtx.fillStyle = '#e8f1fb';
+    diffCtx.fillRect(0, 0, size, size);
+    heightCtx.fillStyle = '#888888';
+    heightCtx.fillRect(0, 0, size, size);
+    roughCtx.fillStyle = '#8a8a8a';
+    roughCtx.fillRect(0, 0, size, size);
+
+    for (let i = 0; i < 500; i++) {
+      const x = rand() * size;
+      const y = rand() * size;
+      const r = 3 + rand() * 14;
+      diffCtx.fillStyle = rand() > 0.5 ? 'rgba(255,255,255,0.22)' : 'rgba(186,210,238,0.18)';
+      diffCtx.beginPath();
+      diffCtx.arc(x, y, r, 0, Math.PI * 2);
+      diffCtx.fill();
+      heightCtx.fillStyle = rand() > 0.5 ? 'rgba(215,215,215,0.25)' : 'rgba(105,105,105,0.2)';
+      heightCtx.beginPath();
+      heightCtx.arc(x, y, r, 0, Math.PI * 2);
+      heightCtx.fill();
+    }
+  } else if (kind === 'bark') {
+    diffCtx.fillStyle = '#5c4033';
+    diffCtx.fillRect(0, 0, size, size);
+    heightCtx.fillStyle = '#757575';
+    heightCtx.fillRect(0, 0, size, size);
+    roughCtx.fillStyle = '#e4e4e4';
+    roughCtx.fillRect(0, 0, size, size);
+
+    for (let i = 0; i < 120; i++) {
+      const x = rand() * size;
+      const w = 2 + rand() * 5;
+      diffCtx.fillStyle = rand() > 0.5 ? '#3e2723' : '#795548';
+      diffCtx.fillRect(x, 0, w, size);
+      heightCtx.fillStyle = rand() > 0.5 ? '#3a3a3a' : '#b8b8b8';
+      heightCtx.fillRect(x, 0, w, size);
+    }
+  } else if (kind === 'roof') {
+    diffCtx.fillStyle = '#475569';
+    diffCtx.fillRect(0, 0, size, size);
+    heightCtx.fillStyle = '#808080';
+    heightCtx.fillRect(0, 0, size, size);
+    roughCtx.fillStyle = '#9a9a9a';
+    roughCtx.fillRect(0, 0, size, size);
+
+    const tileH = Math.max(16, Math.round(size / 8));
+    const tileW = Math.max(16, Math.round(size / 8));
+    for (let row = 0; row < size; row += tileH) {
+      const offset = (Math.floor(row / tileH) % 2) * (tileW / 2);
+      for (let col = -tileW; col < size + tileW; col += tileW) {
+        const shade = Math.floor(65 + rand() * 25);
+        diffCtx.fillStyle = `rgb(${shade},${shade + 10},${shade + 24})`;
+        diffCtx.fillRect(col + offset + 1, row + 1, tileW - 2, tileH - 2);
+        heightCtx.fillStyle = `rgb(${140 + Math.floor(rand() * 35)},140,140)`;
+        heightCtx.fillRect(col + offset + 2, row + 2, tileW - 4, tileH - 4);
+      }
+    }
   } else {
     // arcane
     diffCtx.fillStyle = '#0f172a';
@@ -296,11 +381,39 @@ export function getPbrTextureSet(
     }
   }
 
+  // Derive Ambient Occlusion canvas from heightCanvas (darker crevices = deeper AO)
+  const [aoCanvas, aoCtx] = createCanvas(size);
+  aoCtx.drawImage(heightCanvas, 0, 0);
+  const aoImg = aoCtx.getImageData(0, 0, size, size);
+  for (let i = 0; i < aoImg.data.length; i += 4) {
+    const h = aoImg.data[i];
+    const ao = Math.min(255, Math.max(95, Math.round(115 + (h / 255) * 140)));
+    aoImg.data[i] = ao;
+    aoImg.data[i + 1] = ao;
+    aoImg.data[i + 2] = ao;
+    aoImg.data[i + 3] = 255;
+  }
+  aoCtx.putImageData(aoImg, 0, 0);
+
+  let metalnessMap: THREE.CanvasTexture | undefined;
+  if (kind === 'metal' || kind === 'arcane') {
+    const [metalCanvas, metalCtx] = createCanvas(size);
+    metalCtx.fillStyle = kind === 'metal' ? '#e2e2e2' : '#949494';
+    metalCtx.fillRect(0, 0, size, size);
+    for (let i = 0; i < 60; i++) {
+      metalCtx.fillStyle = rand() > 0.5 ? 'rgba(255,255,255,0.16)' : 'rgba(60,60,60,0.18)';
+      metalCtx.fillRect(0, rand() * size, size, 1 + rand() * 2);
+    }
+    metalnessMap = finalizeColorTexture(metalCanvas, repeatX, repeatY, false);
+  }
+
   const normalStrength = kind === 'water' ? 2.6 : kind === 'metal' ? 1.1 : 2.1;
   const set: PbrTextureSet = {
     map: finalizeColorTexture(diffCanvas, repeatX, repeatY, true),
     normalMap: buildNormalMapFromHeightCanvas(heightCanvas, normalStrength, repeatX, repeatY),
-    roughnessMap: finalizeColorTexture(roughCanvas, repeatX, repeatY, false)
+    roughnessMap: finalizeColorTexture(roughCanvas, repeatX, repeatY, false),
+    aoMap: finalizeColorTexture(aoCanvas, repeatX, repeatY, false),
+    ...(metalnessMap ? { metalnessMap } : {})
   };
   textureSetCache.set(key, set);
   return set;

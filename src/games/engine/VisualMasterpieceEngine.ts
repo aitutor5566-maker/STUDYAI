@@ -563,3 +563,209 @@ export function disposeThreeScene(
   }
   renderer.dispose();
 }
+
+export interface AnimatedWaterHandle {
+  mesh: THREE.Mesh;
+  update: (elapsedSeconds: number) => void;
+}
+
+/**
+ * Shared GLSL animated water surface with multi-wave vertex displacement,
+ * Fresnel sky reflection, sun specular glints, and animated ripple foam.
+ */
+export function createAnimatedWaterSurface(opts: {
+  width: number;
+  depth: number;
+  segments?: number;
+  deepColor?: THREE.ColorRepresentation;
+  shallowColor?: THREE.ColorRepresentation;
+  skyColor?: THREE.ColorRepresentation;
+  sunDirection?: THREE.Vector3;
+  waveHeight?: number;
+  opacity?: number;
+}): AnimatedWaterHandle {
+  const segs = opts.segments ?? 36;
+  const geo = new THREE.PlaneGeometry(opts.width, opts.depth, segs, segs);
+  geo.rotateX(-Math.PI / 2);
+
+  const uniforms = {
+    uTime: { value: 0 },
+    uDeepColor: { value: new THREE.Color(opts.deepColor ?? 0x0369a1) },
+    uShallowColor: { value: new THREE.Color(opts.shallowColor ?? 0x38bdf8) },
+    uSkyColor: { value: new THREE.Color(opts.skyColor ?? 0xbae6fd) },
+    uSunDir: { value: (opts.sunDirection ?? new THREE.Vector3(0.45, 0.72, 0.35)).clone().normalize() },
+    uWaveHeight: { value: opts.waveHeight ?? 0.14 },
+    uOpacity: { value: opts.opacity ?? 0.88 }
+  };
+
+  const mat = new THREE.ShaderMaterial({
+    uniforms,
+    transparent: true,
+    side: THREE.DoubleSide,
+    vertexShader: `
+      uniform float uTime;
+      uniform float uWaveHeight;
+      varying vec3 vWorldPos;
+      varying vec3 vNormal;
+      varying float vWave;
+      void main() {
+        vec3 pos = position;
+        float w1 = sin(pos.x * 0.45 + uTime * 1.8) * cos(pos.z * 0.35 + uTime * 1.4);
+        float w2 = sin(pos.x * 0.9 - pos.z * 0.7 + uTime * 2.6) * 0.45;
+        float disp = (w1 + w2) * uWaveHeight;
+        pos.y += disp;
+
+        float dx = cos(pos.x * 0.45 + uTime * 1.8) * 0.45 * uWaveHeight;
+        float dz = -sin(pos.z * 0.35 + uTime * 1.4) * 0.35 * uWaveHeight;
+        vNormal = normalize(vec3(-dx, 1.0, -dz));
+        vWave = disp;
+
+        vec4 worldPos = modelMatrix * vec4(pos, 1.0);
+        vWorldPos = worldPos.xyz;
+        gl_Position = projectionMatrix * viewMatrix * worldPos;
+      }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      uniform vec3 uDeepColor;
+      uniform vec3 uShallowColor;
+      uniform vec3 uSkyColor;
+      uniform vec3 uSunDir;
+      uniform float uOpacity;
+      varying vec3 vWorldPos;
+      varying vec3 vNormal;
+      varying float vWave;
+      void main() {
+        vec3 viewDir = normalize(cameraPosition - vWorldPos);
+        vec3 n = normalize(vNormal);
+        float fresnel = pow(1.0 - max(dot(viewDir, n), 0.0), 3.0);
+
+        float crest = smoothstep(-0.08, 0.16, vWave);
+        vec3 waterCol = mix(uDeepColor, uShallowColor, crest * 0.75 + 0.15);
+        waterCol = mix(waterCol, uSkyColor, clamp(fresnel * 0.78, 0.0, 0.82));
+
+        vec3 halfVec = normalize(uSunDir + viewDir);
+        float spec = pow(max(dot(n, halfVec), 0.0), 72.0);
+        waterCol += vec3(1.0, 0.97, 0.88) * spec * 0.85;
+
+        float rippleFoam = smoothstep(0.11, 0.19, vWave + sin(vWorldPos.x * 2.2 + uTime * 3.0) * 0.03);
+        waterCol = mix(waterCol, vec3(0.92, 0.98, 1.0), rippleFoam * 0.35);
+
+        gl_FragColor = vec4(waterCol, uOpacity);
+      }
+    `
+  });
+
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.receiveShadow = true;
+
+  return {
+    mesh,
+    update: (elapsedSeconds: number) => {
+      uniforms.uTime.value = elapsedSeconds;
+    }
+  };
+}
+
+export interface VolumetricCloudLayerHandle {
+  group: THREE.Group;
+  update: (dt: number) => void;
+}
+
+/**
+ * Multi-puff 3D cloud clusters with soft shading and wind drift.
+ */
+export function createVolumetricCloudLayer(opts: {
+  count?: number;
+  spreadX?: number;
+  spreadZ?: number;
+  altitude?: number;
+  tintColor?: THREE.ColorRepresentation;
+  windSpeed?: number;
+} = {}): VolumetricCloudLayerHandle {
+  const count = opts.count ?? 14;
+  const spreadX = opts.spreadX ?? 160;
+  const spreadZ = opts.spreadZ ?? 160;
+  const altitude = opts.altitude ?? 42;
+  const windSpeed = opts.windSpeed ?? 1.8;
+
+  const group = new THREE.Group();
+  const cloudMat = new THREE.MeshStandardMaterial({
+    color: opts.tintColor ?? 0xf8fafc,
+    roughness: 0.92,
+    metalness: 0.0,
+    transparent: true,
+    opacity: 0.88
+  });
+
+  const puffGeo = new THREE.SphereGeometry(1, 10, 8);
+  const clusters: Array<{ cluster: THREE.Group; speedFactor: number }> = [];
+
+  for (let i = 0; i < count; i++) {
+    const cluster = new THREE.Group();
+    const puffs = 3 + (i % 3);
+    for (let p = 0; p < puffs; p++) {
+      const puff = new THREE.Mesh(puffGeo, cloudMat);
+      const sx = 2.6 + ((i * 7 + p * 3) % 4);
+      const sy = 1.2 + ((i + p) % 2) * 0.55;
+      const sz = 2.2 + ((i * 5 + p) % 3);
+      puff.scale.set(sx, sy, sz);
+      puff.position.set((p - puffs / 2) * 2.5, (p % 2) * 0.45, ((p * 1.7) % 2) - 1);
+      cluster.add(puff);
+    }
+    cluster.position.set(
+      (((i * 37) % 100) / 100 - 0.5) * spreadX,
+      altitude + (i % 4) * 3.5,
+      (((i * 53) % 100) / 100 - 0.5) * spreadZ
+    );
+    group.add(cluster);
+    clusters.push({ cluster, speedFactor: 0.7 + (i % 4) * 0.22 });
+  }
+
+  const halfX = spreadX / 2;
+  return {
+    group,
+    update: (dt: number) => {
+      for (const item of clusters) {
+        item.cluster.position.x += windSpeed * item.speedFactor * dt;
+        if (item.cluster.position.x > halfX) {
+          item.cluster.position.x = -halfX;
+        }
+      }
+    }
+  };
+}
+
+/**
+ * Rolling frame-time & FPS performance monitor for adaptive graphics stability.
+ */
+export class FramePerformanceMonitor {
+  private samples: number[] = [];
+  private maxSamples: number;
+
+  constructor(maxSamples = 30) {
+    this.maxSamples = Math.max(5, maxSamples);
+  }
+
+  public recordFrame(deltaSeconds: number): void {
+    const ms = Math.max(1, Math.min(250, deltaSeconds * 1000));
+    this.samples.push(ms);
+    if (this.samples.length > this.maxSamples) {
+      this.samples.shift();
+    }
+  }
+
+  public getMetrics(): { avgFrameMs: number; avgFps: number; isFrameBudgetExceeded: boolean } {
+    if (this.samples.length === 0) {
+      return { avgFrameMs: 16.7, avgFps: 60, isFrameBudgetExceeded: false };
+    }
+    const sum = this.samples.reduce((a, b) => a + b, 0);
+    const avgFrameMs = sum / this.samples.length;
+    const avgFps = Math.round(1000 / Math.max(1, avgFrameMs));
+    return {
+      avgFrameMs: Math.round(avgFrameMs * 10) / 10,
+      avgFps,
+      isFrameBudgetExceeded: avgFrameMs > 28 // < ~35 FPS sustained
+    };
+  }
+}

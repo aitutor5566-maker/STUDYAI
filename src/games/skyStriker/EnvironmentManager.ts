@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { getPbrTextureSet } from '../engine/PbrTextureFactory';
-import { createAtmosphericSkyDome } from '../engine/VisualMasterpieceEngine';
+import {
+  createAnimatedWaterSurface,
+  createAtmosphericSkyDome
+} from '../engine/VisualMasterpieceEngine';
 import { GraphicsQuality, WorldId } from './types';
 
 export interface WorldConfig {
@@ -144,22 +147,52 @@ export function buildSkyEnvironment(
   }
   terrainGeo.computeVertexNormals();
 
+  const texRes: 128 | 256 | 512 =
+    quality === 'low' ? 128 : quality === 'ultra' || quality === 'high' ? 512 : 256;
+  const terrainKind =
+    worldId === 'ocean_frontier'
+      ? 'water'
+      : worldId === 'desert_storm'
+      ? 'sand'
+      : worldId === 'frozen_horizon'
+      ? 'snow'
+      : 'stone';
   const terrainPbr =
     typeof document !== 'undefined'
-      ? getPbrTextureSet(worldId === 'ocean_frontier' ? 'water' : 'stone', 18, 18)
+      ? getPbrTextureSet(terrainKind, 18, 18, texRes)
       : null;
-  const terrainMat = new THREE.MeshStandardMaterial({
-    color: cfg.terrainColor,
-    roughness: worldId === 'ocean_frontier' ? 0.14 : 0.86,
-    metalness: worldId === 'ocean_frontier' ? 0.62 : 0.08,
-    normalMap: terrainPbr?.normalMap ?? null,
-    roughnessMap: terrainPbr?.roughnessMap ?? null,
-    normalScale: new THREE.Vector2(0.55, 0.55),
-    flatShading: worldId !== 'ocean_frontier'
-  });
-  const terrain = new THREE.Mesh(terrainGeo, terrainMat);
-  terrain.receiveShadow = true;
-  group.add(terrain);
+
+  let waterHandle: ReturnType<typeof createAnimatedWaterSurface> | null = null;
+  if (worldId === 'ocean_frontier') {
+    waterHandle = createAnimatedWaterSurface({
+      width: 540,
+      depth: 540,
+      segments: quality === 'low' ? 20 : 42,
+      deepColor: 0x0369a1,
+      shallowColor: 0x0ea5e9,
+      skyColor: cfg.skyColor,
+      waveHeight: 0.45,
+      opacity: 0.94
+    });
+    waterHandle.mesh.position.y = -34;
+    group.add(waterHandle.mesh);
+  } else {
+    const terrainMat = new THREE.MeshStandardMaterial({
+      color: cfg.terrainColor,
+      map: terrainPbr?.map ?? null,
+      roughness: 0.86,
+      metalness: 0.08,
+      normalMap: terrainPbr?.normalMap ?? null,
+      roughnessMap: terrainPbr?.roughnessMap ?? null,
+      aoMap: terrainPbr?.aoMap ?? null,
+      aoMapIntensity: 0.45,
+      normalScale: new THREE.Vector2(0.65, 0.65),
+      flatShading: false
+    });
+    const terrain = new THREE.Mesh(terrainGeo, terrainMat);
+    terrain.receiveShadow = true;
+    group.add(terrain);
+  }
 
   // Scrolling Mountains / Skyscrapers / Floating Islands
   const mountainMat = new THREE.MeshStandardMaterial({
@@ -238,9 +271,12 @@ export function buildSkyEnvironment(
 
   scene.add(group);
 
+  let elapsed = 0;
   return {
     group,
     update(dt: number, forwardSpeed: number) {
+      elapsed += dt;
+      waterHandle?.update(elapsed);
       const scroll = forwardSpeed * dt;
       for (const lm of landmarks) {
         lm.position.z += scroll;

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { CinematicCameraController } from './VisualMasterpieceEngine';
+import {
+  CinematicCameraController,
+  FramePerformanceMonitor,
+  createAnimatedWaterSurface,
+  createVolumetricCloudLayer
+} from './VisualMasterpieceEngine';
 
 describe('CinematicCameraController', () => {
   it('smoothly damps camera position, handles FOV boost, and decays camera shake', () => {
@@ -26,5 +31,31 @@ describe('CinematicCameraController', () => {
       controller.update(cam, new THREE.Vector3(4, 5, 14), lookAt, 0.016);
     }
     expect(cam.fov).toBeLessThan(60);
+  });
+});
+
+describe('AAA Water, Clouds & Performance Monitor', () => {
+  it('creates animated GLSL water and volumetric cloud layer and tracks frame metrics', () => {
+    const water = createAnimatedWaterSurface({ width: 20, depth: 20, segments: 12 });
+    expect(water.mesh).toBeInstanceOf(THREE.Mesh);
+    water.update(1.25);
+    const mat = water.mesh.material as THREE.ShaderMaterial;
+    expect(mat.uniforms.uTime.value).toBeCloseTo(1.25, 3);
+
+    const clouds = createVolumetricCloudLayer({ count: 4, spreadX: 60, windSpeed: 2 });
+    expect(clouds.group.children.length).toBe(4);
+    const firstX = clouds.group.children[0].position.x;
+    clouds.update(0.5);
+    expect(clouds.group.children[0].position.x).not.toBe(firstX);
+
+    const monitor = new FramePerformanceMonitor(10);
+    for (let i = 0; i < 10; i++) monitor.recordFrame(1 / 60);
+    const healthy = monitor.getMetrics();
+    expect(healthy.avgFps).toBe(60);
+    expect(healthy.isFrameBudgetExceeded).toBe(false);
+
+    for (let i = 0; i < 10; i++) monitor.recordFrame(0.045);
+    const slow = monitor.getMetrics();
+    expect(slow.isFrameBudgetExceeded).toBe(true);
   });
 });

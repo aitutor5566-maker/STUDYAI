@@ -461,6 +461,7 @@ export const ShadowNinjaRealmsCanvas: React.FC<ShadowNinjaRealmsCanvasProps> = (
           scene.fog.color.setHex(skyState.fogColor);
           scene.fog.density = skyState.fogDensity;
         }
+        world.updateWater?.(elapsed);
         if (world.waterNormalMap) {
           world.waterNormalMap.offset.x = (elapsed * 0.03) % 1;
           world.waterNormalMap.offset.y = (elapsed * 0.022) % 1;

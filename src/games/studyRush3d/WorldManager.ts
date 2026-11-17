@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import { getPbrTextureSet } from '../engine/PbrTextureFactory';
-import { createVolumetricLightShafts } from '../engine/VisualMasterpieceEngine';
+import {
+  createAnimatedWaterSurface,
+  createVolumetricCloudLayer,
+  createVolumetricLightShafts
+} from '../engine/VisualMasterpieceEngine';
 import {
   AnswerShrineRig,
   buildAnswerShrine,
@@ -55,6 +59,7 @@ export interface WorldHandles {
   libraryGroup: THREE.Group;
   waterNormalMap?: THREE.Texture;
   volumetricShafts?: THREE.Group;
+  updateAtmosphere?: (elapsedSeconds: number, dt: number) => void;
 }
 
 function addBoxCollider(colliders: ColliderBox[], cx: number, cz: number, halfW: number, halfD: number): void {
@@ -141,6 +146,8 @@ export function buildStudyRushWorld(scene: THREE.Scene): WorldHandles {
   // Reflective Knowledge Fountain Pool + Instanced Meadow Grass
   let waterNormalMap: THREE.Texture | undefined;
   let volumetricShafts: THREE.Group | undefined;
+  let updateWater: ((t: number) => void) | undefined;
+  let updateClouds: ((dt: number) => void) | undefined;
   if (typeof document !== 'undefined') {
     const waterPbr = getPbrTextureSet('water', 3, 3);
     waterNormalMap = waterPbr.normalMap;
@@ -149,6 +156,7 @@ export function buildStudyRushWorld(scene: THREE.Scene): WorldHandles {
       new THREE.MeshStandardMaterial({
         color: '#64748B',
         normalMap: stonePbr?.normalMap ?? undefined,
+        aoMap: stonePbr?.aoMap ?? undefined,
         roughness: 0.75
       })
     );
@@ -157,23 +165,28 @@ export function buildStudyRushWorld(scene: THREE.Scene): WorldHandles {
     poolBasin.castShadow = true;
     root.add(poolBasin);
 
-    const waterMesh = new THREE.Mesh(
-      new THREE.CircleGeometry(2.85, 24),
-      new THREE.MeshPhysicalMaterial({
-        color: '#0EA5E9',
-        normalMap: waterNormalMap,
-        normalScale: new THREE.Vector2(0.45, 0.45),
-        roughness: 0.08,
-        metalness: 0.15,
-        clearcoat: 1.0,
-        clearcoatRoughness: 0.08,
-        transparent: true,
-        opacity: 0.86
-      })
-    );
-    waterMesh.rotation.x = -Math.PI / 2;
-    waterMesh.position.set(0, 0.35, 4.5);
-    root.add(waterMesh);
+    const animWater = createAnimatedWaterSurface({
+      width: 5.2,
+      depth: 5.2,
+      segments: 20,
+      deepColor: 0x0284c7,
+      shallowColor: 0x38bdf8,
+      skyColor: 0xe0f2fe,
+      waveHeight: 0.05
+    });
+    animWater.mesh.position.set(0, 0.36, 4.5);
+    root.add(animWater.mesh);
+    updateWater = animWater.update;
+
+    const clouds = createVolumetricCloudLayer({
+      count: 10,
+      spreadX: 130,
+      spreadZ: 130,
+      altitude: 34,
+      windSpeed: 1.4
+    });
+    root.add(clouds.group);
+    updateClouds = clouds.update;
 
     // InstancedMesh grass tufts outside the cobblestone plaza (single draw call)
     const tuftGeo = new THREE.ConeGeometry(0.14, 0.55, 5);
@@ -475,7 +488,11 @@ export function buildStudyRushWorld(scene: THREE.Scene): WorldHandles {
     lanternGroup,
     libraryGroup,
     waterNormalMap,
-    volumetricShafts
+    volumetricShafts,
+    updateAtmosphere: (elapsedSeconds: number, dt: number) => {
+      updateWater?.(elapsedSeconds);
+      updateClouds?.(dt);
+    }
   };
 }
 

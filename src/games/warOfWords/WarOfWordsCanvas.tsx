@@ -5,7 +5,9 @@ import {
   AtmosphericParticleSystem,
   buildAtmosphericEnvMap,
   CinematicCameraController,
+  createAnimatedWaterSurface,
   createAtmosphericSkyDome,
+  createVolumetricCloudLayer,
   disposeThreeScene
 } from '../engine/VisualMasterpieceEngine';
 import { WarOfWordsAudioManager } from './AudioManager';
@@ -190,6 +192,30 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
       driftVel: new THREE.Vector3(0.18, 0.38, 0.08)
     });
     scene.add(arcaneParticles.points);
+
+    const moonWater = createAnimatedWaterSurface({
+      width: 90,
+      depth: 18,
+      segments: quality === 'low' ? 16 : 32,
+      deepColor: 0x0f172a,
+      shallowColor: 0x1d4ed8,
+      skyColor: env.skyColor,
+      waveHeight: 0.09,
+      opacity: 0.85
+    });
+    moonWater.mesh.position.set(8, -0.32, -11);
+    scene.add(moonWater.mesh);
+
+    const cloudLayer = createVolumetricCloudLayer({
+      count: quality === 'low' ? 5 : 11,
+      spreadX: 90,
+      spreadZ: 45,
+      altitude: 18,
+      tintColor: 0xcbd5e1,
+      windSpeed: 1.1
+    });
+    cloudLayer.group.position.z = -18;
+    scene.add(cloudLayer.group);
 
     const camController = new CinematicCameraController(48, 1.3);
 
@@ -570,6 +596,8 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
 
         // 6. Smooth Side-Follow Cinematic Camera + Atmospheric Particles
         skyDome.update({ time: now * 0.001 });
+        moonWater.update(now * 0.001);
+        cloudLayer.update(dt);
         arcaneParticles.update(dt, now * 0.001, new THREE.Vector3(playerX, playerY + 4, 0));
 
         const targetCamX = playerX + facing * 3.5;
