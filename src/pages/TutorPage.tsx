@@ -363,8 +363,17 @@ export const TutorPage: React.FC = () => {
   const [revealedQuestions, setRevealedQuestions] = useState<Record<string, boolean>>({});
   const [explanationLength, setExplanationLength] = useState<'concise' | 'balanced' | 'detailed'>('balanced');
   const [maximumDetailMode, setMaximumDetailMode] = useState(false);
-  const [tutorLessonMapOpen, setTutorLessonMapOpen] = useState(false);
+  const [tutorLessonMapOpen, setTutorLessonMapOpen] = useState(() => searchParams.get('openLessonMap') === '1');
   const [tutorLessonMap, setTutorLessonMap] = useState<any>(null);
+
+  useEffect(() => {
+    if (searchParams.get('openLessonMap') === '1' && !tutorLessonMap) {
+      apiFetch<any>('/api/tutor/topic-lesson-map', {
+        method: 'POST',
+        body: JSON.stringify({ topic: activeTopic || 'Photosynthesis', subject, grade, board: 'CBSE' })
+      }).then(setTutorLessonMap).catch(() => {});
+    }
+  }, [searchParams]);
   const [showAdaptiveModal, setShowAdaptiveModal] = useState<boolean>(false);
   const [showVoiceModal, setShowVoiceModal] = useState<boolean>(false);
   const [voiceLessonTutorStructured, setVoiceLessonTutorStructured] = useState<any | null>(null);

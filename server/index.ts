@@ -1410,10 +1410,18 @@ export function createAppServer() {
       if (pathname === '/api/tutor/chat' && req.method === 'POST') {
         const body = await readJsonBody(req);
         const question = sanitizeText(body.message || body.question || '', 2000);
-        const topic = sanitizeText(body.topic || question || 'Science', 180);
-        const grade = typeof body.grade === 'number' ? body.grade : 10;
-        const subject = sanitizeText(body.subject || inferSubjectFromTopic(topic), 60);
-        const language = sanitizeText(body.language || 'English', 30);
+        const lock = buildTopicIdentityLock({
+          question: question || body.topic || 'Science',
+          previousTopic: body.topic,
+          uiSubject: body.subject,
+          grade: typeof body.grade === 'number' ? body.grade : 10,
+          board: sanitizeText(body.board || 'CBSE', 40),
+          language: sanitizeText(body.language || 'English', 30)
+        });
+        const topic = lock.requestedTopic;
+        const grade = lock.grade;
+        const subject = lock.subject;
+        const language = lock.language;
 
         res.writeHead(200, {
           'Content-Type': 'text/event-stream; charset=utf-8',
@@ -1423,6 +1431,23 @@ export function createAppServer() {
         });
 
         try {
+          const routed = await routeIntelligentTutorMessage({
+            message: question,
+            previousTopic: body.topic,
+            subject,
+            grade,
+            board: lock.board,
+            language
+          });
+          if (routed.handledDirectly && routed.reply) {
+            for (const w of routed.reply.split(/(?=\s)/)) {
+              res.write(`data: ${JSON.stringify({ token: w })}\n\n`);
+            }
+            res.write('data: [DONE]\n\n');
+            res.end();
+            return;
+          }
+
           await centralAiOrchestrator.stream(
             {
               taskType: 'TUTOR_CHAT',
@@ -1431,8 +1456,8 @@ export function createAppServer() {
               grade,
               subject,
               language,
-              board: sanitizeText(body.board || 'CBSE', 40),
-              history: Array.isArray(body.history) ? body.history : [],
+              board: lock.board,
+              history: Array.isArray(body.history) ? body.history.slice(-6) : [],
               stream: true
             },
             (token: string) => {
@@ -2558,30 +2583,26 @@ export function createAppServer() {
         const adaptiveProfile = getStudentAdaptiveProfile(studentId);
         const explanationLength = body.explanationLength || (adaptiveProfile.explanation_style as 'concise' | 'balanced' | 'detailed') || 'balanced';
 
-        // Generate structured AI Tutor teaching response with controlled retry and guaranteed offline fallback
+        // Generate structured AI Tutor teaching response (single fast attempt; immediate local fallback on error)
         let structured: any = null;
-        let attempt = 0;
-        while (attempt < 2 && !structured) {
-          try {
-            attempt++;
-            structured = await generateTutorExplanation({
-              topic: effectiveTopic,
-              question,
-              mode,
-              subject,
-              level,
-              grade,
-              language,
-              studentName,
-              history: historyRows,
-              attachmentSummary,
-              selectedVisualComponent: body.selectedVisualComponent || undefined,
-              adaptiveProfile,
-              explanationLength
-            });
-          } catch (err: any) {
-            console.warn(`[AI_TUTOR_DIAGNOSTIC] Generation attempt ${attempt} failed for "${effectiveTopic}": ${err?.message || err}`);
-          }
+        try {
+          structured = await generateTutorExplanation({
+            topic: effectiveTopic,
+            question,
+            mode,
+            subject,
+            level,
+            grade,
+            language,
+            studentName,
+            history: historyRows.slice(-6),
+            attachmentSummary,
+            selectedVisualComponent: body.selectedVisualComponent || undefined,
+            adaptiveProfile,
+            explanationLength
+          });
+        } catch (err: any) {
+          console.warn(`[AI_TUTOR_DIAGNOSTIC] Generation failed for "${effectiveTopic}": ${err?.message || err}`);
         }
 
         // Guaranteed fallback to offline curriculum engine if live attempts returned null/empty

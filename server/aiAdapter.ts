@@ -370,46 +370,64 @@ function extractFirstJsonObject(raw: string): any | null {
  * 2. Google Gemini (gemini-3.8-flash -> gemini-3.5-flash -> gemini-flash-latest)
  * 3. OpenAI (gpt-4o-mini -> gpt-4o)
  */
+let cachedOllamaOnline: { online: boolean; checkedAt: number } | null = null;
+async function isLocalOllamaFastAvailable(ollamaUrl: string): Promise<boolean> {
+  if (cachedOllamaOnline && Date.now() - cachedOllamaOnline.checkedAt < 30_000) {
+    return cachedOllamaOnline.online;
+  }
+  try {
+    const res = await fetch(`${ollamaUrl}/api/tags`, { signal: AbortSignal.timeout(450) });
+    const ok = res.ok;
+    cachedOllamaOnline = { online: ok, checkedAt: Date.now() };
+    return ok;
+  } catch {
+    cachedOllamaOnline = { online: false, checkedAt: Date.now() };
+    return false;
+  }
+}
+
 export async function callConfiguredLlmJson(
   systemPrompt: string,
   userPrompt: string,
-  timeoutMs = 15000
+  timeoutMs = 12000
 ): Promise<{ parsed: any; providerUsed: string } | null> {
-  // 0. Primary Local Teaching Engine: Ollama qwen2.5:7b (Master Rule: Local AI Tutor with qwen2.5:7b)
+  // 0. Primary Local Teaching Engine: Ollama qwen2.5:7b (fast 450ms availability probe avoids 9.5s stalls when offline)
   const ollamaUrl = process.env.OLLAMA_URL || 'http://127.0.0.1:11434';
   const ollamaModel = process.env.OLLAMA_MODEL || 'qwen2.5:7b';
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    const res = await fetch(`${ollamaUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: ollamaModel,
-        messages: [
-          { role: 'system', content: systemPrompt + '\nRespond strictly with a valid JSON object. No markdown fences.' },
-          { role: 'user', content: userPrompt }
-        ],
-        stream: false,
-        format: 'json',
-        options: {
-          temperature: 0.35,
-          top_p: 0.9
+  if (await isLocalOllamaFastAvailable(ollamaUrl)) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      const res = await fetch(`${ollamaUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: ollamaModel,
+          messages: [
+            { role: 'system', content: systemPrompt + '\nRespond strictly with a valid JSON object. No markdown fences.' },
+            { role: 'user', content: userPrompt }
+          ],
+          stream: false,
+          format: 'json',
+          options: {
+            temperature: 0.35,
+            top_p: 0.9
+          }
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timer);
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        const raw = data?.message?.content;
+        const parsed = extractFirstJsonObject(raw);
+        if (parsed) {
+          return { parsed, providerUsed: `AI Tutor Local (${ollamaModel})` };
         }
-      }),
-      signal: controller.signal
-    });
-    clearTimeout(timer);
-    if (res.ok) {
-      const data = (await res.json()) as any;
-      const raw = data?.message?.content;
-      const parsed = extractFirstJsonObject(raw);
-      if (parsed) {
-        return { parsed, providerUsed: `AI Tutor Local (${ollamaModel})` };
       }
+    } catch {
+      cachedOllamaOnline = { online: false, checkedAt: Date.now() };
     }
-  } catch {
-    // If local Ollama direct connection failed, check Mode B: Mac Companion Bridge
   }
 
   // 0b. Mode B: Hosted STUDYAI with Authenticated Mac Companion Bridge
