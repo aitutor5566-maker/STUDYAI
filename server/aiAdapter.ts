@@ -1849,6 +1849,65 @@ ${visualComponentContext}${
     };
   }
 
+  if (/\b(newton['’]?s\s+first\s+law|first\s+law\s+of\s+motion|law\s+of\s+inertia)\b/.test(lower)) {
+    return {
+      topic: "Newton's First Law of Motion (Law of Inertia)",
+      subject: 'Science',
+      mode: input.mode,
+      introduction: `${contextPrefix}**Newton’s First Law of Motion (Law of Inertia)** states that every object continues in its state of **rest** or **uniform motion in a straight line** unless compelled to change that state by a **net external unbalanced force**. Unlike a simple one-line definition, this law reveals why objects resist changes in motion (**inertia**), how **mass** measures inertia, and why **balanced forces** keep velocity constant while **unbalanced forces** produce acceleration.`,
+      keySteps: [
+        'Rest vs. Uniform Motion — "At rest" means velocity is zero relative to a reference frame; "uniform motion" means moving at constant speed in a straight line (zero acceleration). Both states have zero net external force (ΣF = 0).',
+        'Balanced vs. Unbalanced External Forces — Equal and opposite forces cancel out (balanced, ΣF = 0), leaving motion unchanged. Only an unbalanced external force (ΣF ≠ 0) can start, stop, speed up, slow down, or bend the path of an object.',
+        'Inertia & Mass — Inertia is the natural tendency of matter to resist any change in its state of rest or motion. Mass is the quantitative measure of inertia: a heavy truck has far more inertia than a bicycle, so it takes a much larger force to change its velocity.',
+        'Real-Life Examples (Moving & Stationary) — (1) Moving object: When a bus brakes suddenly, your lower body stops with the seat while your upper body lurches forward because of inertia of motion. (2) Stationary object: Flicking a card out from under a coin drops the coin straight into the glass because of inertia of rest.',
+        'Relation to Second & Third Laws — Newton’s First Law defines when motion stays constant (ΣF = 0), while Newton’s Second Law (ΣF = ma) quantifies how much acceleration occurs when an unbalanced force acts.'
+      ],
+      formula: {
+        equation: 'ΣF = 0  ⇒  a = 0  (v = constant, either 0 or uniform)',
+        reactants: [
+          { symbol: 'ΣF = 0', label: 'Balanced Net External Force (Newtons, N)' },
+          { symbol: 'm', label: 'Mass (measure of inertia, kg)' }
+        ],
+        products: [
+          { symbol: 'v = const', label: 'Constant Velocity (rest or straight-line motion)' }
+        ],
+        catalyst: 'Inertia of Rest & Inertia of Motion'
+      },
+      definitions: [
+        { term: 'Inertia', definition: 'The inherent property of an object by which it resists any change in its state of rest or uniform straight-line motion.' },
+        { term: 'Balanced Forces', definition: 'Two or more forces acting on an object whose vector sum is zero (ΣF = 0), causing no change in velocity.' },
+        { term: 'Unbalanced External Force', definition: 'A non-zero net force from outside the object that changes its speed or direction of motion.' },
+        { term: 'Uniform Motion', definition: 'Motion at constant speed along a straight line (constant velocity, zero acceleration).' }
+      ],
+      keywords: ['Inertia of Rest', 'Inertia of Motion', 'Mass as Measure of Inertia', 'Balanced Forces (ΣF = 0)', 'Unbalanced External Force', 'Uniform Straight-Line Motion'],
+      differences: {
+        titleA: 'Balanced Forces (ΣF = 0)',
+        titleB: 'Unbalanced Forces (ΣF ≠ 0)',
+        rows: [
+          { aspect: 'Net Force', itemA: 'Zero (forces cancel out)', itemB: 'Non-zero (one direction dominates)' },
+          { aspect: 'Effect on Motion', itemA: 'Object stays at rest or moves at constant velocity', itemB: 'Object accelerates, decelerates, or changes direction' },
+          { aspect: 'Example', itemA: 'Book resting on a table (Gravity = Normal force)', itemB: 'Pushing a stalled car harder than friction' }
+        ]
+      },
+      analogies: 'Think of inertia like stubbornness against change: a sleeping passenger (at rest) wants to stay asleep, and a sprinter running at full speed wants to keep running unless an outside push or pull intervenes.',
+      misconceptions: [
+        'A force is NOT needed to keep an object moving at constant velocity—on frictionless ice, a sliding puck keeps moving indefinitely with zero applied horizontal force.',
+        'Friction is an external force! Moving objects on Earth slow down not because motion "runs out", but because friction and air resistance act as unbalanced opposing forces.'
+      ],
+      recap: 'Newton’s First Law establishes that zero net external force means zero acceleration: objects maintain rest or constant straight-line velocity due to inertia, which increases with mass.',
+      diagramType: 'newton_physics',
+      model3dType: 'newtons_laws',
+      imageUrl: visualAsset.dataUrl,
+      imageCaption: 'Force diagram illustrating balanced vs. unbalanced external forces and inertia',
+      suggestedFollowUps: [
+        'Why do passengers fall forward when a moving bus stops suddenly?',
+        'How does mass affect inertia with an example?',
+        'Practice 3 exam questions on Newton’s First Law'
+      ],
+      providerMode: 'local_curriculum_engine'
+    };
+  }
+
   if (/\b(newton|laws of motion|inertia|f\s*=\s*ma|momentum|free body)\b/.test(lower)) {
     return {
       topic: 'Newton’s Laws of Motion',

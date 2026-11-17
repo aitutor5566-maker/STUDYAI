@@ -1369,7 +1369,7 @@ export const TutorPage: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                Explain in Maximum Detail
+                Deep Learning
               </button>
               <button
                 type="button"
