@@ -4,9 +4,13 @@ import { multiModelAiTeacherEngine } from './multiModelAiTeacherEngine.ts';
 export type StudentIntentCategory =
   | 'greeting'
   | 'social_chat'
+  | 'identity_capability'
+  | 'casual_conversation'
   | 'gratitude_farewell'
   | 'confusion_clarification'
   | 'continue_lesson'
+  | 'follow_up_question'
+  | 'example_request'
   | 'pronunciation_request'
   | 'line_by_line_request'
   | 'quiz_request'
@@ -77,8 +81,20 @@ export function classifyStudentMessageIntent(opts: {
     };
   }
 
-  // 2. Social chat
-  if (/^(how are you|how r u|how's it going|what's up|whats up|who are you|what can you do|are you there)[?!.\s]*$/i.test(lower)) {
+  // 2. Identity & capability questions
+  if (/^(what is your name|what's your name|who are you|what can you do|tell me about yourself)[?!.\s]*$/i.test(lower)) {
+    return {
+      intent: 'identity_capability',
+      confidence: 0.97,
+      preservedTopic: prevTopic,
+      shouldRunAcademicRag: false,
+      shouldCreateNotesRecord: false,
+      reason: 'Identity or capability question detected.'
+    };
+  }
+
+  // 2b. Social chat & casual conversation
+  if (/^(how are you|how r u|how's it going|what's up|whats up|are you there)[?!.\s]*$/i.test(lower)) {
     return {
       intent: 'social_chat',
       confidence: 0.96,
@@ -86,6 +102,17 @@ export function classifyStudentMessageIntent(opts: {
       shouldRunAcademicRag: false,
       shouldCreateNotesRecord: false,
       reason: 'Social conversational question detected.'
+    };
+  }
+
+  if (/^(i am bored|i'm bored|tell me something interesting|can you help me|help me)[?!.\s]*$/i.test(lower)) {
+    return {
+      intent: 'casual_conversation',
+      confidence: 0.94,
+      preservedTopic: prevTopic,
+      shouldRunAcademicRag: false,
+      shouldCreateNotesRecord: false,
+      reason: 'Casual conversation or general assistance request detected.'
     };
   }
 
@@ -331,11 +358,30 @@ export async function routeIntelligentTutorMessage(opts: {
     };
   }
 
+  if (cls.intent === 'identity_capability') {
+    return {
+      handledDirectly: true,
+      classification: cls,
+      reply: `I'm your STUDYAI learning assistant. You can ask me academic questions, explore topics step by step, practice pronunciation, or generate a Lesson Map anytime!`
+    };
+  }
+
   if (cls.intent === 'social_chat') {
     return {
       handledDirectly: true,
       classification: cls,
       reply: `I'm doing great and ready to help you learn! Ask me any question, paste a paragraph for line-by-line help, or pick a topic to master.`
+    };
+  }
+
+  if (cls.intent === 'casual_conversation') {
+    const reply = /bored|interesting/i.test(opts.message)
+      ? `Fun fact: Light from the Sun takes about 8 minutes and 20 seconds to reach Earth—and plants use that exact sunlight in Photosynthesis! Want to explore a cool Science, History, or Space topic, or play a 3D learning game?`
+      : `Of course${opts.studentName ? `, ${opts.studentName}` : ''}! Tell me which subject, topic, or homework question you'd like to work on.`;
+    return {
+      handledDirectly: true,
+      classification: cls,
+      reply
     };
   }
 

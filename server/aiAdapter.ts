@@ -1949,6 +1949,55 @@ ${visualComponentContext}${
     };
   }
 
+  if (/\b(mitosis|prophase|metaphase|anaphase|telophase|cytokinesis)\b/.test(lower)) {
+    return validateTopicConsistency(topicLock, {
+      topic: 'Mitosis (Equational Cell Division)',
+      subject: 'Science',
+      mode: input.mode,
+      introduction: `${contextPrefix}**Mitosis** is the process of equational nuclear division in eukaryotic somatic cells by which a single parent cell divides to produce **two genetically identical daughter cells**, each maintaining the exact same chromosome number ($2n$) as the parent cell. It is preceded by **Interphase** (G₁, S, G₂), during which DNA replicates.`,
+      keySteps: [
+        'Interphase (Preparation) — Before mitosis begins, the cell grows and duplicates its DNA during the S-phase so each chromosome consists of two identical sister chromatids joined at a centromere.',
+        'Prophase — Chromatin condenses into visible X-shaped chromosomes, the nuclear membrane dissolves, and spindle fibers begin forming from centrosomes.',
+        'Metaphase — Spindle fibers attach to centromeres and align all chromosomes neatly along the cell’s equator (the metaphase plate).',
+        'Anaphase — Centromeres split and spindle fibers shorten, pulling identical sister chromatids toward opposite poles of the cell.',
+        'Telophase & Cytokinesis — Two new nuclear membranes form around the separated chromosome sets, chromosomes uncoil, and the cytoplasm divides (cytokinesis) into two identical daughter cells.'
+      ],
+      formula: null,
+      definitions: [
+        { term: 'Mitosis', definition: 'Equational nuclear division producing two genetically identical daughter nuclei with the same chromosome count (2n → 2n).' },
+        { term: 'Sister Chromatids', definition: 'Two identical DNA copies joined at a centromere, formed during S-phase DNA replication.' },
+        { term: 'Metaphase Plate', definition: 'The equatorial plane along the center of the cell where chromosomes align during Metaphase.' },
+        { term: 'Cytokinesis', definition: 'Division of the cytoplasm following nuclear division to form two separate daughter cells.' }
+      ],
+      keywords: ['Interphase (S-Phase)', 'Prophase', 'Metaphase', 'Anaphase', 'Telophase', 'Cytokinesis', 'Sister Chromatids', 'Spindle Fibers'],
+      differences: {
+        titleA: 'Mitosis (Somatic Cells)',
+        titleB: 'Meiosis (Germ / Gamete Cells)',
+        rows: [
+          { aspect: 'Daughter Cells', itemA: '2 genetically identical diploid (2n) cells', itemB: '4 genetically varied haploid (n) cells' },
+          { aspect: 'Chromosome Count', itemA: 'Remains unchanged (equational)', itemB: 'Halved (reductional)' },
+          { aspect: 'Biological Role', itemA: 'Growth, tissue repair & asexual reproduction', itemB: 'Gamete formation for sexual reproduction' }
+        ]
+      },
+      analogies: 'Think of Mitosis like photocopying a textbook (Interphase), organizing the pages neatly on a table (Metaphase), separating the two identical stacks to opposite sides of the room (Anaphase), and putting each stack into its own folder (Telophase + Cytokinesis).',
+      misconceptions: [
+        'Interphase is NOT a stage of mitosis itself—it is the preparatory phase where DNA is duplicated before Prophase begins.',
+        'Mitosis halves neither the DNA content nor chromosome number per daughter cell relative to the original parent cell (2n remains 2n).'
+      ],
+      recap: 'Mitosis (PMAT: Prophase → Metaphase → Anaphase → Telophase) followed by Cytokinesis produces two genetically identical daughter cells for growth and tissue repair.',
+      diagramType: 'cell_mitosis',
+      model3dType: null,
+      imageUrl: visualAsset.dataUrl,
+      imageCaption: 'Labeled stages of Mitosis: Interphase → Prophase → Metaphase → Anaphase → Telophase → Cytokinesis',
+      suggestedFollowUps: [
+        'How does cytokinesis differ between plant and animal cells?',
+        'Why is DNA replication in S-phase essential before mitosis begins?',
+        'Compare Mitosis and Meiosis in a table'
+      ],
+      providerMode: 'local_curriculum_engine'
+    });
+  }
+
   if (/\b(first war of independence|first war of indian independence|1857|sepoy mutiny|revolt of 1857|mangal pandey|rani lakshmibai|bahadur shah zafar)\b/.test(lower)) {
     return validateTopicConsistency(topicLock, {
       topic: 'First War of Indian Independence (1857)',
