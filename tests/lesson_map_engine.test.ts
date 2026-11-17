@@ -5,7 +5,7 @@ import { lessonMapEngine } from '../server/lessonMapEngine.ts';
 
 initDatabase();
 
-test('LessonMapEngine computes prerequisites, enforces real mastery, and generates 6-phase exam roadmap', () => {
+test('LessonMapEngine computes prerequisites, enforces real mastery, and generates 6-phase exam roadmap', async () => {
   const userId = `test-lm-${Date.now()}`;
 
   // Initial Physics graph: Charge is available, Voltage & Resistance are locked until Charge is completed
@@ -42,4 +42,20 @@ test('LessonMapEngine computes prerequisites, enforces real mastery, and generat
   // Parent/Teacher summary reflects real XP
   const summary = lessonMapEngine.getParentTeacherSummary(userId);
   assert.ok(summary.totalXp >= 150);
+
+  // Custom syllabus lesson map generation & editing
+  const custom = await lessonMapEngine.generateCustomLessonMap(userId, {
+    subject: 'Physics',
+    grade: 10,
+    board: 'CBSE',
+    chapter: 'Electromagnetic Induction',
+    syllabusText: 'Magnetic Flux\nFaradays Law\nLenz Law',
+    sourceLabel: 'NCERT Ch 13'
+  });
+  assert.equal(custom.nodes.length, 3);
+  const listed = lessonMapEngine.listCustomLessonMaps(userId);
+  assert.equal(listed.length, 1);
+  const upd = lessonMapEngine.updateCustomLessonMap(userId, custom.id, custom.nodes, true);
+  assert.equal(upd.updated, true);
+  assert.equal(upd.approved, true);
 });

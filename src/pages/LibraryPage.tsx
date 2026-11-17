@@ -23,6 +23,7 @@ import { TopBrandBar } from '../components/GlassNav';
 import { FuturisticIcon, FuturisticIconName } from '../components/FuturisticIcons';
 import { useLearning } from '../context/LearningContext';
 import { LanguageLearningSection } from '../components/LanguageLearningSection';
+import { LessonMapPage } from './LessonMapPage';
 
 /**
  * Generates a real topic-specific SVG educational illustration data URL on the client
@@ -270,6 +271,7 @@ export const LibraryPage: React.FC = () => {
 
   const filterTabs = [
     { id: 'all', label: `All Resources (${counts.all || 0})` },
+    { id: 'ai_lesson_map', label: 'AI Lesson Map' },
     { id: 'note', label: `Saved Notebooks & Revision (${counts.note || 0})` },
     { id: 'quiz', label: `Practice Quizzes & Assessments (${counts.quiz || 0})` },
     { id: 'game', label: `Educational Games (${counts.game || 0})` },
@@ -286,6 +288,7 @@ export const LibraryPage: React.FC = () => {
     count: number;
     iconName: FuturisticIconName;
   }> = [
+    { id: 'ai_lesson_map', label: 'AI Lesson Map', count: 7, iconName: 'diagrams' },
     { id: 'note', label: 'Saved Notebooks', count: counts.note || 0, iconName: 'notes' },
     { id: 'quiz', label: 'Practice & Quizzes', count: counts.quiz || 0, iconName: 'quiz' },
     { id: 'game', label: 'Curriculum Games', count: counts.game || 0, iconName: 'games' },
@@ -465,7 +468,12 @@ export const LibraryPage: React.FC = () => {
         })}
       </section>
 
-      {/* SECTION 1: CONTINUE LEARNING & RECENTLY ADDED VISUAL CARDS */}
+      {/* SECTION 1: AI LESSON MAP OR SAVED VISUAL LEARNING MATERIALS */}
+      {typeFilter === 'ai_lesson_map' ? (
+        <section style={{ marginBottom: 30 }}>
+          <LessonMapPage embedded />
+        </section>
+      ) : (
       <section style={{ marginBottom: 30 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
           <div>
@@ -735,6 +743,7 @@ export const LibraryPage: React.FC = () => {
           </div>
         )}
       </section>
+      )}
 
       {/* SECTION 2: SPEAKING SKILLS & MULTILINGUAL LANGUAGE LEARNING */}
       <LanguageLearningSection allowGameLaunch={false} />

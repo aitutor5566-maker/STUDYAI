@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Award,
   BookOpen,
@@ -9,7 +10,9 @@ import {
   Map as MapIcon,
   RefreshCw,
   RotateCcw,
+  Search,
   Sparkles,
+  Upload,
   Users,
   ZoomIn,
   ZoomOut
@@ -80,10 +83,18 @@ const STATUS_STYLES: Record<NodeStatus, { border: string; bg: string; badge: str
   mastered: { border: 'border-violet-400', bg: 'bg-violet-950/50', badge: 'bg-violet-500/25 text-violet-200', label: 'Mastered' }
 };
 
-export const LessonMapPage: React.FC = () => {
+export const LessonMapPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const { apiFetch } = useLearning();
+  const navigate = useNavigate();
   const [subject, setSubject] = useState('Physics');
-  const [activeTab, setActiveTab] = useState<'map' | 'roadmap' | 'family'>('map');
+  const [activeTab, setActiveTab] = useState<'map' | 'roadmap' | 'custom' | 'family'>('map');
+  const [viewMode, setViewMode] = useState<'mind_map' | 'tree' | 'chapter'>('mind_map');
+  const [learningMode, setLearningMode] = useState<'learn' | 'exam' | 'revision'>('learn');
+  const [topicSearch, setTopicSearch] = useState('');
+  const [customChapter, setCustomChapter] = useState('');
+  const [customSyllabusText, setCustomSyllabusText] = useState('');
+  const [customMaps, setCustomMaps] = useState<any[]>([]);
+  const [customSaving, setCustomSaving] = useState(false);
   const [graph, setGraph] = useState<GraphPayload | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -201,9 +212,38 @@ export const LessonMapPage: React.FC = () => {
     setFamilySummary(res);
   };
 
+  const loadCustomMaps = useCallback(async () => {
+    const res = await apiFetch<any>('/api/lesson-map/custom');
+    setCustomMaps(res.maps || []);
+  }, [apiFetch]);
+
+  const handleGenerateCustomMap = async () => {
+    if (!customChapter.trim()) return;
+    setCustomSaving(true);
+    try {
+      await apiFetch<any>('/api/lesson-map/generate-custom', {
+        method: 'POST',
+        body: JSON.stringify({
+          subject,
+          grade: 10,
+          board: 'CBSE',
+          chapter: customChapter.trim(),
+          syllabusText: customSyllabusText.trim(),
+          sourceLabel: 'Uploaded / Custom Syllabus Material'
+        })
+      });
+      setCustomChapter('');
+      setCustomSyllabusText('');
+      await loadCustomMaps();
+    } finally {
+      setCustomSaving(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'roadmap' && !roadmap) generateRoadmap();
     if (activeTab === 'family') loadFamilySummary();
+    if (activeTab === 'custom') loadCustomMaps();
   }, [activeTab]);
 
   const nodeById = useMemo(() => {
@@ -213,7 +253,7 @@ export const LessonMapPage: React.FC = () => {
   }, [graph]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 pb-28 pt-6 px-4 md:px-8">
+    <div className={embedded ? 'bg-slate-950 text-slate-100 rounded-3xl p-4 md:p-6 border border-slate-800' : 'min-h-screen bg-slate-950 text-slate-100 pb-28 pt-6 px-4 md:px-8'}>
       <div className="max-w-7xl mx-auto space-y-5">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900/80 border border-slate-800 rounded-3xl p-5">
@@ -242,6 +282,14 @@ export const LessonMapPage: React.FC = () => {
               }`}
             >
               6-Phase Exam Roadmap
+            </button>
+            <button
+              onClick={() => setActiveTab('custom')}
+              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold ${
+                activeTab === 'custom' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300'
+              }`}
+            >
+              <Upload className="w-3.5 h-3.5" /> Upload / Custom Map
             </button>
             <button
               onClick={() => setActiveTab('family')}
@@ -287,11 +335,34 @@ export const LessonMapPage: React.FC = () => {
         {activeTab === 'map' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             <div className="lg:col-span-2 bg-slate-900/70 border border-slate-800 rounded-3xl overflow-hidden relative min-h-[420px]">
-              {/* Map Toolbar */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-950/60">
-                <span className="text-xs text-slate-400">
-                  Drag canvas to pan • Click any node to open the 14-step AI Lesson
-                </span>
+              {/* Map Toolbar: View Modes + Topic Search + Zoom */}
+              <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-slate-800 bg-slate-950/60">
+                <div className="flex items-center gap-1.5">
+                  {([
+                    ['mind_map', 'Mind Map'],
+                    ['tree', 'Tree View'],
+                    ['chapter', 'Chapter View']
+                  ] as const).map(([vm, lbl]) => (
+                    <button
+                      key={vm}
+                      onClick={() => setViewMode(vm)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${
+                        viewMode === vm ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-300'
+                      }`}
+                    >
+                      {lbl}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1">
+                  <Search className="w-3.5 h-3.5 text-slate-400" />
+                  <input
+                    value={topicSearch}
+                    onChange={(e) => setTopicSearch(e.target.value)}
+                    placeholder="Search topic..."
+                    className="bg-transparent text-[11px] text-white outline-none w-28"
+                  />
+                </div>
                 <div className="hidden md:flex items-center gap-1.5">
                   <button onClick={() => setZoom((z) => Math.min(1.4, z + 0.15))} className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700">
                     <ZoomIn className="w-4 h-4" />
@@ -305,7 +376,35 @@ export const LessonMapPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Tree View or Chapter View */}
+              {viewMode !== 'mind_map' && (
+                <div className="p-4 space-y-2.5 max-h-[390px] overflow-y-auto">
+                  {graph?.nodes
+                    .filter((n) => !topicSearch.trim() || `${n.title} ${n.chapter} ${n.topics.join(' ')}`.toLowerCase().includes(topicSearch.toLowerCase()))
+                    .map((node, idx) => {
+                      const st = STATUS_STYLES[node.status];
+                      return (
+                        <button
+                          key={node.id}
+                          onClick={() => openLesson(node)}
+                          className={`w-full text-left p-3 rounded-2xl border ${st.border} ${st.bg} flex items-center justify-between gap-3`}
+                        >
+                          <div>
+                            <div className="text-[10px] text-cyan-300 font-bold uppercase">
+                              {viewMode === 'tree' ? `${node.subject} → ${node.unit} → ${node.chapter}` : `Lesson ${idx + 1}: ${node.chapter}`}
+                            </div>
+                            <div className="text-sm font-bold text-white">{node.title}</div>
+                            <div className="text-[11px] text-slate-400">Topics: {node.topics.join(' • ')} | Subtopics: {node.subtopics.join(', ')}</div>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${st.badge}`}>{st.label}</span>
+                        </button>
+                      );
+                    })}
+                </div>
+              )}
+
               {/* Desktop Interactive Pan/Zoom SVG + Node Canvas */}
+              {viewMode === 'mind_map' && (
               <div
                 className="hidden md:block relative h-[390px] overflow-hidden cursor-grab active:cursor-grabbing select-none"
                 onMouseDown={(e) => {
@@ -381,6 +480,7 @@ export const LessonMapPage: React.FC = () => {
                   })}
                 </div>
               </div>
+              )}
 
               {/* Mobile Vertical Learning Journey */}
               <div className="md:hidden p-4 space-y-3">
@@ -547,9 +647,122 @@ export const LessonMapPage: React.FC = () => {
                     {companionLoading && <div className="text-[11px] text-violet-300">Thinking...</div>}
                     {companionReply && <div className="text-xs text-slate-200 bg-slate-900/90 p-2.5 rounded-xl">{companionReply}</div>}
                   </div>
+
+                  {/* Three Learning Modes + Smart STUDYAI Module Connections */}
+                  <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-400 uppercase">Learning Mode</span>
+                      <div className="flex gap-1">
+                        {(['learn', 'exam', 'revision'] as const).map((lm) => (
+                          <button
+                            key={lm}
+                            onClick={() => setLearningMode(lm)}
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                              learningMode === lm ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-300'
+                            }`}
+                          >
+                            {lm}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {learningMode === 'exam' && (
+                      <div className="text-[11px] text-amber-200 bg-amber-950/30 p-2 rounded-lg">
+                        <b>Exam Focus ({selectedNode.importance.toUpperCase()}):</b> AI-estimated priority — practice 2-mark definitions & 5-mark derivations.
+                      </div>
+                    )}
+                    {learningMode === 'revision' && (
+                      <div className="text-[11px] text-emerald-200 bg-emerald-950/30 p-2 rounded-lg">
+                        <b>Quick Revision:</b> {selectedNode.topics.join(' • ')} | Key subtopics: {selectedNode.subtopics.join(', ')}.
+                      </div>
+                    )}
+                    <div className="grid grid-cols-3 gap-1.5 pt-1">
+                      <button
+                        onClick={() => navigate(`/tutor?topic=${encodeURIComponent(selectedNode.title)}`)}
+                        className="py-1.5 rounded-lg bg-cyan-500/15 border border-cyan-400/40 text-cyan-200 text-[10px] font-bold"
+                      >
+                        AI Tutor
+                      </button>
+                      <button
+                        onClick={() => navigate(`/notes?topic=${encodeURIComponent(selectedNode.title)}`)}
+                        className="py-1.5 rounded-lg bg-amber-500/15 border border-amber-400/40 text-amber-200 text-[10px] font-bold"
+                      >
+                        AI Notebook
+                      </button>
+                      <button
+                        onClick={() => navigate('/diagrams3d')}
+                        className="py-1.5 rounded-lg bg-violet-500/15 border border-violet-400/40 text-violet-200 text-[10px] font-bold"
+                      >
+                        3D Visual Lab
+                      </button>
+                    </div>
+                  </div>
                 </>
               )}
             </div>
+          </div>
+        )}
+
+        {/* TAB: UPLOAD / CUSTOM SYLLABUS LESSON MAP GENERATOR */}
+        {activeTab === 'custom' && (
+          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 space-y-5">
+            <div>
+              <h2 className="text-lg font-black text-white">Generate Lesson Map from Syllabus or Uploaded Material</h2>
+              <p className="text-xs text-slate-400">
+                Paste chapter headings or upload a `.txt` / `.md` syllabus outline. AI structures it into prerequisites & lessons while preserving your source reference.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input
+                value={customChapter}
+                onChange={(e) => setCustomChapter(e.target.value)}
+                placeholder="Chapter Title (e.g. Electromagnetic Induction)"
+                className="rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white"
+              />
+              <input
+                type="file"
+                accept=".txt,.md,.csv"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  file.text().then((txt) => setCustomSyllabusText(txt.slice(0, 5000)));
+                }}
+                className="rounded-xl bg-slate-950 border border-slate-700 px-3 py-1.5 text-xs text-slate-300"
+              />
+            </div>
+            <textarea
+              rows={4}
+              value={customSyllabusText}
+              onChange={(e) => setCustomSyllabusText(e.target.value)}
+              placeholder="Paste syllabus topics (one per line), e.g.:&#10;Magnetic Flux & Faraday's Law&#10;Lenz's Law & Conservation of Energy&#10;AC Generator & Applications"
+              className="w-full rounded-xl bg-slate-950 border border-slate-700 p-3 text-xs text-white"
+            />
+            <button
+              onClick={handleGenerateCustomMap}
+              disabled={customSaving || !customChapter.trim()}
+              className="px-5 py-2.5 rounded-xl bg-emerald-500 disabled:opacity-40 text-slate-950 font-bold text-xs"
+            >
+              {customSaving ? 'Generating Map...' : 'Generate & Save Custom Lesson Map'}
+            </button>
+
+            {customMaps.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                {customMaps.map((cm) => (
+                  <div key={cm.id} className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm text-white">{cm.chapter} ({cm.subject})</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
+                        {cm.nodes?.length || 0} Lessons
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-400">Source: {cm.sourceLabel}</div>
+                    <ul className="text-xs text-slate-300 list-disc pl-4 space-y-0.5">
+                      {(cm.nodes || []).map((n: any) => <li key={n.id}>{n.title}</li>)}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

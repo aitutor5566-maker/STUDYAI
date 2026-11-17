@@ -1050,6 +1050,44 @@ export function createAppServer() {
         return;
       }
 
+      if (pathname === '/api/lesson-map/generate-custom' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const chapter = sanitizeText(body.chapter || '', 120);
+        if (!chapter) {
+          sendJson(res, 400, { error: 'chapter is required' });
+          return;
+        }
+        const customMap = await lessonMapEngine.generateCustomLessonMap(studentId, {
+          subject: sanitizeText(body.subject || 'Science', 60),
+          grade: typeof body.grade === 'number' ? body.grade : 10,
+          board: sanitizeText(body.board || 'CBSE', 40),
+          chapter,
+          syllabusText: sanitizeText(body.syllabusText || '', 6000),
+          sourceLabel: sanitizeText(body.sourceLabel || '', 120) || undefined
+        });
+        sendJson(res, 200, { success: true, customMap });
+        return;
+      }
+
+      if (pathname === '/api/lesson-map/custom' && req.method === 'GET') {
+        const maps = lessonMapEngine.listCustomLessonMaps(studentId);
+        sendJson(res, 200, { maps });
+        return;
+      }
+
+      if (pathname.startsWith('/api/lesson-map/custom/') && req.method === 'PUT') {
+        const mapId = pathname.replace('/api/lesson-map/custom/', '').trim();
+        const body = await readJsonBody(req);
+        const updated = lessonMapEngine.updateCustomLessonMap(
+          studentId,
+          mapId,
+          Array.isArray(body.nodes) ? body.nodes : [],
+          body.approved !== false
+        );
+        sendJson(res, 200, updated);
+        return;
+      }
+
       if (pathname === '/api/ai-teacher/modules/status' && req.method === 'GET') {
         const status = await multiModelAiTeacherEngine.getModuleStatus();
         sendJson(res, 200, status);

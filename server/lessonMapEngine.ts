@@ -90,6 +90,19 @@ export function ensureLessonMapTables(): void {
       roadmap_json TEXT NOT NULL,
       created_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS custom_lesson_maps (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      grade INTEGER NOT NULL,
+      board TEXT NOT NULL,
+      chapter TEXT NOT NULL,
+      source_label TEXT NOT NULL,
+      nodes_json TEXT NOT NULL,
+      approved INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
   `);
   tablesInitialized = true;
 }
@@ -785,6 +798,121 @@ export class LessonMapEngine {
     });
     const totalXp = subjectSummaries.reduce((s, item) => s + item.xp, 0);
     return { userId, totalXp, subjects: subjectSummaries };
+  }
+
+  /**
+   * Analyzes uploaded syllabus/textbook text or chapter request to generate an editable,
+   * user-scoped Lesson Map preserving source references without inventing official syllabus claims.
+   */
+  public async generateCustomLessonMap(
+    userId: string,
+    opts: {
+      subject: string;
+      grade: number;
+      board: string;
+      chapter: string;
+      syllabusText?: string;
+      sourceLabel?: string;
+    }
+  ) {
+    ensureLessonMapTables();
+    const rawLines = (opts.syllabusText || '')
+      .split(/\r?\n|;|•/)
+      .map((s) => s.trim())
+      .filter((s) => s.length >= 4 && s.length <= 120);
+
+    const uniqueTopics = Array.from(new Set(rawLines)).slice(0, 6);
+    const baseTopics =
+      uniqueTopics.length >= 2
+        ? uniqueTopics
+        : [
+            `${opts.chapter}: Core Definitions & Concepts`,
+            `${opts.chapter}: Working Principles & Formulas`,
+            `${opts.chapter}: Worked Examples & Applications`,
+            `${opts.chapter}: Practice & Exam Revision`
+          ];
+
+    const mapId = `cmap-${Date.now().toString(36)}`;
+    const nodes: ComputedLessonNode[] = baseTopics.map((title, idx) => ({
+      id: `${mapId}-n${idx + 1}`,
+      subject: opts.subject,
+      grade: opts.grade,
+      unit: `${opts.board} Grade ${opts.grade}`,
+      chapter: opts.chapter,
+      title,
+      topics: [title],
+      subtopics: [`Key concepts from ${opts.sourceLabel || opts.chapter}`],
+      prerequisites: idx > 0 ? [`${mapId}-n${idx}`] : [],
+      importance: idx === 0 ? 'core' : idx === baseTopics.length - 1 ? 'advanced' : 'high',
+      estimatedMinutes: 20 + idx * 5,
+      x: 80 + idx * 250,
+      y: idx % 2 === 0 ? 110 : 190,
+      status: idx === 0 ? 'available' : 'locked',
+      quizScore: null,
+      attempts: 0,
+      xpEarned: 0,
+      nextRevisionAt: null,
+      missingPrerequisites: idx > 0 ? [`${mapId}-n${idx}`] : [],
+      practiceQuestion: {
+        prompt: `Check your understanding of "${title}":`,
+        options: [
+          `Core principle & definition of ${title}`,
+          'Unrelated concept',
+          'Skip without verification'
+        ],
+        correctIndex: 0,
+        explanation: `Verified foundational understanding of ${title} (${opts.sourceLabel || 'AI-structured map'}).`
+      }
+    }));
+
+    const nowIso = new Date().toISOString();
+    const sourceLabel = opts.sourceLabel || 'AI-Structured Syllabus Map (Verify against official textbook)';
+    db.prepare(`
+      INSERT INTO custom_lesson_maps (id, user_id, subject, grade, board, chapter, source_label, nodes_json, approved, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+    `).run(mapId, userId, opts.subject, opts.grade, opts.board, opts.chapter, sourceLabel, JSON.stringify(nodes), nowIso, nowIso);
+
+    return {
+      id: mapId,
+      subject: opts.subject,
+      grade: opts.grade,
+      board: opts.board,
+      chapter: opts.chapter,
+      sourceLabel,
+      approved: false,
+      nodes
+    };
+  }
+
+  public listCustomLessonMaps(userId: string) {
+    ensureLessonMapTables();
+    const rows = db
+      .prepare('SELECT * FROM custom_lesson_maps WHERE user_id = ? ORDER BY updated_at DESC')
+      .all(userId) as Array<any>;
+    return rows.map((r) => ({
+      id: r.id,
+      subject: r.subject,
+      grade: r.grade,
+      board: r.board,
+      chapter: r.chapter,
+      sourceLabel: r.source_label,
+      approved: Boolean(r.approved),
+      nodes: JSON.parse(r.nodes_json || '[]'),
+      updatedAt: r.updated_at
+    }));
+  }
+
+  public updateCustomLessonMap(
+    userId: string,
+    mapId: string,
+    nodes: ComputedLessonNode[],
+    approved = true
+  ) {
+    ensureLessonMapTables();
+    const res = db
+      .prepare('UPDATE custom_lesson_maps SET nodes_json = ?, approved = ?, updated_at = ? WHERE id = ? AND user_id = ?')
+      .run(JSON.stringify(nodes), approved ? 1 : 0, new Date().toISOString(), mapId, userId);
+    return { updated: (res.changes || 0) > 0, mapId, approved };
   }
 }
 
