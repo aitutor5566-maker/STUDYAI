@@ -102,6 +102,11 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
   const [copied, setCopied] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [activeLevelIndex, setActiveLevelIndex] = useState<number>(0);
+  const [visualMode, setVisualMode] = useState<'simple' | 'detailed' | 'advanced' | 'exam'>('detailed');
+  const [inlineZoom, setInlineZoom] = useState<number>(1);
+  const [showLabels, setShowLabels] = useState<boolean>(true);
+  const [largeLabels, setLargeLabels] = useState<boolean>(false);
+  const [lightBg, setLightBg] = useState<boolean>(false);
 
   const activeLevel = visual.multiLevels && visual.multiLevels.length > 0
     ? visual.multiLevels[activeLevelIndex] || visual.multiLevels[0]
@@ -182,6 +187,28 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
       link.download = `${visual.title.toLowerCase().replace(/[^a-z0-9]/g, '_')}.svg`;
       link.click();
     }
+  };
+
+  const handleDownloadPng = () => {
+    const src = resolvedImageUrl;
+    if (!src) return;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1200, img.naturalWidth || 1200);
+      canvas.height = Math.max(800, img.naturalHeight || 800);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.fillStyle = lightBg ? '#FFFFFF' : '#0F172A';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = `${visual.title.toLowerCase().replace(/[^a-z0-9]/g, '_')}.png`;
+      link.click();
+    };
+    img.src = src;
   };
 
   const handleSaveEdit = () => {
@@ -455,6 +482,81 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
               }
             `}</style>
           )}
+          {!showLabels && (
+            <style>{`
+              .educational-visual-stage svg text {
+                opacity: 0 !important;
+              }
+            `}</style>
+          )}
+          {showLabels && largeLabels && (
+            <style>{`
+              .educational-visual-stage svg text {
+                font-size: 16px !important;
+                font-weight: 800 !important;
+              }
+            `}</style>
+          )}
+
+          {/* Visual Mode + Diagram Customization Toolbar */}
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 6,
+              marginBottom: 8
+            }}
+          >
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              {(
+                [
+                  { id: 'simple', label: 'Simple' },
+                  { id: 'detailed', label: 'Detailed' },
+                  { id: 'advanced', label: 'Advanced' },
+                  { id: 'exam', label: 'Exam Revision' }
+                ] as const
+              ).map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setVisualMode(m.id)}
+                  style={{
+                    padding: '3px 9px',
+                    borderRadius: 999,
+                    fontSize: '0.7rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    background: visualMode === m.id ? '#0F172A' : '#F1F5F9',
+                    color: visualMode === m.id ? '#FFFFFF' : '#475569',
+                    border: '1px solid #CBD5E1'
+                  }}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              <button type="button" onClick={() => setInlineZoom((z) => Math.max(1, +(z - 0.25).toFixed(2)))} style={{ padding: '3px 7px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 700, border: '1px solid #CBD5E1', background: '#FFF', cursor: 'pointer' }}>-</button>
+              <button type="button" onClick={() => setInlineZoom((z) => Math.min(2.25, +(z + 0.25).toFixed(2)))} style={{ padding: '3px 7px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 700, border: '1px solid #CBD5E1', background: '#FFF', cursor: 'pointer' }}>+</button>
+              {inlineZoom !== 1 && (
+                <button type="button" onClick={() => setInlineZoom(1)} style={{ padding: '3px 7px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 700, border: '1px solid #CBD5E1', background: '#FFF', cursor: 'pointer' }}>Reset</button>
+              )}
+              <button type="button" onClick={() => setShowLabels((v) => !v)} style={{ padding: '3px 8px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 700, border: '1px solid #CBD5E1', background: showLabels ? '#FFF7ED' : '#FFF', color: showLabels ? '#C2410C' : '#475569', cursor: 'pointer' }}>
+                {showLabels ? 'Labels: On' : 'Labels: Off'}
+              </button>
+              <button type="button" onClick={() => setLargeLabels((v) => !v)} style={{ padding: '3px 8px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 700, border: '1px solid #CBD5E1', background: largeLabels ? '#FFF7ED' : '#FFF', cursor: 'pointer' }}>
+                {largeLabels ? 'Aa+' : 'Aa'}
+              </button>
+              <button type="button" onClick={() => setLightBg((v) => !v)} style={{ padding: '3px 8px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 700, border: '1px solid #CBD5E1', background: '#FFF', cursor: 'pointer' }}>
+                {lightBg ? 'Dark Bg' : 'Light Bg'}
+              </button>
+              <button type="button" onClick={handleDownloadPng} style={{ padding: '3px 8px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 700, border: '1px solid #CBD5E1', background: '#FFF', cursor: 'pointer' }}>
+                PNG
+              </button>
+            </div>
+          </div>
 
           <div
             className="educational-visual-stage"
@@ -463,8 +565,8 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
             style={{
               position: 'relative',
               borderRadius: 16,
-              overflow: 'hidden',
-              background: '#0F172A',
+              overflow: 'auto',
+              background: lightBg ? '#F8FAFC' : '#0F172A',
               border: '1px solid #334155',
               boxShadow: '0 8px 24px -4px rgba(15, 23, 42, 0.25)',
               display: 'flex',
@@ -490,14 +592,26 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
                   maxHeight: 350,
                   objectFit: 'contain',
                   display: 'block',
-                  margin: '0 auto'
+                  margin: '0 auto',
+                  transform: `scale(${inlineZoom})`,
+                  transformOrigin: 'center center',
+                  transition: 'transform 0.2s ease'
                 }}
               />
             ) : normalizedSvgXml ? (
               <div
                 className="diagram-responsive-frame"
                 dangerouslySetInnerHTML={{ __html: normalizedSvgXml }}
-                style={{ width: '100%', maxWidth: '100%', maxHeight: 350, height: 'auto', display: 'block' }}
+                style={{
+                  width: '100%',
+                  maxWidth: '100%',
+                  maxHeight: 350,
+                  height: 'auto',
+                  display: 'block',
+                  transform: `scale(${inlineZoom})`,
+                  transformOrigin: 'center center',
+                  transition: 'transform 0.2s ease'
+                }}
               />
             ) : null}
 

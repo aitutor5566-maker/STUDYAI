@@ -17,7 +17,10 @@ test('Visual Intelligence produces topic-specific visuals and explanations acros
     { topic: 'DNA Structure', subject: 'Biology' },
     { topic: 'Indian Independence Movement', subject: 'History' },
     { topic: 'Chemical Bonding', subject: 'Chemistry' },
-    { topic: 'Geometry', subject: 'Mathematics' }
+    { topic: 'Geometry', subject: 'Mathematics' },
+    { topic: 'Human Digestive System', subject: 'Biology' },
+    { topic: 'Pythagoras Theorem', subject: 'Mathematics' },
+    { topic: 'Electrical Circuits', subject: 'Physics' }
   ];
 
   for (const t of topics) {
