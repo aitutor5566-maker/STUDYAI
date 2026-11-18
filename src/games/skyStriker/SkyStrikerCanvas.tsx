@@ -479,8 +479,20 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
         let closestTarget: TargetEntity | null = null;
 
         targets.forEach((t, idx) => {
-          const bob = reducedMotionRef.current ? 0 : Math.sin(now * 0.0025 + idx * 1.4) * 0.8;
-          t.group.position.set(t.basePos.x, t.basePos.y + bob, t.basePos.z);
+          const tSec = now * 0.0018 + idx * 1.4;
+          let ox = 0;
+          let oy = 0;
+          if (!reducedMotionRef.current) {
+            if (idx === 0) {
+              ox = Math.sin(tSec) * 1.6;
+            } else if (idx === 1) {
+              oy = Math.sin(tSec * 1.15) * 1.25;
+            } else {
+              ox = Math.sin(tSec) * 1.3;
+              oy = Math.sin(tSec * 2) * 0.75;
+            }
+          }
+          t.group.position.set(t.basePos.x + ox, t.basePos.y + oy, t.basePos.z);
           t.outerRing.rotation.z += dt * 1.1;
           t.innerRing.rotation.z -= dt * 1.6;
           t.coreSphere.rotation.y += dt * 1.4;

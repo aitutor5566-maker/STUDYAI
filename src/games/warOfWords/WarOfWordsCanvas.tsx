@@ -572,6 +572,18 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
         }
 
         sentinels.forEach((s, idx) => {
+          const tSec = now * 0.0016 + idx * 1.5;
+          const baseX = TARGET_POSITIONS_X[idx];
+          if (idx === 0) {
+            s.group.position.x = baseX + Math.sin(tSec) * 1.1;
+            s.group.position.y = Math.sin(tSec * 1.5) * 0.15;
+          } else if (idx === 1) {
+            s.group.position.x = baseX;
+            s.group.position.y = 0.55 + Math.sin(tSec * 1.3) * 0.55;
+          } else {
+            s.group.position.x = baseX + Math.cos(tSec) * 1.05;
+            s.group.position.y = 0.35 + Math.sin(tSec * 2) * 0.35;
+          }
           s.body.rotation.y += dt * 0.9;
           s.ring.rotation.z += dt * (idx === selectedTargetIdx ? 2.2 : 0.6);
         });

@@ -6,6 +6,11 @@ import {
   CinematicCameraController,
   disposeThreeScene
 } from '../engine/VisualMasterpieceEngine';
+import {
+  EnergyCombatSystem,
+  MovingAnswerTargetSystem,
+  TargetMovementPattern
+} from '../engine/CombatAndTargetsEngine';
 import { ShadowNinjaRealmsAudio } from './AudioEngine';
 import {
   animateHeroRig,
@@ -153,6 +158,31 @@ export const ShadowNinjaRealmsCanvas: React.FC<ShadowNinjaRealmsCanvasProps> = (
   const abilityFnRef = useRef<(() => void) | null>(null);
   const buildFnRef = useRef<(() => void) | null>(null);
   const shrineOptsRef = useRef<Array<{ index: number; id: OptionId; text: string }>>([]);
+  const movingTargetsRef = useRef<MovingAnswerTargetSystem | null>(null);
+
+  const syncMovingTargets = (q: RealmsQuestion) => {
+    const sys = movingTargetsRef.current;
+    if (!sys) return;
+    const patterns: TargetMovementPattern[] = ['horizontal', 'vertical', 'curved', 'patrol'];
+    const basePositions = [
+      new THREE.Vector3(-8.5, 2.8, -4.5),
+      new THREE.Vector3(0, 3.4, -7.5),
+      new THREE.Vector3(8.5, 2.8, -4.5),
+      new THREE.Vector3(0, 4.0, 2.5)
+    ];
+    sys.setTargets(
+      q.options.slice(0, 4).map((o, idx) => ({
+        answerId: o.id,
+        label: o.id,
+        text: o.text,
+        basePosition: basePositions[idx % basePositions.length],
+        pattern: patterns[idx % patterns.length],
+        amplitude: 2.2,
+        speed: 1.15 + idx * 0.15,
+        phaseOffset: idx * 1.4
+      }))
+    );
+  };
 
   useEffect(() => {
     const world = worldRef.current;
@@ -163,6 +193,7 @@ export const ShadowNinjaRealmsCanvas: React.FC<ShadowNinjaRealmsCanvasProps> = (
       const opt = opts[idx] || { id: 'A' as OptionId, text: '...' };
       updateRealmsShrineLabel(rig, opt.id, opt.text, false);
     });
+    syncMovingTargets(currentQuestion);
   }, [currentQuestion]);
 
   useEffect(() => {
@@ -232,6 +263,48 @@ export const ShadowNinjaRealmsCanvas: React.FC<ShadowNinjaRealmsCanvasProps> = (
         : buildNinjaCharacterRig(ninjaCharacter);
     hero.root.position.set(0, 0, 8);
     scene.add(hero.root);
+
+    const shieldBubble = new THREE.Mesh(
+      new THREE.SphereGeometry(1.35, 18, 14),
+      new THREE.MeshBasicMaterial({
+        color: '#38BDF8',
+        transparent: true,
+        opacity: 0.28,
+        wireframe: true
+      })
+    );
+    shieldBubble.position.y = 1.1;
+    shieldBubble.visible = false;
+    hero.root.add(shieldBubble);
+
+    const combatSystem = new EnergyCombatSystem(100);
+    const movingTargetSys = new MovingAnswerTargetSystem();
+    movingTargetsRef.current = movingTargetSys;
+    scene.add(movingTargetSys.root);
+    syncMovingTargets(questionRef.current);
+
+    const fireEnergyBolt = () => {
+      if (pausedRef.current) return;
+      audio.unlock();
+      const aimDir = new THREE.Vector3();
+      camera.getWorldDirection(aimDir);
+      aimDir.normalize();
+      const origin = playerPos.clone().add(new THREE.Vector3(0, 1.35, 0)).addScaledVector(aimDir, 1.1);
+      const boltMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(0.28, 10, 10),
+        new THREE.MeshBasicMaterial({ color: '#38BDF8' })
+      );
+      scene.add(boltMesh);
+      combatSystem.spawnProjectile({
+        owner: 'player',
+        origin,
+        direction: aimDir,
+        speed: 34,
+        radius: 0.5,
+        mesh: boltMesh
+      });
+      spawnSparks(origin, '#38BDF8', 4);
+    };
 
     const enemies: EnemyEntity[] = [];
     const spawnEnemy = (x: number, z: number) => {
@@ -394,6 +467,18 @@ export const ShadowNinjaRealmsCanvas: React.FC<ShadowNinjaRealmsCanvasProps> = (
       } else if (e.code === 'KeyB') {
         e.preventDefault();
         triggerBuildBlock();
+      } else if (e.code === 'KeyQ') {
+        e.preventDefault();
+        fireEnergyBolt();
+      } else if (e.code === 'KeyC') {
+        e.preventDefault();
+        const dodgeDir = new THREE.Vector3(-Math.sin(camYaw), 0, -Math.cos(camYaw));
+        if (combatSystem.triggerDodge(dodgeDir)) {
+          spawnSparks(playerPos.clone().add(new THREE.Vector3(0, 0.8, 0)), '#A855F7', 6);
+        }
+      } else if (e.code === 'KeyR') {
+        e.preventDefault();
+        combatSystem.activateShield(2.5);
       } else if (e.code === 'Digit1') castAtShrine(0);
       else if (e.code === 'Digit2') castAtShrine(1);
       else if (e.code === 'Digit3') castAtShrine(2);
@@ -593,6 +678,37 @@ export const ShadowNinjaRealmsCanvas: React.FC<ShadowNinjaRealmsCanvasProps> = (
           }
         }
 
+        if (combatSystem.dodgeActive) {
+          const dnx = THREE.MathUtils.clamp(playerPos.x + combatSystem.dodgeDirection.x * 16 * dt, -52, 52);
+          const dnz = THREE.MathUtils.clamp(playerPos.z + combatSystem.dodgeDirection.z * 16 * dt, -52, 52);
+          if (!collidesXZ(dnx, playerPos.z, 0.52, world)) playerPos.x = dnx;
+          if (!collidesXZ(playerPos.x, dnz, 0.52, world)) playerPos.z = dnz;
+        }
+        shieldBubble.visible = combatSystem.shieldActive;
+        if (combatSystem.shieldActive) {
+          shieldBubble.rotation.y += dt * 2.4;
+        }
+
+        movingTargetSys.update(elapsed, 1.0);
+        const combatStep = combatSystem.step(dt, playerPos, 0.75, movingTargetSys);
+        for (const em of combatStep.expiredMeshes) {
+          scene.remove(em);
+        }
+        if (combatStep.hitTarget) {
+          const hitId = combatStep.hitTarget.config.answerId as OptionId;
+          const outcome = validateRealmsAnswer(questionRef.current, hitId);
+          spawnSparks(combatStep.hitTarget.position, outcome.isCorrect ? '#22C55E' : '#F97316', 14);
+          if (outcome.isCorrect) audio.playCorrect();
+          else audio.playWrong();
+          callbacksRef.current.onAnswerEvaluated(outcome);
+        }
+        if (combatStep.playerDamaged > 0) {
+          camController.addShake(0.32);
+          callbacksRef.current.onPlayerHit(combatStep.playerDamaged);
+        } else if (combatStep.absorbedByShield) {
+          spawnSparks(playerPos.clone().add(new THREE.Vector3(0, 1.1, 0)), '#38BDF8', 8);
+        }
+
         for (const e of enemies) {
           e.core.rotation.y += dt * 2.5;
           if (e.stunTimer > 0) {
@@ -600,7 +716,34 @@ export const ShadowNinjaRealmsCanvas: React.FC<ShadowNinjaRealmsCanvasProps> = (
             continue;
           }
           const dist = e.rig.group.position.distanceTo(playerPos);
-          if (dist < 14 && dist > 1.8) {
+          if (dist < 16 && dist > 5.5) {
+            const dir = playerPos.clone().sub(e.rig.group.position);
+            dir.y = 0;
+            dir.normalize();
+            e.rig.group.position.addScaledVector(dir, e.speed * dt);
+            e.rig.group.lookAt(playerPos.x, 0, playerPos.z);
+
+            e.cooldown -= dt;
+            if (e.cooldown <= 0) {
+              e.cooldown = 2.6;
+              const orbOrigin = e.rig.group.position.clone().add(new THREE.Vector3(0, 1.2, 0));
+              const orbDir = playerPos.clone().add(new THREE.Vector3(0, 1.0, 0)).sub(orbOrigin);
+              const orbMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.26, 8, 8),
+                new THREE.MeshBasicMaterial({ color: '#EF4444' })
+              );
+              scene.add(orbMesh);
+              combatSystem.spawnProjectile({
+                owner: 'enemy',
+                origin: orbOrigin,
+                direction: orbDir,
+                speed: 14,
+                radius: 0.38,
+                damage: 8,
+                mesh: orbMesh
+              });
+            }
+          } else if (dist <= 5.5 && dist > 1.8) {
             const dir = playerPos.clone().sub(e.rig.group.position);
             dir.y = 0;
             dir.normalize();
