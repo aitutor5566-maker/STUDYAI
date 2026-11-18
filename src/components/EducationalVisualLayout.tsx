@@ -106,6 +106,7 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
   const [inlineZoom, setInlineZoom] = useState<number>(1);
   const [showLabels, setShowLabels] = useState<boolean>(true);
   const [largeLabels, setLargeLabels] = useState<boolean>(false);
+  const [showArrows, setShowArrows] = useState<boolean>(true);
   const [lightBg, setLightBg] = useState<boolean>(false);
 
   const activeLevel = visual.multiLevels && visual.multiLevels.length > 0
@@ -497,6 +498,14 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
               }
             `}</style>
           )}
+          {!showArrows && (
+            <style>{`
+              .educational-visual-stage svg [marker-end],
+              .educational-visual-stage svg marker {
+                opacity: 0.08 !important;
+              }
+            `}</style>
+          )}
 
           {/* Visual Mode + Diagram Customization Toolbar */}
           <div
@@ -548,6 +557,9 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
               </button>
               <button type="button" onClick={() => setLargeLabels((v) => !v)} style={{ padding: '3px 8px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 700, border: '1px solid #CBD5E1', background: largeLabels ? '#FFF7ED' : '#FFF', cursor: 'pointer' }}>
                 {largeLabels ? 'Aa+' : 'Aa'}
+              </button>
+              <button type="button" onClick={() => setShowArrows((v) => !v)} style={{ padding: '3px 8px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 700, border: '1px solid #CBD5E1', background: showArrows ? '#FFF7ED' : '#FFF', color: showArrows ? '#C2410C' : '#475569', cursor: 'pointer' }}>
+                {showArrows ? 'Arrows: On' : 'Arrows: Off'}
               </button>
               <button type="button" onClick={() => setLightBg((v) => !v)} style={{ padding: '3px 8px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 700, border: '1px solid #CBD5E1', background: '#FFF', cursor: 'pointer' }}>
                 {lightBg ? 'Dark Bg' : 'Light Bg'}
@@ -750,7 +762,7 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
                 </div>
               )}
 
-              {deepWalkthrough.point8_malfunctionOrEdgeCase && (
+              {visualMode !== 'simple' && deepWalkthrough.point8_malfunctionOrEdgeCase && (
                 <div style={{ fontSize: '0.81rem', color: '#991B1B', lineHeight: 1.55, background: '#FEF2F2', padding: '6px 10px', borderRadius: 8, border: '1px solid #FECACA' }}>
                   <strong>⚠️ Malfunction / Pathology:</strong> {deepWalkthrough.point8_malfunctionOrEdgeCase}
                 </div>
@@ -819,7 +831,7 @@ export const EducationalVisualLayout: React.FC<EducationalVisualProps> = ({
                 <span>Key Labelled Components (In Diagram Order):</span>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {componentsList.map((comp, idx) => {
+                {(visualMode === 'simple' ? componentsList.slice(0, 4) : componentsList).map((comp, idx) => {
                   const isSelected = activeComponent?.label === comp.label;
                   return (
                     <button
