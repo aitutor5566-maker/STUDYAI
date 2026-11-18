@@ -251,12 +251,23 @@ export class EducationalVisualIntelligenceEngine {
     subject?: string;
     grade?: number;
     board?: string;
+    language?: string;
     preferredSource?: 'auto' | 'openai' | 'gemini' | 'vector' | '3d';
   }): Promise<EducationalVisualOutput> {
     const plan = this.planVisual(params);
-    const cacheKey = `${plan.topic.toLowerCase()}:${params.preferredSource || 'auto'}`;
+    const langKey = (params.language || 'English').toLowerCase();
+    const cacheKey = `${plan.topic.toLowerCase()}:${plan.subject.toLowerCase()}:${plan.grade}:${plan.board.toLowerCase()}:${langKey}:${params.preferredSource || 'auto'}`;
 
     if (this.assetCache.has(cacheKey)) {
+      this.visualTelemetry.push({
+        timestamp: new Date().toISOString(),
+        topic: plan.topic,
+        subject: plan.subject,
+        provider: 'VisualAssetCache',
+        model: 'memory-cache',
+        durationMs: 0,
+        status: 'reused'
+      });
       return this.assetCache.get(cacheKey)!;
     }
 
@@ -316,6 +327,7 @@ export class EducationalVisualIntelligenceEngine {
       try {
         const openAiVisual = await this.generateOpenAiEducationalImage(plan, openAiKey);
         if (openAiVisual) {
+          openAiVisual.multiLevels = this.getMultiLevelVisuals(plan.topic);
           this.assetCache.set(cacheKey, openAiVisual);
           this.persistAssetToDb(openAiVisual, plan);
           return openAiVisual;
@@ -331,6 +343,7 @@ export class EducationalVisualIntelligenceEngine {
       try {
         const geminiVisual = await this.generateGeminiEducationalImage(plan, geminiKey);
         if (geminiVisual) {
+          geminiVisual.multiLevels = this.getMultiLevelVisuals(plan.topic);
           this.assetCache.set(cacheKey, geminiVisual);
           this.persistAssetToDb(geminiVisual, plan);
           return geminiVisual;
@@ -1023,6 +1036,27 @@ export class EducationalVisualIntelligenceEngine {
           labels: rxnAsset.labels
         });
       }
+    }
+
+    // Fallback to rich subtopic catalog diagrams so Mitosis, Newton's Laws, Optics, DNA, History & Geometry
+    // all receive coordinated multi-stage visuals instead of empty multiLevels.
+    if (levels.length === 0) {
+      const subDiagrams = getSubtopicDiagramsForTopic(topic);
+      subDiagrams.slice(0, 4).forEach((d: any, idx: number) => {
+        if (d?.svgXml) {
+          levels.push({
+            level: idx + 1,
+            levelName: `Stage ${idx + 1}: ${d.title || topic}`,
+            title: d.title || `${topic} — Stage ${idx + 1}`,
+            description: d.caption || `Structured visual breakdown for ${topic}.`,
+            assetKey: d.id || `${topic.toLowerCase().replace(/\s+/g, '_')}_${idx + 1}`,
+            visualType: d.visualType || 'scientific_diagram',
+            dataUrl: `data:image/svg+xml;base64,${Buffer.from(d.svgXml).toString('base64')}`,
+            svgXml: d.svgXml,
+            labels: Array.isArray(d.labels) ? d.labels : []
+          });
+        }
+      });
     }
 
     return levels;

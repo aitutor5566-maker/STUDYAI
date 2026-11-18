@@ -6,16 +6,18 @@ import { educationalVisualIntelligenceEngine } from '../server/educationalVisual
 
 initDatabase();
 
-test('Visual Intelligence produces topic-specific visuals and explanations across all 8 acceptance topics', async () => {
+test('Visual Intelligence produces topic-specific visuals and explanations across all 10 benchmark topics', async () => {
   const topics = [
+    { topic: 'Photosynthesis', subject: 'Biology' },
     { topic: 'Human Heart', subject: 'Biology' },
     { topic: 'Mitosis', subject: 'Biology' },
-    { topic: 'Photosynthesis', subject: 'Biology' },
     { topic: "Newton's Laws", subject: 'Physics' },
-    { topic: 'Atomic Structure', subject: 'Chemistry' },
+    { topic: 'Reflection and Refraction', subject: 'Physics' },
+    { topic: 'Water Cycle', subject: 'Geography' },
+    { topic: 'DNA Structure', subject: 'Biology' },
     { topic: 'Indian Independence Movement', subject: 'History' },
-    { topic: 'Solar System', subject: 'Science' },
-    { topic: 'Quadratic Equations', subject: 'Mathematics' }
+    { topic: 'Chemical Bonding', subject: 'Chemistry' },
+    { topic: 'Geometry', subject: 'Mathematics' }
   ];
 
   for (const t of topics) {
@@ -24,7 +26,7 @@ test('Visual Intelligence produces topic-specific visuals and explanations acros
       subject: t.subject,
       grade: 10,
       board: 'CBSE',
-      forceRefresh: false
+      language: 'English'
     });
 
     assert.ok(visual.assetId, `${t.topic} should have an assetId`);
@@ -34,8 +36,18 @@ test('Visual Intelligence produces topic-specific visuals and explanations acros
     assert.ok(visual.walkthrough.processSequence.length >= 2, `${t.topic} should include process sequence`);
   }
 
+  // Second identical call must reuse cached asset
+  const cached = await educationalVisualIntelligenceEngine.produceEducationalVisual({
+    topic: 'Photosynthesis',
+    subject: 'Biology',
+    grade: 10,
+    board: 'CBSE',
+    language: 'English'
+  });
+  assert.ok(cached.assetId);
+
   const telemetry = educationalVisualIntelligenceEngine.getVisualGenerationTelemetry();
-  assert.ok(typeof telemetry.totalRequests === 'number');
+  assert.ok(telemetry.reusedCount >= 1, 'Repeated identical topic request should record cache reuse');
 });
 
 test('Saved notebooks persist full sections and visual assets cleanly in SQLite', () => {
