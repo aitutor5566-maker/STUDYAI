@@ -70,6 +70,13 @@ export interface ProjectedTargetHud {
   validationState: 'idle' | 'correct' | 'incorrect';
 }
 
+export interface RadarBlip {
+  id: string;
+  kind: 'enemy' | 'target';
+  relX: number; // -1..1 normalized radar coords
+  relZ: number; // -1..1 normalized radar coords
+}
+
 export interface SkyStrikerHudSnapshot {
   speedKts: number;
   altitudeFt: number;
@@ -80,6 +87,10 @@ export interface SkyStrikerHudSnapshot {
   lockProgress: number;
   isLocked: boolean;
   targets: ProjectedTargetHud[];
+  playerHp?: number;
+  shieldActive?: boolean;
+  dodgeReady?: boolean;
+  radarBlips?: RadarBlip[];
 }
 
 export interface SkyStrikerAudioSettings {

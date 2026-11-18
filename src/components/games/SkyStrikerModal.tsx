@@ -943,6 +943,73 @@ export const SkyStrikerModal: React.FC<SkyStrikerModalProps> = ({
             </div>
           </div>
 
+          {/* TOP-RIGHT: Circular Aviation Radar & Hull/Shield Indicator */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 64,
+              right: 12,
+              zIndex: 18,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 6,
+              pointerEvents: 'none'
+            }}
+          >
+            <div
+              style={{
+                position: 'relative',
+                width: 84,
+                height: 84,
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(14,116,144,0.38) 0%, rgba(2,6,23,0.88) 72%)',
+                border: '1.5px solid rgba(34,211,238,0.65)',
+                boxShadow: '0 0 18px rgba(34,211,238,0.22)'
+              }}
+            >
+              <div style={{ position: 'absolute', inset: 18, borderRadius: '50%', border: '1px dashed rgba(34,211,238,0.28)' }} />
+              <div style={{ position: 'absolute', left: '50%', top: '50%', width: 6, height: 6, borderRadius: '50%', background: '#38BDF8', transform: 'translate(-50%,-50%)' }} />
+              {(hud.radarBlips || []).map((b) => (
+                <div
+                  key={b.id}
+                  style={{
+                    position: 'absolute',
+                    left: `${50 + b.relX * 38}%`,
+                    top: `${50 + b.relZ * 38}%`,
+                    width: b.kind === 'enemy' ? 6 : 7,
+                    height: b.kind === 'enemy' ? 6 : 7,
+                    borderRadius: '50%',
+                    background: b.kind === 'enemy' ? '#EF4444' : '#22D3EE',
+                    boxShadow: b.kind === 'enemy' ? '0 0 6px #EF4444' : '0 0 6px #22D3EE',
+                    transform: 'translate(-50%,-50%)'
+                  }}
+                />
+              ))}
+            </div>
+            <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#E2E8F0', background: 'rgba(15,23,42,0.85)', padding: '2px 8px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.14)' }}>
+              HP {hud.playerHp ?? 100}% {hud.shieldActive ? '• 🛡️' : ''}
+            </div>
+          </div>
+
+          {/* CENTER: Subtle Aviation Aiming Reticle */}
+          <div
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: '54%',
+              width: 48,
+              height: 48,
+              transform: 'translate(-50%, -50%)',
+              borderRadius: '50%',
+              border: `1.5px solid ${hud.isLocked ? 'rgba(16,185,129,0.75)' : 'rgba(34,211,238,0.4)'}`,
+              pointerEvents: 'none',
+              zIndex: 12
+            }}
+          >
+            <div style={{ position: 'absolute', left: '50%', top: '50%', width: 4, height: 4, borderRadius: '50%', background: hud.isLocked ? '#10B981' : '#22D3EE', transform: 'translate(-50%,-50%)' }} />
+          </div>
+
           {/* TOP-RIGHT: Fullscreen, Sound & Pause */}
           <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 8, zIndex: 20 }}>
             <button

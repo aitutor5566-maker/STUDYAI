@@ -20,11 +20,13 @@ export function buildFighterJet(skin: AircraftSkin): FighterJetRig {
 
   const bodyMat = new THREE.MeshStandardMaterial({
     color: skin.fuselageHex,
-    metalness: 0.78,
-    roughness: 0.24,
+    metalness: 0.82,
+    roughness: 0.22,
     normalMap: metalPbr?.normalMap ?? null,
     roughnessMap: metalPbr?.roughnessMap ?? null,
-    normalScale: new THREE.Vector2(0.45, 0.45)
+    aoMap: metalPbr?.aoMap ?? null,
+    metalnessMap: metalPbr?.metalnessMap ?? null,
+    normalScale: new THREE.Vector2(0.55, 0.55)
   });
 
   const accentMat = new THREE.MeshStandardMaterial({
@@ -60,31 +62,55 @@ export function buildFighterJet(skin: AircraftSkin): FighterJetRig {
     opacity: 0.92
   });
 
-  // Main Fuselage (nose faces -Z)
-  const fuselageGeo = new THREE.BoxGeometry(0.95, 0.58, 4.5);
+  // Sculpted Supersonic Lathe Fuselage (nose faces -Z)
+  const fuselageProfile = [
+    new THREE.Vector2(0.01, -4.45),
+    new THREE.Vector2(0.18, -3.7),
+    new THREE.Vector2(0.36, -2.55),
+    new THREE.Vector2(0.54, -1.1),
+    new THREE.Vector2(0.58, 0.4),
+    new THREE.Vector2(0.50, 1.85),
+    new THREE.Vector2(0.38, 2.35),
+    new THREE.Vector2(0.01, 2.4)
+  ];
+  const fuselageGeo = new THREE.LatheGeometry(fuselageProfile, 18);
+  fuselageGeo.rotateX(Math.PI / 2);
+  fuselageGeo.scale(1.12, 0.68, 1.0);
   const fuselage = new THREE.Mesh(fuselageGeo, bodyMat);
   fuselage.castShadow = true;
   root.add(fuselage);
 
-  // Nose Cone
-  const noseGeo = new THREE.ConeGeometry(0.46, 2.0, 8);
-  noseGeo.rotateX(-Math.PI / 2);
-  const nose = new THREE.Mesh(noseGeo, bodyMat);
-  nose.position.set(0, -0.02, -3.2);
-  nose.castShadow = true;
-  root.add(nose);
+  // Twin Side Air-Intake Cowlings
+  const intakeGeo = new THREE.BoxGeometry(0.34, 0.34, 1.75);
+  const leftIntake = new THREE.Mesh(intakeGeo, darkTrimMat);
+  leftIntake.position.set(-0.56, -0.06, -0.55);
+  leftIntake.castShadow = true;
+  root.add(leftIntake);
+  const rightIntake = new THREE.Mesh(intakeGeo, darkTrimMat);
+  rightIntake.position.set(0.56, -0.06, -0.55);
+  rightIntake.castShadow = true;
+  root.add(rightIntake);
 
-  // Dorsal Spine
-  const spineGeo = new THREE.BoxGeometry(0.45, 0.32, 2.8);
+  // Dorsal Spine & Panel Striping
+  const spineGeo = new THREE.BoxGeometry(0.36, 0.26, 2.8);
   const spine = new THREE.Mesh(spineGeo, accentMat);
-  spine.position.set(0, 0.34, 0.35);
+  spine.position.set(0, 0.34, 0.45);
   root.add(spine);
 
-  // Cockpit Canopy
-  const canopyGeo = new THREE.SphereGeometry(0.42, 16, 12);
-  canopyGeo.scale(0.85, 0.7, 2.1);
+  // Cockpit Frame + Tinted Glass Canopy
+  const canopyFrame = new THREE.Mesh(
+    new THREE.TorusGeometry(0.36, 0.035, 8, 18),
+    darkTrimMat
+  );
+  canopyFrame.rotation.x = Math.PI / 2;
+  canopyFrame.scale.set(0.95, 2.15, 1);
+  canopyFrame.position.set(0, 0.36, -1.3);
+  root.add(canopyFrame);
+
+  const canopyGeo = new THREE.SphereGeometry(0.42, 18, 14);
+  canopyGeo.scale(0.85, 0.68, 2.2);
   const canopy = new THREE.Mesh(canopyGeo, canopyMat);
-  canopy.position.set(0, 0.42, -1.25);
+  canopy.position.set(0, 0.42, -1.32);
   root.add(canopy);
 
   // Swept Main Wings (extruded shape)
@@ -230,4 +256,30 @@ export function buildFighterJet(skin: AircraftSkin): FighterJetRig {
     portStrobe,
     starboardStrobe
   };
+}
+
+export function buildEnemyInterceptorJet(variantIdx = 0): FighterJetRig {
+  const palettes: AircraftSkin[] = [
+    {
+      id: 'cyan_viper',
+      name: 'Crimson Interceptor',
+      fuselageHex: 0x1e293b,
+      wingAccentHex: 0xef4444,
+      canopyHex: 0xf97316,
+      engineGlowHex: 0xfb7185,
+      previewGradient: 'linear-gradient(135deg, #1e293b, #ef4444)'
+    },
+    {
+      id: 'solar_phoenix',
+      name: 'Obsidian Striker',
+      fuselageHex: 0x312e81,
+      wingAccentHex: 0xa855f7,
+      canopyHex: 0x38bdf8,
+      engineGlowHex: 0xc084fc,
+      previewGradient: 'linear-gradient(135deg, #312e81, #a855f7)'
+    }
+  ];
+  const rig = buildFighterJet(palettes[variantIdx % palettes.length]);
+  rig.landingGearGroup.visible = false;
+  return rig;
 }

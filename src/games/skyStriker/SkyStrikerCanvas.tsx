@@ -7,7 +7,8 @@ import {
   CinematicCameraController,
   disposeThreeScene
 } from '../engine/VisualMasterpieceEngine';
-import { buildFighterJet } from './AircraftModel';
+import { buildEnemyInterceptorJet, buildFighterJet } from './AircraftModel';
+import { EnergyCombatSystem } from '../engine/CombatAndTargetsEngine';
 import { buildSkyEnvironment } from './EnvironmentManager';
 import { SkyStrikerAudioManager } from './AudioManager';
 import {
@@ -16,6 +17,7 @@ import {
   CameraMode,
   GraphicsQuality,
   ProjectedTargetHud,
+  RadarBlip,
   SkyStrikerHudSnapshot,
   SkyStrikerQuestion,
   WorldId
@@ -176,6 +178,35 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
     const jet = buildFighterJet(skin);
     jet.root.position.set(0, 4, 0);
     scene.add(jet.root);
+
+    const jetShieldMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(3.8, 18, 14),
+      new THREE.MeshBasicMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.25,
+        wireframe: true
+      })
+    );
+    jetShieldMesh.visible = false;
+    jet.root.add(jetShieldMesh);
+
+    const combatSystem = new EnergyCombatSystem(100);
+    const enemySquadron = [0, 1, 2].map((idx) => {
+      const rig = buildEnemyInterceptorJet(idx);
+      rig.root.scale.setScalar(0.88);
+      rig.root.position.set((idx - 1) * 22, 9 + idx * 2, -55 - idx * 14);
+      scene.add(rig.root);
+      return {
+        id: `enemy-jet-${idx}`,
+        rig,
+        phase: idx * 2.1,
+        attackCooldown: 2.2 + idx * 1.1,
+        baseX: (idx - 1) * 19,
+        baseY: 8 + idx * 2.2,
+        baseZ: -52 - idx * 12
+      };
+    });
 
     // Three Holographic Answer Targets
     const targetGroupRoot = new THREE.Group();
@@ -377,6 +408,13 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
       } else if (code === 'Space') {
         e.preventDefault();
         fireEnergyPulse();
+      } else if (code === 'KeyC') {
+        e.preventDefault();
+        const dirX = keys['KeyA'] || keys['ArrowLeft'] ? -1 : 1;
+        combatSystem.triggerDodge(new THREE.Vector3(dirX, 0, 0));
+      } else if (code === 'KeyR') {
+        e.preventDefault();
+        combatSystem.activateShield(2.6);
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
@@ -443,10 +481,65 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
         jetPos.y = Math.max(-2, Math.min(16, jetPos.y + jetVel.y * dt));
 
         // Smooth banking & pitch
-        const targetBank = -clampedX * 0.58;
+        const targetBank = -clampedX * 0.58 + (combatSystem.dodgeActive ? Math.PI * 2 * (combatSystem.dodgeRemaining / 0.28) : 0);
         const targetPitch = clampedY * 0.34;
         bankAngle += (targetBank - bankAngle) * Math.min(1, dt * 7);
         pitchAngle += (targetPitch - pitchAngle) * Math.min(1, dt * 7);
+
+        if (combatSystem.dodgeActive) {
+          jetPos.x = Math.max(-24, Math.min(24, jetPos.x + combatSystem.dodgeDirection.x * 22 * dt));
+        }
+        jetShieldMesh.visible = combatSystem.shieldActive;
+        if (combatSystem.shieldActive) {
+          jetShieldMesh.rotation.y += dt * 2.5;
+        }
+
+        // Update Enemy Squadron AI (patrol, bank, track player, launch telegraphed energy orbs)
+        const elapsedSec = now * 0.001;
+        for (const enemy of enemySquadron) {
+          const tPhase = elapsedSec * 0.65 + enemy.phase;
+          const targetEx = THREE.MathUtils.lerp(enemy.baseX + Math.sin(tPhase) * 14, jetPos.x * 0.65, 0.28);
+          const targetEy = enemy.baseY + Math.cos(tPhase * 1.3) * 3.5;
+          const dx = targetEx - enemy.rig.root.position.x;
+          enemy.rig.root.position.x += dx * Math.min(1, dt * 1.8);
+          enemy.rig.root.position.y += (targetEy - enemy.rig.root.position.y) * Math.min(1, dt * 1.8);
+          enemy.rig.root.position.z = enemy.baseZ + Math.sin(tPhase * 0.7) * 8;
+          enemy.rig.root.rotation.z = THREE.MathUtils.clamp(-dx * 0.08, -0.55, 0.55);
+          enemy.rig.root.rotation.y = Math.PI; // facing player
+
+          enemy.attackCooldown -= dt;
+          if (enemy.attackCooldown <= 0) {
+            enemy.attackCooldown = 3.6 + Math.random() * 1.4;
+            const orbOrigin = enemy.rig.root.position.clone().add(new THREE.Vector3(0, 0, 3.5));
+            const orbDir = jetPos.clone().sub(orbOrigin);
+            const orbMesh = new THREE.Mesh(
+              new THREE.SphereGeometry(0.55, 10, 10),
+              new THREE.MeshBasicMaterial({ color: 0xef4444 })
+            );
+            effectsGroup.add(orbMesh);
+            combatSystem.spawnProjectile({
+              owner: 'enemy',
+              origin: orbOrigin,
+              direction: orbDir,
+              speed: 26,
+              radius: 0.75,
+              ttl: 3.2,
+              damage: 10,
+              mesh: orbMesh
+            });
+          }
+        }
+
+        const combatStep = combatSystem.step(dt, jetPos, 1.85);
+        for (const em of combatStep.expiredMeshes) {
+          effectsGroup.remove(em);
+        }
+        if (combatStep.playerDamaged > 0) {
+          camController.addShake(0.35);
+          if (combatSystem.playerHp <= 0) {
+            combatSystem.reset(100);
+          }
+        }
 
         const targetSpeed = isBoosting ? 84 : isBraking ? 30 : 50;
         forwardSpeed += (targetSpeed - forwardSpeed) * Math.min(1, dt * 4);
@@ -618,6 +711,21 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
             };
           });
 
+          const radarBlips: RadarBlip[] = [
+            ...enemySquadron.map((e) => ({
+              id: e.id,
+              kind: 'enemy' as const,
+              relX: THREE.MathUtils.clamp((e.rig.root.position.x - jetPos.x) / 45, -1, 1),
+              relZ: THREE.MathUtils.clamp((e.rig.root.position.z - jetPos.z) / 80, -1, 1)
+            })),
+            ...targets.map((t) => ({
+              id: t.targetId,
+              kind: 'target' as const,
+              relX: THREE.MathUtils.clamp((t.group.position.x - jetPos.x) / 45, -1, 1),
+              relZ: THREE.MathUtils.clamp((t.group.position.z - jetPos.z) / 80, -1, 1)
+            }))
+          ];
+
           callbacksRef.current.onHudUpdate({
             speedKts: Math.round(forwardSpeed * 11),
             altitudeFt: Math.round(1200 + jetPos.y * 140),
@@ -627,7 +735,11 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
             selectedAnswerId: targets.find((t) => t.targetId === selectedTargetId)?.answerId || null,
             lockProgress,
             isLocked: lockProgress >= 0.95,
-            targets: projected
+            targets: projected,
+            playerHp: combatSystem.playerHp,
+            shieldActive: combatSystem.shieldActive,
+            dodgeReady: combatSystem.dodgeCooldown <= 0,
+            radarBlips
           });
         }
       }
