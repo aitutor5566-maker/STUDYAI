@@ -423,6 +423,37 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
 
+    // Free-look camera mouse drag + double-click reset
+    let freeLookYaw = 0;
+    let freeLookPitch = 0;
+    let draggingLook = false;
+    let lastLookX = 0;
+    let lastLookY = 0;
+    const onMouseDown = (e: MouseEvent) => {
+      if (pausedRef.current) return;
+      draggingLook = true;
+      lastLookX = e.clientX;
+      lastLookY = e.clientY;
+    };
+    const onMouseMove = (e: MouseEvent) => {
+      if (!draggingLook || pausedRef.current) return;
+      freeLookYaw = THREE.MathUtils.clamp(freeLookYaw - (e.clientX - lastLookX) * 0.004, -0.85, 0.85);
+      freeLookPitch = THREE.MathUtils.clamp(freeLookPitch + (e.clientY - lastLookY) * 0.003, -0.35, 0.45);
+      lastLookX = e.clientX;
+      lastLookY = e.clientY;
+    };
+    const onMouseUp = () => {
+      draggingLook = false;
+    };
+    const onDblClick = () => {
+      freeLookYaw = 0;
+      freeLookPitch = 0;
+    };
+    renderer.domElement.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    renderer.domElement.addEventListener('dblclick', onDblClick);
+
     // ResizeObserver for genuine fullscreen & orientation handling
     const handleResize = () => {
       if (!container) return;
@@ -477,8 +508,8 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
         jetVel.x += (targetVx - jetVel.x) * Math.min(1, dt * 6.5);
         jetVel.y += (targetVy - jetVel.y) * Math.min(1, dt * 6.5);
 
-        jetPos.x = Math.max(-24, Math.min(24, jetPos.x + jetVel.x * dt));
-        jetPos.y = Math.max(-2, Math.min(16, jetPos.y + jetVel.y * dt));
+        jetPos.x = Math.max(-44, Math.min(44, jetPos.x + jetVel.x * dt));
+        jetPos.y = Math.max(-4, Math.min(24, jetPos.y + jetVel.y * dt));
 
         // Smooth banking & pitch
         const targetBank = -clampedX * 0.58 + (combatSystem.dodgeActive ? Math.PI * 2 * (combatSystem.dodgeRemaining / 0.28) : 0);
@@ -487,7 +518,7 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
         pitchAngle += (targetPitch - pitchAngle) * Math.min(1, dt * 7);
 
         if (combatSystem.dodgeActive) {
-          jetPos.x = Math.max(-24, Math.min(24, jetPos.x + combatSystem.dodgeDirection.x * 22 * dt));
+          jetPos.x = Math.max(-44, Math.min(44, jetPos.x + combatSystem.dodgeDirection.x * 22 * dt));
         }
         jetShieldMesh.visible = combatSystem.shieldActive;
         if (combatSystem.shieldActive) {
@@ -632,11 +663,15 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
         const camFollowFactor = mode === 'reduced' ? 0.25 : mode === 'cinematic' ? 0.62 : 0.45;
         const camDistZ = isBoosting ? 14.6 : 13.2;
         let desiredCamPos = new THREE.Vector3(
-          jetPos.x * camFollowFactor,
-          jetPos.y + (mode === 'cinematic' ? 3.8 : 4.2),
-          camDistZ
+          jetPos.x * camFollowFactor + Math.sin(freeLookYaw) * 9,
+          jetPos.y + (mode === 'cinematic' ? 3.8 : 4.2) + freeLookPitch * 6,
+          camDistZ * Math.cos(freeLookYaw * 0.4)
         );
-        let lookTarget = new THREE.Vector3(jetPos.x * 0.65, jetPos.y + 1.2, -28);
+        let lookTarget = new THREE.Vector3(
+          jetPos.x * 0.65 - Math.sin(freeLookYaw) * 14,
+          jetPos.y + 1.2 - freeLookPitch * 8,
+          -28
+        );
 
         if (mode === 'cockpit') {
           desiredCamPos = new THREE.Vector3(jetPos.x, jetPos.y + 0.85, jetPos.z - 1.35);
@@ -756,6 +791,10 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
       window.removeEventListener('orientationchange', handleResize);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      renderer.domElement.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      renderer.domElement.removeEventListener('dblclick', onDblClick);
       disposeThreeScene(scene, renderer, postPipeline, envTexture);
     };
   }, [worldId, quality, skinId, audioManager, mobileInputRef]);

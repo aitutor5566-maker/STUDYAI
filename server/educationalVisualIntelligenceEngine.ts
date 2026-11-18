@@ -522,66 +522,137 @@ export class EducationalVisualIntelligenceEngine {
   }
 
   /**
-   * Generates a topic-specific educational illustration via Google Gemini Image Generation API.
+   * Generates a topic-specific educational illustration via Google Gemini Image Generation API
+   * with multi-model fallback and telemetry logging.
    */
+  private visualTelemetry: Array<{
+    timestamp: string;
+    topic: string;
+    subject: string;
+    provider: string;
+    model: string;
+    durationMs: number;
+    status: 'approved' | 'reused' | 'fallback' | 'failed';
+    errorReason?: string;
+  }> = [];
+
+  public getVisualGenerationTelemetry() {
+    const total = this.visualTelemetry.length;
+    const approved = this.visualTelemetry.filter((t) => t.status === 'approved').length;
+    const reused = this.visualTelemetry.filter((t) => t.status === 'reused').length;
+    const fallback = this.visualTelemetry.filter((t) => t.status === 'fallback').length;
+    const failed = this.visualTelemetry.filter((t) => t.status === 'failed').length;
+    return {
+      totalRequests: total,
+      approvedCount: approved,
+      reusedCount: reused,
+      fallbackCount: fallback,
+      failedCount: failed,
+      recentEvents: this.visualTelemetry.slice(-25).reverse()
+    };
+  }
+
   private async generateGeminiEducationalImage(plan: VisualPlan, apiKey: string): Promise<EducationalVisualOutput | null> {
-    const model = process.env.GEMINI_IMAGE_MODEL || 'gemini-3.1-flash-image';
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 10000);
+    const modelsToTry = Array.from(
+      new Set([
+        process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image',
+        'gemini-3.1-flash-image'
+      ])
+    );
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: plan.imagePrompt }] }],
-        generationConfig: {
-          responseModalities: ['TEXT', 'IMAGE']
+    for (const model of modelsToTry) {
+      const t0 = Date.now();
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 18000);
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: plan.imagePrompt }] }],
+            generationConfig: {
+              responseModalities: ['TEXT', 'IMAGE']
+            }
+          }),
+          signal: controller.signal
+        });
+        clearTimeout(timer);
+
+        if (res.ok) {
+          const data = (await res.json()) as any;
+          const parts: any[] = data?.candidates?.[0]?.content?.parts || [];
+          const imgPart = parts.find((p) => p?.inlineData?.data);
+          if (imgPart?.inlineData?.data) {
+            this.visualTelemetry.push({
+              timestamp: new Date().toISOString(),
+              topic: plan.topic,
+              subject: plan.subject,
+              provider: 'Google Gemini',
+              model,
+              durationMs: Date.now() - t0,
+              status: 'approved'
+            });
+            const mime = imgPart.inlineData.mimeType || 'image/png';
+            const dataUrl = `data:${mime};base64,${imgPart.inlineData.data}`;
+            return {
+              assetId: `img-gem-${crypto.randomUUID().slice(0, 10)}`,
+              topic: plan.topic,
+              subject: plan.subject,
+              modality: plan.modality,
+              title: `${plan.topic} — Educational Visual Illustration`,
+              caption: `Google Gemini realistic visual generation for ${plan.subject}.`,
+              dataUrl,
+              sourceType: 'gemini_image',
+              providerUsed: `Google Gemini (${model})`,
+              qualityAssessment: {
+                overallStatus: 'approved',
+                qualityScore: 91,
+                relevanceScore: 94,
+                scientificAccuracyScore: 90,
+                structuralCompletenessScore: 91,
+                labelClarityScore: 88,
+                freedomFromDistortionsScore: 92,
+                feedbackNotes: ['Generated via Google Gemini visual synthesis with structured educational constraints.'],
+                verifiedAnatomyPresent: plan.expectedComponents,
+                missingElements: []
+              },
+              walkthrough: {
+                whatItShows: `Textbook visual representation of ${plan.topic}.`,
+                importantComponents: plan.expectedComponents,
+                processSequence: ['Visual component identification', 'Key mechanism sequence', 'Practical examination takeaways'],
+                examTakeaway: plan.primaryExplanationGoal
+              },
+              labels: plan.expectedComponents.map((c, i) => ({ id: `lbl-${i}`, name: c })),
+              interactive3dSupported: Boolean(plan.recommendedModel3d),
+              recommendedModel3d: plan.recommendedModel3d
+            };
+          }
+        } else {
+          const errText = await res.text().catch(() => '');
+          this.visualTelemetry.push({
+            timestamp: new Date().toISOString(),
+            topic: plan.topic,
+            subject: plan.subject,
+            provider: 'Google Gemini',
+            model,
+            durationMs: Date.now() - t0,
+            status: 'fallback',
+            errorReason: `HTTP ${res.status}: ${errText.slice(0, 120)}`
+          });
         }
-      }),
-      signal: controller.signal
-    });
-    clearTimeout(timer);
-
-    if (res.ok) {
-      const data = (await res.json()) as any;
-      const parts: any[] = data?.candidates?.[0]?.content?.parts || [];
-      const imgPart = parts.find((p) => p?.inlineData?.data);
-      if (imgPart?.inlineData?.data) {
-        const mime = imgPart.inlineData.mimeType || 'image/png';
-        const dataUrl = `data:${mime};base64,${imgPart.inlineData.data}`;
-        return {
-          assetId: `img-gem-${crypto.randomUUID().slice(0, 10)}`,
+      } catch (err: any) {
+        clearTimeout(timer);
+        this.visualTelemetry.push({
+          timestamp: new Date().toISOString(),
           topic: plan.topic,
           subject: plan.subject,
-          modality: plan.modality,
-          title: `${plan.topic} — Educational Visual Illustration`,
-          caption: `Google Gemini image generation configured for ${plan.subject}.`,
-          dataUrl,
-          sourceType: 'gemini_image',
-          providerUsed: `Google Gemini (${model})`,
-          qualityAssessment: {
-            overallStatus: 'approved',
-            qualityScore: 91,
-            relevanceScore: 94,
-            scientificAccuracyScore: 90,
-            structuralCompletenessScore: 91,
-            labelClarityScore: 88,
-            freedomFromDistortionsScore: 92,
-            feedbackNotes: ['Generated via Google Gemini visual synthesis with structured educational constraints.'],
-            verifiedAnatomyPresent: plan.expectedComponents,
-            missingElements: []
-          },
-          walkthrough: {
-            whatItShows: `Textbook visual representation of ${plan.topic}.`,
-            importantComponents: plan.expectedComponents,
-            processSequence: ['Visual component identification', 'Key mechanism sequence', 'Practical examination takeaways'],
-            examTakeaway: plan.primaryExplanationGoal
-          },
-          labels: plan.expectedComponents.map((c, i) => ({ id: `lbl-${i}`, name: c })),
-          interactive3dSupported: Boolean(plan.recommendedModel3d),
-          recommendedModel3d: plan.recommendedModel3d
-        };
+          provider: 'Google Gemini',
+          model,
+          durationMs: Date.now() - t0,
+          status: 'failed',
+          errorReason: err?.message || 'Request failed'
+        });
       }
     }
     return null;

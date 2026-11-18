@@ -190,6 +190,8 @@ export const NotesPage: React.FC = () => {
   const [editMarkdown, setEditMarkdown] = useState<string>('');
   const [editStructured, setEditStructured] = useState<any | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [openingNoteLoading, setOpeningNoteLoading] = useState<boolean>(false);
+  const [openingNoteError, setOpeningNoteError] = useState<string | null>(null);
   const [historyStack, setHistoryStack] = useState<Array<{ title: string; markdown: string; structured: any }>>([]);
   const [redoStack, setRedoStack] = useState<Array<{ title: string; markdown: string; structured: any }>>([]);
   const [editingSectionIdx, setEditingSectionIdx] = useState<number | null>(null);
@@ -422,10 +424,7 @@ export const NotesPage: React.FC = () => {
       if (requestedId) {
         const found = list.find((n) => n.id === requestedId);
         if (found) {
-          selectNoteForEditing(found);
-          setDashboardMode('notebook');
-          setNotebookSubTab('full');
-          setReaderViewMode('continuous');
+          await handleOpenNotebook(found);
         }
       } else if (requestedTopic) {
         const cleanReqTopic = requestedTopic.trim().toLowerCase();
@@ -436,18 +435,15 @@ export const NotesPage: React.FC = () => {
             (n.topic || '').toLowerCase().includes(cleanReqTopic)
         );
         if (found) {
-          selectNoteForEditing(found);
-          setDashboardMode('notebook');
-          setNotebookSubTab('full');
-          setReaderViewMode('continuous');
+          await handleOpenNotebook(found);
         } else if (!generating) {
           // Auto-trigger generation so clicking from Home or navigation generates note immediately
           handleGenerateNotebook(undefined, requestedTopic.trim());
         }
       } else if (activeNote) {
         const refreshed = list.find((n) => n.id === activeNote.id);
-        if (refreshed) {
-          setActiveNote(refreshed);
+        if (refreshed && (!activeNote.structured?.sections?.length || !activeNote.structured?.sections?.[0]?.body)) {
+          await handleOpenNotebook(refreshed);
         }
       }
     } catch (err: any) {
@@ -515,13 +511,33 @@ export const NotesPage: React.FC = () => {
     setSelectedSourceIds(srcIds);
   };
 
-  // Open Notebook in Complete Single-Page Continuous Document View
-  const handleOpenNotebook = (note: any) => {
+  // Open Notebook in Complete Single-Page Continuous Document View (always hydrates full note from backend)
+  const handleOpenNotebook = async (note: any) => {
+    setOpeningNoteError(null);
     selectNoteForEditing(note);
     setDashboardMode('notebook');
     setNotebookSubTab('full');
     setReaderViewMode('continuous');
     setSearchParams({ id: note.id });
+
+    const hasFullContent =
+      Boolean(note?.content_markdown) &&
+      Array.isArray(note?.structured?.sections) &&
+      note.structured.sections.some((s: any) => Boolean(s?.body || s?.detailedExplanation || s?.simpleExplanation));
+
+    if (!hasFullContent && note?.id) {
+      setOpeningNoteLoading(true);
+      try {
+        const fullNote = await apiFetch<any>(`/api/notes/${encodeURIComponent(note.id)}`);
+        if (fullNote && fullNote.id) {
+          selectNoteForEditing(fullNote);
+        }
+      } catch (err: any) {
+        setOpeningNoteError(err?.message || 'Unable to load full notebook content. Click Retry.');
+      } finally {
+        setOpeningNoteLoading(false);
+      }
+    }
   };
 
   const handleBackToDashboard = () => {
@@ -1623,6 +1639,23 @@ export const NotesPage: React.FC = () => {
           ========================================================================= */}
       {dashboardMode === 'notebook' && activeNote && (
         <main style={{ maxWidth: 1180, margin: '0 auto', padding: '12px 16px' }}>
+          {openingNoteLoading && (
+            <div style={{ padding: '10px 14px', borderRadius: 12, marginBottom: 12, background: 'rgba(14,165,233,0.12)', border: '1px solid rgba(14,165,233,0.35)', color: '#0369A1', fontSize: '0.86rem', fontWeight: 700 }}>
+              Loading full notebook sections and visual assets...
+            </div>
+          )}
+          {openingNoteError && (
+            <div style={{ padding: '10px 14px', borderRadius: 12, marginBottom: 12, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.35)', color: '#B91C1C', fontSize: '0.86rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <span>{openingNoteError}</span>
+              <button
+                type="button"
+                onClick={() => handleOpenNotebook(activeNote)}
+                style={{ padding: '6px 12px', borderRadius: 8, background: '#DC2626', color: '#FFF', border: 'none', fontWeight: 800, cursor: 'pointer' }}
+              >
+                Retry
+              </button>
+            </div>
+          )}
           {/* Top Control Bar */}
           <div
             className="glass-card"

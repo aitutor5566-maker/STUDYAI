@@ -850,6 +850,11 @@ export function createAppServer() {
         return;
       }
 
+      if (pathname === '/api/admin/visual-telemetry' && req.method === 'GET') {
+        sendJson(res, 200, educationalVisualIntelligenceEngine.getVisualGenerationTelemetry());
+        return;
+      }
+
       // Direct Visual SVG / Asset Preview
       if (pathname.startsWith('/api/visuals/preview/')) {
         const imageId = pathname.replace('/api/visuals/preview/', '');
@@ -3827,8 +3832,8 @@ export function createAppServer() {
         return;
       }
 
-      if (pathname.startsWith('/api/notes/') && req.method === 'GET') {
-        const noteId = pathname.split('/')[3];
+      if (effectivePathname.startsWith('/api/notes/') && req.method === 'GET') {
+        const noteId = decodeURIComponent(effectivePathname.replace('/api/notes/', '').split('/')[0] || '');
         const row = db.prepare('SELECT * FROM notes WHERE id = ? AND user_id = ?').get(noteId, studentId) as any;
         if (!row) {
           sendJson(res, 404, { error: 'Note not found.' });

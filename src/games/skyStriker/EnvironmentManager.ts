@@ -145,18 +145,39 @@ export function buildSkyEnvironment(
   }
   group.add(sun);
 
-  // Vast Terrain Ground Plane
-  const terrainGeo = new THREE.PlaneGeometry(900, 900, 40, 40);
+  // Vast Multi-Octave Procedural Mountain & Canyon Terrain
+  const segs = quality === 'low' ? 48 : 88;
+  const terrainGeo = new THREE.PlaneGeometry(900, 900, segs, segs);
   terrainGeo.rotateX(-Math.PI / 2);
   const posAttr = terrainGeo.attributes.position;
+  const colors = new Float32Array(posAttr.count * 3);
+  const valleyCol = new THREE.Color(worldId === 'frozen_horizon' ? 0x475569 : 0x78512d);
+  const slopeCol = new THREE.Color(worldId === 'frozen_horizon' ? 0x94a3b8 : 0xb47844);
+  const peakCol = new THREE.Color(worldId === 'frozen_horizon' ? 0xf8fafc : 0xe2b887);
+  const tmpCol = new THREE.Color();
+
   for (let i = 0; i < posAttr.count; i++) {
     const x = posAttr.getX(i);
     const z = posAttr.getZ(i);
-    // Gentle valley in the center, taller ridges on flanks
-    const valleyFactor = Math.min(1, Math.abs(x) / 90);
-    const ridge = (Math.sin(x * 0.035) * Math.cos(z * 0.035) * 14 + Math.sin(x * 0.09) * 4) * valleyFactor;
-    posAttr.setY(i, ridge - 38);
+    // Multi-octave ridged mountain heightmap with deep canyon/valley corridor
+    const valleyFactor = Math.min(1, Math.abs(x) / 85);
+    const oct1 = Math.abs(Math.sin(x * 0.018) * Math.cos(z * 0.018)) * 34;
+    const oct2 = Math.sin(x * 0.052 + 1.3) * Math.cos(z * 0.044) * 11;
+    const oct3 = Math.sin((x + z) * 0.11) * 3.2;
+    const h = (oct1 + oct2 + oct3) * (0.25 + 0.75 * valleyFactor);
+    posAttr.setY(i, h - 38);
+
+    const t = THREE.MathUtils.clamp(h / 36, 0, 1);
+    if (t < 0.45) {
+      tmpCol.lerpColors(valleyCol, slopeCol, t / 0.45);
+    } else {
+      tmpCol.lerpColors(slopeCol, peakCol, (t - 0.45) / 0.55);
+    }
+    colors[i * 3] = tmpCol.r;
+    colors[i * 3 + 1] = tmpCol.g;
+    colors[i * 3 + 2] = tmpCol.b;
   }
+  terrainGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   terrainGeo.computeVertexNormals();
 
   const texRes: 128 | 256 | 512 =
@@ -201,7 +222,8 @@ export function buildSkyEnvironment(
     }
   } else {
     const terrainMat = new THREE.MeshStandardMaterial({
-      color: cfg.terrainColor,
+      color: 0xffffff,
+      vertexColors: true,
       map: terrainPbr?.map ?? null,
       roughness: 0.86,
       metalness: 0.08,
@@ -268,12 +290,16 @@ export function buildSkyEnvironment(
       isl.position.set(x, -12 + Math.random() * 24, z);
       obj = isl;
     } else {
-      const h = 28 + Math.random() * 54;
-      const r = 18 + Math.random() * 22;
-      const peak = new THREE.Mesh(new THREE.ConeGeometry(r, h, 6), mountainMat);
-      peak.position.set(x, -38 + h / 2, z);
-      peak.rotation.y = Math.random() * Math.PI;
-      obj = peak;
+      // Sculpted Multi-Part Ridge Spire (replaces primitive single cone)
+      const ridgeGroup = new THREE.Group();
+      const h = 24 + Math.random() * 42;
+      const r = 16 + Math.random() * 18;
+      const baseMound = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 1), mountainMat);
+      baseMound.scale.set(1.25, h / (r * 1.4), 1.15);
+      baseMound.position.set(x, -36 + h * 0.25, z);
+      baseMound.rotation.set(Math.random() * 0.2, Math.random() * Math.PI, Math.random() * 0.2);
+      ridgeGroup.add(baseMound);
+      obj = ridgeGroup;
     }
     group.add(obj);
     landmarks.push(obj);
