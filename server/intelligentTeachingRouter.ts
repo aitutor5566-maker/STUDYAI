@@ -66,7 +66,25 @@ export function classifyStudentMessageIntent(opts: {
 }): IntentClassificationResult {
   const raw = (opts.message || '').trim();
   const lower = raw.toLowerCase();
-  const prevTopic = opts.previousTopic?.trim() || null;
+  let prevTopic = opts.previousTopic?.trim() || null;
+  if (!prevTopic && Array.isArray(opts.history) && opts.history.length > 0) {
+    for (let i = opts.history.length - 1; i >= 0; i--) {
+      const h = opts.history[i];
+      if (h?.role === 'user' && h.content) {
+        const candidate = h.content
+          .replace(/^(explain|what is|define|tell me about|describe)\s+/i, '')
+          .replace(/[?!.]+$/g, '')
+          .trim();
+        if (
+          candidate.length >= 3 &&
+          !/^(hi|hello|hey|how are you|what is your name|thank you|thanks|bye|give me an example|explain it again)/i.test(candidate)
+        ) {
+          prevTopic = candidate.slice(0, 120);
+          break;
+        }
+      }
+    }
+  }
   const wordCount = raw.split(/\s+/).filter(Boolean).length;
 
   // 1. Greetings
@@ -151,6 +169,37 @@ export function classifyStudentMessageIntent(opts: {
       shouldRunAcademicRag: Boolean(prevTopic),
       shouldCreateNotesRecord: false,
       reason: 'Student asked to continue the previous lesson.'
+    };
+  }
+
+  // 5b. Example request (anchors to previousTopic when present)
+  if (
+    /^(give me an? example|show me an? example|real[- ]life example|another example|examples?\??|for example\??)[!.\s]*$/i.test(lower) ||
+    (/\b(give me an? example|more examples|everyday example)\b/i.test(lower) && wordCount <= 9)
+  ) {
+    return {
+      intent: 'example_request',
+      confidence: 0.94,
+      preservedTopic: prevTopic,
+      shouldRunAcademicRag: Boolean(prevTopic),
+      shouldCreateNotesRecord: false,
+      reason: 'Example request detected; preserving active conversation topic.'
+    };
+  }
+
+  // 5c. Context-dependent follow-up question (anaphora: "its", "it", "this", "more deeply")
+  if (
+    prevTopic &&
+    wordCount <= 12 &&
+    /\b(its|it|this|that|more deeply|in more detail|explain more|go deeper|why is it important|what is its importance|what are its applications|how does it work)\b/i.test(lower)
+  ) {
+    return {
+      intent: 'follow_up_question',
+      confidence: 0.93,
+      preservedTopic: prevTopic,
+      shouldRunAcademicRag: true,
+      shouldCreateNotesRecord: false,
+      reason: 'Follow-up question referencing active conversation topic.'
     };
   }
 
@@ -386,10 +435,21 @@ export async function routeIntelligentTutorMessage(opts: {
   }
 
   if (cls.intent === 'gratitude_farewell') {
+    const isFarewell = /\b(bye|goodbye|see you|good night)\b/i.test(opts.message);
     return {
       handledDirectly: true,
       classification: cls,
-      reply: `You're very welcome${opts.studentName ? `, ${opts.studentName}` : ''}! Keep up the great curiosity — come back anytime you want to practice or explore more.`
+      reply: isFarewell
+        ? `Goodbye${opts.studentName ? `, ${opts.studentName}` : ''}! Have a great day, and come back anytime you want to learn more.`
+        : `You're welcome${opts.studentName ? `, ${opts.studentName}` : ''}! Happy to help — let me know if you want to explore another topic.`
+    };
+  }
+
+  if (cls.intent === 'example_request' && !cls.preservedTopic) {
+    return {
+      handledDirectly: true,
+      classification: cls,
+      reply: `${namePrefix}sure! Which topic or concept would you like an example for?`
     };
   }
 
@@ -468,9 +528,22 @@ export async function routeIntelligentTutorMessage(opts: {
     };
   }
 
-  // Otherwise fall through to existing structured AI Tutor pipeline with preserved topic if continue_lesson
+  // Otherwise fall through to existing structured AI Tutor pipeline with preserved topic for follow-ups/examples
+  const resolvedTopic =
+    cls.intent === 'follow_up_question' || cls.intent === 'example_request' || cls.intent === 'continue_lesson'
+      ? cls.preservedTopic || undefined
+      : undefined;
+  const resolvedPrompt =
+    cls.intent === 'example_request' && resolvedTopic
+      ? `Provide 3 clear everyday and scientific examples of "${resolvedTopic}" with step-by-step explanations.`
+      : cls.intent === 'follow_up_question' && resolvedTopic
+      ? `Continuing our lesson on "${resolvedTopic}": ${opts.message}`
+      : opts.message;
+
   return {
     handledDirectly: false,
-    classification: cls
+    classification: cls,
+    resolvedTopic,
+    resolvedPrompt
   };
 }

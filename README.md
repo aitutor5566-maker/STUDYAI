@@ -4,12 +4,12 @@
 
 ![STUDYAI Hero Banner](docs/images/studyai_hero_banner.jpg)
 
-[![Live App](https://img.shields.io/badge/Live%20App-laws--republican--reviews--refers.trycloudflare.com-0EA5E9?style=for-the-badge&logo=cloudflare&logoColor=white)](https://laws-republican-reviews-refers.trycloudflare.com)
+[![Live App](https://img.shields.io/badge/Live%20App-richards--involves--provinces--totally.trycloudflare.com-0EA5E9?style=for-the-badge&logo=cloudflare&logoColor=white)](https://richards-involves-provinces-totally.trycloudflare.com)
 [![React 18](https://img.shields.io/badge/React-18.3-61DAFB?logo=react&logoColor=black)](https://react.dev)
 [![Three.js](https://img.shields.io/badge/Three.js-0.170.0-000000?logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-**Live URL:** [https://laws-republican-reviews-refers.trycloudflare.com](https://laws-republican-reviews-refers.trycloudflare.com)
+**Live URL:** [https://richards-involves-provinces-totally.trycloudflare.com](https://richards-involves-provinces-totally.trycloudflare.com)
 
 Interactive **AI Personal Teacher**, **Visual Lesson Map**, **AI Notes & Voice Audio**, and **AAA Three.js 3D Educational Games**.
 

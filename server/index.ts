@@ -1437,7 +1437,8 @@ export function createAppServer() {
             subject,
             grade,
             board: lock.board,
-            language
+            language,
+            history: Array.isArray(body.history) ? body.history.slice(-6) : []
           });
           if (routed.handledDirectly && routed.reply) {
             for (const w of routed.reply.split(/(?=\s)/)) {
@@ -1451,8 +1452,8 @@ export function createAppServer() {
           await centralAiOrchestrator.stream(
             {
               taskType: 'TUTOR_CHAT',
-              topic,
-              prompt: question || `Explain ${topic} step by step with clear definitions and examples.`,
+              topic: routed.resolvedTopic || topic,
+              prompt: routed.resolvedPrompt || question || `Explain ${topic} step by step with clear definitions and examples.`,
               grade,
               subject,
               language,
