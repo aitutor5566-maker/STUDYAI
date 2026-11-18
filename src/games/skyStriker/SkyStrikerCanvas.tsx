@@ -145,8 +145,8 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
     // AAA Visual Masterpiece Engine: IBL Sky Reflections + Bloom + Slipstream Particles + Dynamic FOV Camera
     const envTexture = buildAtmosphericEnvMap(
       renderer,
-      worldId === 'future_city' ? '#090D24' : '#38BDF8',
-      worldId === 'desert_storm' ? '#FDBA74' : '#BAE6FD',
+      worldId === 'future_city' ? '#090D24' : worldId === 'coastal_sunset' ? '#FB923C' : '#38BDF8',
+      worldId === 'desert_storm' || worldId === 'coastal_sunset' ? '#FDBA74' : '#BAE6FD',
       '#0F172A'
     );
     scene.environment = envTexture;

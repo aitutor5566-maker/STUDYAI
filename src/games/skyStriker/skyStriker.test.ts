@@ -36,9 +36,9 @@ describe('Study Rush 3D — Sky Striker Engine', () => {
     expect(rev.map((q) => q.questionId).sort()).toEqual(base.map((q) => q.questionId).sort());
   });
 
-  it('provides 5 worlds starting with Desert Storm and 4 aircraft skins', () => {
-    expect(SKY_WORLDS.length).toBe(5);
-    expect(SKY_WORLDS[0].id).toBe('desert_storm');
+  it('provides 6 worlds starting with Coastal Sunset and 4 aircraft skins', () => {
+    expect(SKY_WORLDS.length).toBe(6);
+    expect(SKY_WORLDS[0].id).toBe('coastal_sunset');
     expect(AIRCRAFT_SKINS.length).toBe(4);
   });
 });

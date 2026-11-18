@@ -10,6 +10,7 @@ export type SkyStrikerSubject =
 export type DifficultyLevel = 'easy' | 'medium' | 'hard';
 
 export type WorldId =
+  | 'coastal_sunset'
   | 'desert_storm'
   | 'frozen_horizon'
   | 'ocean_frontier'

@@ -21,6 +21,18 @@ export interface WorldConfig {
 
 export const SKY_WORLDS: WorldConfig[] = [
   {
+    id: 'coastal_sunset',
+    name: '1. Coastal Sunset',
+    subtitle: 'Golden sunset horizon, animated ocean waves & sculpted coastal islands',
+    skyColor: 0xfb923c,
+    fogColor: 0xfdba74,
+    sunColor: 0xfef08a,
+    ambientColor: 0xfecdd3,
+    terrainColor: 0x0369a1,
+    mountainColor: 0x365314,
+    accentColor: 0xf59e0b
+  },
+  {
     id: 'desert_storm',
     name: '1. Desert Storm',
     subtitle: 'Golden canyon mountains, rocky valleys & sunlit clouds',
@@ -150,7 +162,7 @@ export function buildSkyEnvironment(
   const texRes: 128 | 256 | 512 =
     quality === 'low' ? 128 : quality === 'ultra' || quality === 'high' ? 512 : 256;
   const terrainKind =
-    worldId === 'ocean_frontier'
+    worldId === 'ocean_frontier' || worldId === 'coastal_sunset'
       ? 'water'
       : worldId === 'desert_storm'
       ? 'sand'
@@ -163,19 +175,30 @@ export function buildSkyEnvironment(
       : null;
 
   let waterHandle: ReturnType<typeof createAnimatedWaterSurface> | null = null;
-  if (worldId === 'ocean_frontier') {
+  if (worldId === 'ocean_frontier' || worldId === 'coastal_sunset') {
+    const isSunset = worldId === 'coastal_sunset';
     waterHandle = createAnimatedWaterSurface({
-      width: 540,
-      depth: 540,
-      segments: quality === 'low' ? 20 : 42,
-      deepColor: 0x0369a1,
-      shallowColor: 0x0ea5e9,
-      skyColor: cfg.skyColor,
-      waveHeight: 0.45,
-      opacity: 0.94
+      width: 620,
+      depth: 620,
+      segments: quality === 'low' ? 24 : 48,
+      deepColor: isSunset ? 0x0c4a6e : 0x0369a1,
+      shallowColor: isSunset ? 0x0284c7 : 0x0ea5e9,
+      skyColor: isSunset ? 0xfdba74 : cfg.skyColor,
+      sunDirection: new THREE.Vector3(0.08, 0.22, -0.97),
+      waveHeight: 0.42,
+      opacity: 0.95
     });
-    waterHandle.mesh.position.y = -34;
+    waterHandle.mesh.position.y = -32;
     group.add(waterHandle.mesh);
+
+    if (isSunset) {
+      const sunDisk = new THREE.Mesh(
+        new THREE.CircleGeometry(28, 32),
+        new THREE.MeshBasicMaterial({ color: 0xfef08a, fog: false })
+      );
+      sunDisk.position.set(16, 22, -320);
+      group.add(sunDisk);
+    }
   } else {
     const terrainMat = new THREE.MeshStandardMaterial({
       color: cfg.terrainColor,
@@ -220,6 +243,25 @@ export function buildSkyEnvironment(
       strip.position.y = h * 0.42;
       bldg.add(strip);
       obj = bldg;
+    } else if (worldId === 'coastal_sunset' || worldId === 'ocean_frontier') {
+      // Sculpted Coastal Island with sandy beach ring + lush central ridge
+      const islandGroup = new THREE.Group();
+      const radius = 22 + Math.random() * 24;
+      const beach = new THREE.Mesh(
+        new THREE.CylinderGeometry(radius * 0.85, radius, 2.4, 14),
+        new THREE.MeshStandardMaterial({ color: 0xe6c280, roughness: 0.92 })
+      );
+      beach.position.y = 0.8;
+      islandGroup.add(beach);
+      const hillH = 12 + Math.random() * 22;
+      const hill = new THREE.Mesh(
+        new THREE.ConeGeometry(radius * 0.68, hillH, 10),
+        mountainMat
+      );
+      hill.position.y = hillH * 0.45;
+      islandGroup.add(hill);
+      islandGroup.position.set(x * 1.1, -32.2, z);
+      obj = islandGroup;
     } else if (worldId === 'sky_kingdom') {
       const isl = new THREE.Mesh(new THREE.ConeGeometry(16 + Math.random() * 12, 22, 6), mountainMat);
       isl.rotation.x = Math.PI;

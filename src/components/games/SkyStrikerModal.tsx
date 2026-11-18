@@ -95,7 +95,7 @@ export const SkyStrikerModal: React.FC<SkyStrikerModalProps> = ({
   const [subject, setSubject] = useState<SkyStrikerSubject>('All Subjects');
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(propDifficulty || 'medium');
   const [grade, setGrade] = useState<number>(activeProfile?.grade || 8);
-  const [worldId, setWorldId] = useState<WorldId>('desert_storm');
+  const [worldId, setWorldId] = useState<WorldId>('coastal_sunset');
   const [skinId, setSkinId] = useState<AircraftSkinId>('cyan_viper');
   const [cameraMode, setCameraMode] = useState<CameraMode>('standard');
   const [quality, setQuality] = useState<GraphicsQuality>(() => detectRecommendedGraphicsQuality());
@@ -117,7 +117,7 @@ export const SkyStrikerModal: React.FC<SkyStrikerModalProps> = ({
     } catch {
       // ignore
     }
-    return ['desert_storm'];
+    return ['coastal_sunset', 'desert_storm'];
   });
 
   const [savedMissed, setSavedMissed] = useState<SkyStrikerQuestion[]>(() => {
@@ -239,7 +239,7 @@ export const SkyStrikerModal: React.FC<SkyStrikerModalProps> = ({
 
       // Unlock next world on solid completion (>= 60% accuracy)
       if (accuracy >= 60) {
-        const order: WorldId[] = ['desert_storm', 'frozen_horizon', 'ocean_frontier', 'future_city', 'sky_kingdom'];
+        const order: WorldId[] = ['coastal_sunset', 'frozen_horizon', 'ocean_frontier', 'future_city', 'sky_kingdom', 'desert_storm'];
         const currentIdx = order.indexOf(worldId);
         const nextWorld = order[Math.min(order.length - 1, currentIdx + 1)];
         if (nextWorld && !unlockedWorlds.includes(nextWorld)) {
@@ -414,7 +414,7 @@ export const SkyStrikerModal: React.FC<SkyStrikerModalProps> = ({
               totalCorrect: nextCorrect,
               totalAttempts: nextCorrect + nextIncorrect
             });
-            const order: WorldId[] = ['desert_storm', 'frozen_horizon', 'ocean_frontier', 'future_city', 'sky_kingdom'];
+            const order: WorldId[] = ['coastal_sunset', 'frozen_horizon', 'ocean_frontier', 'future_city', 'sky_kingdom', 'desert_storm'];
             const nextWorld = order[(order.indexOf(worldId) + 1) % order.length];
             if (nextWorld) {
               setWorldId(nextWorld);
