@@ -8,7 +8,10 @@ import {
   disposeThreeScene
 } from '../engine/VisualMasterpieceEngine';
 import { buildEnemyInterceptorJet, buildFighterJet } from './AircraftModel';
-import { EnergyCombatSystem } from '../engine/CombatAndTargetsEngine';
+import {
+  EnergyCombatSystem,
+  createBillboardLabelSprite
+} from '../engine/CombatAndTargetsEngine';
 import { buildSkyEnvironment } from './EnvironmentManager';
 import { SkyStrikerAudioManager } from './AudioManager';
 import {
@@ -239,10 +242,18 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
       lockSoundPlayed = false;
       evaluatedQuestionId = null;
 
-      // Arrange 3 targets ahead of aircraft (Left, Center, Right) with subtle depth variation
-      const xOffsets = [-16.5, 0, 16.5];
-      const yOffsets = [4.5 + (Math.random() - 0.5) * 3, 6.0 + (Math.random() - 0.5) * 3, 4.5 + (Math.random() - 0.5) * 3];
-      const zOffsets = [-46 - Math.random() * 6, -50 - Math.random() * 6, -46 - Math.random() * 6];
+      // Dynamic Formations (Wide, Staggered Depth Wedge, Vertical Echelon, Diagonal Sky Arc)
+      const formations = [
+        { x: [-17.5, 0, 17.5], y: [5.0, 7.5, 5.0], z: [-48, -54, -48] },
+        { x: [-14, 0, 14], y: [3.5, 11.5, 4.5], z: [-42, -56, -64] },
+        { x: [-12, 2, 15], y: [2.5, 8.0, 13.0], z: [-50, -45, -58] },
+        { x: [-16, 0, 16], y: [10.5, 4.0, 10.5], z: [-56, -44, -56] }
+      ];
+      const formIdx = Math.abs(q.questionId.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % formations.length;
+      const form = formations[formIdx];
+      const xOffsets = form.x;
+      const yOffsets = form.y.map((y) => y + (Math.random() - 0.5) * 1.8);
+      const zOffsets = form.z.map((z) => z + (Math.random() - 0.5) * 3.0);
 
       q.options.slice(0, 3).forEach((opt, idx) => {
         const tg = new THREE.Group();
@@ -287,6 +298,13 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
           })
         );
         tg.add(shieldMesh);
+
+        const labelSprite = createBillboardLabelSprite(opt.label, opt.text, '#22D3EE');
+        if (labelSprite) {
+          labelSprite.position.set(0, 4.2, 0);
+          labelSprite.scale.set(9.2, 2.3, 1);
+          tg.add(labelSprite);
+        }
 
         targetGroupRoot.add(tg);
         targets.push({
@@ -369,7 +387,8 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
       } else {
         target.validationState = 'incorrect';
         (target.shieldMesh.material as THREE.MeshBasicMaterial).opacity = 0.65;
-        (target.outerRing.material as THREE.MeshBasicMaterial).color.setHex(0xf59e0b);
+        (target.shieldMesh.material as THREE.MeshBasicMaterial).color.setHex(0xef4444);
+        (target.outerRing.material as THREE.MeshBasicMaterial).color.setHex(0xef4444);
       }
 
       callbacksRef.current.onAnswerEvaluated(target.answerId);
@@ -606,17 +625,26 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
           const tSec = now * 0.0018 + idx * 1.4;
           let ox = 0;
           let oy = 0;
+          let oz = 0;
           if (!reducedMotionRef.current) {
             if (idx === 0) {
-              ox = Math.sin(tSec) * 1.6;
+              ox = Math.sin(tSec) * 3.4;
+              oz = Math.cos(tSec * 0.85) * 5.2;
             } else if (idx === 1) {
-              oy = Math.sin(tSec * 1.15) * 1.25;
+              oy = Math.sin(tSec * 1.15) * 2.6;
+              oz = Math.sin(tSec * 0.75) * 5.8;
             } else {
-              ox = Math.sin(tSec) * 1.3;
-              oy = Math.sin(tSec * 2) * 0.75;
+              ox = Math.sin(tSec) * 2.8;
+              oy = Math.sin(tSec * 2) * 1.8;
+              oz = Math.cos(tSec * 0.9) * 5.0;
             }
           }
-          t.group.position.set(t.basePos.x + ox, t.basePos.y + oy, t.basePos.z);
+          t.group.position.set(t.basePos.x + ox, t.basePos.y + oy, t.basePos.z + oz);
+          if (t.validationState === 'idle') {
+            (t.outerRing.material as THREE.MeshBasicMaterial).color.setHex(
+              t.targetId === selectedTargetId ? 0xfbbf24 : 0x22d3ee
+            );
+          }
           t.outerRing.rotation.z += dt * 1.1;
           t.innerRing.rotation.z -= dt * 1.6;
           t.coreSphere.rotation.y += dt * 1.4;
