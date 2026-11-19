@@ -123,6 +123,7 @@ import { responseValidationLayer } from './responseValidationLayer.ts';
 import { knowledgeIntelligenceAdmin } from './knowledgeIntelligenceAdmin.ts';
 import { multiBoardKnowledgeEngine, SUPPORTED_CURRICULA } from './multiBoardKnowledgeEngine.ts';
 import { icseCbseKnowledgeBank } from './icseCbseKnowledgeBank.ts';
+import { chapterMasteryJourneyEngine } from './chapterMasteryJourneyEngine.ts';
 import { ResearchIntelligenceEngine } from './researchIntelligenceEngine.ts';
 import { UnifiedVisualIntelligenceEngine } from './visualIntelligenceEngineUnified.ts';
 import { StudyAiPersonalTeacherEngine } from './studyAiPersonalTeacherEngine.ts';
@@ -1179,6 +1180,82 @@ export function createAppServer() {
       if (pathname === '/api/lesson-map/custom' && req.method === 'GET') {
         const maps = lessonMapEngine.listCustomLessonMaps(studentId);
         sendJson(res, 200, { maps });
+        return;
+      }
+
+      // Chapter Mastery Journey — Zero to Complete Understanding Endpoints
+      if (pathname === '/api/chapter-mastery/chapters' && req.method === 'GET') {
+        const board = parsedUrl.searchParams.get('board') || undefined;
+        const gradeStr = parsedUrl.searchParams.get('grade');
+        const grade = gradeStr ? parseInt(gradeStr, 10) : undefined;
+        const subject = parsedUrl.searchParams.get('subject') || undefined;
+        const chapters = chapterMasteryJourneyEngine.listAvailableChapters({ board, grade, subject });
+        sendJson(res, 200, { total: chapters.length, chapters });
+        return;
+      }
+
+      if (pathname === '/api/chapter-mastery/start' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const journey = chapterMasteryJourneyEngine.startOrResumeJourney({
+          userId: studentId,
+          chapterId: body.chapterId ? sanitizeText(body.chapterId, 120) : undefined,
+          query: body.query ? sanitizeText(body.query, 200) : undefined,
+          board: body.board ? sanitizeText(body.board, 40) : undefined,
+          grade: typeof body.grade === 'number' ? body.grade : undefined,
+          subject: body.subject ? sanitizeText(body.subject, 60) : undefined,
+          teachingMode: body.teachingMode === 'exam' ? 'exam' : body.teachingMode === 'normal' ? 'normal' : undefined
+        });
+        sendJson(res, 200, { success: true, journey });
+        return;
+      }
+
+      if (pathname === '/api/chapter-mastery/checkpoint' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        if (!body.chapterId || !body.checkpointId) {
+          sendJson(res, 400, { error: 'chapterId and checkpointId are required.' });
+          return;
+        }
+        const evaluation = chapterMasteryJourneyEngine.evaluateCheckpoint({
+          userId: studentId,
+          chapterId: sanitizeText(body.chapterId, 120),
+          checkpointId: sanitizeText(body.checkpointId, 120),
+          topicName: sanitizeText(body.topicName || '', 160),
+          studentAnswer: sanitizeText(body.studentAnswer || '', 1500)
+        });
+        sendJson(res, 200, { success: true, evaluation });
+        return;
+      }
+
+      if (pathname === '/api/chapter-mastery/progress' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        if (!body.chapterId) {
+          sendJson(res, 400, { error: 'chapterId is required.' });
+          return;
+        }
+        const progress = chapterMasteryJourneyEngine.updateProgressControls({
+          userId: studentId,
+          chapterId: sanitizeText(body.chapterId, 120),
+          currentStage: typeof body.currentStage === 'number' ? body.currentStage : undefined,
+          teachingMode: body.teachingMode === 'exam' ? 'exam' : body.teachingMode === 'normal' ? 'normal' : undefined,
+          toggleBookmarkTopic: body.toggleBookmarkTopic ? sanitizeText(body.toggleBookmarkTopic, 160) : undefined,
+          prerequisitesSkipped: typeof body.prerequisitesSkipped === 'boolean' ? body.prerequisitesSkipped : undefined
+        });
+        sendJson(res, 200, { success: true, progress });
+        return;
+      }
+
+      if (pathname === '/api/chapter-mastery/assessment/submit' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        if (!body.chapterId) {
+          sendJson(res, 400, { error: 'chapterId is required.' });
+          return;
+        }
+        const report = chapterMasteryJourneyEngine.submitFinalAssessment({
+          userId: studentId,
+          chapterId: sanitizeText(body.chapterId, 120),
+          answers: typeof body.answers === 'object' && body.answers ? body.answers : {}
+        });
+        sendJson(res, 200, { success: true, report });
         return;
       }
 

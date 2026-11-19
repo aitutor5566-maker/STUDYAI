@@ -2,6 +2,7 @@ import { centralAiOrchestrator, type CentralAIProviderId } from './centralAiOrch
 import { macCompanionBridge } from './macCompanionBridge.ts';
 import { ResponseValidationLayer, type ComprehensiveValidationReport } from './responseValidationLayer.ts';
 import { unifiedKnowledgeRetrieval, type UnifiedRetrievedKnowledge } from './unifiedKnowledgeRetrieval.ts';
+import { icseCbseKnowledgeBank } from './icseCbseKnowledgeBank.ts';
 
 export type TeachingQuestionType =
   | 'quick_answer'
@@ -84,12 +85,32 @@ export interface MultiModelTeachResponse {
   examPreparation?: {
     markFormat: ExamMarkFormat;
     formattedAnswer: string;
+    formalDefinitions: Array<{ term: string; definition: string }>;
+    importantComparisons: Array<{ title: string; summary: string }>;
     commonMistakes: string[];
     practiceQuestions: string[];
+    modelAnswers: Array<{ question: string; marks: number; modelAnswer: string; markingTip: string }>;
   };
+  subjectTeachingSequence: string[];
+  needsClarification?: boolean;
+  clarificationQuestion?: string;
+  uncertaintyDisclosure?: string;
   sources: Array<{ title: string; publisher: string; board: string; grade: number }>;
   validation: ComprehensiveValidationReport;
   latencyMs: number;
+}
+
+export function getSubjectTeachingSequence(subject: string): string[] {
+  const s = subject.toLowerCase();
+  if (s.includes('bio')) return ['Definition', 'Structure', 'Parts', 'Functions', 'Processes', 'Diagram', 'Examples', 'Differences', 'Applications', 'Assessment'];
+  if (s.includes('phys')) return ['Definition', 'Principle', 'Laws', 'Explanation', 'Formulas', 'Derivations', 'Numericals', 'Diagrams', 'Applications', 'Assessment'];
+  if (s.includes('chem')) return ['Definition', 'Basic Concepts', 'Elements & Compounds', 'Properties', 'Structures', 'Reactions', 'Equations', 'Examples', 'Applications', 'Assessment'];
+  if (s.includes('math')) return ['Prerequisites', 'Concepts', 'Rules', 'Formulas', 'Methods', 'Worked Problems', 'Practice', 'Applications', 'Assessment'];
+  if (s.includes('hist')) return ['Background', 'Timeline', 'People', 'Events', 'Causes', 'Developments', 'Consequences', 'Historical Significance', 'Assessment'];
+  if (s.includes('geo')) return ['Introduction', 'Location', 'Physical Features', 'Formation', 'Processes', 'Maps', 'Diagrams', 'Examples', 'Applications', 'Assessment'];
+  if (s.includes('eng') || s.includes('hindi') || s.includes('telugu') || s.includes('lang')) return ['Vocabulary', 'Definitions & Meanings', 'Grammar', 'Rules', 'Examples', 'Reading', 'Comprehension', 'Writing', 'Practice', 'Assessment'];
+  if (s.includes('comp')) return ['Introduction', 'Terminology', 'Concepts', 'Components', 'Working Principles', 'Algorithms', 'Examples', 'Practical Tasks', 'Applications', 'Assessment'];
+  return ['Introduction', 'Definition', 'Core Concepts', 'Working Principles', 'Examples', 'Applications', 'Comparisons', 'Assessment'];
 }
 
 const validator = new ResponseValidationLayer();
@@ -368,7 +389,70 @@ export class MultiModelAiTeacherEngine {
       limitations.push(...primaryRes.warnings);
     }
 
-    const answerText = primaryRes.answer || `Let's understand ${topic} in ${subject} step by step.`;
+    let answerText = primaryRes.answer || `Let's understand ${topic} in ${subject} step by step.`;
+    const isGenericAmbiguousPhrase =
+      !req.subject &&
+      /^(explain|teach|tell me about|what is)?\s*(chapter\s*\d+|unit\s*\d+|this|that|it|power|work|cell|state|acid|voice)\s*[?!.]*$/i.test(question);
+
+    const rawKbChapter = isGenericAmbiguousPhrase
+      ? null
+      : icseCbseKnowledgeBank.findBestMatchingChapter({
+          query: topic,
+          board,
+          grade,
+          subject
+        });
+
+    const topicTokens = topic
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length >= 4 && !['explain', 'what', 'with', 'about', 'theory', 'chapter'].includes(w));
+    const kbHay = rawKbChapter
+      ? `${rawKbChapter.chapterTitle} ${rawKbChapter.topicList.join(' ')} ${rawKbChapter.keyTerminology.join(' ')}`.toLowerCase()
+      : '';
+    const kbMatchesTopic =
+      Boolean(rawKbChapter) &&
+      (topicTokens.length === 0 || topicTokens.some((tok) => kbHay.includes(tok)));
+    const kbChapter = kbMatchesTopic ? rawKbChapter : null;
+
+    const isAmbiguous =
+      isGenericAmbiguousPhrase ||
+      (!req.subject &&
+        !kbChapter &&
+        question.split(/\s+/).length <= 4 &&
+        /\b(chapter\s*\d+|unit\s*\d+|power|work|cell|state|acid|voice)\b/i.test(question));
+
+    const clarificationQuestion = isAmbiguous
+      ? `To teach this accurately for ${board} Class ${grade}, could you clarify which subject or chapter you mean (for example, Physics, Chemistry, Biology, or Civics)?`
+      : undefined;
+
+    let uncertaintyDisclosure: string | undefined;
+    if (!kbChapter) {
+      uncertaintyDisclosure = `Note: "${topic}" is not yet published in the verified ${board} Class ${grade} Knowledge Bank. This explanation uses curriculum-guided reasoning and should be cross-checked with your official textbook.`;
+      limitations.push(uncertaintyDisclosure);
+    }
+
+    // In Exam Preparation Mode, preserve full conceptual teaching and enrich with formal definitions,
+    // comparisons, formulas/derivations, exam question types, and marking guidance so Exam Mode is always deeper.
+    if (questionType === 'exam_prep' && kbChapter) {
+      const defsBlock = kbChapter.importantDefinitions
+        .slice(0, 4)
+        .map((d) => `- **${d.term}**: ${d.definition}`)
+        .join('\n');
+      const compBlock = kbChapter.importantComparisons[0]
+        ? `\n\n### 📊 Important Distinctions (${kbChapter.importantComparisons[0].title})\n` +
+          kbChapter.importantComparisons[0].rows
+            .map((r) => `- **${r.aspect}**: ${kbChapter.importantComparisons[0].leftColumnHeader} = ${r.leftValue} | ${kbChapter.importantComparisons[0].rightColumnHeader} = ${r.rightValue}`)
+            .join('\n')
+        : '';
+      const examQsBlock = [...kbChapter.practiceQuestions, ...kbChapter.assessmentQuestions]
+        .slice(0, 4)
+        .map((q, idx) => `${idx + 1}. **[${q.questionType} • ${q.marks} Marks]** ${q.question}\n   - *Model Answer*: ${q.correctAnswer}\n   - *Marking Guidance*: ${q.explanation}`)
+        .join('\n');
+
+      answerText = `${answerText}\n\n---\n### 🎯 ${board} Class ${grade} Exam Preparation Addendum\n#### 📖 Formal Textbook Definitions\n${defsBlock}${compBlock}\n\n#### 📝 Board-Aligned Practice Questions & Model Answers\n${examQsBlock}`;
+    }
+
     const validation = validator.validate({
       topic,
       subject,
@@ -461,14 +545,36 @@ export class MultiModelAiTeacherEngine {
         ? {
             markFormat: examMarks,
             formattedAnswer: answerText,
-            commonMistakes: [
-              'Skipping definitions or key terminology before jumping into examples.',
-              'Forgetting units, signs, or balanced coefficients in equations.'
-            ],
-            practiceQuestions: [
-              `Define ${topic} and state two key applications (${examMarks}).`,
-              `Explain the working of ${topic} with a labelled diagram and example.`
-            ]
+            formalDefinitions: (kbChapter?.importantDefinitions || []).map((d) => ({
+              term: d.term,
+              definition: d.definition
+            })),
+            importantComparisons: (kbChapter?.importantComparisons || []).map((c) => ({
+              title: c.title,
+              summary: c.rows.map((r) => `${r.aspect}: ${r.leftValue} vs ${r.rightValue}`).join(' | ')
+            })),
+            commonMistakes:
+              kbChapter && kbChapter.commonMisconceptions.length > 0
+                ? kbChapter.commonMisconceptions.map((m) => `${m.misconception} → ${m.scientificCorrection}`)
+                : [
+                    'Skipping definitions or key terminology before jumping into examples.',
+                    'Forgetting units, signs, or balanced coefficients in equations.'
+                  ],
+            practiceQuestions:
+              kbChapter && kbChapter.assessmentQuestions.length > 0
+                ? kbChapter.assessmentQuestions.map((q) => `[${q.questionType} • ${q.marks}M] ${q.question}`)
+                : [
+                    `Define ${topic} and state two key applications (${examMarks}).`,
+                    `Explain the working of ${topic} with a labelled diagram and example.`
+                  ],
+            modelAnswers: [...(kbChapter?.practiceQuestions || []), ...(kbChapter?.assessmentQuestions || [])]
+              .slice(0, 4)
+              .map((q) => ({
+                question: q.question,
+                marks: q.marks,
+                modelAnswer: q.correctAnswer,
+                markingTip: q.explanation
+              }))
           }
         : undefined;
 
@@ -476,6 +582,10 @@ export class MultiModelAiTeacherEngine {
       subject,
       topic,
       questionType,
+      subjectTeachingSequence: getSubjectTeachingSequence(subject),
+      needsClarification: isAmbiguous,
+      clarificationQuestion,
+      uncertaintyDisclosure,
       routing: {
         modulesUsed,
         primaryProvider: primaryRes.provider,

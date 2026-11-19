@@ -207,7 +207,7 @@ export class ResponseValidationLayer {
       details: langDetails
     };
 
-    // 8. Formula Syntax & Mathematical Correctness Check
+  // 8. Formula Syntax & Mathematical Correctness Check
     let formulaPassed = true;
     let formulaDetails = 'Mathematical and chemical formulas use standard scientific notation.';
 
@@ -216,6 +216,39 @@ export class ResponseValidationLayer {
       formulaPassed = false;
       formulaDetails = 'Syntax error: unmatched display math delimiters ($$).';
       warnings.push('Unbalanced math equation delimiters detected.');
+    }
+
+    // Deterministic mathematical recalculation check for linear equations (ax ± b = c)
+    const linEq = topicLower.match(/(\d+)\s*x\s*([+-])\s*(\d+)\s*=\s*(\d+)/i);
+    if (linEq) {
+      const a = Number(linEq[1]);
+      const op = linEq[2];
+      const b = Number(linEq[3]);
+      const c = Number(linEq[4]);
+      const expectedX = (op === '+' ? c - b : c + b) / a;
+      if (Number.isFinite(expectedX) && !lower.includes(`x = ${expectedX}`) && !lower.includes(`x=${expectedX}`)) {
+        formulaPassed = false;
+        formulaDetails = `Mathematical verification failed: expected verified root x = ${expectedX}.`;
+        warnings.push(`Recalculation mismatch for ${linEq[0]} (expected x = ${expectedX}).`);
+      } else {
+        formulaDetails = `Mathematically verified: linear equation ${linEq[0]} recalculates cleanly to x = ${expectedX}.`;
+      }
+    }
+
+    // Deterministic quadratic discriminant check (ax² ± bx ± c = 0)
+    const quadEq = topicLower.match(/(\d*)\s*x(?:\^2|²)\s*([+-])\s*(\d+)\s*x\s*([+-])\s*(\d+)\s*=\s*0/i);
+    if (quadEq) {
+      const a = quadEq[1] ? Number(quadEq[1]) : 1;
+      const b = (quadEq[2] === '-' ? -1 : 1) * Number(quadEq[3]);
+      const c = (quadEq[4] === '-' ? -1 : 1) * Number(quadEq[5]);
+      const D = b * b - 4 * a * c;
+      if (!lower.includes(String(D))) {
+        formulaPassed = false;
+        formulaDetails = `Quadratic verification failed: expected Discriminant D = ${D}.`;
+        warnings.push(`Recalculation mismatch: expected D = ${D}.`);
+      } else {
+        formulaDetails = `Mathematically verified: quadratic discriminant D = b² - 4ac = ${D} confirmed.`;
+      }
     }
 
     const formulaSyntaxCorrectness: ValidationCheckResult = {

@@ -46,6 +46,7 @@ import { useLearning } from '../context/LearningContext';
 import { AdaptiveProfileModal } from '../components/AdaptiveProfileModal';
 import { VoiceTeacherModal } from '../components/VoiceTeacherModal';
 import { EducationalVisualLayout } from '../components/EducationalVisualLayout';
+import { ChapterMasteryJourneyPanel } from '../components/ChapterMasteryJourneyPanel';
 
 type LanguageType = 'English' | 'Telugu' | 'Hindi';
 type ModeType = 'simple' | 'detailed';
@@ -324,6 +325,7 @@ export const TutorPage: React.FC = () => {
   const [language, setLanguage] = useState<LanguageType>('English');
   const [mode, setMode] = useState<ModeType>('simple');
   const [teachingMode, setTeachingMode] = useState<TeachingMode>('normal');
+  const [chapterJourneyActive, setChapterJourneyActive] = useState<boolean>(false);
   const [streamingMode, setStreamingMode] = useState<boolean>(false);
   const [streamingText, setStreamingText] = useState<string>('');
   const [isListening, setIsListening] = useState<boolean>(false);
@@ -1220,6 +1222,24 @@ export const TutorPage: React.FC = () => {
           >
             ⚡ Exam
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={chapterJourneyActive}
+            onClick={() => setChapterJourneyActive((v) => !v)}
+            style={{
+              padding: '5px 12px',
+              borderRadius: 999,
+              border: 'none',
+              background: chapterJourneyActive ? 'linear-gradient(135deg, #0F172A 0%, #334155 100%)' : 'transparent',
+              color: chapterJourneyActive ? '#FFFFFF' : '#475569',
+              fontWeight: 800,
+              fontSize: '0.76rem',
+              cursor: 'pointer'
+            }}
+          >
+            🎓 Chapter Mastery
+          </button>
         </div>
 
         {/* Compact Language Selector */}
@@ -1673,6 +1693,20 @@ export const TutorPage: React.FC = () => {
           </div>
         )}
 
+        {chapterJourneyActive ? (
+          <ChapterMasteryJourneyPanel
+            defaultBoard="CBSE"
+            defaultGrade={grade}
+            defaultSubject={subject}
+            defaultTopic={activeTopic}
+            teachingMode={teachingMode}
+            onTeachingModeChange={(m) => {
+              setTeachingMode(m);
+              setMode(m === 'exam' ? 'detailed' : 'simple');
+            }}
+          />
+        ) : (
+        <>
         {messages.map((msg) => {
           if (msg.role === 'user') {
             const isEditing = editingMsgId === msg.id;
@@ -3161,6 +3195,9 @@ export const TutorPage: React.FC = () => {
               <RotateCcw size={14} /> Retry
             </button>
           </div>
+        )}
+
+        </>
         )}
 
         <div ref={messagesEndRef} />
