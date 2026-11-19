@@ -170,3 +170,59 @@ test('3. Knowledge Bank connects to AI Notes, Educational Games, and Admin Verif
   assert.ok(verifiedCh.completenessPercentage >= 95);
   assert.ok(verifiedCh.version >= 2);
 });
+
+test('4. 10-Category, Two-Board Coverage Matrix (2 × 10 × 10 = 200 Cells), All 10 Classes Populated, Duplicate Prevention & Deep Heart/Skill Content', () => {
+  const report = icseCbseKnowledgeBank.getCompletenessTrackerReport();
+
+  // 1. All 10 subject coverage categories and 200 matrix cells (2 Boards × 10 Classes × 10 Categories)
+  assert.equal(report.tenCategoriesFramework.length, 10);
+  assert.equal(report.summary.totalTenCategoryMatrixCells, 200);
+
+  // 2. All 10 classes (Classes 1 to 10) have populated chapters in both CBSE and ICSE
+  assert.equal(report.classWiseCoverage.length, 10);
+  for (const cls of report.classWiseCoverage) {
+    assert.ok(cls.cbseChaptersCount >= 1, `Expected CBSE chapters in Class ${cls.grade}`);
+    assert.ok(cls.icseChaptersCount >= 1, `Expected ICSE chapters in Class ${cls.grade}`);
+  }
+
+  // 3. Categories are honestly classified (not falsely claiming all 10 are compulsory exam subjects in every class)
+  const statuses = new Set(report.tenCategoryMatrix.map((c) => c.prescriptionStatus));
+  assert.ok(statuses.has('compulsory_prescribed'));
+  assert.ok(statuses.has('optional_prescribed'));
+  assert.ok(statuses.has('school_level_graded'));
+  assert.ok(statuses.has('integrated_supplementary'));
+  assert.ok(statuses.has('not_applicable'));
+
+  // 4. Deep content retrieval across Categories 5, 7, 8, 9, 10 and Human Heart (4 chambers, valves, vessels, double circulation)
+  const evsCh = icseCbseKnowledgeBank.findBestMatchingChapter({ query: '3Rs Reduce Reuse Recycle', grade: 2 });
+  assert.ok(evsCh && evsCh.chapterIntroduction.includes('Reduce, Reuse, and Recycle'));
+
+  const gkCh = icseCbseKnowledgeBank.findBestMatchingChapter({ query: 'ISRO Chandrayaan-3 Aditya-L1', grade: 6 });
+  assert.ok(gkCh && gkCh.chapterIntroduction.includes('Chandrayaan-3'));
+
+  const artCh = icseCbseKnowledgeBank.findBestMatchingChapter({ query: 'Color Wheel Linear Perspective Kalamkari', grade: 7 });
+  assert.ok(artCh && artCh.chapterIntroduction.includes('Color Wheel'));
+
+  const peCh = icseCbseKnowledgeBank.findBestMatchingChapter({ query: 'Balanced Diet BMI R.I.C.E. First Aid Yoga', grade: 8 });
+  assert.ok(peCh && peCh.chapterIntroduction.includes('R.I.C.E.'));
+
+  const vocCh = icseCbseKnowledgeBank.findBestMatchingChapter({ query: 'Financial Literacy 50/30/20 Design Thinking SUPW', grade: 9 });
+  assert.ok(vocCh && vocCh.chapterIntroduction.includes('50/30/20'));
+
+  const heartRetrieved = unifiedKnowledgeRetrieval.retrieveKnowledge('Human Heart', 'Biology', 10, 'CBSE');
+  const heartText = JSON.stringify(heartRetrieved);
+  assert.match(heartText, /Atrium|Ventricle|Tricuspid|Bicuspid|Double Circulation/i);
+
+  // 5. Duplicate ingestion prevention
+  const dupAttempt = icseCbseKnowledgeBank.ingestChapterWithDuplicateCheck({
+    board: 'CBSE',
+    grade: 8,
+    subject: 'Physics',
+    syllabusUnit: 'Mechanics',
+    chapterNumber: 8,
+    chapterTitle: 'Chapter 8: Force and Pressure',
+    chapterIntroduction: 'Duplicate test',
+    topicList: ['Force', 'Pressure']
+  });
+  assert.equal(dupAttempt.duplicateDetected, true);
+});
