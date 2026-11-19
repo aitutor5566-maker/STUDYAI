@@ -1,5 +1,7 @@
 import crypto from 'node:crypto';
 import { db } from './db.ts';
+import { ResearchIntelligenceEngine } from './researchIntelligenceEngine.ts';
+import { multiBoardKnowledgeEngine } from './multiBoardKnowledgeEngine.ts';
 
 export type EducationalBoard =
   | 'CBSE'
@@ -9,6 +11,8 @@ export type EducationalBoard =
 
 export type SupportedSubject =
   | 'Science'
+  | 'General Science'
+  | 'Environmental Science'
   | 'Physics'
   | 'Chemistry'
   | 'Biology'
@@ -17,11 +21,14 @@ export type SupportedSubject =
   | 'History'
   | 'Geography'
   | 'Civics'
+  | 'Political Science'
   | 'Economics'
   | 'English'
   | 'Telugu'
   | 'Hindi'
-  | 'Computer Science';
+  | 'Computer Science'
+  | 'Information Technology'
+  | 'General Knowledge';
 
 export type EducationalLanguage = 'English' | 'Telugu' | 'Hindi';
 
@@ -342,6 +349,19 @@ export class UnifiedKnowledgeRetrievalService {
   }
 
   /**
+   * Synchronous convenience wrapper for callers that pass (topic, subject, grade, board, language)
+   */
+  retrieveKnowledge(
+    topic: string,
+    subject?: SupportedSubject | string,
+    grade = 10,
+    board: EducationalBoard | string = 'CBSE',
+    language: EducationalLanguage | string = 'English'
+  ): UnifiedRetrievedKnowledge {
+    return this.retrieveSync({ topic, subject, grade, board, language });
+  }
+
+  /**
    * Core Knowledge Retrieval Service
    * Resolves universal knowledge, maps to student's board, applies grade pedagogy,
    * pairs dual explanations, attaches visual assets and exam tips.
@@ -351,22 +371,36 @@ export class UnifiedKnowledgeRetrievalService {
   }
 
   async retrieve(query: KnowledgeRetrievalQuery): Promise<UnifiedRetrievedKnowledge> {
+    return this.retrieveSync(query);
+  }
+
+  retrieveSync(query: KnowledgeRetrievalQuery): UnifiedRetrievedKnowledge {
     const cleanTopic = (query.topic || '').trim();
     const resolvedSubject = this.resolveSubject(cleanTopic, query.subject);
-    const resolvedGrade = Math.max(1, Math.min(10, query.grade || 10));
+    const resolvedGrade = Math.max(1, Math.min(12, query.grade || 10));
     const resolvedBoard: EducationalBoard = this.normalizeBoard(query.board);
     const resolvedLang: EducationalLanguage = this.normalizeLanguage(query.language);
 
-    // 1. Layer A: Universal Knowledge Node
-    const universalNode = this.buildUniversalKnowledgeNode(cleanTopic, resolvedSubject);
+    // Ensure baseline multi-board knowledge nodes exist in SQLite
+    try {
+      const countRow = db.prepare('SELECT COUNT(*) as c FROM universal_knowledge_nodes').get() as any;
+      if (!countRow || Number(countRow.c) < 15) {
+        multiBoardKnowledgeEngine.initializeBaselineKnowledge();
+      }
+    } catch {
+      // non-blocking
+    }
 
-    // 2. Layer B: Board Curriculum Requirement
-    const boardRequirement = this.buildBoardRequirement(cleanTopic, resolvedSubject, resolvedGrade, resolvedBoard);
+    // 1. Layer A: Universal Knowledge Node (checks SQLite + rich subject knowledge base + auto-discovery)
+    const universalNode = this.buildUniversalKnowledgeNode(cleanTopic, resolvedSubject, resolvedGrade, resolvedBoard);
+
+    // 2. Layer B: Board Curriculum Requirement (checks SQLite board_curriculum_mappings first)
+    const boardRequirement = this.buildBoardRequirement(cleanTopic, resolvedSubject, resolvedGrade, resolvedBoard, universalNode.id);
 
     // 3. Layer C: Grade Pedagogy Profile
-    const gradePedagogy = GRADE_PROFILES[resolvedGrade] || GRADE_PROFILES[10];
+    const gradePedagogy = GRADE_PROFILES[Math.min(10, resolvedGrade)] || GRADE_PROFILES[10];
 
-    // 4. Layer D: Dual Explanations (Layman vs Formal Academic)
+    // 4. Layer D: Dual Explanations (Layman vs Formal Academic, rooted in actual universalNode facts)
     const dualExplanation = this.buildDualExplanation(cleanTopic, resolvedSubject, resolvedGrade, universalNode);
 
     // 5. Layer E: Examination Information
@@ -376,7 +410,7 @@ export class UnifiedKnowledgeRetrievalService {
     const visualAssets = this.retrieveVisualAssets(cleanTopic);
 
     // 7. Sources
-    const sources = this.getRegisteredSources({ board: resolvedBoard, grade: resolvedGrade });
+    const sources = this.getRegisteredSources({ board: resolvedBoard, grade: Math.min(10, resolvedGrade) });
 
     // 8. Language Localization
     const languageLocalized = this.localizeContent(cleanTopic, resolvedSubject, dualExplanation, resolvedLang);
@@ -414,35 +448,149 @@ export class UnifiedKnowledgeRetrievalService {
   }
 
   private resolveSubject(topic: string, explicitSubject?: string): SupportedSubject {
-    if (explicitSubject && explicitSubject !== 'Science') {
+    if (explicitSubject && explicitSubject !== 'Science' && explicitSubject !== 'General Science' && explicitSubject !== 'All') {
       const match = explicitSubject.trim();
       return match as SupportedSubject;
     }
     const lower = topic.toLowerCase();
-    if (/(photosynthesis|heart|cardiac|cell|mitosis|respiration|digest|dna|plant|kidney|circulation|biology)/.test(lower)) {
+    if (/[\u0C00-\u0C7F]/.test(topic) || /\b(telugu|sandhi|samasam|vyakaranam|alankaram|chandassu|సవర్ణదీర్ఘ|సంధి|సమాసం|తెలుగు)\b/i.test(lower)) {
+      return 'Telugu';
+    }
+    if (/[\u0900-\u097F]/.test(topic) || /\b(hindi|vyakaran|sandhi vichched|samas|muhavare|अलंकार|संधि|समास|हिंदी)\b/i.test(lower)) {
+      return 'Hindi';
+    }
+    if (/(photosynthesis|stomata|chloroplast|chlorophyll|heart|cardiac|cell|mitosis|meiosis|respiration|digest|dna|plant|kidney|nephron|circulation|biology|enzyme|ecosystem)/.test(lower)) {
       return 'Biology';
     }
-    if (/(chemical reaction|equation|acid|base|salt|periodic table|bonding|covalent|ionic|redox|metal|non-metal)/.test(lower)) {
+    if (/(chemical reaction|equation|acid|base|salt|periodic table|bonding|covalent|ionic|redox|metal|non-metal|stoichiometry|mole|chemistry)/.test(lower)) {
       return 'Chemistry';
     }
-    if (/(electricity|ohm|circuit|light|reflection|refraction|lens|magnet|force|motion|newton|gravity|energy|physics)/.test(lower)) {
+    if (/(electricity|ohm|circuit|light|reflection|refraction|snell|lens|mirror|magnet|force|motion|newton|inertia|momentum|gravity|energy|work|power|physics)/.test(lower)) {
       return 'Physics';
     }
-    if (/(quadratic|equation|trigonometry|geometry|circle|polynomial|arithmetic progression|statistics|probability|math)/.test(lower)) {
+    if (/(quadratic|linear equation|solve|algebra|trigonometry|sine|cosine|geometry|triangle|circle|mensuration|polynomial|arithmetic progression|fraction|decimal|statistics|mean|median|mode|probability|math)/.test(lower) || /[0-9]x\s*[+\-=]/.test(lower)) {
       return 'Mathematics';
     }
-    if (/(french revolution|nationalism|history|civil disobedience|gandhi|war|independence)/.test(lower)) {
+    if (/(french revolution|bastille|nationalism|history|civil disobedience|non-cooperation|satyagraha|gandhi|war|independence|mughal|harappa)/.test(lower)) {
       return 'History';
     }
-    if (/(water resource|dam|soil|resource|climate|agriculture|geography|map)/.test(lower)) {
+    if (/(water cycle|hydrological|water resource|dam|soil|resource|climate|monsoon|orographic|rainfall|agriculture|geography|map|tectonic)/.test(lower)) {
       return 'Geography';
+    }
+    if (/(constitution|fundamental rights|parliament|lok sabha|rajya sabha|democracy|federalism|judiciary|civics|political science)/.test(lower)) {
+      return 'Civics';
+    }
+    if (/(gdp|per capita|inflation|money and credit|rbi|primary sector|tertiary sector|demand and supply|economics)/.test(lower)) {
+      return 'Economics';
+    }
+    if (/(grammar|tense|active voice|passive voice|reported speech|direct and indirect|subject verb|clause|preposition|metaphor|simile|english)/.test(lower)) {
+      return 'English';
+    }
+    if (/(algorithm|python|binary search|data structure|sql|database|osi model|tcp\/ip|computer network|computer science)/.test(lower)) {
+      return 'Computer Science';
     }
     return 'Science';
   }
 
-  private buildUniversalKnowledgeNode(topic: string, subject: SupportedSubject): UniversalKnowledgeNode {
+  private buildUniversalKnowledgeNode(
+    topic: string,
+    subject: SupportedSubject,
+    grade = 10,
+    board: EducationalBoard = 'CBSE'
+  ): UniversalKnowledgeNode {
     const id = `ukn-${crypto.createHash('md5').update(topic.toLowerCase()).digest('hex').slice(0, 8)}`;
     const lower = topic.toLowerCase();
+
+    // 1. Check SQLite universal_knowledge_nodes (exact match, keyword match, or subject match)
+    try {
+      const allNodes = db.prepare('SELECT * FROM universal_knowledge_nodes').all() as any[];
+      const matched = allNodes.find((n) => {
+        const nt = String(n.topic || '').toLowerCase();
+        if (nt === lower || lower.includes(nt) || nt.includes(lower)) return true;
+        // Keyword matching for common queries
+        if (/(photosynthesis|stomata|chloroplast|calvin)/.test(lower) && nt.includes('photosynthesis')) return true;
+        if (/(newton|laws of motion|inertia|momentum|f\s*=\s*ma)/.test(lower) && nt.includes('newton')) return true;
+        if (/(quadratic|discriminant|ax\^2|ax²)/.test(lower) && nt.includes('quadratic')) return true;
+        if (/(linear equation|simultaneous|solve.*x|[0-9]x\s*[+\-=])/.test(lower) && nt.includes('linear equation')) return true;
+        if (/(trigonometr|sin|cos|tan|hypotenuse)/.test(lower) && nt.includes('trigonometry')) return true;
+        if (/(triangle|circle|mensuration|volume|surface area|bpt|thales)/.test(lower) && nt.includes('geometry')) return true;
+        if (/(statistics|mean|median|mode|probability)/.test(lower) && nt.includes('statistics')) return true;
+        if (/(chemical reaction|balance|redox|decomposition|displacement)/.test(lower) && nt.includes('chemical reaction')) return true;
+        if (/(acid|base|salt|ph scale|neutralization)/.test(lower) && nt.includes('acids, bases')) return true;
+        if (/(periodic|mendeleev|moseley|covalent|ionic|bonding)/.test(lower) && nt.includes('periodic')) return true;
+        if (/(mitosis|meiosis|cell division|cell organelle)/.test(lower) && nt.includes('mitosis')) return true;
+        if (/(respiration|excretion|nephron|alveoli|atp)/.test(lower) && nt.includes('respiration')) return true;
+        if (/(french revolution|bastille|three estates|napoleon)/.test(lower) && nt.includes('french revolution')) return true;
+        if (/(indian national|freedom struggle|gandhi|satyagraha|dandi|non-cooperation|quit india)/.test(lower) && nt.includes('indian national')) return true;
+        if (/(water cycle|hydrological|monsoon|rainwater|climate|orographic)/.test(lower) && nt.includes('water cycle')) return true;
+        if (/(constitution|fundamental rights|parliament|lok sabha|democracy|federalism)/.test(lower) && nt.includes('constitution')) return true;
+        if (/(gdp|per capita|sectors of economy|money and credit|rbi|shg)/.test(lower) && nt.includes('economic')) return true;
+        if (/(active and passive|passive voice|tense|reported speech|direct and indirect|subject verb|concord|clause|grammar)/.test(lower) && subject === 'English' && nt.includes('english grammar')) return true;
+        if ((/[\u0C00-\u0C7F]/.test(topic) || /(telugu|sandhi|samasam|vyakaranam|alankaram|chandassu)/.test(lower)) && nt.includes('తెలుగు వ్యాకరణం')) return true;
+        if ((/[\u0900-\u097F]/.test(topic) || /(hindi|vyakaran|samas)/.test(lower)) && nt.includes('हिंदी व्याकरण')) return true;
+        if (/(algorithm|python|binary search|sql|osi model|computer network)/.test(lower) && nt.includes('computer science')) return true;
+        return false;
+      });
+
+      if (matched) {
+        const laws = JSON.parse(matched.fundamental_laws_json || '[]');
+        const rawFormulas = JSON.parse(matched.governing_formulas_json || '[]');
+        const formulas = rawFormulas.map((f: any) => ({
+          formula: f.formula || f.equation || '',
+          explanation: f.explanation || '',
+          siUnits: f.siUnits || 'Standard Curriculum Notation'
+        }));
+        const phenomena = JSON.parse(matched.key_phenomena_json || '[]');
+        const prereqs = JSON.parse(matched.prerequisites_json || '[]');
+        const rawSubs = JSON.parse(matched.subtopics_json || '[]');
+        const subtopics = rawSubs.map((s: any) =>
+          typeof s === 'string'
+            ? { title: s, summary: `Core subtopic of ${matched.topic} in ${matched.subject}.` }
+            : s
+        );
+
+        // Enrich Photosynthesis specifically with Stomata & Guard Cells detail
+        if (String(matched.id) === 'ukn-photosynthesis') {
+          if (!phenomena.some((p: string) => p.toLowerCase().includes('stomata'))) {
+            phenomena.push('Stomatal gas exchange: Bean-shaped Guard Cells regulate stomatal pore opening (via turgor pressure) for CO₂ intake, O₂ release, and transpiration');
+          }
+        }
+
+        return {
+          id: matched.id,
+          topic: matched.topic,
+          subject: (matched.subject as SupportedSubject) || subject,
+          domain: matched.domain || `${subject} Curriculum`,
+          academicDefinition: matched.academic_definition,
+          fundamentalLaws: laws,
+          governingFormulas: formulas,
+          keyPhenomena: phenomena,
+          prerequisites: prereqs,
+          subtopics,
+          verifiedScientificFactCheck: Boolean(matched.verified)
+        };
+      }
+    } catch {
+      // Fall through to continuous discovery or built-in nodes
+    }
+
+    // 2. Trigger Continuous Knowledge Discovery Pipeline for unindexed topics
+    try {
+      if (!ResearchIntelligenceEngine.isResearchPaused() && topic.length >= 3) {
+        const gap = ResearchIntelligenceEngine.detectTopicGaps(topic, subject, grade, board);
+        if (gap.hasGap) {
+          void ResearchIntelligenceEngine.executeResearchPipeline({
+            topic,
+            subject,
+            grade,
+            board,
+            priority: 1
+          }).catch(() => {});
+        }
+      }
+    } catch {
+      // non-blocking
+    }
 
     if (lower.includes('photosynthesis')) {
       return {
@@ -450,21 +598,25 @@ export class UnifiedKnowledgeRetrievalService {
         topic: 'Photosynthesis',
         subject: 'Biology',
         domain: 'Plant Physiology & Bioenergetics',
-        academicDefinition: 'The photochemical process by which autotrophic organisms synthesize glucose and molecular oxygen from carbon dioxide and water utilizing light energy absorbed by chlorophyll pigments.',
-        fundamentalLaws: ['First Law of Thermodynamics (Conservation of Energy)', 'Law of Mass Action'],
+        academicDefinition: 'The photochemical process by which autotrophic plants synthesize glucose (C₆H₁₂O₆) and molecular oxygen (O₂) from carbon dioxide (entering through leaf stomata) and water utilizing sunlight absorbed by chlorophyll pigments in chloroplasts.',
+        fundamentalLaws: ['First Law of Thermodynamics (Conservation of Energy)', 'Blackman Law of Limiting Factors'],
         governingFormulas: [
           {
             formula: '6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂',
-            explanation: 'Balanced stoichiometric equation representing net reactant conversion to glucose and gaseous oxygen.',
+            explanation: 'Balanced stoichiometric equation representing net reactant conversion to glucose and gaseous oxygen in presence of sunlight and chlorophyll.',
             siUnits: 'Stoichiometric molar balance'
           }
         ],
-        keyPhenomena: ['Photolysis of water in PS II', 'Proton pumping across thylakoid membrane', 'RuBisCO-mediated carbon fixation in the stroma'],
-        prerequisites: ['Plant Cell Structure', 'Chloroplast Anatomy', 'Enzyme Function'],
+        keyPhenomena: [
+          'Role of Stomata: Microscopic pores on leaf epidermis flanked by bean-shaped Guard Cells; turgor pressure opens stomata for CO₂ diffusion inward and O₂/water vapour diffusion outward',
+          'Photolysis of water (2H₂O → 4H⁺ + 4e⁻ + O₂) in Thylakoid membranes (Light Reaction)',
+          'RuBisCO-mediated carbon fixation (Calvin Cycle) in the chloroplast Stroma'
+        ],
+        prerequisites: ['Plant Cell Structure', 'Chloroplast Anatomy', 'Stomatal Guard Cell Turgor'],
         subtopics: [
-          { title: 'Chloroplast Ultrastructure', summary: 'Double-membrane organelle containing thylakoids and stroma.' },
-          { title: 'Light Reactions (Photolysis)', summary: 'Photon absorption driving ATP and NADPH synthesis.' },
-          { title: 'Calvin Cycle (Dark Reactions)', summary: 'Enzymatic reduction of carbon dioxide into hexose sugar.' }
+          { title: 'Chloroplast & Stomatal Apparatus', summary: 'Double-membrane chloroplast (grana & stroma) and guard-cell regulated stomata pores.' },
+          { title: 'Light-Dependent Reactions (Photolysis)', summary: 'Photon absorption in thylakoids splitting water to release O₂ and generate ATP & NADPH.' },
+          { title: 'Calvin Cycle (Light-Independent Dark Reactions)', summary: 'Enzymatic reduction of CO₂ into glucose (C₆H₁₂O₆) inside the stroma.' }
         ],
         verifiedScientificFactCheck: true
       };
@@ -476,21 +628,21 @@ export class UnifiedKnowledgeRetrievalService {
         topic: 'Human Heart',
         subject: 'Biology',
         domain: 'Human Physiology & Circulatory System',
-        academicDefinition: 'A muscular myogenic organ composed of cardiac tissue that rhythmically pumps oxygenated and deoxygenated blood through systemic and pulmonary vascular circuits.',
+        academicDefinition: 'A muscular four-chambered myogenic organ composed of cardiac tissue that rhythmically pumps oxygenated and deoxygenated blood through systemic and pulmonary vascular circuits.',
         fundamentalLaws: ['Poiseuille Law of Fluid Dynamics', 'Frank-Starling Law of the Heart'],
         governingFormulas: [
           {
             formula: 'Cardiac Output (CO) = Stroke Volume (SV) × Heart Rate (HR)',
-            explanation: 'Relates volume ejected per ventricular contraction to resting pulse rate.',
+            explanation: 'Relates volume ejected per ventricular contraction (~70 mL) to resting pulse rate (~72 bpm ≈ 5 L/min).',
             siUnits: 'Liters per minute (L/min)'
           }
         ],
-        keyPhenomena: ['Double Circulation (Systemic & Pulmonary)', 'Sinoatrial (SA) node cardiac pacemaking', 'Atrioventricular valve closure (Lub-Dub heart sounds)'],
-        prerequisites: ['Blood Components', 'Blood Vessels (Arteries vs Veins)', 'Muscle Tissue Types'],
+        keyPhenomena: ['Double Circulation (Systemic & Pulmonary)', 'Sinoatrial (SA) node cardiac pacemaking', 'Tricuspid, Bicuspid (Mitral), and Semilunar valve closure'],
+        prerequisites: ['Blood Components', 'Blood Vessels (Arteries vs Veins)', 'Cardiac Muscle'],
         subtopics: [
-          { title: 'Internal Anatomy (Four Chambers)', summary: 'Right/left atria and right/left ventricles.' },
-          { title: 'Pulmonary & Systemic Circulation', summary: 'Separate oxygenation and nutrient distribution routes.' },
-          { title: 'Cardiac Conduction Cycle', summary: 'Electrical propagation through SA node, AV node, and Purkinje fibers.' }
+          { title: 'Internal Anatomy (Four Chambers & Valves)', summary: 'Right/left atria, right/left ventricles, tricuspid, bicuspid, and semilunar valves.' },
+          { title: 'Pulmonary & Systemic Double Circulation', summary: 'Complete separation of oxygenated and deoxygenated blood routes.' },
+          { title: 'Cardiac Conduction Cycle', summary: 'Electrical propagation through SA node, AV node, Bundle of His, and Purkinje fibers.' }
         ],
         verifiedScientificFactCheck: true
       };
@@ -499,15 +651,19 @@ export class UnifiedKnowledgeRetrievalService {
     if (lower.includes('newton') || lower.includes('force') || lower.includes('motion')) {
       return {
         id,
-        topic: "Newton's Laws of Motion & Force",
+        topic: "Newton's Three Laws of Motion",
         subject: 'Physics',
         domain: 'Classical Mechanics & Dynamics',
-        academicDefinition: 'Newtonian mechanics postulates that the rate of change of momentum of a body is directly proportional to the applied unbalanced force and takes place in the direction in which the force acts.',
-        fundamentalLaws: ["Newton's First Law (Inertia)", "Newton's Second Law (F = ma)", "Newton's Third Law (Action & Reaction)"],
+        academicDefinition: "Newton's Three Laws of Motion govern classical mechanics: (1) Law of Inertia — a body maintains its state of rest or uniform straight-line motion unless acted upon by an unbalanced external force; (2) Law of Momentum — net force equals the rate of change of momentum (F = ma); (3) Law of Action-Reaction — every action has an equal and opposite reaction on different bodies.",
+        fundamentalLaws: [
+          "Newton's First Law (Law of Inertia)",
+          "Newton's Second Law (F = dp/dt = m · a)",
+          "Newton's Third Law (Action & Reaction: F_AB = -F_BA)"
+        ],
         governingFormulas: [
           {
             formula: 'F = m · a',
-            explanation: 'Net force equals mass multiplied by linear acceleration.',
+            explanation: 'Net external force equals mass multiplied by linear acceleration.',
             siUnits: 'Newtons (N) or kg·m/s²'
           },
           {
@@ -516,12 +672,12 @@ export class UnifiedKnowledgeRetrievalService {
             siUnits: 'kg·m/s'
           }
         ],
-        keyPhenomena: ['Inertia of rest, motion, and direction', 'Momentum conservation in collisions', 'Equal and opposite contact forces'],
-        prerequisites: ['Kinematics (Displacement, Velocity, Acceleration)', 'Scalar and Vector Quantities', 'Basic Algebra'],
+        keyPhenomena: ['Inertia of rest, motion, and direction', 'Momentum conservation in collisions (m₁u₁ + m₂u₂ = m₁v₁ + m₂v₂)', 'Equal and opposite action-reaction forces'],
+        prerequisites: ['Kinematics (Displacement, Velocity, Acceleration)', 'Scalar and Vector Quantities'],
         subtopics: [
-          { title: "Newton's First Law and Inertia", summary: 'Resistance of an object to change in its state of motion.' },
-          { title: "Newton's Second Law and Momentum", summary: 'Quantitative definition of force and mathematical derivation.' },
-          { title: "Newton's Third Law and Applications", summary: 'Universal pairs of action and reaction forces.' }
+          { title: "Newton's First Law and Inertia", summary: 'Resistance of an object to change its state of rest or uniform motion.' },
+          { title: "Newton's Second Law and Momentum", summary: 'Quantitative definition of force F = ma derived from rate of change of momentum.' },
+          { title: "Newton's Third Law and Conservation of Momentum", summary: 'Action-reaction pairs in rocket propulsion, walking, and recoil.' }
         ],
         verifiedScientificFactCheck: true
       };
@@ -533,14 +689,15 @@ export class UnifiedKnowledgeRetrievalService {
       topic,
       subject,
       domain: `${subject} Core Curriculum`,
-      academicDefinition: `${topic} is a foundational scientific and academic principle in ${subject} governing interaction, equilibrium, and systematic transformation.`,
-      fundamentalLaws: ['Conservation Principles', 'Equilibrium Dynamics'],
+      academicDefinition: `${topic} is a core academic concept in Grade ${grade} ${subject} (${board} curriculum) that explains the principles, definitions, mechanisms, and applications of ${topic}.`,
+      fundamentalLaws: [`Core Principles of ${topic} in ${subject}`],
       governingFormulas: [],
-      keyPhenomena: [`Governing interactions of ${topic}`],
-      prerequisites: ['Basic scientific terminology', 'Grade-appropriate prerequisites'],
+      keyPhenomena: [`Key mechanisms and observable examples of ${topic}`],
+      prerequisites: [`Foundational ${subject} terminology`],
       subtopics: [
-        { title: `Core Mechanisms of ${topic}`, summary: `Primary operational characteristics and relationships.` },
-        { title: `Applications and Examples of ${topic}`, summary: `Curriculum and real-world instances.` }
+        { title: `Definition & Core Principles of ${topic}`, summary: `Foundational explanation and terminology of ${topic}.` },
+        { title: `Step-by-Step Working & Examples of ${topic}`, summary: `Detailed mechanism and solved curriculum examples.` },
+        { title: `Real-World Applications & Exam Preparation`, summary: `Practical relevance and board examination questions.` }
       ],
       verifiedScientificFactCheck: true
     };
@@ -550,8 +707,40 @@ export class UnifiedKnowledgeRetrievalService {
     topic: string,
     subject: SupportedSubject,
     grade: number,
-    board: EducationalBoard
+    board: EducationalBoard,
+    universalNodeId?: string
   ): BoardCurriculumRequirement {
+    // Query SQLite board_curriculum_mappings first for authentic board-specific chapter title & textbook
+    if (universalNodeId) {
+      try {
+        const mapped = db.prepare(`
+          SELECT * FROM board_curriculum_mappings
+          WHERE universal_node_id = ? AND board = ?
+          ORDER BY ABS(grade - ?) ASC
+          LIMIT 1
+        `).get(universalNodeId, board, grade) as any;
+
+        if (mapped) {
+          let outcomes: string[] = [];
+          try {
+            outcomes = JSON.parse(mapped.learning_outcomes_json || '[]');
+          } catch {}
+          return {
+            board,
+            grade,
+            subject,
+            officialSubjectName: `${board} Class ${grade} ${subject}`,
+            chapterTitle: mapped.chapter_title || topic,
+            prescribedTextbook: mapped.prescribed_textbook,
+            learningOutcomes: outcomes.length > 0 ? outcomes : [`Master ${topic} as prescribed in ${mapped.chapter_title}`],
+            curriculumEmphasis: board === 'ICSE' ? 'numerical' : board === 'CBSE' ? 'conceptual' : 'activity_based'
+          };
+        }
+      } catch {
+        // fall through
+      }
+    }
+
     let prescribedBook = 'NCERT Prescribed Textbook';
     let officialName = `${subject} (Class ${grade})`;
     let emphasis: 'conceptual' | 'numerical' | 'application' | 'activity_based' = 'conceptual';
@@ -559,17 +748,17 @@ export class UnifiedKnowledgeRetrievalService {
     switch (board) {
       case 'ICSE':
         prescribedBook = `CISCE Prescribed Concise ${subject} (Class ${grade})`;
-        officialName = `ICSE ${subject} Class X`;
+        officialName = `ICSE ${subject} Class ${grade}`;
         emphasis = subject === 'Physics' || subject === 'Chemistry' ? 'numerical' : 'application';
         break;
       case 'AP_STATE_BOARD':
-        prescribedBook = `AP SCERT General Science Class ${grade}`;
-        officialName = `Andhra Pradesh SSC ${subject}`;
+        prescribedBook = `AP SCERT ${subject} Textbook Class ${grade}`;
+        officialName = `Andhra Pradesh SCERT Class ${grade} ${subject}`;
         emphasis = 'activity_based';
         break;
       case 'TS_STATE_BOARD':
-        prescribedBook = `Telangana SCERT Class ${grade} Textbook`;
-        officialName = `Telangana SSC ${subject}`;
+        prescribedBook = `Telangana SCERT Class ${grade} ${subject} Textbook`;
+        officialName = `Telangana SCERT Class ${grade} ${subject}`;
         emphasis = 'activity_based';
         break;
       case 'CBSE':
@@ -588,9 +777,9 @@ export class UnifiedKnowledgeRetrievalService {
       chapterTitle: topic,
       prescribedTextbook: prescribedBook,
       learningOutcomes: [
-        `Understand the foundational definition and mechanism of ${topic}`,
-        `Apply theoretical formulas or biological principles to practical problems`,
-        `Accurately label and interpret examination schematics of ${topic}`
+        `Understand the foundational definition and mechanism of ${topic} in ${subject}`,
+        `Apply formulas, rules, or principles of ${topic} to curriculum problems`,
+        `Interpret diagrams, examples, and examination questions on ${topic}`
       ],
       curriculumEmphasis: emphasis
     };
@@ -602,20 +791,26 @@ export class UnifiedKnowledgeRetrievalService {
     grade: number,
     universalNode: UniversalKnowledgeNode
   ): DualExplanation {
-    const isBiology = subject === 'Biology' || subject === 'Science';
+    const lawsList = universalNode.fundamentalLaws.length > 0
+      ? universalNode.fundamentalLaws
+      : [`Core Principle of ${universalNode.topic}`];
+    const phenomList = universalNode.keyPhenomena.length > 0
+      ? universalNode.keyPhenomena
+      : universalNode.subtopics.map((s) => `${s.title}: ${s.summary}`);
 
     return {
-      laymanEverydayExplanation: `In simple everyday words, ${topic} is like a natural system where specific ingredients or components come together in an orderly way to achieve a clear, useful outcome. Think of it like a kitchen recipe or a postal delivery line where every part does its own special job.`,
+      laymanEverydayExplanation: `In simple, everyday Grade ${grade} terms: ${universalNode.academicDefinition} Key phenomena include: ${phenomList.slice(0, 2).join('; ')}.`,
       academicFormalDefinition: universalNode.academicDefinition,
-      realWorldAnalogy: `Consider a modern solar-powered factory: incoming raw materials arrive at designated gates, clean energy powers the machinery, and finished goods leave safely while keeping the environment in balance.`,
+      realWorldAnalogy: `In real-world ${subject}, ${universalNode.topic} operates through ${lawsList[0]}${universalNode.governingFormulas[0] ? ` governed by ${universalNode.governingFormulas[0].formula}` : ''}.`,
       stepByStepMechanism: [
-        `1. Activation / Initiation: Initial inputs or forces activate the system.`,
-        `2. Transformation / Working Phase: Key components interact under governing physical or biological laws.`,
-        `3. Equilibrium / Final Output: Resulting products or stable states are achieved.`
-      ],
+        ...universalNode.subtopics.map((s, idx) => `${idx + 1}. ${s.title}: ${s.summary}`),
+        ...(phenomList.map((p, idx) => `${universalNode.subtopics.length + idx + 1}. ${p}`))
+      ].slice(0, 5),
       commonMisconceptions: [
-        `Confusing cause with effect or mixing up directional flows.`,
-        `Forgetting that the process must strictly obey conservation principles.`
+        `Always distinguish the specific laws of ${universalNode.topic} (${lawsList[0]}) from unrelated concepts.`,
+        universalNode.governingFormulas[0]
+          ? `Verify units and signs when applying ${universalNode.governingFormulas[0].formula} (${universalNode.governingFormulas[0].explanation}).`
+          : `Avoid memorizing ${universalNode.topic} without understanding its underlying cause-and-effect steps.`
       ]
     };
   }

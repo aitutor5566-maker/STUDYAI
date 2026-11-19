@@ -12,6 +12,7 @@
  */
 
 import crypto from 'node:crypto';
+import { unifiedKnowledgeRetrieval } from './unifiedKnowledgeRetrieval.ts';
 
 export type GameSlug =
   | 'missing_letters'
@@ -884,7 +885,104 @@ function getTopicKnowledgeBase(topic: string, subject: string): TopicKnowledge {
     };
   }
 
-  // Universal Default / Adaptive Fallback (Mathematics, Science, Humanities)
+  // Universal Default / Adaptive Knowledge Bank Retrieval (Mathematics, Science, Social Studies, Languages, Computer Science)
+  try {
+    const retrieved = unifiedKnowledgeRetrieval.retrieveKnowledge(topic, subject, 10, 'CBSE');
+    const node = retrieved.universalNode;
+    const subTerms = node.subtopics.map((s) => ({
+      term: s.title.split(/[:(]/)[0].trim().slice(0, 22) || node.topic,
+      meaning: s.summary || node.academicDefinition
+    }));
+    const lawTerms = node.fundamentalLaws.map((l, i) => ({
+      term: l.split(/[:(]/)[0].trim().slice(0, 22) || `Principle ${i + 1}`,
+      meaning: l
+    }));
+    const combinedTerms = [
+      { term: node.topic.split(/[:(]/)[0].trim().slice(0, 22), meaning: node.academicDefinition },
+      ...subTerms,
+      ...lawTerms
+    ].filter((x) => x.term.length >= 3);
+
+    if (combinedTerms.length >= 2) {
+      const primaryFormula = node.governingFormulas[0]?.formula || node.fundamentalLaws[0] || node.topic;
+      return {
+        keyTerms: combinedTerms.slice(0, 6),
+        sentenceFillers: [
+          {
+            sentenceWithBlank: `In ${node.subject} (${node.domain}), ______ is defined as: ${node.academicDefinition.slice(0, 110)}...`,
+            correctWord: node.topic.split(/[:(]/)[0].trim(),
+            distractors: ['Random Drift', 'Unrelated Factor', 'Static Noise'],
+            explanation: node.academicDefinition,
+            concept: node.topic
+          },
+          ...node.subtopics.slice(0, 2).map((s) => ({
+            sentenceWithBlank: `A core subtopic of ${node.topic} is ______, which governs ${s.summary.slice(0, 75)}.`,
+            correctWord: s.title.split(/[:(]/)[0].trim(),
+            distractors: ['Arbitrary Constant', 'Isolated Anomaly', 'Thermal Noise'],
+            explanation: `${s.title}: ${s.summary}`,
+            concept: s.title
+          }))
+        ],
+        matchingPairs: [
+          { left: node.topic.split(/[:(]/)[0].trim(), right: node.academicDefinition.slice(0, 90) },
+          ...node.subtopics.slice(0, 3).map((s) => ({
+            left: s.title.split(/[:(]/)[0].trim(),
+            right: s.summary.slice(0, 90)
+          })),
+          ...(node.governingFormulas[0]
+            ? [{ left: node.governingFormulas[0].formula, right: node.governingFormulas[0].explanation.slice(0, 90) }]
+            : [])
+        ],
+        mcqs: [
+          {
+            question: `Which statement accurately defines ${node.topic} in ${node.subject}?`,
+            options: [
+              node.academicDefinition.slice(0, 115),
+              'An unverified random assumption with no governing principles',
+              'A process that violates conservation laws in all conditions',
+              'An unrelated phenomenon outside the academic curriculum'
+            ],
+            correctIndex: 0,
+            explanation: node.academicDefinition,
+            concept: node.topic
+          },
+          {
+            question: `Which principle or formula is directly associated with ${node.topic}?`,
+            options: [
+              primaryFormula,
+              'No governing principle or relationship exists',
+              'Random uncalibrated guessing',
+              'Contradictory dimensional analysis'
+            ],
+            correctIndex: 0,
+            explanation: `In ${node.subject}, ${node.topic} is governed by ${primaryFormula}.`,
+            concept: `${node.topic} Principles`
+          }
+        ],
+        trueFalseItems: [
+          {
+            statement: `${node.topic} in ${node.subject}: ${node.academicDefinition}`,
+            isTrue: true,
+            explanation: `Verified curriculum definition from ${retrieved.boardRequirement.prescribedTextbook}.`,
+            concept: node.topic
+          }
+        ],
+        findMistakeItems: [
+          {
+            incorrectStatement: `In ${node.subject}, ${node.topic} can never be explained by systematic principles or evidence.`,
+            mistakeToken: 'never',
+            correctToken: 'always',
+            correctedStatement: `In ${node.subject}, ${node.topic} can always be explained by systematic principles or evidence.`,
+            explanation: node.academicDefinition,
+            concept: node.topic
+          }
+        ]
+      };
+    }
+  } catch {
+    // fall through to generic backup
+  }
+
   return {
     keyTerms: [
       { term: 'Hypothesis', meaning: 'Testable explanation formulated based on prior observations.' },

@@ -9,6 +9,8 @@ export type EducationalBoard =
 
 export type SupportedSubject =
   | 'Science'
+  | 'General Science'
+  | 'Environmental Science'
   | 'Physics'
   | 'Chemistry'
   | 'Biology'
@@ -17,13 +19,21 @@ export type SupportedSubject =
   | 'History'
   | 'Geography'
   | 'Civics'
+  | 'Political Science'
   | 'Economics'
   | 'English'
   | 'Telugu'
   | 'Hindi'
-  | 'Computer Science';
+  | 'Computer Science'
+  | 'Information Technology'
+  | 'General Knowledge';
 
-export type KnowledgeStatus = 'research_draft' | 'verified_knowledge' | 'published_knowledge';
+export type KnowledgeStatus =
+  | 'research_draft'
+  | 'needs_verification'
+  | 'verified_knowledge'
+  | 'published_knowledge'
+  | 'superseded_knowledge';
 
 export type ConceptRelationType =
   | 'PREREQUISITE_OF'
@@ -348,6 +358,332 @@ export class MultiBoardKnowledgeEngine {
         phenomena: ['Terminating vs non-terminating recurring decimals'],
         prereqs: ['Fractions and Rational Numbers'],
         subtopics: ['Conversion to Fractions', 'Decimal Arithmetic', 'Rounding & Precision']
+      },
+      {
+        id: 'ukn-newtons-laws',
+        topic: "Newton's Three Laws of Motion",
+        subject: 'Physics',
+        domain: 'Classical Mechanics & Dynamics',
+        definition: "Newton's Three Laws of Motion describe the quantitative relationship between a body, the forces acting upon it, and its resulting motion: (1) Law of Inertia, (2) F = dp/dt = m·a, and (3) Action and Reaction are equal and opposite.",
+        laws: [
+          "Newton's First Law (Law of Inertia): A body remains at rest or in uniform motion in a straight line unless acted upon by an external unbalanced force.",
+          "Newton's Second Law (Law of Momentum): The rate of change of linear momentum is directly proportional to the applied unbalanced force (F = m·a).",
+          "Newton's Third Law (Action-Reaction): For every action force there is an equal and opposite reaction force acting on two different bodies (F_AB = -F_BA)."
+        ],
+        formulas: [
+          { formula: 'F = m · a', explanation: 'Net force (N) equals mass (kg) multiplied by acceleration (m/s²).' },
+          { formula: 'p = m · v', explanation: 'Linear momentum (kg·m/s) equals mass times velocity.' },
+          { formula: 'F = (m·v - m·u) / t', explanation: 'Rate of change of momentum derivation of Second Law.' }
+        ],
+        phenomena: ['Inertia of rest, motion, and direction', 'Recoil of a gun and rocket propulsion', 'Impulse and momentum conservation in collisions'],
+        prereqs: ['Velocity and Acceleration', 'Mass vs Weight', 'Vector and Scalar Quantities'],
+        subtopics: ['First Law & Inertia', 'Second Law & Momentum Derivation', 'Third Law & Action-Reaction Pairs', 'Conservation of Linear Momentum', 'Free-Body Diagrams']
+      },
+      {
+        id: 'ukn-optics-refraction',
+        topic: 'Light: Reflection and Refraction',
+        subject: 'Physics',
+        domain: 'Ray & Geometric Optics',
+        definition: 'Reflection is the bouncing back of light in the same medium at an interface, whereas refraction is the bending of light when it passes obliquely from one optical medium to another of different refractive index.',
+        laws: ['Law of Reflection (∠i = ∠r)', "Snell's Law of Refraction (n₁ sin i = n₂ sin r)"],
+        formulas: [
+          { formula: 'n = c / v = sin i / sin r', explanation: "Refractive index and Snell's Law." },
+          { formula: '1/f = 1/v - 1/u', explanation: 'Thin Lens Formula relating focal length, image distance, and object distance.' },
+          { formula: '1/f = 1/v + 1/u', explanation: 'Spherical Mirror Formula.' }
+        ],
+        phenomena: ['Total Internal Reflection (TIR)', 'Dispersion through a glass prism', 'Real and virtual image formation'],
+        prereqs: ['Rectilinear Propagation of Light', 'Trigonometric Sine Ratio'],
+        subtopics: ['Spherical Mirrors', "Snell's Law & Refractive Index", 'Convex & Concave Lenses', 'Power of a Lens (P = 1/f)']
+      },
+      {
+        id: 'ukn-chemical-reactions',
+        topic: 'Chemical Reactions and Equations',
+        subject: 'Chemistry',
+        domain: 'Stoichiometry & Chemical Kinetics',
+        definition: 'A chemical reaction is a process in which one or more reactant substances undergo bond breaking and bond formation to produce new product substances with distinct chemical properties, obeying the Law of Conservation of Mass.',
+        laws: ['Law of Conservation of Mass (Lavoisier)', 'Law of Definite Proportions (Proust)'],
+        formulas: [
+          { formula: '2Mg + O₂ → 2MgO', explanation: 'Combination reaction (combustion of magnesium ribbon).' },
+          { formula: 'Zn + H₂SO₄ → ZnSO₄ + H₂↑', explanation: 'Single displacement reaction.' },
+          { formula: 'CaCO₃ (s) → CaO (s) + CO₂ (g)', explanation: 'Thermal decomposition reaction.' }
+        ],
+        phenomena: ['Evolution of gas, precipitate formation, colour and temperature change', 'Oxidation-Reduction (Redox) electron transfer', 'Corrosion and Rancidity'],
+        prereqs: ['Atoms and Molecules', 'Valency and Chemical Formulae'],
+        subtopics: ['Balancing Chemical Equations', 'Combination & Decomposition', 'Displacement & Double Displacement', 'Oxidation and Reduction (Redox)']
+      },
+      {
+        id: 'ukn-acids-bases-salts',
+        topic: 'Acids, Bases and Salts',
+        subject: 'Chemistry',
+        domain: 'Ionic Equilibrium & Solutions',
+        definition: 'Acids donate H⁺ (H₃O⁺) ions in aqueous solution (pH < 7), bases donate OH⁻ ions or accept protons (pH > 7), and salts are ionic compounds formed by the neutralization reaction between an acid and a base.',
+        laws: ['Arrhenius & Bronsted-Lowry Acid-Base Theories', 'Logarithmic pH Scale (Sorensen)'],
+        formulas: [
+          { formula: 'pH = -log₁₀[H⁺]', explanation: 'Hydrogen ion concentration logarithmic scale (0 to 14).' },
+          { formula: 'HCl + NaOH → NaCl + H₂O', explanation: 'Neutralization reaction forming salt and water.' },
+          { formula: 'CaSO₄·2H₂O → CaSO₄·½H₂O + 1½H₂O', explanation: 'Preparation of Plaster of Paris from Gypsum at 373 K.' }
+        ],
+        phenomena: ['Exothermic dilution of concentrated acids', 'Olfactory and pH indicators', 'Water of crystallization'],
+        prereqs: ['Chemical Reactions', 'Ions and Electrolytes'],
+        subtopics: ['pH Scale & Indicators', 'Neutralization Reactions', 'Chlor-Alkali Process (NaOH)', 'Baking Soda, Washing Soda & Plaster of Paris']
+      },
+      {
+        id: 'ukn-periodic-table',
+        topic: 'Periodic Classification of Elements & Chemical Bonding',
+        subject: 'Chemistry',
+        domain: 'Inorganic & Structural Chemistry',
+        definition: 'The Modern Periodic Law states that the physical and chemical properties of elements are periodic functions of their atomic numbers (Z), governing valence shell electron configurations and ionic/covalent bonding.',
+        laws: ['Modern Periodic Law (Henry Moseley)', 'Octet Rule (Kossel & Lewis)'],
+        formulas: [
+          { formula: 'Maximum electrons in shell n = 2n²', explanation: 'Bohr-Bury electronic configuration rule.' }
+        ],
+        phenomena: ['Periodic trends in atomic radius, ionization energy, and electronegativity', 'Electrovalent (ionic) vs Covalent electron sharing'],
+        prereqs: ['Atomic Structure', 'Atomic Number and Mass Number'],
+        subtopics: ['Groups and Periods', 'Periodic Trends (Radius, Electronegativity)', 'Ionic vs Covalent Bonding', 'Lewis Dot Structures']
+      },
+      {
+        id: 'ukn-cell-division',
+        topic: 'Cell Structure, Mitosis and Meiosis',
+        subject: 'Biology',
+        domain: 'Cell Biology & Genetics',
+        definition: 'The cell is the fundamental structural and functional unit of life; somatic growth occurs via Mitosis (equational division producing 2 diploid 2n cells), whereas gametogenesis occurs via Meiosis (reductional division producing 4 haploid n cells).',
+        laws: ['Cell Theory (Schleiden, Schwann & Virchow: Omnis cellula e cellula)'],
+        formulas: [
+          { formula: 'Mitosis: 2n → 2 × (2n)', explanation: 'Equational division preserving chromosome number.' },
+          { formula: 'Meiosis: 2n → 4 × (n)', explanation: 'Reductional division halving chromosome number + crossing over.' }
+        ],
+        phenomena: ['Prophase, Metaphase, Anaphase, Telophase & Cytokinesis', 'Chiasmata formation and genetic recombination in Pachytene'],
+        prereqs: ['Prokaryotic vs Eukaryotic Cells', 'Chromosomes and DNA'],
+        subtopics: ['Cell Organelles (Nucleus, Mitochondria, Ribosomes)', 'Cell Cycle (Interphase & M-Phase)', 'Mitosis Stages', 'Meiosis I & II and Significance']
+      },
+      {
+        id: 'ukn-respiration-excretion',
+        topic: 'Cellular Respiration and Excretion',
+        subject: 'Biology',
+        domain: 'Human & Plant Physiology',
+        definition: 'Cellular respiration is the enzymatic oxidation of glucose to synthesize ATP energy (aerobically yielding ~30-38 ATP or anaerobically yielding 2 ATP), while excretion removes nitrogenous metabolic wastes like urea via nephrons in the kidneys.',
+        laws: ['Chemiosmotic Hypothesis (Mitchell)', 'Glomerular Ultrafiltration & Tubular Reabsorption'],
+        formulas: [
+          { formula: 'C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + 38 ATP', explanation: 'Aerobic cellular respiration in cytoplasm and mitochondria.' },
+          { formula: 'C₆H₁₂O₆ → 2C₂H₅OH + 2CO₂ + 2 ATP', explanation: 'Anaerobic fermentation in yeast.' }
+        ],
+        phenomena: ['Glycolysis in cytoplasm and Krebs cycle in mitochondrial matrix', 'Alveolar gas exchange', 'Nephron urine formation (Ultrafiltration, Reabsorption, Secretion)'],
+        prereqs: ['Photosynthesis', 'Enzymes', 'Blood Circulation'],
+        subtopics: ['Aerobic vs Anaerobic Respiration', 'Human Respiratory System & Alveoli', 'Structure of Nephron', 'Osmoregulation & Dialysis']
+      },
+      {
+        id: 'ukn-linear-equations-algebra',
+        topic: 'Linear Equations and Algebraic Expressions',
+        subject: 'Mathematics',
+        domain: 'Algebra',
+        definition: 'A linear equation is a first-degree algebraic equation whose graph is a straight line (ax + b = 0 or a₁x + b₁y + c₁ = 0), solvable analytically via transposition, substitution, elimination, or cross-multiplication.',
+        laws: ['Axioms of Equality', 'Consistency Criteria for Simultaneous Linear Systems'],
+        formulas: [
+          { formula: 'ax + b = c ⇒ x = (c - b) / a', explanation: 'Single-variable linear solution.' },
+          { formula: 'a₁/a₂ ≠ b₁/b₂ (Unique Solution)', explanation: 'Intersecting lines condition for a pair of linear equations.' },
+          { formula: '(a + b)² = a² + 2ab + b²; a² - b² = (a - b)(a + b)', explanation: 'Fundamental algebraic identities.' }
+        ],
+        phenomena: ['Graphical intersection of lines in the Cartesian plane', 'Parallel (no solution) vs Coincident (infinite solutions) lines'],
+        prereqs: ['Arithmetic Operations', 'Variables and Constants'],
+        subtopics: ['Solving Single-Variable Linear Equations', 'Substitution & Elimination Methods', 'Consistency of Simultaneous Equations', 'Word Problems on Age, Speed & Numbers']
+      },
+      {
+        id: 'ukn-trigonometry',
+        topic: 'Introduction to Trigonometry and Identities',
+        subject: 'Mathematics',
+        domain: 'Trigonometry & Geometry',
+        definition: 'Trigonometry studies the quantitative relationships between the acute angles and side ratios of a right-angled triangle (sine, cosine, tangent, cosecant, secant, cotangent) and their universal identities.',
+        laws: ['Pythagorean Theorem (Hypotenuse² = Base² + Perpendicular²)'],
+        formulas: [
+          { formula: 'sin θ = Opposite / Hypotenuse; cos θ = Adjacent / Hypotenuse; tan θ = sin θ / cos θ', explanation: 'Primary trigonometric ratios.' },
+          { formula: 'sin²θ + cos²θ = 1', explanation: 'Fundamental Pythagorean Trigonometric Identity.' },
+          { formula: '1 + tan²θ = sec²θ; 1 + cot²θ = cosec²θ', explanation: 'Derived Pythagorean Identities.' }
+        ],
+        phenomena: ['Angles of elevation and depression in surveying and navigation', 'Standard angles (0°, 30°, 45°, 60°, 90°) exact ratio invariance'],
+        prereqs: ['Right-Angled Triangles', 'Pythagoras Theorem', 'Similar Triangles'],
+        subtopics: ['Trigonometric Ratios', 'Standard Angle Values Table', 'Pythagorean Trigonometric Identities', 'Heights and Distances (Angle of Elevation/Depression)']
+      },
+      {
+        id: 'ukn-geometry-mensuration',
+        topic: 'Geometry, Triangles, Circles and Mensuration',
+        subject: 'Mathematics',
+        domain: 'Euclidean Geometry & Mensuration',
+        definition: 'Euclidean geometry and mensuration analyze similarity/congruence of triangles, tangent-secant properties of circles, and the calculation of perimeter, surface area, and volume of 2D/3D solids.',
+        laws: ['Basic Proportionality Theorem (Thales Theorem)', 'Pythagoras Theorem', 'Tangent-Radius Perpendicularity Theorem'],
+        formulas: [
+          { formula: 'Area of Triangle = ½ × base × height; Heron Formula = √[s(s-a)(s-b)(s-c)]', explanation: 'Planar triangle area formulas.' },
+          { formula: 'Circle Area = πr²; Circumference = 2πr', explanation: 'Circle mensuration.' },
+          { formula: 'Cylinder Volume = πr²h; Cone Volume = ⅓πr²h; Sphere Volume = (4/3)πr³', explanation: '3D Solid Mensuration.' }
+        ],
+        phenomena: ['Equal length of tangents drawn from an external point to a circle', 'Volume conservation during recasting of metallic solids'],
+        prereqs: ['Lines and Angles', 'Polygons'],
+        subtopics: ['Similar Triangles & BPT (Thales Theorem)', 'Circle Tangents & Chords', 'Surface Areas and Volumes of Cylinders, Cones & Spheres', 'Coordinate Geometry Distance & Section Formulas']
+      },
+      {
+        id: 'ukn-statistics-probability',
+        topic: 'Statistics and Probability',
+        subject: 'Mathematics',
+        domain: 'Data Science, Statistics & Probability',
+        definition: 'Statistics summarizes grouped and ungrouped data through measures of central tendency (Mean, Median, Mode), while Probability quantifies the likelihood of an event on a scale from 0 to 1.',
+        laws: ['Empirical Relationship: 3 Median = Mode + 2 Mean', 'Classical Probability Axiom: 0 ≤ P(E) ≤ 1; P(E) + P(not E) = 1'],
+        formulas: [
+          { formula: 'Mean (x̄) = Σ(fᵢxᵢ) / Σfᵢ', explanation: 'Direct method for arithmetic mean of grouped data.' },
+          { formula: 'Median = l + [(N/2 - cf) / f] × h', explanation: 'Median of grouped frequency distribution.' },
+          { formula: 'P(E) = (Number of favourable outcomes) / (Total possible outcomes)', explanation: 'Theoretical (Classical) Probability.' }
+        ],
+        phenomena: ['Cumulative frequency ogive curves', 'Sample spaces for coins, dice, and playing cards'],
+        prereqs: ['Fractions and Percentages', 'Data Tables and Bar Graphs'],
+        subtopics: ['Mean (Direct, Assumed Mean, Step-Deviation)', 'Median & Cumulative Frequency', 'Mode of Grouped Data', 'Theoretical Probability & Complementary Events']
+      },
+      {
+        id: 'ukn-french-revolution-nationalism',
+        topic: 'The French Revolution and Rise of Nationalism',
+        subject: 'History',
+        domain: 'Modern World & Indian History',
+        definition: 'The French Revolution (1789) dismantled feudal absolutism under the Ancien Régime, established popular sovereignty and the Declaration of the Rights of Man and Citizen, and catalyzed constitutional nationalism across Europe and anti-colonial movements in India.',
+        laws: ['Historical Causation: Socio-Economic Inequality, Enlightenment Philosophy & Fiscal Crisis'],
+        formulas: [],
+        phenomena: [
+          'Division of French society into First Estate (Clergy), Second Estate (Nobility), and Third Estate (Peasants, Workers, Bourgeoisie)',
+          'Storming of the Bastille on 14 July 1789 and abolition of feudal privileges',
+          'Napoleonic Civil Code of 1804 and spread of liberty, equality, and fraternity'
+        ],
+        prereqs: ['Feudalism and Monarchy', 'Enlightenment Thinkers (Locke, Rousseau, Montesquieu)'],
+        subtopics: ['Causes: The Three Estates & Subsistence Crisis', 'Outbreak of 1789 & Constitutional Monarchy', 'Reign of Terror & Jacobin Republic', 'Napoleonic Code & Legacy of Liberty, Equality, Fraternity']
+      },
+      {
+        id: 'ukn-indian-national-movement',
+        topic: 'Indian National Movement and Freedom Struggle',
+        subject: 'History',
+        domain: 'Modern Indian History',
+        definition: 'The Indian National Movement was a mass anti-colonial struggle against British imperial rule that progressed from early moderate petitions to Gandhian Satyagraha (Non-Cooperation 1920, Civil Disobedience / Dandi Salt March 1930, Quit India 1942), culminating in Independence in 1947.',
+        laws: ['Satyagraha (Truth-Force and Non-Violent Civil Resistance)'],
+        formulas: [],
+        phenomena: ['Partition of Bengal & Swadeshi Movement (1905)', 'Jallianwala Bagh & Non-Cooperation Movement (1919-1922)', 'Dandi Salt March & Civil Disobedience (1930)', 'Quit India Movement (1942) & Indian Independence Act (1947)'],
+        prereqs: ['Revolt of 1857', 'Foundation of Indian National Congress (1885)'],
+        subtopics: ['Moderates, Extremists & Swadeshi Movement', 'Mahatma Gandhi & Idea of Satyagraha', 'Non-Cooperation & Khilafat Movements', 'Salt Satyagraha, Civil Disobedience & Quit India']
+      },
+      {
+        id: 'ukn-geography-water-climate-monsoon',
+        topic: 'Water Cycle, Monsoon Climate and Natural Resources',
+        subject: 'Geography',
+        domain: 'Physical & Resource Geography',
+        definition: 'The hydrological (water) cycle continuously circulates water between oceans, atmosphere, and land through evaporation, transpiration, condensation, precipitation, and runoff, driving seasonal monsoon rainfall, river basins, and groundwater recharge.',
+        laws: ['Hydrological Mass Balance (Precipitation = Evapotranspiration + Runoff + Groundwater Recharge)', 'Coriolis Force (Ferrel Law) deflecting winds right in Northern Hemisphere'],
+        formulas: [
+          { formula: 'P = E + R + ΔS', explanation: 'Water Balance Equation (Precipitation = Evapotranspiration + Runoff + Storage change).' }
+        ],
+        phenomena: ['Differential heating of Indian landmass and Indian Ocean driving Southwest Monsoon', 'Orographic rainfall along Western Ghats and Himalayas', 'Multi-purpose river valley projects and rainwater harvesting'],
+        prereqs: ['States of Matter', 'Latitude, Longitude and Pressure Belts'],
+        subtopics: ['Processes of the Hydrological Cycle', 'Mechanism of Indian Monsoon (ITCZ, Jet Streams)', 'Soil Types & Conservation', 'Water Resources & Rainwater Harvesting']
+      },
+      {
+        id: 'ukn-civics-constitution-democracy',
+        topic: 'Indian Constitution, Fundamental Rights and Parliamentary Democracy',
+        subject: 'Civics',
+        domain: 'Constitutional Governance & Political Science',
+        definition: 'The Constitution of India (effective 26 January 1950) establishes a Sovereign, Socialist, Secular, Democratic Republic with federal power-sharing, six Fundamental Rights (Part III, Articles 12-35), Directive Principles, and parliamentary separation of powers between Legislature, Executive, and Judiciary.',
+        laws: ['Doctrine of Basic Structure & Constitutional Supremacy', 'Separation of Powers & Judicial Review (Article 32)'],
+        formulas: [],
+        phenomena: ['Six Fundamental Rights (Equality, Freedom, Against Exploitation, Freedom of Religion, Cultural/Educational, Constitutional Remedies)', 'Bicameral Parliament (Lok Sabha & Rajya Sabha)', 'Three-tier Federalism (Union, State, Panchayati Raj / Municipalities)'],
+        prereqs: ['Indian Freedom Struggle', 'Rule of Law'],
+        subtopics: ['Preamble & Key Values', 'Six Fundamental Rights & Fundamental Duties', 'Union Parliament (Lok Sabha vs Rajya Sabha)', 'Independent Judiciary & Federal Power Sharing']
+      },
+      {
+        id: 'ukn-economics-development-money',
+        topic: 'Economic Development, Sectors of Economy, Money and Credit',
+        subject: 'Economics',
+        domain: 'Macroeconomics & Development Economics',
+        definition: 'Economics analyzes how societies allocate scarce resources across Primary (agriculture), Secondary (manufacturing), and Tertiary (services) sectors, measured by GDP, Per Capita Income, and HDI, facilitated by modern banking, Reserve Bank of India (RBI) monetary regulation, and formal credit.',
+        laws: ['Law of Demand and Supply', 'Double Coincidence of Wants eliminated by Money as Medium of Exchange'],
+        formulas: [
+          { formula: 'Per Capita Income = Total National Income / Total Population', explanation: 'Average income indicator used in World Development Reports.' },
+          { formula: 'BMI = Weight (kg) / [Height (m)]²', explanation: 'Body Mass Index nutritional indicator.' }
+        ],
+        phenomena: ['Shift from Primary to Tertiary sector in developing economies', 'Reserve Bank of India (RBI) currency issuance and CRR/collateral supervision', 'Self-Help Groups (SHGs) and micro-credit'],
+        prereqs: ['Basic Percentage and Averages', 'Goods and Services'],
+        subtopics: ['Development Indicators (PCI, Literacy, IMR, HDI)', 'Primary, Secondary & Tertiary Sectors; Organized vs Unorganized', 'Functions of Money & RBI', 'Formal vs Informal Credit & Self-Help Groups']
+      },
+      {
+        id: 'ukn-english-grammar-voice-tenses',
+        topic: 'English Grammar: Tenses, Active-Passive Voice, Direct-Indirect Speech and Clauses',
+        subject: 'English',
+        domain: 'English Language, Grammar & Composition',
+        definition: 'English grammar governs sentence syntax through twelve verb tense aspects, voice transformation (Active Subject-Verb-Object to Passive Object + be + V₃ + by Subject), reported speech tense backshifting, subject-verb concord, and figurative literary devices.',
+        laws: [
+          'Active to Passive Rule: Object becomes Subject + Auxiliary (be) in matching tense + Past Participle (V₃) + by + Agent.',
+          'Direct to Indirect Speech Rule: When reporting verb is in past tense ("said"), shift present tense to past, past simple to past perfect, and update time/place deictics ("now" → "then", "tomorrow" → "the next day").',
+          'Subject-Verb Concord: A singular subject takes a singular verb; collective or "neither/either" subjects take singular verbs.'
+        ],
+        formulas: [
+          { formula: 'Active: S + V + O  ⇒  Passive: O + [be + V₃] + by + S', explanation: 'Voice transformation syntactic formula.' },
+          { formula: 'Present Perfect: Subject + has/have + V₃', explanation: 'Action completed in the past with present relevance.' }
+        ],
+        phenomena: ['Transitive vs Intransitive verb voice eligibility', 'Poetic devices: Metaphor, Simile, Personification, Alliteration, Irony'],
+        prereqs: ['Parts of Speech (Noun, Pronoun, Verb, Adjective, Adverb, Preposition, Conjunction)', 'Singular and Plural Nouns'],
+        subtopics: ['12 Verb Tenses & Aspect Usage', 'Active and Passive Voice Transformation', 'Direct and Indirect (Reported) Speech', 'Subject-Verb Agreement (Concord) & Literary Devices']
+      },
+      {
+        id: 'ukn-telugu-vyakaranam',
+        topic: 'తెలుగు వ్యాకరణం: సంధులు, సమాసాలు, అలంకారాలు మరియు ఛందస్సు (Telugu Grammar)',
+        subject: 'Telugu',
+        domain: 'Telugu Language, Vyakaranam & Sahityం (తెలుగు భాషా సాహిత్యాలు)',
+        definition: 'తెలుగు వ్యాకరణం (Telugu Vyakaranam) పదాల నిర్మాణం, పూర్వపర స్వరాల కలయిక (సంధి - Sandhi), సమర్థములైన పదాల ఏకపద భావం (సమాసం - Samasam), కావ్య సౌందర్యాన్ని పెంచే అలంకారాలు (Alankaralu), మరియు పద్య లక్షణాలను తెలిపే ఛందస్సును (Chandassu - గురువు U, లఘువు I) శాస్త్రీయంగా వివరిస్తుంది.',
+        laws: [
+          'సవర్ణదీర్ఘ సంధి సూత్రం: అ, ఇ, ఉ, ఋ లకు సవర్ణములైన అచ్చులు పరమైనప్పుడు వాని దీర్ఘము ఏకాదేశమగును (ఉదా: రామ + ఆలయము = రామాలయము).',
+          'గుణసంధి సూత్రం: అకారమునకు ఇ, ఉ, ఋ లు పరమైనప్పుడు క్రమముగా ఏ, ఓ, అర్ లు ఆదేశమగును (ఉదా: దేవ + ఇంద్రుడు = దేవేంద్రుడు).',
+          'ఉత్వసంధి / ఇత్వసంధి / యడాగమ సంధి తెలుగు సంధులలో ప్రముఖమైనవి.'
+        ],
+        formulas: [
+          { formula: 'సవర్ణదీర్ఘ సంధి: అ/ఆ + అ/ఆ → ఆ | ఇ/ఈ + ఇ/ఈ → ఈ | ఉ/ఊ + ఉ/ఊ → ఊ', explanation: 'సంస్కృత సవర్ణదీర్ఘ సంధి సూత్ర నిర్మాణం.' },
+          { formula: 'ద్వంద్వ సమాసం: ఉభయపదార్థ ప్రధానం (ఉదా: తల్లిదండ్రులు = తల్లియును, తండ్రియును)', explanation: 'రెండు పదాల అర్థాలకు సమాన ప్రాధాన్యత గల సమాసం.' },
+          { formula: 'ద్విగు సమాసం: సంఖ్యా పూర్వపద కర్మధారయం (ఉదా: ముల్లోకములు = మూడైన లోకములు)', explanation: 'మొదటి పదం సంఖ్యావాచకంగా గల సమాసం.' }
+        ],
+        phenomena: [
+          'భాషా భాగాలు (Parts of Speech in Telugu): నామవాచకం (Noun), సర్వనామం (Pronoun), విశేషణం (Adjective), క్రియ (Verb), అవ్యయం (Indeclinable)',
+          'అలంకారాలు: ఉపమాలంకారం (Simile), ఉత్ప్రేక్షాలంకారం, రూపకాలంకారం (Metaphor), అతిశయోక్తి అలంకారం',
+          'ఛందస్సు: ఉత్పలమాల (భ-ర-న-భ-భ-ర-వ), చంపకమాల (న-జ-భ-జ-జ-జ-ర), శార్దూలం (మ-స-జ-స-త-త-గ), మత్తేభం (స-భ-ర-న-మ-య-వ)'
+        ],
+        prereqs: ['అచ్చులు (Vowels - 16), హల్లులు (Consonants - 37)', 'గుణింతాలు మరియు ఒత్తులు'],
+        subtopics: [
+          'భాషా భాగాలు (5 Parts of Speech in Telugu)',
+          'సంధులు: సవర్ణదీర్ఘ, గుణ, వృద్ధి, యణాదేశ మరియు తెలుగు సంధులు (ఉత్వ, ఇత్వ, అత్వ)',
+          'సమాసాలు: తత్పురుష, కర్మధారయ, ద్విగు, ద్వంద్వ, బహువ్రీహి సమాసాలు',
+          'అలంకారాలు (శబ్దాలంకారాలు & అర్థాలంకారాలు) మరియు ఛందస్సు (గురు-లఘువులు)'
+        ]
+      },
+      {
+        id: 'ukn-hindi-vyakaran',
+        topic: 'हिंदी व्याकरण: संधि, समास, काल, वाच्य और अलंकार (Hindi Grammar)',
+        subject: 'Hindi',
+        domain: 'Hindi Language & Vyakaran (हिंदी भाषा और व्याकरण)',
+        definition: 'हिंदी व्याकरण (Hindi Vyakaran) भाषा को शुद्ध रूप में लिखने, पढ़ने और बोलने के नियमों का शास्त्र है, जिसमें वर्ण-विचार, संज्ञा, सर्वनाम, विशेषण, क्रिया, संधि (दो वर्णों का मेल), समास (शब्दों का संक्षिप्तीकरण), उपसर्ग-प्रत्यय, मुहावरे और अलंकार शामिल हैं।',
+        laws: [
+          'दीर्घ स्वर संधि: ह्रस्व या दीर्घ अ, इ, उ के बाद समान स्वर आने पर दोनों मिलकर दीर्घ (आ, ई, ऊ) हो जाते हैं (जैसे: विद्या + आलय = विद्यालय)।',
+          'गुण संधि: अ/आ के आगे इ/ई हो तो ए, उ/ऊ हो तो ओ, तथा ऋ हो तो अर् हो जाता है (जैसे: नर + इंद्र = नरेंद्र)।'
+        ],
+        formulas: [
+          { formula: 'संधि: प्रथम शब्द का अंतिम वर्ण + द्वितीय शब्द का प्रथम वर्ण → विकार (परिवर्तन)', explanation: 'वर्णों के मेल से उत्पन्न ध्वनि परिवर्तन।' },
+          { formula: 'समास के ६ मुख्य भेद: अव्ययीभाव, तत्पुरुष, कर्मधारय, द्विगु, द्वंद्व, बहुव्रीहि', explanation: 'हिंदी समास वर्गीकरण।' }
+        ],
+        phenomena: ['संज्ञा, सर्वनाम, विशेषण और क्रिया के भेद', 'कर्तृवाच्य, कर्मवाच्य और भाववाच्य', 'अनुप्रास, यमक, श्लेष, उपमा और रूपक अलंकार'],
+        prereqs: ['स्वर और व्यंजन (Vowels & Consonants in Devanagari)', 'मात्राएँ और शब्द-भेद'],
+        subtopics: ['संज्ञा, सर्वनाम, विशेषण और क्रिया', 'संधि और संधि-विच्छेद (स्वर, व्यंजन, विसर्ग)', 'समास और समास-विग्रह के ६ भेद', 'मुहावरे, लोकोक्तियाँ और अलंकार']
+      },
+      {
+        id: 'ukn-computer-science-algorithms',
+        topic: 'Computer Science: Algorithms, Python Programming, Data Structures & Networks',
+        subject: 'Computer Science',
+        domain: 'Computer Science & Information Technology',
+        definition: 'Computer Science encompasses algorithmic problem-solving, structured and object-oriented programming (Python/Java), relational databases (SQL), and computer network architectures (OSI & TCP/IP protocols).',
+        laws: ['Boolean Algebra Laws (De Morgan Theorems)', 'Structured Programming Theorem (Sequence, Selection, Iteration)'],
+        formulas: [
+          { formula: 'Binary Search Time Complexity = O(log₂ n); Linear Search = O(n)', explanation: 'Algorithmic asymptotic efficiency.' },
+          { formula: 'Decimal to Binary: N = Σ bᵢ · 2ⁱ', explanation: 'Positional base-2 number representation.' }
+        ],
+        phenomena: ['Variables, loops, conditionals, and functions in Python', 'Client-server HTTP/HTTPS request-response cycle and DNS resolution', 'SQL SELECT, JOIN, GROUP BY relational queries'],
+        prereqs: ['Basic Logic and Arithmetic', 'Input-Process-Output (IPO) Cycle'],
+        subtopics: ['Algorithms, Flowcharts & Time Complexity', 'Python Programming (Loops, Functions, Lists, Dictionaries)', 'Relational Databases & SQL Queries', 'Computer Networks (LAN/WAN, OSI Layers, TCP/IP, Cybersecurity)']
       }
     ];
 
@@ -518,6 +854,153 @@ export class MultiBoardKnowledgeEngine {
         chapter: 'Chapter 9: Electric Current',
         book: 'Telangana SCERT Physical Science Class 10',
         outcomes: ['Explore drift speed of electrons', 'Construct V-I graphs for ohmic conductors', 'Apply Kirchhoff laws to basic circuits']
+      },
+
+      // Newton's Laws across 4 Boards
+      {
+        id: 'map-newton-cbse-9',
+        nodeId: 'ukn-newtons-laws',
+        board: 'CBSE',
+        grade: 9,
+        chapter: 'Chapter 8: Force and Laws of Motion',
+        book: 'NCERT Class 9 Science',
+        outcomes: ['State Newton three laws of motion', 'Derive F = ma from rate of change of momentum', 'Apply conservation of momentum']
+      },
+      {
+        id: 'map-newton-icse-9',
+        nodeId: 'ukn-newtons-laws',
+        board: 'ICSE',
+        grade: 9,
+        chapter: 'Chapter 3: Laws of Motion',
+        book: 'Concise Physics Class 9 (ICSE)',
+        outcomes: ['Distinguish contact and non-contact forces', 'Solve F = dp/dt numericals', 'Analyze action-reaction pairs']
+      },
+      {
+        id: 'map-newton-ap-9',
+        nodeId: 'ukn-newtons-laws',
+        board: 'AP_STATE_BOARD',
+        grade: 9,
+        chapter: 'Chapter 2: Laws of Motion',
+        book: 'AP SCERT Physical Science Class 9',
+        outcomes: ['Demonstrate inertia of rest and motion', 'Verify Second Law using Atwood machine', 'Calculate impulse and momentum']
+      },
+      {
+        id: 'map-newton-ts-9',
+        nodeId: 'ukn-newtons-laws',
+        board: 'TS_STATE_BOARD',
+        grade: 9,
+        chapter: 'Chapter 2: Laws of Motion',
+        book: 'Telangana SCERT Physical Science Class 9',
+        outcomes: ['Understand net force and free-body diagrams', 'Derive F = ma', 'Apply Third Law to rocket propulsion']
+      },
+
+      // Quadratic Equations & Linear Equations across 4 Boards
+      {
+        id: 'map-quad-cbse-10',
+        nodeId: 'ukn-quadratic-equations',
+        board: 'CBSE',
+        grade: 10,
+        chapter: 'Chapter 4: Quadratic Equations',
+        book: 'NCERT Class 10 Mathematics',
+        outcomes: ['Solve quadratic equations by factorization and quadratic formula', 'Analyze discriminant D = b² - 4ac for nature of roots']
+      },
+      {
+        id: 'map-quad-icse-10',
+        nodeId: 'ukn-quadratic-equations',
+        board: 'ICSE',
+        grade: 10,
+        chapter: 'Chapter 5: Quadratic Equations in One Variable',
+        book: 'CISCE Prescribed Class 10 Mathematics',
+        outcomes: ['Examine nature of roots via discriminant', 'Solve word problems reducible to quadratic form']
+      },
+      {
+        id: 'map-quad-ap-10',
+        nodeId: 'ukn-quadratic-equations',
+        board: 'AP_STATE_BOARD',
+        grade: 10,
+        chapter: 'Chapter 5: Quadratic Equations',
+        book: 'AP SCERT Class 10 Mathematics',
+        outcomes: ['Find roots by completing the square and Sridharacharya formula', 'Relate discriminant to parabola x-intercepts']
+      },
+      {
+        id: 'map-quad-ts-10',
+        nodeId: 'ukn-quadratic-equations',
+        board: 'TS_STATE_BOARD',
+        grade: 10,
+        chapter: 'Chapter 5: Quadratic Equations',
+        book: 'Telangana SCERT Class 10 Mathematics',
+        outcomes: ['Solve quadratic equations and verify sum/product of roots', 'Model geometric and motion word problems']
+      },
+
+      // French Revolution & Nationalism across 4 Boards
+      {
+        id: 'map-french-cbse-9',
+        nodeId: 'ukn-french-revolution-nationalism',
+        board: 'CBSE',
+        grade: 9,
+        chapter: 'Chapter 1: The French Revolution',
+        book: 'NCERT Class 9 India and the Contemporary World I',
+        outcomes: ['Analyze Three Estates social hierarchy', 'Explain Declaration of Rights of Man and Citizen', 'Assess Reign of Terror and Rise of Napoleon']
+      },
+      {
+        id: 'map-french-ap-9',
+        nodeId: 'ukn-french-revolution-nationalism',
+        board: 'AP_STATE_BOARD',
+        grade: 9,
+        chapter: 'Chapter 12: Democratic and Nationalist Revolutions',
+        book: 'AP SCERT Social Studies Class 9',
+        outcomes: ['Compare American and French Revolutions', 'Understand constitutional monarchy and human rights']
+      },
+
+      // Water Cycle, Monsoon & Geography across 4 Boards
+      {
+        id: 'map-geo-cbse-10',
+        nodeId: 'ukn-geography-water-climate-monsoon',
+        board: 'CBSE',
+        grade: 10,
+        chapter: 'Chapter 3: Water Resources & Climate',
+        book: 'NCERT Class 10 Contemporary India II',
+        outcomes: ['Trace hydrological cycle and monsoon mechanism', 'Evaluate multi-purpose river projects and rainwater harvesting']
+      },
+      {
+        id: 'map-geo-icse-10',
+        nodeId: 'ukn-geography-water-climate-monsoon',
+        board: 'ICSE',
+        grade: 10,
+        chapter: 'Chapter 4 & 6: Climate of India & Water Resources',
+        book: 'CISCE Total Geography Class 10',
+        outcomes: ['Explain Southwest and Northeast Monsoon winds', 'Differentiate surface water and groundwater conservation']
+      },
+
+      // English Grammar across 4 Boards
+      {
+        id: 'map-eng-cbse-10',
+        nodeId: 'ukn-english-grammar-voice-tenses',
+        board: 'CBSE',
+        grade: 10,
+        chapter: 'Integrated Grammar: Tenses, Voice, Reported Speech & Determiners',
+        book: 'NCERT First Flight & Words and Expressions Class 10',
+        outcomes: ['Transform Active to Passive voice accurately', 'Convert Direct to Indirect speech with tense backshift', 'Apply Subject-Verb Concord']
+      },
+
+      // Telugu Vyakaranam across AP & TS Boards
+      {
+        id: 'map-tel-ap-10',
+        nodeId: 'ukn-telugu-vyakaranam',
+        board: 'AP_STATE_BOARD',
+        grade: 10,
+        chapter: 'తెలుగు వ్యాకరణం: సంధులు, సమాసాలు, అలంకారాలు, ఛందస్సు',
+        book: 'AP SCERT 10వ తరగతి తెలుగు వాచకం',
+        outcomes: ['సవర్ణదీర్ఘ, గుణ, వృద్ధి, ఉత్వ, ఇత్వ సంధులను విడదీసి సూత్రాలను రాయడం', 'ద్వంద్వ, ద్విగు, తత్పురుష సమాసాల విగ్రహవాక్యాలను గుర్తించడం', 'ఉత్పలమాల, చంపకమాల పద్యాలకు గురు-లఘువులు గుర్తించడం']
+      },
+      {
+        id: 'map-tel-ts-10',
+        nodeId: 'ukn-telugu-vyakaranam',
+        board: 'TS_STATE_BOARD',
+        grade: 10,
+        chapter: 'తెలుగు వ్యాకరణాంశాలు: సంధులు - సమాసాలు - అలంకారాలు - ఛందస్సు',
+        book: 'Telangana SCERT 10వ తరగతి తెలుగు వాచకం (సింగిడి)',
+        outcomes: ['సంస్కృత మరియు తెలుగు సంధుల సూత్రాలను ఉదాహరణలతో వివరించడం', 'సమాస భేదాలు మరియు అలంకారాలను గుర్తించడం']
       }
     ];
 

@@ -48,12 +48,17 @@ export class ResponseValidationLayer {
 
     // 1. Subject Relevance Check
     const subjectKeywords: Record<string, string[]> = {
-      biology: ['cell', 'organ', 'plant', 'tissue', 'blood', 'chloroplast', 'heart', 'photosynthesis', 'respiration', 'enzyme'],
-      chemistry: ['reaction', 'acid', 'base', 'equation', 'atom', 'molecule', 'bonding', 'compound', 'electron', 'salt'],
-      physics: ['force', 'motion', 'energy', 'velocity', 'current', 'voltage', 'circuit', 'ohm', 'power', 'work'],
-      mathematics: ['equation', 'formula', 'root', 'discriminant', 'variable', 'quadratic', 'solve', 'polynomial', 'graph'],
-      history: ['revolution', 'treaty', 'war', 'estate', 'century', 'movement', 'monarchy', 'republic', 'nation'],
-      geography: ['resource', 'water', 'climate', 'soil', 'dam', 'river', 'rainwater', 'aquifer', 'agriculture']
+      biology: ['cell', 'organ', 'plant', 'tissue', 'blood', 'chloroplast', 'heart', 'photosynthesis', 'stomata', 'respiration', 'enzyme', 'mitosis', 'nephron'],
+      chemistry: ['reaction', 'acid', 'base', 'equation', 'atom', 'molecule', 'bonding', 'compound', 'electron', 'salt', 'periodic', 'ph'],
+      physics: ['force', 'motion', 'energy', 'velocity', 'current', 'voltage', 'circuit', 'ohm', 'power', 'work', 'newton', 'inertia', 'momentum', 'refraction'],
+      mathematics: ['equation', 'formula', 'root', 'discriminant', 'variable', 'quadratic', 'linear', 'solve', 'polynomial', 'graph', 'sin', 'cos', 'triangle', 'mean', 'median'],
+      history: ['revolution', 'treaty', 'war', 'estate', 'century', 'movement', 'monarchy', 'republic', 'nation', 'bastille', 'satyagraha', 'gandhi'],
+      geography: ['resource', 'water', 'climate', 'soil', 'dam', 'river', 'rainwater', 'aquifer', 'agriculture', 'monsoon', 'hydrological', 'evaporation'],
+      civics: ['constitution', 'rights', 'parliament', 'democracy', 'federalism', 'judiciary', 'lok sabha'],
+      economics: ['gdp', 'income', 'sector', 'money', 'credit', 'rbi', 'development', 'demand'],
+      english: ['grammar', 'tense', 'voice', 'active', 'passive', 'speech', 'subject', 'verb', 'sentence', 'clause'],
+      telugu: ['సంధి', 'సమాసం', 'వ్యాకరణం', 'అలంకారం', 'ఛందస్సు', 'సవర్ణదీర్ఘ', 'నామవాచకం', 'తెలుగు'],
+      hindi: ['संधि', 'समास', 'व्याकरण', 'अलंकार', 'संज्ञा', 'क्रिया', 'हिंदी']
     };
 
     let subjectMatched = true;
@@ -108,6 +113,13 @@ export class ResponseValidationLayer {
         factualAccuracyPassed = false;
         factDetails = "Missing Ohm's Law (V = IR) or core electrical parameters.";
       }
+    }
+
+    // Anti-hallucination guard against fabricated textbook page predictions or guaranteed leaked exam papers
+    if (/\b(100%\s+guaranteed\s+leaked\s+paper|exact\s+page\s+9999)\b/i.test(lower)) {
+      factualAccuracyPassed = false;
+      factDetails = 'Blocked fabricated textbook page number or unverified examination leak claim.';
+      warnings.push('Anti-hallucination guard triggered on unverified citation/prediction.');
     }
 
     const factualAccuracy: ValidationCheckResult = {

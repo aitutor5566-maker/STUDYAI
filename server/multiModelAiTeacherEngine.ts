@@ -106,21 +106,29 @@ export function classifyTeachingIntent(
 
   let subject = explicitSubject?.trim() || 'General Science';
   if (!explicitSubject) {
-    if (/\b(quadratic|polynomial|equation|algebra|trigonometry|sin|cos|tan|triangle|circle|calculus|derivative|integral|probability|ratio|percentage|solve|factor|roots?)\b/.test(q) || /x\^2|x²/.test(q)) {
+    if (/[\u0C00-\u0C7F]/.test(question) || /\b(telugu|sandhi|samasam|vyakaranam|alankaram|chandassu)\b/.test(q)) {
+      subject = 'Telugu';
+    } else if (/[\u0900-\u097F]/.test(question) || /\b(hindi|vyakaran|samas|muhavare)\b/.test(q)) {
+      subject = 'Hindi';
+    } else if (/\b(quadratic|polynomial|equation|algebra|trigonometry|sin|cos|tan|triangle|circle|calculus|derivative|integral|probability|ratio|percentage|solve|factor|roots?)\b/.test(q) || /x\^2|x²|[0-9]x\s*[+\-=]/.test(q)) {
       subject = 'Mathematics';
     } else if (/\b(force|newton|velocity|acceleration|momentum|ohm|voltage|current|resistance|watt|joule|refraction|lens|mirror|gravity|kinematics|mass)\b/.test(q)) {
       subject = 'Physics';
     } else if (/\b(atom|mole|stoichiometry|acid|base|ph|reaction|balance|h2o|co2|hcl|naoh|oxidation|periodic|valency|covalent|ionic)\b/.test(q) || /->|→/.test(q)) {
       subject = 'Chemistry';
-    } else if (/\b(cell|mitosis|meiosis|photosynthesis|chloroplast|heart|blood|dna|enzyme|respiration|neuron|organ)\b/.test(q)) {
+    } else if (/\b(cell|mitosis|meiosis|photosynthesis|stomata|chloroplast|heart|blood|dna|enzyme|respiration|neuron|organ)\b/.test(q)) {
       subject = 'Biology';
     } else if (/\b(algorithm|array|loop|function|recursion|binary|database|sql|python|javascript|typescript|complexity)\b/.test(q)) {
       subject = 'Computer Science';
-    } else if (/\b(revolution|treaty|empire|dynasty|war|constitution|independence|century|historian)\b/.test(q)) {
+    } else if (/\b(revolution|bastille|treaty|empire|dynasty|war|satyagraha|gandhi|independence|century|historian)\b/.test(q)) {
       subject = 'History';
-    } else if (/\b(climate|monsoon|river|soil|latitude|tectonic|biome|agriculture|aquifer)\b/.test(q)) {
+    } else if (/\b(water cycle|hydrological|climate|monsoon|river|soil|latitude|tectonic|biome|agriculture|aquifer)\b/.test(q)) {
       subject = 'Geography';
-    } else if (/\b(grammar|synonym|antonym|metaphor|simile|tense|essay|poem|literature)\b/.test(q)) {
+    } else if (/\b(constitution|fundamental rights|parliament|lok sabha|rajya sabha|democracy|federalism|civics)\b/.test(q)) {
+      subject = 'Civics';
+    } else if (/\b(gdp|per capita|inflation|money and credit|rbi|demand and supply|economics)\b/.test(q)) {
+      subject = 'Economics';
+    } else if (/\b(grammar|synonym|antonym|metaphor|simile|tense|active voice|passive voice|reported speech|essay|poem|literature)\b/.test(q)) {
       subject = 'English';
     }
   }
@@ -293,7 +301,8 @@ export class MultiModelAiTeacherEngine {
         topic,
         subject as any,
         grade,
-        board as any
+        board as any,
+        language
       );
       if (retrieved) {
         modulesUsed.push('gpt_knowledge_bank');

@@ -595,27 +595,77 @@ export class LocalCurriculumFallbackAdapter implements BaseAiProvider {
   async execute(req: NormalizedAiRequest, retrieved?: UnifiedRetrievedKnowledge | null) {
     const board = req.board || 'CBSE';
     const grade = req.grade || 10;
-    const topic = req.topic || 'Curriculum Concept';
-    const subject = req.subject || 'Science';
+    const topic = retrieved?.universalNode?.topic || req.topic || 'Curriculum Concept';
+    const subject = retrieved?.universalNode?.subject || req.subject || 'Science';
+    const lang = (req.language || 'English').toLowerCase();
 
-    const definition = retrieved?.dualExplanation.academicFormalDefinition ||
+    const definition =
+      retrieved?.dualExplanation?.academicFormalDefinition ||
       `${topic} is an essential curricular concept in ${subject} prescribed by ${board} for Grade ${grade}.`;
 
-    const layman = retrieved?.dualExplanation.laymanEverydayExplanation ||
+    const layman =
+      retrieved?.languageLocalized?.localizedLaymanIntro ||
+      retrieved?.dualExplanation?.laymanEverydayExplanation ||
       `Simply put, ${topic} explains how fundamental principles operate through verifiable physical, chemical, biological, or mathematical rules.`;
 
-    const steps = retrieved?.dualExplanation.stepByStepMechanism || [
+    const laws = retrieved?.universalNode?.fundamentalLaws || [];
+    const formulas = retrieved?.universalNode?.governingFormulas || [];
+    const phenomena = retrieved?.universalNode?.keyPhenomena || [];
+    const steps = retrieved?.dualExplanation?.stepByStepMechanism || [
       'Foundational observation and principle identification',
       'Underlying cause-and-effect relationship',
       'Curricular application and examination importance'
     ];
+    const misconceptions = retrieved?.dualExplanation?.commonMisconceptions || [];
+    const subtopics = retrieved?.universalNode?.subtopics || [];
 
-    const content = `# ${topic} (${board} Grade ${grade})\n\n### 📖 Formal Definition\n${definition}\n\n### 💡 Intuitive Explanation\n${layman}\n\n### 🔬 Key Steps & Mechanisms\n${steps.map((s, idx) => `${idx + 1}. **${s}**`).join('\n')}\n\n*Source: ${board} Prescribed Textbook Curriculum (${retrieved?.sources[0]?.title || 'Standard NCERT Outline'})*`;
+    // Check if prompt asks to solve a linear/quadratic algebraic equation step-by-step
+    let algebraStepByStep = '';
+    const promptText = req.prompt || '';
+    const linearMatch = promptText.match(/(\d+)\s*x\s*([+-])\s*(\d+)\s*=\s*(\d+)/i);
+    if (linearMatch) {
+      const a = Number(linearMatch[1]);
+      const op = linearMatch[2];
+      const b = Number(linearMatch[3]);
+      const c = Number(linearMatch[4]);
+      const rhs = op === '+' ? c - b : c + b;
+      const xVal = rhs / a;
+      algebraStepByStep = `\n\n### 🧮 Step-by-Step Algebraic Solution\n- **Given Equation**: \`${a}x ${op} ${b} = ${c}\`\n- **Step 1 (Transpose constant term)**: \`${a}x = ${c} ${op === '+' ? '-' : '+'} ${b} = ${rhs}\`\n- **Step 2 (Divide both sides by coefficient ${a})**: \`x = ${rhs} / ${a} = ${xVal}\`\n- **Step 3 (Verification Check)**: Substitute \`x = ${xVal}\` into LHS: \`${a}(${xVal}) ${op} ${b} = ${a * xVal} ${op} ${b} = ${c} = RHS\` (Verified).`;
+    }
+
+    const lawsBlock = laws.length > 0
+      ? `\n\n### ⚖️ Fundamental Laws & Principles\n${laws.map((l, idx) => `${idx + 1}. **${l}**`).join('\n')}`
+      : '';
+
+    const formulasBlock = formulas.length > 0
+      ? `\n\n### 📐 Governing Formulas & Equations\n${formulas.map((f) => `- **\`${f.formula}\`** — ${f.explanation}${f.siUnits ? ` *(Units: ${f.siUnits})*` : ''}`).join('\n')}`
+      : '';
+
+    const phenomenaBlock = phenomena.length > 0
+      ? `\n\n### 🔬 Key Phenomena, Components & Mechanisms\n${phenomena.map((p) => `- ${p}`).join('\n')}`
+      : '';
+
+    const subtopicsBlock = subtopics.length > 0
+      ? `\n\n### 📚 Core Syllabus Subtopics (${board} Class ${grade})\n${subtopics.map((s, idx) => `${idx + 1}. **${s.title}**: ${s.summary}`).join('\n')}`
+      : '';
+
+    const misconceptionsBlock = misconceptions.length > 0
+      ? `\n\n### ⚠️ Common Misconceptions & Exam Tips\n${misconceptions.map((m) => `- ${m}`).join('\n')}`
+      : '';
+
+    const headingTitle =
+      lang.includes('telugu') && retrieved?.languageLocalized?.translatedTopic
+        ? retrieved.languageLocalized.translatedTopic
+        : lang.includes('hindi') && retrieved?.languageLocalized?.translatedTopic
+        ? retrieved.languageLocalized.translatedTopic
+        : topic;
+
+    const content = `# ${headingTitle} (${board} Grade ${grade} • ${subject})\n\n### 📖 Formal Definition\n${definition}\n\n### 💡 Intuitive Explanation\n${layman}${lawsBlock}${formulasBlock}${algebraStepByStep}${phenomenaBlock}\n\n### 🔄 Step-by-Step Process\n${steps.map((s) => `- **${s}**`).join('\n')}${subtopicsBlock}${misconceptionsBlock}\n\n*Source: ${retrieved?.boardRequirement?.prescribedTextbook || `${board} Prescribed Textbook Curriculum`} (${retrieved?.boardRequirement?.chapterTitle || topic})*`;
 
     return {
       content,
       model: 'studyai-deterministic-curriculum-v3',
-      tokensUsed: { prompt: 80, completion: 220, total: 300 }
+      tokensUsed: { prompt: 120, completion: 380, total: 500 }
     };
   }
 }
