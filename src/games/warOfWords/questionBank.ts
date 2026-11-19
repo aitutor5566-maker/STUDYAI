@@ -154,6 +154,26 @@ const RAW_QUESTIONS: RawTuple[] = [
 
 const OPTION_IDS: OptionId[] = ['A', 'B', 'C', 'D'];
 
+function inferPartOfSpeech(word: string, topic: string, category: string): string {
+  const lower = word.toLowerCase();
+  const top = topic.toLowerCase();
+  if (category === 'Idioms & Phrases' || word.includes(' ')) return 'Idiom / Phrase';
+  if (top.includes('adjective') || /(ous|ful|ant|ent|ic|ive|ble|al)$/.test(lower)) return 'Adjective';
+  if (top.includes('adverb') || lower.endsWith('ly')) return 'Adverb';
+  if (top.includes('verb') || ['inspect', 'alleviate', 'corroborate', 'shrink', 'convert', 'overflow', 'read', 'rises', 'found'].includes(lower)) return 'Verb';
+  if (top.includes('preposition') || ['across', 'from', 'despite'].includes(lower)) return 'Preposition';
+  if (top.includes('conjunction') || ['although', 'but'].includes(lower)) return 'Conjunction';
+  if (top.includes('pronoun') || ['who', 'which', 'i'].includes(lower)) return 'Pronoun';
+  return 'Noun / Academic Term';
+}
+
+function buildSyllableBreakdown(word: string, pronunciation: string): string {
+  if (pronunciation && pronunciation.includes('-')) {
+    return pronunciation.toLowerCase();
+  }
+  return word.toLowerCase();
+}
+
 export const WAR_OF_WORDS_QUESTIONS: WarWordQuestion[] = RAW_QUESTIONS.map((row) => {
   const [
     id,
@@ -172,6 +192,18 @@ export const WAR_OF_WORDS_QUESTIONS: WarWordQuestion[] = RAW_QUESTIONS.map((row)
     visualEmoji
   ] = row;
 
+  const targetWord = opts[correctIdx];
+  const distractors = opts.filter((_, idx) => idx !== correctIdx);
+  const partOfSpeech = inferPartOfSpeech(targetWord, topic, category);
+  const syllables = buildSyllableBreakdown(targetWord, pronunciation);
+  const synonyms =
+    category === 'Antonym Battle'
+      ? [meaning.split(/[;,]/)[0].trim()]
+      : [topic, `${targetWord} (related)`];
+  const antonyms = distractors.slice(0, 2);
+  const commonUsage = `Commonly used in Grade ${grade}+ ${topic.toLowerCase()} and ${category.toLowerCase()} contexts.`;
+  const memoryTip = `Connect "${targetWord}" (${pronunciation}) with: "${meaning.slice(0, 48)}${meaning.length > 48 ? '...' : ''}"`;
+
   return {
     id,
     category,
@@ -181,10 +213,16 @@ export const WAR_OF_WORDS_QUESTIONS: WarWordQuestion[] = RAW_QUESTIONS.map((row)
     vocabLevel,
     prompt,
     visualEmoji,
-    targetWord: opts[correctIdx],
+    targetWord,
     pronunciation,
+    syllables,
+    partOfSpeech,
     meaning,
     exampleSentence,
+    synonyms,
+    antonyms,
+    commonUsage,
+    memoryTip,
     explanation,
     options: opts.map((text, idx) => ({ id: OPTION_IDS[idx], text })),
     correctOptionId: OPTION_IDS[correctIdx]

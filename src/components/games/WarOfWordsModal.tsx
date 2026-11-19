@@ -72,11 +72,11 @@ const CATEGORIES: EnglishCategory[] = [
 ];
 
 const WORLDS: Array<{ id: WorldId; name: string; subtitle: string }> = [
-  { id: 'moonlight_valley', name: '1. Bamboo Forest Valley', subtitle: 'Bamboo stalks, stone bridges & silver moon' },
-  { id: 'shadow_forest', name: '2. Night-time Forest', subtitle: 'Foggy shadow pathways & glowing flora' },
-  { id: 'ancient_kingdom', name: '3. Stone Fortress', subtitle: 'Fortress battlements & torchlit columns' },
-  { id: 'crystal_caverns', name: '4. Mountain Temple', subtitle: 'Sacred temple caverns & blue crystals' },
-  { id: 'sky_of_knowledge', name: '5. Traditional Courtyard', subtitle: 'Moonlit dojo courtyard & starry bridges' },
+  { id: 'moonlight_valley', name: '1. Moonlit Forest', subtitle: 'Trees, glowing landmarks & hidden word challenges' },
+  { id: 'ancient_kingdom', name: '2. Ancient Temple', subtitle: 'Stone platforms, doors, bridges & vocabulary puzzles' },
+  { id: 'shadow_forest', name: '3. Mountain Path', subtitle: 'Climbing routes, obstacles & checkpoints' },
+  { id: 'crystal_caverns', name: '4. Crystal Cave', subtitle: 'Glowing crystals, pathways & word discovery' },
+  { id: 'sky_of_knowledge', name: '5. Castle Library', subtitle: 'Bookshelves, scrolls, word collections & NPC guides' },
   { id: 'training_arena', name: '6. Training Arena', subtitle: 'Shinobi practice dojo & wooden platforms' }
 ];
 
@@ -701,16 +701,36 @@ export const WarOfWordsModal: React.FC<WarOfWordsModalProps> = ({
             onPauseRequested={() => setScreen((s) => (s === 'playing' ? 'paused' : 'playing'))}
           />
 
-          {/* TOP-LEFT: Knowledge Points & Streak */}
-          <div style={{ position: 'absolute', top: 12, left: 12, background: 'rgba(15,23,42,0.86)', border: '1px solid rgba(34,211,238,0.35)', borderRadius: 14, padding: '9px 14px' }}>
+          {/* TOP-LEFT: Knowledge Points, Streak & Waypoint Compass */}
+          <div style={{ position: 'absolute', top: 12, left: 12, background: 'rgba(15,23,42,0.88)', border: '1px solid rgba(34,211,238,0.35)', borderRadius: 14, padding: '9px 14px', maxWidth: 230 }}>
             <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#67E8F9' }}>⭐ {knowledgePoints} KP</div>
-            <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#FDE047' }}>🔥 Streak: {streak}</div>
+            <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#FDE047' }}>🔥 Streak: {streak} • Checkpoint {Math.floor(qIndex / 2) + 1}</div>
+            {hud.objectiveLabel && (
+              <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#A7F3D0', marginTop: 3 }}>
+                ▲ {hud.objectiveLabel}
+              </div>
+            )}
             {mode === 'time_challenge' && (
               <div style={{ fontSize: '0.76rem', fontWeight: 900, color: timeRemaining <= 15 ? '#FCA5A5' : '#A7F3D0', marginTop: 2 }}>
                 ⏱️ {timeRemaining}s
               </div>
             )}
           </div>
+
+          {hud.nearbyNpcPrompt && (
+            <div style={{ position: 'absolute', bottom: 152, left: '50%', transform: 'translateX(-50%)', background: 'rgba(16,185,129,0.92)', border: '1px solid #A7F3D0', borderRadius: 99, padding: '5px 14px', fontSize: '0.75rem', fontWeight: 800, zIndex: 25 }}>
+              {hud.nearbyNpcPrompt}
+            </div>
+          )}
+
+          {hud.activeNpcDialogue && (
+            <div style={{ position: 'absolute', bottom: 184, left: '50%', transform: 'translateX(-50%)', width: 'min(480px, 92vw)', background: 'rgba(15,23,42,0.94)', border: '1.5px solid #FACC15', borderRadius: 16, padding: '10px 14px', fontSize: '0.78rem', zIndex: 25, boxShadow: '0 10px 28px rgba(0,0,0,0.5)' }}>
+              <div style={{ fontWeight: 900, color: '#FDE047', marginBottom: 2 }}>
+                💬 {hud.activeNpcDialogue.name} • {hud.activeNpcDialogue.role}
+              </div>
+              <div style={{ color: '#F8FAFC', lineHeight: 1.4 }}>{hud.activeNpcDialogue.dialogue}</div>
+            </div>
+          )}
 
           {/* TOP-CENTER: Question Panel (responsive for mobile & desktop) */}
           <div
@@ -927,10 +947,35 @@ export const WarOfWordsModal: React.FC<WarOfWordsModalProps> = ({
                   </button>
                 </div>
 
-                <div style={{ background: '#1E293B', borderRadius: 14, padding: 14, marginBottom: 14, fontSize: '0.86rem', lineHeight: 1.5 }}>
-                  <div><strong>WORD:</strong> {learningPanel.question.targetWord} <span style={{ color: '#94A3B8' }}>({learningPanel.question.pronunciation})</span></div>
-                  <div><strong>MEANING:</strong> {learningPanel.question.meaning}</div>
-                  <div><strong>EXAMPLE:</strong> <em>"{learningPanel.question.exampleSentence}"</em></div>
+                <div style={{ background: '#1E293B', borderRadius: 14, padding: 14, marginBottom: 14, fontSize: '0.84rem', lineHeight: 1.5 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+                    <span style={{ fontSize: '1.05rem', fontWeight: 900, color: '#67E8F9' }}>{learningPanel.question.targetWord}</span>
+                    <span style={{ color: '#94A3B8', fontWeight: 700 }}>/{learningPanel.question.pronunciation}/</span>
+                    {learningPanel.question.syllables && (
+                      <span style={{ padding: '2px 8px', borderRadius: 99, background: 'rgba(34,211,238,0.14)', color: '#A5F3FC', fontSize: '0.72rem', fontWeight: 800 }}>
+                        Syllables: {learningPanel.question.syllables}
+                      </span>
+                    )}
+                    {learningPanel.question.partOfSpeech && (
+                      <span style={{ padding: '2px 8px', borderRadius: 99, background: 'rgba(250,204,21,0.16)', color: '#FDE047', fontSize: '0.72rem', fontWeight: 800 }}>
+                        {learningPanel.question.partOfSpeech}
+                      </span>
+                    )}
+                  </div>
+                  <div><strong>SIMPLE DEFINITION:</strong> {learningPanel.question.meaning}</div>
+                  <div><strong>EXAMPLE SENTENCE:</strong> <em>"{learningPanel.question.exampleSentence}"</em></div>
+                  {learningPanel.question.synonyms && learningPanel.question.synonyms.length > 0 && (
+                    <div><strong>SYNONYMS / CONTEXT:</strong> {learningPanel.question.synonyms.join(', ')}</div>
+                  )}
+                  {learningPanel.question.antonyms && learningPanel.question.antonyms.length > 0 && (
+                    <div><strong>CONTRAST / ANTONYMS:</strong> {learningPanel.question.antonyms.join(', ')}</div>
+                  )}
+                  {learningPanel.question.commonUsage && (
+                    <div><strong>COMMON USAGE (Grade {grade}):</strong> {learningPanel.question.commonUsage}</div>
+                  )}
+                  {learningPanel.question.memoryTip && (
+                    <div style={{ marginTop: 4, color: '#FDE047' }}><strong>💡 MEMORY TIP:</strong> {learningPanel.question.memoryTip}</div>
+                  )}
                   <div style={{ marginTop: 6, color: '#CBD5E1' }}>{learningPanel.question.explanation}</div>
                 </div>
 

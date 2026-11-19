@@ -35,6 +35,10 @@ export interface WarHudSnapshot {
   inAttackRange: boolean;
   playerX: number;
   targets: Array<{ index: number; id: OptionId; text: string; x: number }>;
+  objectiveDistanceMeters?: number;
+  objectiveLabel?: string;
+  nearbyNpcPrompt?: string | null;
+  activeNpcDialogue?: { name: string; role: string; dialogue: string } | null;
 }
 
 export interface WarOfWordsCanvasProps {
@@ -315,6 +319,26 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
     guardBubble.visible = false;
     warrior.root.add(guardBubble);
 
+    // 3D Floating Direction Arrow above player pointing toward next Word Challenge
+    const waypointArrowGroup = new THREE.Group();
+    const arrowMat = new THREE.MeshStandardMaterial({
+      color: '#FACC15',
+      emissive: '#F59E0B',
+      emissiveIntensity: 1.4,
+      roughness: 0.2
+    });
+    const arrowShaft = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 0.65), arrowMat);
+    arrowShaft.position.z = -0.15;
+    const arrowHead = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.55, 6), arrowMat);
+    arrowHead.rotation.x = Math.PI / 2;
+    arrowHead.position.z = 0.35;
+    waypointArrowGroup.add(arrowShaft, arrowHead);
+    waypointArrowGroup.position.set(-7, 2.95, 0);
+    scene.add(waypointArrowGroup);
+
+    let activeNpcDialogue: { name: string; role: string; dialogue: string } | null = null;
+    let npcDialogueTimer = 0;
+
     const spawnBurst = (origin: THREE.Vector3, colorHex: string, count: number) => {
       const actualCount = quality === 'low' ? Math.ceil(count / 2) : count;
       const geo = new THREE.BoxGeometry(0.22, 0.22, 0.22);
@@ -370,6 +394,15 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
     triggerSelectNearestRef.current = () => {
       if (pausedRef.current) return;
       audioManager.unlock();
+      for (const npc of env.npcs) {
+        if (Math.hypot(npc.group.position.x - playerX, npc.group.position.z - playerZ) <= 3.6) {
+          audioManager.playTargetSelect();
+          activeNpcDialogue = { name: npc.name, role: npc.role, dialogue: npc.dialogue };
+          npcDialogueTimer = 6.5;
+          spawnBurst(npc.group.position.clone().add(new THREE.Vector3(0, 1.8, 0)), '#FACC15', 8);
+          return;
+        }
+      }
       const nearest = getNearestSentinel();
       if (nearest.dist <= 6.5) {
         selectTarget(nearest.index);
@@ -748,6 +781,35 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
           s.ring.rotation.z += dt * (idx === selectedTargetIdx ? 2.2 : 0.6);
         });
 
+        // Friendly Guide / Librarian NPC patrol & indicator bob
+        env.npcs.forEach((npc, idx) => {
+          const walkA = now * 0.0011 + idx * 2.1;
+          npc.group.position.x = npc.position.x + Math.sin(walkA) * 1.1;
+          npc.group.rotation.y = Math.cos(walkA) >= 0 ? Math.PI / 2 : -Math.PI / 2;
+          npc.indicator.rotation.y += dt * 2.0;
+          npc.indicator.position.y = 2.52 + Math.sin(now * 0.004 + idx) * 0.12;
+        });
+
+        if (npcDialogueTimer > 0) {
+          npcDialogueTimer -= dt;
+          if (npcDialogueTimer <= 0) {
+            activeNpcDialogue = null;
+          }
+        }
+
+        // Update 3D Direction Arrow above player pointing toward nearest/selected Word Challenge Sentinel
+        const activeTargetSentinel =
+          selectedTargetIdx !== null && sentinels[selectedTargetIdx]
+            ? sentinels[selectedTargetIdx]
+            : sentinels[nearest.index];
+        const objPos = activeTargetSentinel ? activeTargetSentinel.group.position : new THREE.Vector3(4, 0, 0);
+        waypointArrowGroup.position.set(
+          playerX,
+          playerY + 2.95 + Math.sin(now * 0.0045) * 0.12,
+          playerZ
+        );
+        waypointArrowGroup.lookAt(objPos.x, waypointArrowGroup.position.y, objPos.z);
+
         // 5. Torch Flicker & Particles
         env.torchLights.forEach((tl, i) => {
           tl.intensity = 2.2 + Math.sin(now * 0.01 + i * 2) * 0.35;
@@ -790,6 +852,14 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
           hudTimer = 0;
           const sel = selectedTargetIdx !== null ? sentinels[selectedTargetIdx] : null;
           const inRange = sel ? Math.abs(sel.group.position.x - playerX) <= 3.9 : false;
+          let nearbyNpcPrompt: string | null = null;
+          for (const npc of env.npcs) {
+            if (Math.hypot(npc.group.position.x - playerX, npc.group.position.z - playerZ) <= 3.6) {
+              nearbyNpcPrompt = `Press [E] or SELECT to talk to ${npc.name} (${npc.role})`;
+              break;
+            }
+          }
+          const objDist = Math.round(Math.hypot(objPos.x - playerX, objPos.z - playerZ));
           callbacksRef.current.onHudUpdate({
             selectedTargetIndex: selectedTargetIdx,
             selectedOptionId: sel ? sel.optionId : null,
@@ -801,7 +871,13 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
               id: s.optionId,
               text: s.optionText,
               x: s.group.position.x
-            }))
+            })),
+            objectiveDistanceMeters: objDist,
+            objectiveLabel: activeTargetSentinel
+              ? `Word Sentinel ${activeTargetSentinel.optionId}: "${activeTargetSentinel.optionText}" (${objDist}m)`
+              : `Next Word Challenge (${objDist}m)`,
+            nearbyNpcPrompt,
+            activeNpcDialogue
           });
         }
       }

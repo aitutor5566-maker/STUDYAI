@@ -355,10 +355,21 @@ export interface PlatformBox {
   bottomY: number;
 }
 
+export interface VocabularyNpcEntity {
+  id: string;
+  name: string;
+  role: string;
+  dialogue: string;
+  position: THREE.Vector3;
+  group: THREE.Group;
+  indicator: THREE.Mesh;
+}
+
 export interface WorldEnvironmentResult {
   root: THREE.Group;
   platforms: PlatformBox[];
   torchLights: THREE.PointLight[];
+  npcs: VocabularyNpcEntity[];
   skyColor: string;
   fogColor: string;
 }
@@ -371,6 +382,7 @@ export function buildWorldEnvironment(
   const root = new THREE.Group();
   const platforms: PlatformBox[] = [];
   const torchLights: THREE.PointLight[] = [];
+  const npcs: VocabularyNpcEntity[] = [];
 
   const themes: Record<WorldId, { sky: string; fog: string; ground: string; stone: string; accent: string }> = {
     moonlight_valley: { sky: '#070D1F', fog: '#0B1736', ground: '#10241E', stone: '#334155', accent: '#22D3EE' },
@@ -463,12 +475,116 @@ export function buildWorldEnvironment(
     }
   }
 
+  // Area-Specific 3D Landmarks (1. Moonlit Forest, 2. Ancient Temple, 3. Mountain Path, 4. Crystal Cave, 5. Castle Library)
+  if (worldId === 'moonlight_valley' || worldId === 'shadow_forest') {
+    for (const tx of [-12, -4, 8, 17, 26]) {
+      const trunk = makeMesh(new THREE.CylinderGeometry(0.32, 0.45, 3.8, 8), '#451A03');
+      trunk.position.set(tx, 1.9, -4.4);
+      const canopy = makeMesh(new THREE.DodecahedronGeometry(2.2, 1), '#065F46');
+      canopy.position.set(tx, 4.4, -4.4);
+      root.add(trunk, canopy);
+    }
+  } else if (worldId === 'ancient_kingdom') {
+    // Ancient Temple stone gateways & carved doors
+    for (const gx of [1, 18]) {
+      const gateL = makeMesh(new THREE.BoxGeometry(0.8, 4.8, 0.8), '#64748B');
+      gateL.position.set(gx - 2.2, 2.4, -3.2);
+      const gateR = gateL.clone();
+      gateR.position.x = gx + 2.2;
+      const lintel = makeMesh(new THREE.BoxGeometry(5.6, 0.7, 1.0), '#F59E0B');
+      lintel.position.set(gx, 4.9, -3.2);
+      root.add(gateL, gateR, lintel);
+    }
+  } else if (worldId === 'crystal_caverns') {
+    // Crystal Cave glowing crystal clusters
+    for (const cx of [-6, 3, 12, 21, 28]) {
+      const crystal = makeMesh(new THREE.OctahedronGeometry(1.1, 0), '#38BDF8', {
+        emissive: '#0284C7',
+        emissiveIntensity: 1.4
+      });
+      crystal.position.set(cx, 1.2, -3.8);
+      root.add(crystal);
+    }
+  } else if (worldId === 'sky_of_knowledge') {
+    // Castle Library bookshelves & floating glowing word scrolls
+    for (const bx of [-5, 7, 19]) {
+      const shelf = makeMesh(new THREE.BoxGeometry(3.2, 3.8, 0.8), '#78350F');
+      shelf.position.set(bx, 1.9, -4.1);
+      const scroll = makeMesh(new THREE.CylinderGeometry(0.18, 0.18, 0.85, 10), '#FDE047', {
+        emissive: '#F59E0B',
+        emissiveIntensity: 1.2
+      });
+      scroll.rotation.z = Math.PI / 3;
+      scroll.position.set(bx, 4.3, -3.5);
+      root.add(shelf, scroll);
+    }
+  }
+
+  // Friendly Guides, Librarians & Explorer NPCs with distinct outfits and vocabulary clues
+  const npcSpecs = [
+    {
+      id: 'npc-librarian-elena',
+      name: 'Librarian Elena',
+      role: 'Castle Lexicon Keeper',
+      dialogue: 'Look at the context clue and prefix/root of the word! Press [Q] anytime for an Arcane Vocabulary Insight.',
+      robeColor: '#7C3AED',
+      x: -3.5,
+      z: -2.2
+    },
+    {
+      id: 'npc-explorer-kenji',
+      name: 'Scout Kenji',
+      role: 'Moonlit Forest & Temple Guide',
+      dialogue: 'Follow the golden 3D Direction Arrow above you! Approach the enemy sentinel carrying the matching word and strike.',
+      robeColor: '#0D9488',
+      x: 9.5,
+      z: -2.2
+    },
+    {
+      id: 'npc-sage-alaric',
+      name: 'Chronicler Alaric',
+      role: 'Crystal Cave Etymologist',
+      dialogue: 'Every word you master unlocks its pronunciation, syllables, part of speech, synonyms, and a memory tip!',
+      robeColor: '#D97706',
+      x: 18.5,
+      z: -2.2
+    }
+  ];
+
+  for (const ns of npcSpecs) {
+    const npcGroup = new THREE.Group();
+    npcGroup.position.set(ns.x, 0, ns.z);
+    const legs = makeMesh(new THREE.BoxGeometry(0.46, 0.72, 0.32), '#1E293B');
+    legs.position.y = 0.36;
+    const robe = makeMesh(new THREE.BoxGeometry(0.62, 0.86, 0.42), ns.robeColor);
+    robe.position.y = 1.15;
+    const head = makeMesh(new THREE.BoxGeometry(0.46, 0.46, 0.46), '#F1C27D');
+    head.position.y = 1.84;
+    const indicator = makeMesh(new THREE.OctahedronGeometry(0.2, 0), '#FACC15', {
+      emissive: '#F59E0B',
+      emissiveIntensity: 1.35
+    });
+    indicator.position.y = 2.52;
+    npcGroup.add(legs, robe, head, indicator);
+    root.add(npcGroup);
+    npcs.push({
+      id: ns.id,
+      name: ns.name,
+      role: ns.role,
+      dialogue: ns.dialogue,
+      position: new THREE.Vector3(ns.x, 0, ns.z),
+      group: npcGroup,
+      indicator
+    });
+  }
+
   scene.add(root);
 
   return {
     root,
     platforms,
     torchLights,
+    npcs,
     skyColor: theme.sky,
     fogColor: theme.fog
   };

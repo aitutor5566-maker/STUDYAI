@@ -64,8 +64,14 @@ export interface WarWordQuestion {
   visualEmoji?: string;
   targetWord: string;
   pronunciation: string;
+  syllables?: string;
+  partOfSpeech?: string;
   meaning: string;
   exampleSentence: string;
+  synonyms?: string[];
+  antonyms?: string[];
+  commonUsage?: string;
+  memoryTip?: string;
   explanation: string;
   options: WarWordOption[];
   correctOptionId: OptionId;

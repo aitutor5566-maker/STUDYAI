@@ -32,8 +32,14 @@ describe('WAR OF WORDS — STUDY RUSH 3D Core Systems', () => {
     for (const q of WAR_OF_WORDS_QUESTIONS) {
       expect(q.targetWord.length).toBeGreaterThan(0);
       expect(q.pronunciation.length).toBeGreaterThan(0);
+      expect(q.syllables?.length).toBeGreaterThan(0);
+      expect(q.partOfSpeech?.length).toBeGreaterThan(0);
       expect(q.meaning.length).toBeGreaterThan(5);
       expect(q.exampleSentence.length).toBeGreaterThan(5);
+      expect(q.synonyms?.length).toBeGreaterThan(0);
+      expect(q.antonyms?.length).toBeGreaterThan(0);
+      expect(q.commonUsage?.length).toBeGreaterThan(5);
+      expect(q.memoryTip?.length).toBeGreaterThan(5);
       expect(q.explanation.length).toBeGreaterThan(5);
     }
   });
@@ -100,6 +106,7 @@ describe('WAR OF WORDS — STUDY RUSH 3D Core Systems', () => {
       const scene = new THREE.Scene();
       const env = buildWorldEnvironment(scene, w, 'low');
       expect(env.platforms.length).toBeGreaterThanOrEqual(4);
+      expect(env.npcs.length).toBe(3);
     }
   });
 });
