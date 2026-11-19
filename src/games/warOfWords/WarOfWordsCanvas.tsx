@@ -256,11 +256,14 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
       if (opt) updateSentinelLabel(rig, opt.id, opt.text, false);
     });
 
-    // Gameplay Physics & Animation State
+    // Gameplay Physics & Animation State (Full 3D Directional Movement: X, Y, Z)
     let playerX = -7;
     let playerY = 0;
+    let playerZ = 0;
     let velX = 0;
     let velY = 0;
+    let velZ = 0;
+    let facingAngle = 0; // radians (0 = +X, PI = -X, PI/2 = -Z, -PI/2 = +Z)
     let facing = 1; // 1 = right (+X), -1 = left (-X)
     let isGrounded = true;
     let selectedTargetIdx: number | null = null;
@@ -294,7 +297,7 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
       let bestDist = Infinity;
       sentinels.forEach((s, idx) => {
         if (!s.group.visible) return;
-        const d = Math.abs(s.group.position.x - playerX);
+        const d = Math.hypot(s.group.position.x - playerX, s.group.position.z - playerZ);
         if (d < bestDist) {
           bestDist = d;
           bestIdx = idx;
@@ -461,10 +464,13 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
       lastTime = now;
 
       if (!pausedRef.current) {
-        // 1. Horizontal Movement with Smooth Acceleration & Deceleration
+        // 1. Full 3D Directional Movement (X and Z) with Smooth Acceleration & Deceleration
         let inputX = 0;
+        let inputZ = 0;
         if (keys['KeyD'] || keys['ArrowRight']) inputX += 1;
         if (keys['KeyA'] || keys['ArrowLeft']) inputX -= 1;
+        if (keys['KeyS']) inputZ += 1;
+        if (keys['KeyW']) inputZ -= 1;
         if (Math.abs(mobileInputRef.current.moveX) > 0.1) {
           inputX += mobileInputRef.current.moveX;
         }
@@ -478,23 +484,29 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
         const sprinting = keys['ShiftLeft'] || keys['ShiftRight'];
         const maxSpeed = sprinting ? 11.2 : 7.8;
         const targetVelX = THREE.MathUtils.clamp(inputX, -1, 1) * maxSpeed;
-        const accel = Math.abs(targetVelX) > 0.1 ? 38 : 28;
+        const targetVelZ = THREE.MathUtils.clamp(inputZ, -1, 1) * (maxSpeed * 0.75);
+        const accel = Math.abs(targetVelX) > 0.1 || Math.abs(targetVelZ) > 0.1 ? 38 : 28;
         velX = THREE.MathUtils.lerp(velX, targetVelX, 1 - Math.exp(-accel * dt));
+        velZ = THREE.MathUtils.lerp(velZ, targetVelZ, 1 - Math.exp(-accel * dt));
 
         let nextX = THREE.MathUtils.clamp(playerX + velX * dt, -14, 30);
+        const nextZ = THREE.MathUtils.clamp(playerZ + velZ * dt, -3.2, 3.2);
 
         // Prevent passing through Sentinel cores (soft separation)
         for (const s of sentinels) {
           if (!s.group.visible) continue;
           const dx = nextX - s.group.position.x;
-          if (Math.abs(dx) < 0.95 && playerY < 2.2) {
+          const dz = nextZ - s.group.position.z;
+          if (Math.hypot(dx, dz) < 0.95 && playerY < 2.2) {
             nextX = s.group.position.x + (dx >= 0 ? 0.95 : -0.95);
           }
         }
         playerX = nextX;
+        playerZ = nextZ;
 
-        if (Math.abs(inputX) > 0.1) {
-          facing = inputX > 0 ? 1 : -1;
+        if (Math.abs(inputX) > 0.1 || Math.abs(inputZ) > 0.1) {
+          facing = inputX >= 0 ? 1 : -1;
+          facingAngle = Math.atan2(-inputZ, inputX);
         }
 
         // 2. Vertical Gravity & Platform Collision
@@ -530,10 +542,10 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
         isGrounded = landed;
 
         // 3. Warrior Model Transform & Event-Driven Animations
-        warrior.root.position.set(playerX, playerY, 0);
-        warrior.root.rotation.y = facing > 0 ? 0 : Math.PI;
+        warrior.root.position.set(playerX, playerY, playerZ);
+        warrior.root.rotation.y = facingAngle;
 
-        const speedAbs = Math.abs(velX);
+        const speedAbs = Math.hypot(velX, velZ);
         if (speedAbs > 0.6 && isGrounded) {
           walkPhase += dt * (sprinting ? 14 : 9.5);
           footstepTimer -= dt;

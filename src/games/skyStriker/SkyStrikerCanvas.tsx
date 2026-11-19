@@ -56,6 +56,7 @@ interface TargetEntity {
   label: 'A' | 'B' | 'C';
   text: string;
   group: THREE.Group;
+  jetRig: ReturnType<typeof buildEnemyInterceptorJet>;
   outerRing: THREE.Mesh;
   innerRing: THREE.Mesh;
   coreSphere: THREE.Mesh;
@@ -260,21 +261,27 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
         const pos = new THREE.Vector3(xOffsets[idx], yOffsets[idx], zOffsets[idx]);
         tg.position.copy(pos);
 
-        // Uniform cyan holographic appearance (never leaks correct answer!)
+        // 3D Enemy Fighter Jet Aircraft representing this Answer Option (A, B, or C)
+        const jetRig = buildEnemyInterceptorJet(idx);
+        jetRig.root.scale.setScalar(0.95);
+        jetRig.root.rotation.y = Math.PI;
+        tg.add(jetRig.root);
+
+        // Tactical lock-on reticle rings around the enemy answer aircraft
         const outerRing = new THREE.Mesh(
-          new THREE.TorusGeometry(3.1, 0.16, 12, 36),
-          new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.9 })
+          new THREE.TorusGeometry(3.4, 0.12, 12, 36),
+          new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.72 })
         );
         tg.add(outerRing);
 
         const innerRing = new THREE.Mesh(
-          new THREE.TorusGeometry(2.25, 0.1, 10, 30),
-          new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.7 })
+          new THREE.TorusGeometry(2.5, 0.08, 10, 30),
+          new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.55 })
         );
         tg.add(innerRing);
 
         const coreSphere = new THREE.Mesh(
-          new THREE.OctahedronGeometry(1.15, 1),
+          new THREE.OctahedronGeometry(0.45, 1),
           new THREE.MeshStandardMaterial({
             color: 0x06b6d4,
             emissive: 0x0891b2,
@@ -285,11 +292,12 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
             opacity: 0.85
           })
         );
+        coreSphere.position.set(0, 0.42, -1.2);
         tg.add(coreSphere);
 
         // Harmless energy shield (revealed only on incorrect evaluation)
         const shieldMesh = new THREE.Mesh(
-          new THREE.SphereGeometry(3.4, 20, 16),
+          new THREE.SphereGeometry(3.6, 20, 16),
           new THREE.MeshBasicMaterial({
             color: 0xf59e0b,
             wireframe: true,
@@ -301,8 +309,8 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
 
         const labelSprite = createBillboardLabelSprite(opt.label, opt.text, '#22D3EE');
         if (labelSprite) {
-          labelSprite.position.set(0, 4.2, 0);
-          labelSprite.scale.set(9.2, 2.3, 1);
+          labelSprite.position.set(0, 4.4, 0);
+          labelSprite.scale.set(9.4, 2.35, 1);
           tg.add(labelSprite);
         }
 
@@ -313,6 +321,7 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
           label: opt.label,
           text: opt.text,
           group: tg,
+          jetRig,
           outerRing,
           innerRing,
           coreSphere,
@@ -389,6 +398,24 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
         (target.shieldMesh.material as THREE.MeshBasicMaterial).opacity = 0.65;
         (target.shieldMesh.material as THREE.MeshBasicMaterial).color.setHex(0xef4444);
         (target.outerRing.material as THREE.MeshBasicMaterial).color.setHex(0xef4444);
+        // Wrong-answer aircraft launches a game-only counterattack energy orb
+        const counterOrigin = target.group.position.clone().add(new THREE.Vector3(0, 0, 3.0));
+        const counterDir = jetPos.clone().sub(counterOrigin);
+        const counterMesh = new THREE.Mesh(
+          new THREE.SphereGeometry(0.6, 10, 10),
+          new THREE.MeshBasicMaterial({ color: 0xef4444 })
+        );
+        effectsGroup.add(counterMesh);
+        combatSystem.spawnProjectile({
+          owner: 'enemy',
+          origin: counterOrigin,
+          direction: counterDir,
+          speed: 28,
+          radius: 0.8,
+          ttl: 3.0,
+          damage: 12,
+          mesh: counterMesh
+        });
       }
 
       callbacksRef.current.onAnswerEvaluated(target.answerId);
@@ -640,9 +667,23 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
             }
           }
           t.group.position.set(t.basePos.x + ox, t.basePos.y + oy, t.basePos.z + oz);
-          if (t.validationState === 'idle') {
+
+          // Animate answer fighter jet banking, pitch, evasive maneuvers, and defeat spiral
+          if (t.validationState === 'correct') {
+            t.jetRig.root.rotation.z += dt * 5.2;
+            t.jetRig.root.rotation.x += dt * 1.4;
+            t.basePos.y -= dt * 3.8;
+          } else if (t.validationState === 'incorrect') {
+            t.jetRig.root.rotation.z += dt * 7.5; // evasive barrel roll
+          } else {
+            const isSel = t.targetId === selectedTargetId;
+            const bank = Math.cos(tSec) * (isSel ? 0.52 : 0.34);
+            const pitch = Math.sin(tSec * 1.2) * 0.18;
+            t.jetRig.root.rotation.set(pitch, Math.PI + Math.sin(tSec * 0.7) * 0.22, bank);
+            t.jetRig.leftAileron.rotation.x = bank * 0.6;
+            t.jetRig.rightAileron.rotation.x = -bank * 0.6;
             (t.outerRing.material as THREE.MeshBasicMaterial).color.setHex(
-              t.targetId === selectedTargetId ? 0xfbbf24 : 0x22d3ee
+              isSel ? 0xfbbf24 : 0x22d3ee
             );
           }
           t.outerRing.rotation.z += dt * 1.1;

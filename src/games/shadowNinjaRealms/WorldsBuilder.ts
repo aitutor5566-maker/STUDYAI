@@ -67,47 +67,92 @@ function createShrineRig(index: number, pos: THREE.Vector3, isVoxel: boolean): S
   const group = new THREE.Group();
   group.position.copy(pos);
 
-  const stonePbr = typeof document !== 'undefined' ? getPbrTextureSet('stone', 1, 1) : null;
-  const baseMat = new THREE.MeshStandardMaterial({
-    color: isVoxel ? '#334155' : '#1E293B',
-    roughness: 0.6,
-    metalness: 0.25,
-    normalMap: stonePbr?.normalMap ?? null
+  const palettes = [
+    { armor: '#0F766E', accent: '#10B981', skin: '#EAB676' },
+    { armor: '#1E3A8A', accent: '#38BDF8', skin: '#F1C27D' },
+    { armor: '#7C2D12', accent: '#F59E0B', skin: '#E0AC69' }
+  ];
+  const pal = palettes[index % palettes.length];
+
+  const armorMat = new THREE.MeshStandardMaterial({
+    color: pal.armor,
+    roughness: 0.55,
+    metalness: 0.3
   });
-  const base = new THREE.Mesh(
-    isVoxel ? new THREE.BoxGeometry(2.1, 0.7, 2.1) : new THREE.CylinderGeometry(1.1, 1.35, 0.7, 12),
-    baseMat
+  const skinMat = new THREE.MeshStandardMaterial({
+    color: pal.skin,
+    roughness: 0.75
+  });
+  const darkMat = new THREE.MeshStandardMaterial({
+    color: '#1E293B',
+    roughness: 0.7
+  });
+
+  // Articulated 3D Answer Character / Guardian (Legs, Torso, Arms, Head, Staff Orb)
+  const legL = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.78, 0.28), darkMat);
+  legL.position.set(-0.18, 0.39, 0);
+  legL.castShadow = true;
+  const legR = legL.clone();
+  legR.position.x = 0.18;
+  group.add(legL, legR);
+
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.86, 0.42), armorMat);
+  torso.position.y = 1.2;
+  torso.castShadow = true;
+  group.add(torso);
+
+  const armL = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.72, 0.24), armorMat);
+  armL.position.set(-0.48, 1.2, 0);
+  armL.castShadow = true;
+  const armR = armL.clone();
+  armR.position.set(0.48, 1.2, 0.12);
+  armR.rotation.x = -0.35;
+  group.add(armL, armR);
+
+  const head = new THREE.Mesh(
+    isVoxel ? new THREE.BoxGeometry(0.54, 0.54, 0.54) : new THREE.SphereGeometry(0.29, 14, 14),
+    skinMat
   );
-  base.position.y = 0.35;
-  base.castShadow = true;
-  base.receiveShadow = true;
-  group.add(base);
+  head.position.y = 1.92;
+  head.castShadow = true;
+  group.add(head);
+
+  const visor = new THREE.Mesh(
+    new THREE.BoxGeometry(0.36, 0.08, 0.08),
+    new THREE.MeshBasicMaterial({ color: pal.accent })
+  );
+  visor.position.set(0, 1.94, 0.26);
+  group.add(visor);
+
+  const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.85, 8), darkMat);
+  staff.position.set(0.54, 1.05, 0.25);
+  group.add(staff);
 
   const crystal = new THREE.Mesh(
-    isVoxel ? new THREE.BoxGeometry(0.75, 1.25, 0.75) : new THREE.OctahedronGeometry(0.65, 0),
+    isVoxel ? new THREE.BoxGeometry(0.38, 0.38, 0.38) : new THREE.OctahedronGeometry(0.28, 0),
     new THREE.MeshStandardMaterial({
-      color: '#38BDF8',
-      emissive: '#0284C7',
-      emissiveIntensity: 1.45,
+      color: pal.accent,
+      emissive: pal.accent,
+      emissiveIntensity: 1.35,
       roughness: 0.15,
       metalness: 0.3
     })
   );
-  crystal.position.y = 1.95;
+  crystal.position.set(0.54, 2.05, 0.25);
   crystal.castShadow = true;
   group.add(crystal);
 
   const ring = new THREE.Mesh(
-    new THREE.RingGeometry(1.15, 1.42, 24),
+    new THREE.RingGeometry(1.05, 1.32, 24),
     new THREE.MeshBasicMaterial({
-      color: '#38BDF8',
+      color: pal.accent,
       transparent: true,
-      opacity: 0.48,
+      opacity: 0.52,
       side: THREE.DoubleSide
     })
   );
   ring.rotation.x = -Math.PI / 2;
-  ring.position.y = 0.06;
+  ring.position.y = 0.05;
   group.add(ring);
 
   const canvas = document.createElement('canvas');
@@ -117,7 +162,7 @@ function createShrineRig(index: number, pos: THREE.Vector3, isVoxel: boolean): S
   texture.colorSpace = THREE.SRGBColorSpace;
   const labelMat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide });
   const labelMesh = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1.05), labelMat);
-  labelMesh.position.y = 3.55;
+  labelMesh.position.y = 3.25;
   group.add(labelMesh);
 
   const rig: ShrineRig = {
@@ -132,7 +177,7 @@ function createShrineRig(index: number, pos: THREE.Vector3, isVoxel: boolean): S
     optionId: 'A',
     optionText: '...'
   };
-  updateRealmsShrineLabel(rig, 'A', 'Approach Shrine', false);
+  updateRealmsShrineLabel(rig, 'A', 'Approach Character', false);
   return rig;
 }
 

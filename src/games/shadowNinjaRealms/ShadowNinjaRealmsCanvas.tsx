@@ -648,12 +648,21 @@ export const ShadowNinjaRealmsCanvas: React.FC<ShadowNinjaRealmsCanvasProps> = (
         });
 
         let bestIdx: number | null = null;
-        let bestDist = 4.8;
+        let bestDist = 5.4;
         world.shrines.forEach((s, idx) => {
-          s.crystal.rotation.y += dt * 1.4;
-          s.crystal.position.y = 1.95 + Math.sin(elapsed * 2.5 + idx) * 0.14;
+          // Answer character patrols its territory and turns toward player when nearby
+          const patrolAngle = elapsed * 0.9 + idx * 2.1;
+          const px = s.position.x + Math.cos(patrolAngle) * 1.45;
+          const pz = s.position.z + Math.sin(patrolAngle) * 1.45;
+          s.group.position.set(px, Math.abs(Math.sin(elapsed * 4 + idx)) * 0.08, pz);
+          const d = s.group.position.distanceTo(playerPos);
+          if (d < 9.5) {
+            s.group.lookAt(playerPos.x, s.group.position.y, playerPos.z);
+          } else {
+            s.group.rotation.y = -patrolAngle;
+          }
+          s.crystal.rotation.y += dt * 1.8;
           s.labelMesh.lookAt(camera.position.x, s.labelMesh.position.y, camera.position.z);
-          const d = s.position.distanceTo(playerPos);
           if (d < bestDist) {
             bestDist = d;
             bestIdx = idx;

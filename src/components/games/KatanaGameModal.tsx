@@ -635,29 +635,38 @@ export const KatanaGameModal: React.FC<{
       const eg = new THREE.Group();
       eg.position.set(pos.x, pos.y, pos.z);
 
-      // Shadow Warrior Torso
+      // Shadow Warrior Torso & Articulated Legs with Distinct Squadron Outfit per Option
+      const outfitColors = [0x181824, 0x4c0519, 0x0f2942, 0x14331a];
+      const accentColors = [0xef4444, 0xf97316, 0x38bdf8, 0x10b981];
       const sTorsoGeo = new THREE.BoxGeometry(0.7, 0.82, 0.4);
       const sTorsoMat = new THREE.MeshStandardMaterial({
-        color: 0x181824,
+        color: outfitColors[idx % outfitColors.length],
         roughness: 0.5,
         metalness: 0.4
       });
       const sTorso = new THREE.Mesh(sTorsoGeo, sTorsoMat);
-      sTorso.position.y = 1.0;
+      sTorso.position.y = 1.05;
       eg.add(sTorso);
+
+      const sLegGeo = new THREE.CylinderGeometry(0.11, 0.09, 0.62, 8);
+      const sLegL = new THREE.Mesh(sLegGeo, sTorsoMat);
+      sLegL.position.set(-0.18, 0.35, 0);
+      const sLegR = sLegL.clone();
+      sLegR.position.x = 0.18;
+      eg.add(sLegL, sLegR);
 
       // Shadow Kabuto Helmet with Demonic Horns
       const sHeadGeo = new THREE.SphereGeometry(0.25, 16, 16);
       const sHeadMat = new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.7 });
       const sHead = new THREE.Mesh(sHeadGeo, sHeadMat);
-      sHead.position.y = 1.58;
+      sHead.position.y = 1.62;
       eg.add(sHead);
 
-      // Crimson Horns
+      // Squadron Accent Horns
       const hornGeo = new THREE.ConeGeometry(0.07, 0.38, 6);
       const hornMat = new THREE.MeshStandardMaterial({
-        color: 0xb91c1c,
-        emissive: 0x7f1d1d,
+        color: accentColors[idx % accentColors.length],
+        emissive: accentColors[idx % accentColors.length],
         emissiveIntensity: 0.4
       });
       const leftHorn = new THREE.Mesh(hornGeo, hornMat);
@@ -781,8 +790,46 @@ export const KatanaGameModal: React.FC<{
     scene.add(decGroup);
     switchEnvironment(currentEnvironment);
 
-    // 10. Main 60 FPS Render Loop
+    // 10. Full 3D Directional Player Movement & Main 60 FPS Render Loop
     let lastTime = performance.now();
+    let playerFreeX = 0;
+    let playerFreeY = 0;
+    let playerFreeZ = 3.2;
+    let playerVelY = 0;
+    let playerGrounded = true;
+    let playerFacingY = 0;
+    let camOrbitYaw = 0;
+    let draggingCam = false;
+    let lastDragX = 0;
+    const keysDown: Record<string, boolean> = {};
+
+    const onMoveKeyDown = (e: KeyboardEvent) => {
+      keysDown[e.code] = true;
+      if (e.code === 'Space' && playerGrounded && animStateRef.current.warriorAction === 'idle') {
+        playerVelY = 7.8;
+        playerGrounded = false;
+      }
+    };
+    const onMoveKeyUp = (e: KeyboardEvent) => {
+      keysDown[e.code] = false;
+    };
+    const onCamMouseDown = (e: MouseEvent) => {
+      draggingCam = true;
+      lastDragX = e.clientX;
+    };
+    const onCamMouseMove = (e: MouseEvent) => {
+      if (!draggingCam) return;
+      camOrbitYaw = THREE.MathUtils.clamp(camOrbitYaw - (e.clientX - lastDragX) * 0.004, -0.75, 0.75);
+      lastDragX = e.clientX;
+    };
+    const onCamMouseUp = () => {
+      draggingCam = false;
+    };
+    window.addEventListener('keydown', onMoveKeyDown);
+    window.addEventListener('keyup', onMoveKeyUp);
+    renderer.domElement.addEventListener('mousedown', onCamMouseDown);
+    window.addEventListener('mousemove', onCamMouseMove);
+    window.addEventListener('mouseup', onCamMouseUp);
 
     const animate = () => {
       frameIdRef.current = requestAnimationFrame(animate);
@@ -838,9 +885,39 @@ export const KatanaGameModal: React.FC<{
       const warrior = warriorGroupRef.current;
       if (warrior) {
         if (state.warriorAction === 'idle') {
-          // Breathing stance bob
-          warrior.position.set(0, Math.sin(state.time * 3.2) * 0.04, 3.2);
-          warrior.rotation.y = 0;
+          let moveX = 0;
+          let moveZ = 0;
+          if (keysDown['KeyD'] || keysDown['ArrowRight']) moveX += 1;
+          if (keysDown['KeyA'] || keysDown['ArrowLeft']) moveX -= 1;
+          if (keysDown['KeyS'] || keysDown['ArrowDown']) moveZ += 1;
+          if (keysDown['KeyW'] || keysDown['ArrowUp']) moveZ -= 1;
+
+          const sprinting = Boolean(keysDown['ShiftLeft'] || keysDown['ShiftRight'] || keysDown['KeyC']);
+          const spd = sprinting ? 8.2 : 5.4;
+          if (moveX !== 0 || moveZ !== 0) {
+            const len = Math.hypot(moveX, moveZ);
+            playerFreeX = THREE.MathUtils.clamp(playerFreeX + (moveX / len) * spd * dt, -7.5, 7.5);
+            playerFreeZ = THREE.MathUtils.clamp(playerFreeZ + (moveZ / len) * spd * dt, -3.8, 5.2);
+            playerFacingY = Math.atan2(-moveX, -moveZ);
+          }
+
+          playerVelY -= 20 * dt;
+          playerFreeY += playerVelY * dt;
+          if (playerFreeY <= 0) {
+            playerFreeY = 0;
+            playerVelY = 0;
+            playerGrounded = true;
+          }
+
+          warrior.position.set(playerFreeX, playerFreeY + Math.sin(state.time * 3.2) * 0.04, playerFreeZ);
+          warrior.rotation.y = playerFacingY;
+          state.startPos.set(playerFreeX, 0, playerFreeZ);
+
+          if (cameraRef.current) {
+            cameraRef.current.position.x = THREE.MathUtils.lerp(cameraRef.current.position.x, playerFreeX * 0.55 + Math.sin(camOrbitYaw) * 6, dt * 6);
+            cameraRef.current.position.z = THREE.MathUtils.lerp(cameraRef.current.position.z, playerFreeZ + 5.2 * Math.cos(camOrbitYaw), dt * 6);
+            cameraRef.current.lookAt(playerFreeX * 0.4, 1.1, playerFreeZ - 3.5);
+          }
 
           if (katanaMeshRef.current) {
             katanaMeshRef.current.rotation.z = Math.sin(state.time * 2.5) * 0.05;
@@ -978,6 +1055,11 @@ export const KatanaGameModal: React.FC<{
       if (frameIdRef.current) cancelAnimationFrame(frameIdRef.current);
       resizeObserver.disconnect();
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('keydown', onMoveKeyDown);
+      window.removeEventListener('keyup', onMoveKeyUp);
+      renderer.domElement.removeEventListener('mousedown', onCamMouseDown);
+      window.removeEventListener('mousemove', onCamMouseMove);
+      window.removeEventListener('mouseup', onCamMouseUp);
       window.removeEventListener('orientationchange', handleResize);
       document.removeEventListener('fullscreenchange', handleResize);
       renderer.dispose();

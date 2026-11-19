@@ -169,43 +169,76 @@ export interface AnswerSentinelRig {
 }
 
 /**
- * Builds 3 visually identical neutral Answer Sentinels so no color/shape reveals the answer.
+ * Builds 3 articulated 3D Enemy Shadow Ninja Characters representing Answer Options A, B, and C.
  */
 export function buildAnswerSentinel(index: number): AnswerSentinelRig {
   const group = new THREE.Group();
   group.add(createContactShadowMesh(1.05));
 
-  const pedestal = makeMesh(new THREE.CylinderGeometry(0.85, 1.0, 0.28, 12), '#1E293B', {
-    pbr: 'stone',
-    metalness: 0.28,
-    roughness: 0.58
-  });
-  pedestal.position.y = 0.14;
+  const outfits = [
+    { armor: '#1E293B', cloak: '#7F1D1D', accent: '#EF4444' },
+    { armor: '#1E293B', cloak: '#064E3B', accent: '#10B981' },
+    { armor: '#1E293B', cloak: '#1E3A8A', accent: '#38BDF8' }
+  ];
+  const outfit = outfits[index % outfits.length];
 
   const ringMat = new THREE.MeshBasicMaterial({
-    color: '#38BDF8',
+    color: outfit.accent,
     transparent: true,
-    opacity: 0.35,
+    opacity: 0.48,
     side: THREE.DoubleSide
   });
   const ring = new THREE.Mesh(new THREE.RingGeometry(1.05, 1.32, 24), ringMat);
   ring.rotation.x = -Math.PI / 2;
   ring.position.y = 0.05;
 
-  // Mystical Cloaked Sentinel
-  const body = makeMesh(new THREE.ConeGeometry(0.65, 1.65, 6), '#312E81', {
-    emissive: '#1E1B4B',
-    emissiveIntensity: 0.4
-  });
-  body.position.y = 1.1;
+  // Articulated Enemy Shadow Ninja (Legs, Torso, Cloak, Hooded Head, Glowing Visor, Arms & Twin Blades)
+  const legL = makeMesh(new THREE.BoxGeometry(0.28, 0.78, 0.28), outfit.armor, { metalness: 0.35 });
+  legL.position.set(0, 0.39, -0.16);
+  const legR = makeMesh(new THREE.BoxGeometry(0.28, 0.78, 0.28), outfit.armor, { metalness: 0.35 });
+  legR.position.set(0, 0.39, 0.16);
 
-  const head = makeMesh(new THREE.OctahedronGeometry(0.36, 0), '#64748B', {
-    emissive: '#38BDF8',
-    emissiveIntensity: 0.45
+  const body = makeMesh(new THREE.BoxGeometry(0.54, 0.9, 0.68), outfit.armor, {
+    emissive: outfit.cloak,
+    emissiveIntensity: 0.28,
+    metalness: 0.42
   });
-  head.position.y = 2.18;
+  body.position.y = 1.24;
 
-  // Floating CanvasTexture label above sentinel
+  const cloak = makeMesh(new THREE.BoxGeometry(0.14, 1.08, 0.72), outfit.cloak, { roughness: 0.85 });
+  cloak.position.set(0.32, 1.1, 0);
+  cloak.rotation.z = 0.18;
+
+  const head = makeMesh(new THREE.BoxGeometry(0.44, 0.46, 0.44), '#0F172A');
+  head.position.y = 1.95;
+
+  const visor = makeMesh(new THREE.BoxGeometry(0.08, 0.09, 0.32), outfit.accent, {
+    emissive: outfit.accent,
+    emissiveIntensity: 1.5
+  });
+  visor.position.set(-0.22, 1.97, 0);
+
+  const hood = makeMesh(new THREE.ConeGeometry(0.42, 0.52, 4), outfit.cloak);
+  hood.position.set(0.04, 2.24, 0);
+  hood.rotation.y = Math.PI / 4;
+  hood.rotation.z = -0.2;
+
+  const armL = makeMesh(new THREE.BoxGeometry(0.24, 0.68, 0.24), outfit.armor);
+  armL.position.set(-0.1, 1.32, -0.44);
+  armL.rotation.z = 0.35;
+  const armR = makeMesh(new THREE.BoxGeometry(0.24, 0.68, 0.24), outfit.armor);
+  armR.position.set(-0.1, 1.32, 0.44);
+  armR.rotation.z = 0.35;
+
+  const daggerL = makeMesh(new THREE.BoxGeometry(0.75, 0.06, 0.05), outfit.accent, {
+    emissive: outfit.accent,
+    emissiveIntensity: 0.9
+  });
+  daggerL.position.set(-0.48, 1.15, -0.44);
+  const daggerR = daggerL.clone();
+  daggerR.position.z = 0.44;
+
+  // Floating CanvasTexture label above enemy ninja
   const canvas = document.createElement('canvas');
   canvas.width = 512;
   canvas.height = 176;
@@ -218,7 +251,7 @@ export function buildAnswerSentinel(index: number): AnswerSentinelRig {
   );
   labelMesh.position.y = 3.35;
 
-  group.add(pedestal, ring, body, head, labelMesh);
+  group.add(ring, legL, legR, body, cloak, head, visor, hood, armL, armR, daggerL, daggerR, labelMesh);
 
   const rig: AnswerSentinelRig = {
     index,

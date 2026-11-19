@@ -423,28 +423,46 @@ export interface AnswerShrineRig {
 export function buildAnswerShrine(index: number, accentHex: string): AnswerShrineRig {
   const group = new THREE.Group();
 
-  const pedestal = makeBox(2.4, 0.7, 2.4, '#334155');
-  pedestal.position.y = 0.35;
-  const trim = makeBox(2.6, 0.18, 2.6, accentHex, {
-    emissive: accentHex,
-    emissiveIntensity: 0.45
-  });
-  trim.position.y = 0.75;
+  // Articulated 3D Voxel Answer Character / Guardian (Legs, Tunic, Arms, Head, Staff Crystal, Feet Ring)
+  const legL = makeBox(0.28, 0.75, 0.28, '#1E293B');
+  legL.position.set(-0.18, 0.38, 0);
+  const legR = makeBox(0.28, 0.75, 0.28, '#1E293B');
+  legR.position.set(0.18, 0.38, 0);
 
-  const crystal = makeBox(0.9, 1.15, 0.9, accentHex, {
+  const torso = makeBox(0.72, 0.88, 0.42, accentHex);
+  torso.position.y = 1.18;
+
+  const armL = makeBox(0.24, 0.74, 0.24, '#334155');
+  armL.position.set(-0.48, 1.18, 0);
+  const armR = makeBox(0.24, 0.74, 0.24, '#334155');
+  armR.position.set(0.48, 1.18, 0.12);
+
+  const head = makeBox(0.56, 0.56, 0.56, '#EAB676');
+  head.position.y = 1.92;
+
+  const visor = makeBox(0.38, 0.1, 0.08, '#FFFFFF', {
     emissive: accentHex,
-    emissiveIntensity: 0.85,
+    emissiveIntensity: 0.9
+  });
+  visor.position.set(0, 1.94, 0.29);
+
+  const staff = makeBox(0.1, 1.85, 0.1, '#78350F');
+  staff.position.set(0.55, 1.05, 0.25);
+
+  const crystal = makeBox(0.42, 0.42, 0.42, accentHex, {
+    emissive: accentHex,
+    emissiveIntensity: 1.1,
     roughness: 0.2
   });
-  crystal.position.y = 1.85;
+  crystal.position.set(0.55, 2.08, 0.25);
 
-  const ring = makeBox(1.5, 0.14, 1.5, '#FFFFFF', {
+  const ring = makeBox(1.5, 0.08, 1.5, '#FFFFFF', {
     emissive: accentHex,
     emissiveIntensity: 0.6
   });
-  ring.position.y = 1.1;
+  ring.position.y = 0.05;
 
-  // Floating CanvasTexture label billboard above crystal
+  // Floating CanvasTexture label billboard above character
   const canvas = document.createElement('canvas');
   canvas.width = 512;
   canvas.height = 192;
@@ -458,9 +476,9 @@ export function buildAnswerShrine(index: number, accentHex: string): AnswerShrin
   });
   const labelGeo = new THREE.PlaneGeometry(4.4, 1.65);
   const labelMesh = new THREE.Mesh(labelGeo, labelMat);
-  labelMesh.position.y = 3.55;
+  labelMesh.position.y = 3.25;
 
-  group.add(pedestal, trim, crystal, ring, labelMesh);
+  group.add(legL, legR, torso, armL, armR, head, visor, staff, crystal, ring, labelMesh);
 
   const rig: AnswerShrineRig = {
     index,
