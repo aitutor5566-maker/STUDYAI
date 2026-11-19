@@ -862,6 +862,20 @@ function getTopicKnowledgeBase(topic: string, subject: string): TopicKnowledge {
           correctIndex: 0,
           explanation: 'Rougher surfaces possess more pronounced micro-irregularities that interlock deeply.',
           concept: 'Surface Roughness & Friction'
+        },
+        {
+          question: 'How is Pressure (P) defined in terms of Perpendicular Force / Thrust (F) and Contact Area (A), and what is its SI unit?',
+          options: ['P = F / A, measured in Pascals (Pa = N/m²)', 'P = F × A, measured in Joules', 'P = A / F, measured in Watts', 'P = F + A, measured in Newtons'],
+          correctIndex: 0,
+          explanation: 'Pressure is the perpendicular force (thrust) acting per unit area (P = F / A), with SI unit Pascal (1 Pa = 1 N/m²).',
+          concept: 'Thrust and Pressure (P = F / A)'
+        },
+        {
+          question: 'Why do school bags have wide straps instead of thin strings?',
+          options: ['Wide straps increase contact area (A) and reduce pressure (P = F / A) on the shoulders', 'Wide straps increase the weight of the bag', 'Wide straps decrease contact area to increase pressure', 'Wide straps eliminate gravitational force'],
+          correctIndex: 0,
+          explanation: 'Since P = F / A, increasing the surface area A reduces the pressure P exerted on the student’s shoulders.',
+          concept: 'Inverse Relationship of Pressure and Area'
         }
       ],
       trueFalseItems: [

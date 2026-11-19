@@ -17,6 +17,28 @@ export const AdminPage: React.FC = () => {
   const [bugs, setBugs] = useState<any[]>([]);
   const [testers, setTesters] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [kbFilterBoard, setKbFilterBoard] = useState<string>('ALL');
+  const [kbFilterGrade, setKbFilterGrade] = useState<number>(0);
+  const [kbFilterSubject, setKbFilterSubject] = useState<string>('ALL');
+  const [verifyingChapterId, setVerifyingChapterId] = useState<string | null>(null);
+
+  const handleVerifyChapter = async (chapterId: string) => {
+    setVerifyingChapterId(chapterId);
+    try {
+      const res = await fetch('/api/knowledge-bank/chapters/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ chapterId })
+      });
+      if (res.ok) {
+        await loadAdminData();
+      }
+    } catch (err) {
+      console.warn('Chapter verification error:', err);
+    } finally {
+      setVerifyingChapterId(null);
+    }
+  };
 
   const isAuthenticated = Boolean(token);
 
@@ -325,6 +347,137 @@ export const AdminPage: React.FC = () => {
                     <span style={{ marginLeft: 8, color: '#D97706', fontWeight: 800 }}>[Auto-Discovery Queued]</span>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* ICSE & CBSE KNOWLEDGE BANK COMPLETENESS TRACKER (Grades 1-10) */}
+          {knowledgeReport.completenessTracker && (
+            <div className="glass-card" style={{ padding: 18 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
+                <div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 800 }}>
+                    ICSE & CBSE Knowledge Bank Completeness Tracker (Grades 1–10)
+                  </h3>
+                  <p style={{ fontSize: '0.78rem', color: '#6B7280' }}>
+                    Board → Grade → Subject → Chapter → Topics → 8-State Verified Content Status ({knowledgeReport.completenessTracker.summary?.totalPrescribedGradeSubjects} Prescribed Grade-Subjects • {knowledgeReport.completenessTracker.summary?.totalChaptersTracked} Tracked Chapters)
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <select
+                    value={kbFilterBoard}
+                    onChange={(e) => setKbFilterBoard(e.target.value)}
+                    style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: '0.8rem', fontWeight: 700 }}
+                  >
+                    <option value="ALL">All Boards (CBSE & ICSE)</option>
+                    <option value="CBSE">CBSE / NCERT</option>
+                    <option value="ICSE">ICSE / CISCE</option>
+                  </select>
+                  <select
+                    value={kbFilterGrade}
+                    onChange={(e) => setKbFilterGrade(Number(e.target.value))}
+                    style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: '0.8rem', fontWeight: 700 }}
+                  >
+                    <option value={0}>All Grades (1–10)</option>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((g) => (
+                      <option key={g} value={g}>Grade {g}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={kbFilterSubject}
+                    onChange={(e) => setKbFilterSubject(e.target.value)}
+                    style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: '0.8rem', fontWeight: 700 }}
+                  >
+                    <option value="ALL">All Subjects</option>
+                    {['Mathematics', 'Physics', 'Chemistry', 'Biology', 'General Science', 'History', 'Geography', 'Civics', 'Economics', 'English', 'Hindi', 'Telugu', 'Computer Science'].map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* 8-State Status Breakdown Pills */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+                {Object.entries(knowledgeReport.completenessTracker.summary?.statusBreakdown || {}).map(([status, count]: [string, any]) => (
+                  <span
+                    key={status}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: 999,
+                      background: status === 'Published' ? '#DCFCE7' : status === 'Verified' ? '#DBEAFE' : '#FEF3C7',
+                      color: status === 'Published' ? '#166534' : status === 'Verified' ? '#1E40AF' : '#92400E',
+                      fontSize: '0.75rem',
+                      fontWeight: 800
+                    }}
+                  >
+                    {status}: {count}
+                  </span>
+                ))}
+                <span style={{ padding: '4px 10px', borderRadius: 999, background: '#FFF3E8', color: '#FF6A00', fontSize: '0.75rem', fontWeight: 800 }}>
+                  CBSE Avg Completeness: {knowledgeReport.completenessTracker.summary?.cbseCompletenessPercentage}% • ICSE Avg Completeness: {knowledgeReport.completenessTracker.summary?.icseCompletenessPercentage}%
+                </span>
+              </div>
+
+              {/* Chapters Table */}
+              <div style={{ display: 'grid', gap: 8, maxHeight: 460, overflowY: 'auto' }}>
+                {(knowledgeReport.completenessTracker.chapters || [])
+                  .filter((ch: any) => (kbFilterBoard === 'ALL' || ch.board === kbFilterBoard) && (kbFilterGrade === 0 || ch.grade === kbFilterGrade) && (kbFilterSubject === 'ALL' || ch.subject === kbFilterSubject))
+                  .map((ch: any) => (
+                    <div
+                      key={ch.id}
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 10,
+                        padding: '10px 14px',
+                        borderRadius: 12,
+                        background: '#F9FAFB',
+                        border: '1px solid #E5E7EB'
+                      }}
+                    >
+                      <div style={{ flex: '1 1 320px' }}>
+                        <div style={{ fontWeight: 800, fontSize: '0.86rem', color: '#111827' }}>
+                          [{ch.board} • Grade {ch.grade} • {ch.subject}] {ch.chapterTitle}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#4B5563', marginTop: 2 }}>
+                          Topics ({ch.topicsCount}): {(ch.topicList || []).slice(0, 4).join(' • ')}
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: '#6B7280', marginTop: 2 }}>
+                          Source: {ch.prescribedSource} • v{ch.version}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 800, color: ch.completenessPercentage >= 90 ? '#10B981' : '#D97706' }}>
+                          {ch.completenessPercentage}% Complete
+                        </span>
+                        <span
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: 999,
+                            background: ch.status === 'Published' ? '#DCFCE7' : ch.status === 'Verified' ? '#DBEAFE' : '#FEF3C7',
+                            color: ch.status === 'Published' ? '#166534' : ch.status === 'Verified' ? '#1E40AF' : '#B45309',
+                            fontSize: '0.74rem',
+                            fontWeight: 800
+                          }}
+                        >
+                          {ch.status}
+                        </span>
+                        {ch.status !== 'Published' && (
+                          <button
+                            type="button"
+                            disabled={verifyingChapterId === ch.id}
+                            onClick={() => handleVerifyChapter(ch.id)}
+                            className="btn-orange"
+                            style={{ padding: '4px 10px', fontSize: '0.74rem', borderRadius: 8 }}
+                          >
+                            {verifyingChapterId === ch.id ? 'Verifying...' : 'Verify & Publish'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
               </div>
             </div>
           )}

@@ -8,6 +8,8 @@
  * Each subtopic receives its own dedicated, accurately labeled diagram.
  */
 
+import { icseCbseKnowledgeBank } from './icseCbseKnowledgeBank.ts';
+
 export interface ImageGenerationInstruction {
   mainTopic: string;
   subtopic: string;
@@ -2769,103 +2771,54 @@ export function getSubtopicDiagramsForTopic(topic: string, subject?: string): Su
 
 function buildGenericSubtopicDiagrams(topic: string, subject: string): SubtopicDiagramItem[] {
   const clean = topic.trim();
+  const kbCh = icseCbseKnowledgeBank.findBestMatchingChapter({ query: clean, subject });
+  const topics = kbCh && kbCh.topicList.length >= 3
+    ? kbCh.topicList.slice(0, 3)
+    : [`Core Principles of ${clean}`, `Mechanism & Rules of ${clean}`, `Applications & Examples of ${clean}`];
+  const defs = kbCh?.importantDefinitions || [];
+  const exps = kbCh?.detailedExplanations || [];
 
-  // Subtopic 1: Structural Foundations
-  const svg1 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 460" width="800" height="460">
-    <rect width="800" height="460" rx="20" fill="#0F172A"/>
-    <text x="400" y="38" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">${clean} — Structural Foundations &amp; Core Architecture</text>
-    <rect x="80" y="100" width="280" height="260" rx="16" fill="#1E293B" stroke="#38BDF8" stroke-width="2.5"/>
-    <text x="220" y="135" font-family="Inter, sans-serif" font-size="16" font-weight="800" fill="#38BDF8" text-anchor="middle">Input Foundations</text>
-    <text x="220" y="175" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#CBD5E1" text-anchor="middle">• Core Primary Elements</text>
-    <text x="220" y="215" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#CBD5E1" text-anchor="middle">• Initial Boundary Conditions</text>
-    <text x="220" y="255" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#CBD5E1" text-anchor="middle">• Governing Material State</text>
+  return topics.map((subTitle, idx) => {
+    const defA = defs[idx]?.term || kbCh?.keyTerminology[idx] || `${subTitle} Principle`;
+    const defB = defs[(idx + 1) % Math.max(1, defs.length)]?.term || kbCh?.keyTerminology[idx + 1] || `${clean} Outcome`;
+    const expText = exps[idx % Math.max(1, exps.length)]?.explanation || kbCh?.chapterIntroduction || `Curriculum concept for ${subTitle} in ${subject}.`;
+    const safeTitle = subTitle.replace(/[<>&"]/g, '');
+    const safeA = defA.replace(/[<>&"]/g, '');
+    const safeB = defB.replace(/[<>&"]/g, '');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 460" width="800" height="460">
+      <rect width="800" height="460" rx="20" fill="#0F172A"/>
+      <text x="400" y="38" font-family="Inter, sans-serif" font-size="17" font-weight="800" fill="#FFFFFF" text-anchor="middle">${safeTitle}</text>
+      <rect x="70" y="95" width="290" height="240" rx="16" fill="#1E293B" stroke="#38BDF8" stroke-width="2.5"/>
+      <text x="215" y="135" font-family="Inter, sans-serif" font-size="15" font-weight="800" fill="#38BDF8" text-anchor="middle">${safeA}</text>
+      <text x="215" y="185" font-family="Inter, sans-serif" font-size="12.5" font-weight="600" fill="#CBD5E1" text-anchor="middle">Verified ${subject} Concept</text>
+      <line x1="360" y1="215" x2="440" y2="215" stroke="#FDE047" stroke-width="4"/>
+      <polygon points="445,215 432,207 432,223" fill="#FDE047"/>
+      <rect x="440" y="95" width="290" height="240" rx="16" fill="#1E293B" stroke="#10B981" stroke-width="2.5"/>
+      <text x="585" y="135" font-family="Inter, sans-serif" font-size="15" font-weight="800" fill="#34D399" text-anchor="middle">${safeB}</text>
+      <text x="585" y="185" font-family="Inter, sans-serif" font-size="12.5" font-weight="600" fill="#CBD5E1" text-anchor="middle">Curriculum Mechanism &amp; Result</text>
+    </svg>`;
 
-    <line x1="360" y1="230" x2="440" y2="230" stroke="#FDE047" stroke-width="4"/>
-    <polygon points="445,230 432,222 432,238" fill="#FDE047"/>
-
-    <rect x="440" y="100" width="280" height="260" rx="16" fill="#1E293B" stroke="#10B981" stroke-width="2.5"/>
-    <text x="580" y="135" font-family="Inter, sans-serif" font-size="16" font-weight="800" fill="#34D399" text-anchor="middle">Functional Organization</text>
-    <text x="580" y="175" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#CBD5E1" text-anchor="middle">• Active Transduction Unit</text>
-    <text x="580" y="215" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#CBD5E1" text-anchor="middle">• Feedback Regulation Circuit</text>
-    <text x="580" y="255" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#CBD5E1" text-anchor="middle">• Terminal Verification Output</text>
-    <rect x="80" y="385" width="640" height="48" rx="10" fill="#1E293B" stroke="#475569" stroke-width="1.5"/>
-    <text x="400" y="414" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#F8FAFC" text-anchor="middle">Structural Blueprint: Inputs assemble into functional units under conservation laws.</text>
-  </svg>`;
-
-  // Subtopic 2: Working Mechanism
-  const svg2 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 460" width="800" height="460">
-    <rect width="800" height="460" rx="20" fill="#0F172A"/>
-    <text x="400" y="38" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="#FFFFFF" text-anchor="middle">${clean} — Step-by-Step Working Mechanism</text>
-    <rect x="50" y="110" width="200" height="220" rx="14" fill="#1E293B" stroke="#38BDF8" stroke-width="2"/>
-    <text x="150" y="145" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#38BDF8" text-anchor="middle">Stage 1: Excitation</text>
-    <text x="150" y="180" font-family="Inter, sans-serif" font-size="11.5" font-weight="600" fill="#CBD5E1" text-anchor="middle">Input arrival &amp; binding</text>
-
-    <line x1="250" y1="220" x2="300" y2="220" stroke="#38BDF8" stroke-width="3"/>
-
-    <rect x="300" y="110" width="200" height="220" rx="14" fill="#1E293B" stroke="#F59E0B" stroke-width="2"/>
-    <text x="400" y="145" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#FBBF24" text-anchor="middle">Stage 2: Transduction</text>
-    <text x="400" y="180" font-family="Inter, sans-serif" font-size="11.5" font-weight="600" fill="#CBD5E1" text-anchor="middle">Core reaction / motion</text>
-
-    <line x1="500" y1="220" x2="550" y2="220" stroke="#F59E0B" stroke-width="3"/>
-
-    <rect x="550" y="110" width="200" height="220" rx="14" fill="#1E293B" stroke="#10B981" stroke-width="2"/>
-    <text x="650" y="145" font-family="Inter, sans-serif" font-size="14" font-weight="800" fill="#34D399" text-anchor="middle">Stage 3: Equilibrium</text>
-    <text x="650" y="180" font-family="Inter, sans-serif" font-size="11.5" font-weight="600" fill="#CBD5E1" text-anchor="middle">Verified steady state</text>
-  </svg>`;
-
-  return [
-    {
-      diagramId: `gen-diag-1-${clean.slice(0, 4)}`,
-      subtopicKey: 'structural_foundations',
-      subtopicTitle: `Structural Foundations & Core Organization of ${clean}`,
-      diagramTitle: `Diagram 1: ${clean} Structural Blueprint & Input Elements`,
-      diagramType: 'conceptual_architecture',
-      caption: `Structural schematic of ${clean} demonstrating its input foundations and functional organization.`,
-      svgXml: svg1,
-      dataUrl: svgToDataUrl(svg1),
-      point1_whatItRepresents: `The physical or conceptual structural organization of ${clean}.`,
+    return {
+      diagramId: `kb-diag-${idx + 1}-${clean.slice(0, 4).toLowerCase()}`,
+      subtopicKey: `subtopic_${idx + 1}`,
+      subtopicTitle: subTitle,
+      diagramTitle: `Diagram ${idx + 1}: ${subTitle}`,
+      diagramType: 'curriculum_diagram',
+      caption: `Curriculum diagram illustrating ${subTitle} (${defA} and ${defB}).`,
+      svgXml: svg,
+      dataUrl: svgToDataUrl(svg),
+      point1_whatItRepresents: expText,
       point2_labelledParts: [
-        { label: 'Input Foundations', description: `Starting materials, known variables, or initial boundary conditions.` },
-        { label: 'Functional Organization', description: `The active central unit mediating transformation.` }
+        { label: defA, description: defs[idx]?.definition || `Core component of ${subTitle}.` },
+        { label: defB, description: defs[(idx + 1) % Math.max(1, defs.length)]?.definition || `Resulting property in ${subTitle}.` }
       ],
-      point3_componentFunctions: `Separates initial requirements from intermediate active processing structures.`,
-      point4_componentRelationships: `Input components assemble directly into the central functional unit.`,
-      point5_directionOfMovementOrProcess: `Sequential flow from left inputs to right functional outputs.`,
-      point6_stepByStepInterpretation: [
-        `1. Identify input boundaries of ${clean}.`,
-        `2. Observe organization within the central functional unit.`,
-        `3. Verify that physical conservation principles are strictly maintained.`
-      ],
-      point7_learningOutcome: `Gain structural mastery over ${clean} before analyzing complex dynamic processes.`,
-      point8_whatToRemember: `Every system in ${clean} requires structured inputs to sustain functional equilibrium.`,
+      point3_componentFunctions: expText,
+      point4_componentRelationships: `${defA} directly governs ${defB} within ${clean}.`,
+      point5_directionOfMovementOrProcess: kbCh?.solvedProblems[0]?.stepByStepSolution?.join(' → ') || expText,
+      point6_stepByStepInterpretation: kbCh?.learningObjectives?.slice(0, 3) || [expText],
+      point7_learningOutcome: kbCh?.learningObjectives?.[idx % Math.max(1, kbCh.learningObjectives.length)] || `Master ${subTitle} in ${subject}.`,
+      point8_whatToRemember: kbCh?.importantFacts?.[idx % Math.max(1, kbCh.importantFacts.length)] || kbCh?.chapterSummary || expText,
       isVerified: true
-    },
-    {
-      diagramId: `gen-diag-2-${clean.slice(0, 4)}`,
-      subtopicKey: 'working_mechanism',
-      subtopicTitle: `Working Mechanism and Dynamic Transformations of ${clean}`,
-      diagramTitle: `Diagram 2: ${clean} Step-by-Step Dynamic Working Mechanism`,
-      diagramType: 'mechanism_pathway',
-      caption: `Dynamic mechanism of ${clean} showing the 3-stage progression from excitation to equilibrium.`,
-      svgXml: svg2,
-      dataUrl: svgToDataUrl(svg2),
-      point1_whatItRepresents: `The causal cause-and-effect progression through which ${clean} operates.`,
-      point2_labelledParts: [
-        { label: 'Stage 1: Excitation', description: 'Activation or supply of driving potential.' },
-        { label: 'Stage 2: Transduction', description: 'Central energy or matter conversion phase.' },
-        { label: 'Stage 3: Equilibrium', description: 'Output generation and return to stable resting state.' }
-      ],
-      point3_componentFunctions: `Drives the measurable transition from initial state to final verified outcome.`,
-      point4_componentRelationships: `Stage 1 primes Stage 2; Stage 2 drives Stage 3.`,
-      point5_directionOfMovementOrProcess: `Directional forward progression without skipping intermediate phases.`,
-      point6_stepByStepInterpretation: [
-        `1. Inputs excite the active center.`,
-        `2. Central transformation converts energy or rearranges elements.`,
-        `3. System establishes stable output equilibrium.`
-      ],
-      point7_learningOutcome: `Explain how ${clean} works step by step using scientific cause-and-effect reasoning.`,
-      point8_whatToRemember: `Follow the sequence: Excitation → Transduction → Stable Equilibrium.`,
-      isVerified: true
-    }
-  ];
+    };
+  });
 }

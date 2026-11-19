@@ -17,6 +17,7 @@ import crypto from 'node:crypto';
 import { db } from './db.ts';
 import { classifyUniversalTopic, type TopicClassification } from './universalSubjectClassifier.ts';
 import { unifiedKnowledgeRetrieval } from './unifiedKnowledgeRetrieval.ts';
+import { icseCbseKnowledgeBank } from './icseCbseKnowledgeBank.ts';
 import {
   buildUniversalTeachingWorkflow,
   buildSinglePageDigitalTextbookMarkdown,
@@ -322,15 +323,98 @@ export class AdvancedNotesGenerationEngine {
       studentName: req.studentName || 'Student'
     });
 
-    // 4b. If workflow used generic fallback templates (novel/uncached topic), synthesize genuine AI teaching content
+    // 4b. If workflow used generic fallback templates, populate directly from the ICSE & CBSE Knowledge Bank & Unified Knowledge Retrieval first!
     const wfText = JSON.stringify(workflow);
     const isGenericFallback =
       wfText.includes('Primary Operational Unit') ||
       wfText.includes('Structural Blueprint & Input Elements') ||
+      wfText.includes('Step-by-Step Dynamic Working Mechanism') ||
       wfText.includes('governing mechanism wherein specific structural inputs') ||
       (workflow.stage5_mainConceptsAndSubtopics || []).length < 3;
 
     if (isGenericFallback) {
+      const kbChapter = icseCbseKnowledgeBank.findBestMatchingChapter({
+        query: cleanTopic,
+        board: resolvedBoard,
+        grade: resolvedGrade,
+        subject: resolvedSubject
+      });
+
+      if (kbChapter) {
+        workflow.stage3_coreDefinitions = kbChapter.importantDefinitions.map((d) => ({
+          term: d.term,
+          formalDefinition: d.definition,
+          simpleMeaning: d.definition,
+          everydayAnalogy: kbChapter.examples[0] || kbChapter.chapterIntroduction
+        }));
+        workflow.stage4_keyPoints = kbChapter.importantFacts.length >= 2 ? kbChapter.importantFacts : kbChapter.learningObjectives;
+        const existingSubs = workflow.stage5_mainConceptsAndSubtopics || [];
+        const builtSubtopics = kbChapter.topicList.slice(0, 4).map((t, i) => {
+          const templateDiag = existingSubs[i]?.diagram || existingSubs[0]?.diagram;
+          return {
+            ...(existingSubs[i] || existingSubs[0] || {}),
+            id: `kb-sub-${i + 1}`,
+            name: t,
+            whatItIs: kbChapter.detailedExplanations[i % kbChapter.detailedExplanations.length]?.explanation || kbChapter.chapterIntroduction,
+            howItWorks: kbChapter.solvedProblems[0]?.stepByStepSolution?.join(' ') || kbChapter.chapterSummary,
+            structureOrComponents: kbChapter.keyTerminology.slice(0, 5).join(', '),
+            whyItIsImportant: kbChapter.learningObjectives[i % kbChapter.learningObjectives.length] || kbChapter.chapterSummary,
+            characteristics: kbChapter.examples.slice(0, 2),
+            importance: kbChapter.applications[0] || kbChapter.chapterSummary,
+            diagram: templateDiag
+              ? {
+                  ...templateDiag,
+                  title: `${t} — ${kbChapter.subject} Diagram`,
+                  caption: `Verified ${kbChapter.board} Grade ${kbChapter.grade} diagram illustrating ${t}.`
+                }
+              : undefined
+          };
+        });
+        workflow.stage5_mainConceptsAndSubtopics = builtSubtopics as any;
+        (workflow as any).stage5_mainConceptsAndComponents = builtSubtopics;
+        if (kbChapter.commonMisconceptions.length > 0) {
+          workflow.stage10_commonMistakesAndMisconceptions = kbChapter.commonMisconceptions.map(
+            (m) => `${m.misconception} → Correction: ${m.scientificCorrection}`
+          );
+        }
+        if (kbChapter.assessmentQuestions.length > 0) {
+          workflow.stage9_examQuestions = kbChapter.assessmentQuestions.map((q) => ({
+            question: q.question,
+            marks: q.marks,
+            modelAnswer: q.correctAnswer,
+            boardTip: q.explanation
+          }));
+        }
+      } else if (verifiedKnowledge?.universalNode) {
+        const un = verifiedKnowledge.universalNode;
+        workflow.stage3_coreDefinitions = [
+          {
+            term: un.topic,
+            formalDefinition: un.academicDefinition,
+            simpleMeaning: verifiedKnowledge.dualExplanation?.laymanEverydayExplanation || un.academicDefinition,
+            everydayAnalogy: un.keyPhenomena[0] || un.academicDefinition
+          }
+        ];
+        workflow.stage4_keyPoints = un.fundamentalLaws.length >= 2 ? un.fundamentalLaws : [un.academicDefinition, ...un.keyPhenomena];
+        const unSubs = (un.subtopics || []).slice(0, 4).map((s: any, i: number) => ({
+          id: `un-sub-${i + 1}`,
+          name: s.title || `${un.topic} Principle ${i + 1}`,
+          whatItIs: s.summary || un.academicDefinition,
+          howItWorks: un.fundamentalLaws[i % Math.max(1, un.fundamentalLaws.length)] || un.academicDefinition,
+          structureOrComponents: un.prerequisites.join(', ') || un.domain,
+          whyItIsImportant: un.keyPhenomena[i % Math.max(1, un.keyPhenomena.length)] || un.academicDefinition,
+          characteristics: un.fundamentalLaws.slice(0, 2),
+          importance: un.academicDefinition
+        }));
+        if (unSubs.length >= 3) {
+          workflow.stage5_mainConceptsAndSubtopics = unSubs;
+          (workflow as any).stage5_mainConceptsAndComponents = unSubs;
+        }
+      }
+    }
+
+    const stillGeneric = JSON.stringify(workflow).includes('Primary Operational Unit');
+    if (stillGeneric) {
       try {
         const aiPrompt = `You are an expert ${resolvedBoard} Class ${resolvedGrade} ${resolvedSubject} teacher.
 Create a thorough, accurate, student-friendly teaching lesson on "${cleanTopic}".

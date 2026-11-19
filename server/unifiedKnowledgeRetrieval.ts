@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { db } from './db.ts';
 import { ResearchIntelligenceEngine } from './researchIntelligenceEngine.ts';
 import { multiBoardKnowledgeEngine } from './multiBoardKnowledgeEngine.ts';
+import { icseCbseKnowledgeBank } from './icseCbseKnowledgeBank.ts';
 
 export type EducationalBoard =
   | 'CBSE'
@@ -381,8 +382,9 @@ export class UnifiedKnowledgeRetrievalService {
     const resolvedBoard: EducationalBoard = this.normalizeBoard(query.board);
     const resolvedLang: EducationalLanguage = this.normalizeLanguage(query.language);
 
-    // Ensure baseline multi-board knowledge nodes exist in SQLite
+    // Ensure baseline multi-board knowledge nodes and ICSE/CBSE Knowledge Bank exist in SQLite
     try {
+      icseCbseKnowledgeBank.ensureInitialized();
       const countRow = db.prepare('SELECT COUNT(*) as c FROM universal_knowledge_nodes').get() as any;
       if (!countRow || Number(countRow.c) < 15) {
         multiBoardKnowledgeEngine.initializeBaselineKnowledge();
@@ -456,25 +458,28 @@ export class UnifiedKnowledgeRetrievalService {
     if (/[\u0C00-\u0C7F]/.test(topic) || /\b(telugu|sandhi|samasam|vyakaranam|alankaram|chandassu|సవర్ణదీర్ఘ|సంధి|సమాసం|తెలుగు)\b/i.test(lower)) {
       return 'Telugu';
     }
-    if (/[\u0900-\u097F]/.test(topic) || /\b(hindi|vyakaran|sandhi vichched|samas|muhavare|अलंकार|संधि|समास|हिंदी)\b/i.test(lower)) {
+    if (/[\u0900-\u097F]/.test(topic) || /\b(hindi|vyakaran|sangya|sarvanam|visheshan|sandhi vichched|samas|muhavare|अलंकार|संज्ञा|सर्वनाम|संधि|समास|हिंदी)\b/i.test(lower)) {
       return 'Hindi';
     }
-    if (/(photosynthesis|stomata|chloroplast|chlorophyll|heart|cardiac|cell|mitosis|meiosis|respiration|digest|dna|plant|kidney|nephron|circulation|biology|enzyme|ecosystem)/.test(lower)) {
+    if (/(life processes|photosynthesis|stomata|chloroplast|chlorophyll|heart|cardiac|cell|mitosis|meiosis|respiration|digest|dna|plant|kidney|nephron|circulation|biology|enzyme|ecosystem)/.test(lower)) {
       return 'Biology';
     }
-    if (/(chemical reaction|equation|acid|base|salt|periodic table|bonding|covalent|ionic|redox|metal|non-metal|stoichiometry|mole|chemistry)/.test(lower)) {
+    if (/(atomic structure|structure of the atom|rutherford|bohr|isotope|isobar|valency|subatomic|chemical reaction|equation|acid|base|salt|periodic table|bonding|covalent|ionic|redox|metal|non-metal|stoichiometry|mole|chemistry)/.test(lower)) {
       return 'Chemistry';
     }
-    if (/(electricity|ohm|circuit|light|reflection|refraction|snell|lens|mirror|magnet|force|motion|newton|inertia|momentum|gravity|energy|work|power|physics)/.test(lower)) {
+    if (/(force and pressure|thrust|pascal|liquid pressure|atmospheric pressure|electricity|ohm|circuit|light|reflection|refraction|snell|lens|mirror|magnet|force|motion|newton|inertia|momentum|gravity|energy|work|power|physics)/.test(lower)) {
       return 'Physics';
     }
-    if (/(quadratic|linear equation|solve|algebra|trigonometry|sine|cosine|geometry|triangle|circle|mensuration|polynomial|arithmetic progression|fraction|decimal|statistics|mean|median|mode|probability|math)/.test(lower) || /[0-9]x\s*[+\-=]/.test(lower)) {
+    if (/(multiplication|multiply|multiplicand|multiplier|product|repeated addition|addition|subtraction|division|quadratic|linear equation|solve|algebra|trigonometry|sine|cosine|geometry|triangle|circle|mensuration|polynomial|arithmetic progression|fraction|decimal|statistics|mean|median|mode|probability|math)/.test(lower) || /[0-9]x\s*[+\-=]/.test(lower)) {
       return 'Mathematics';
     }
-    if (/(french revolution|bastille|nationalism|history|civil disobedience|non-cooperation|satyagraha|gandhi|war|independence|mughal|harappa)/.test(lower)) {
+    if (/(indus valley|harappa|mohenjo|lothal|earliest cities|river valley civilization|french revolution|bastille|nationalism|history|civil disobedience|non-cooperation|satyagraha|gandhi|war|independence|mughal|vedic)/.test(lower)) {
       return 'History';
     }
-    if (/(water cycle|hydrological|water resource|dam|soil|resource|climate|monsoon|orographic|rainfall|agriculture|geography|map|tectonic)/.test(lower)) {
+    if (/(weather and climate|weather|barometer|hygrometer|lapse rate|insolation|water cycle|hydrological|water resource|dam|soil|resource|climate|monsoon|orographic|rainfall|agriculture|geography|map|tectonic)/.test(lower)) {
+      if (explicitSubject && (explicitSubject === 'Science' || explicitSubject === 'General Science') && lower.includes('water cycle')) {
+        return 'General Science';
+      }
       return 'Geography';
     }
     if (/(constitution|fundamental rights|parliament|lok sabha|rajya sabha|democracy|federalism|judiciary|civics|political science)/.test(lower)) {
@@ -506,11 +511,22 @@ export class UnifiedKnowledgeRetrievalService {
       const allNodes = db.prepare('SELECT * FROM universal_knowledge_nodes').all() as any[];
       const matched = allNodes.find((n) => {
         const nt = String(n.topic || '').toLowerCase();
-        if (nt === lower || lower.includes(nt) || nt.includes(lower)) return true;
-        // Keyword matching for common queries
-        if (/(photosynthesis|stomata|chloroplast|calvin)/.test(lower) && nt.includes('photosynthesis')) return true;
+        // Grade-specific Knowledge Bank Chapter nodes first
+        if (/(multiplication|multiply|multiplicand|repeated addition|how many times)/.test(lower) && nt.includes('multiplication')) return true;
+        if (/(addition and subtraction|counting 1 to 20)/.test(lower) && nt.includes('addition and subtraction')) return true;
+        if (grade <= 5 && /(water cycle|evaporation|condensation|every drop counts)/.test(lower) && nt.includes('every drop counts')) return true;
+        if (/(indus valley|harappa|mohenjo|lothal|earliest cities|river valley civilization)/.test(lower) && (nt.includes('earliest cities') || nt.includes('indus valley'))) return true;
+        if (/(weather and climate|barometer|hygrometer|lapse rate|diurnal range)/.test(lower) && nt.includes('weather')) return true;
+        if (/(force and pressure|thrust|pascal|liquid pressure|atmospheric pressure)/.test(lower) && nt.includes('force and pressure')) return true;
+        if (/(atomic structure|structure of the atom|rutherford|bohr|isotope|isobar)/.test(lower) && (nt.includes('structure of the atom') || nt.includes('atomic structure'))) return true;
+        if (/(life processes|double circulation|nephron|nutrition, respiration)/.test(lower) && nt.includes('life processes')) return true;
+        if (grade === 7 && (/[\u0900-\u097F]/.test(topic) || /(hindi|sangya|sarvanam|visheshan|vyakaran|sandhi|samas)/.test(lower)) && nt.includes('संज्ञा')) return true;
+
+        if (nt === lower || (!nt.startsWith('chapter ') && (lower.includes(nt) || nt.includes(lower)))) return true;
+        // Keyword matching for core queries
+        if (/(photosynthesis|stomata|chloroplast|calvin)/.test(lower) && nt === 'photosynthesis') return true;
         if (/(newton|laws of motion|inertia|momentum|f\s*=\s*ma)/.test(lower) && nt.includes('newton')) return true;
-        if (/(quadratic|discriminant|ax\^2|ax²)/.test(lower) && nt.includes('quadratic')) return true;
+        if (/(quadratic|discriminant|ax\^2|ax²)/.test(lower) && nt === 'quadratic equations') return true;
         if (/(linear equation|simultaneous|solve.*x|[0-9]x\s*[+\-=])/.test(lower) && nt.includes('linear equation')) return true;
         if (/(trigonometr|sin|cos|tan|hypotenuse)/.test(lower) && nt.includes('trigonometry')) return true;
         if (/(triangle|circle|mensuration|volume|surface area|bpt|thales)/.test(lower) && nt.includes('geometry')) return true;
@@ -527,7 +543,7 @@ export class UnifiedKnowledgeRetrievalService {
         if (/(gdp|per capita|sectors of economy|money and credit|rbi|shg)/.test(lower) && nt.includes('economic')) return true;
         if (/(active and passive|passive voice|tense|reported speech|direct and indirect|subject verb|concord|clause|grammar)/.test(lower) && subject === 'English' && nt.includes('english grammar')) return true;
         if ((/[\u0C00-\u0C7F]/.test(topic) || /(telugu|sandhi|samasam|vyakaranam|alankaram|chandassu)/.test(lower)) && nt.includes('తెలుగు వ్యాకరణం')) return true;
-        if ((/[\u0900-\u097F]/.test(topic) || /(hindi|vyakaran|samas)/.test(lower)) && nt.includes('हिंदी व्याकरण')) return true;
+        if ((/[\u0900-\u097F]/.test(topic) || /(hindi|vyakaran|samas|sangya|sarvanam)/.test(lower)) && nt.includes('हिंदी व्याकरण')) return true;
         if (/(algorithm|python|binary search|sql|osi model|computer network)/.test(lower) && nt.includes('computer science')) return true;
         return false;
       });
@@ -535,11 +551,15 @@ export class UnifiedKnowledgeRetrievalService {
       if (matched) {
         const laws = JSON.parse(matched.fundamental_laws_json || '[]');
         const rawFormulas = JSON.parse(matched.governing_formulas_json || '[]');
-        const formulas = rawFormulas.map((f: any) => ({
-          formula: f.formula || f.equation || '',
-          explanation: f.explanation || '',
-          siUnits: f.siUnits || 'Standard Curriculum Notation'
-        }));
+        const formulas = rawFormulas.map((f: any) =>
+          typeof f === 'string'
+            ? { formula: f, explanation: f, siUnits: 'Standard Curriculum Notation' }
+            : {
+                formula: f.formula || f.equation || '',
+                explanation: f.explanation || '',
+                siUnits: f.siUnits || 'Standard Curriculum Notation'
+              }
+        );
         const phenomena = JSON.parse(matched.key_phenomena_json || '[]');
         const prereqs = JSON.parse(matched.prerequisites_json || '[]');
         const rawSubs = JSON.parse(matched.subtopics_json || '[]');

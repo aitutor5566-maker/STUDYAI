@@ -14,6 +14,7 @@ import {
   getSubtopicDiagramsForTopic,
   type SubtopicDiagramItem
 } from './subtopicDiagramCatalog.ts';
+import { icseCbseKnowledgeBank } from './icseCbseKnowledgeBank.ts';
 
 export interface NumericalProblem9Step {
   problemNumber: number;
@@ -1700,15 +1701,26 @@ function buildMainDefinitionForTopic(topic: string, subject: string) {
     };
   }
 
+  const kbCh = icseCbseKnowledgeBank.findBestMatchingChapter({ query: topic, subject });
+  if (kbCh) {
+    return {
+      academicDefinition: kbCh.chapterIntroduction,
+      simpleLanguageExplanation: kbCh.chapterSummary,
+      keyWordMeanings: kbCh.importantDefinitions.slice(0, 4).map((d) => ({ word: d.term, meaning: d.definition })),
+      coreExample: kbCh.examples[0] || kbCh.chapterIntroduction,
+      practicalInterpretation: kbCh.applications[0] || kbCh.chapterSummary
+    };
+  }
+
   return {
-    academicDefinition: `${topic} is scientifically defined as the governing mechanism wherein specific structural inputs undergo controlled interaction or transformation to produce verified outcomes under conservation laws.`,
+    academicDefinition: `${topic} is a fundamental academic concept in ${subject} that explains the principles, definitions, and real-world applications of ${topic}.`,
     simpleLanguageExplanation: `In simple everyday words, ${topic} explains how different parts work together step by step to produce a measurable, predictable result in the natural world.`,
     keyWordMeanings: [
-      { word: 'Mechanism', meaning: 'The sequence of chemical, physical, or biological steps by which an overall change occurs.' },
-      { word: 'Equilibrium', meaning: 'A balanced state where opposing forces or reaction rates cancel each other out.' }
+      { word: topic, meaning: `The primary subject concept studied in ${subject}.` },
+      { word: 'Principle', meaning: 'The verified scientific or academic rule governing this topic.' }
     ],
-    coreExample: `Observed whenever energy or materials transition from initial potential states into active kinetic work within ${subject}.`,
-    practicalInterpretation: `Understanding ${topic} allows us to accurately calculate, predict, and control real systems instead of guessing outcomes.`
+    coreExample: `Observed in standard curriculum experiments and real-life applications within ${subject}.`,
+    practicalInterpretation: `Understanding ${topic} allows us to accurately calculate, predict, and explain real systems.`
   };
 }
 
@@ -1905,20 +1917,31 @@ function buildImportantDefinitionsForTopic(topic: string, subject: string): Impo
     ];
   }
 
+  const kbCh = icseCbseKnowledgeBank.findBestMatchingChapter({ query: topic, subject });
+  if (kbCh && kbCh.importantDefinitions.length >= 2) {
+    return kbCh.importantDefinitions.map((d, idx) => ({
+      term: d.term,
+      academicDefinition: d.definition,
+      simpleExplanation: d.definition,
+      example: kbCh.examples[idx % Math.max(1, kbCh.examples.length)] || kbCh.chapterIntroduction,
+      importance: kbCh.learningObjectives[idx % Math.max(1, kbCh.learningObjectives.length)] || kbCh.chapterSummary
+    }));
+  }
+
   return [
     {
-      term: 'Primary Operational Unit',
-      academicDefinition: `The fundamental physical or structural element responsible for initiating ${topic}.`,
-      simpleExplanation: `The main starting part that sets the whole system in motion.`,
-      example: `Found across all standard textbook laboratory setups for ${topic}.`,
-      importance: `Without this unit, no downstream transformation can occur.`
+      term: `${topic} Core Definition`,
+      academicDefinition: `The foundational curriculum definition and governing principle of ${topic} in ${subject}.`,
+      simpleExplanation: `The main concept that explains what ${topic} is and how it works.`,
+      example: `Found across standard ${subject} curriculum examples for ${topic}.`,
+      importance: `Essential for mastering ${topic} in board examinations.`
     },
     {
-      term: 'Equilibrium State',
-      academicDefinition: `A balanced condition where forward and reverse process rates are equal and net change is zero.`,
-      simpleExplanation: `When all forces or chemical changes balance out steadily.`,
-      example: `Reached once initial reactions or kinetic transfers conclude.`,
-      importance: `Represents the final resting or measured outcome in curriculum problems.`
+      term: `${topic} Applied Principle`,
+      academicDefinition: `The practical rule or law connecting ${topic} to real-world observations in ${subject}.`,
+      simpleExplanation: `How ${topic} applies in solved problems and real life.`,
+      example: `Applied when solving standard ${subject} questions on ${topic}.`,
+      importance: `Represents the applied outcome in curriculum problems.`
     }
   ];
 }

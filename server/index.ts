@@ -122,6 +122,7 @@ import { unifiedKnowledgeRetrieval } from './unifiedKnowledgeRetrieval.ts';
 import { responseValidationLayer } from './responseValidationLayer.ts';
 import { knowledgeIntelligenceAdmin } from './knowledgeIntelligenceAdmin.ts';
 import { multiBoardKnowledgeEngine, SUPPORTED_CURRICULA } from './multiBoardKnowledgeEngine.ts';
+import { icseCbseKnowledgeBank } from './icseCbseKnowledgeBank.ts';
 import { ResearchIntelligenceEngine } from './researchIntelligenceEngine.ts';
 import { UnifiedVisualIntelligenceEngine } from './visualIntelligenceEngineUnified.ts';
 import { StudyAiPersonalTeacherEngine } from './studyAiPersonalTeacherEngine.ts';
@@ -606,9 +607,49 @@ export function createAppServer() {
       }
 
       if ((pathname === '/api/v1/admin/knowledge-intelligence/policies' || pathname === '/api/admin/knowledge-intelligence/policies') && req.method === 'PUT') {
-        const body = await parseJsonBody(req);
+        const body = await readJsonBody(req);
         const updated = knowledgeIntelligenceAdmin.updatePolicies(body || {});
         sendJson(res, 200, { success: true, policies: updated });
+        return;
+      }
+
+      // ICSE & CBSE Complete Knowledge Bank (Grades 1-10) Search & Completeness Tracker Endpoints
+      if ((pathname === '/api/v1/knowledge-bank/completeness' || pathname === '/api/knowledge-bank/completeness') && req.method === 'GET') {
+        const board = parsedUrl.searchParams.get('board') || undefined;
+        const gradeStr = parsedUrl.searchParams.get('grade');
+        const grade = gradeStr ? parseInt(gradeStr, 10) : undefined;
+        const subject = parsedUrl.searchParams.get('subject') || undefined;
+        const report = icseCbseKnowledgeBank.getCompletenessTrackerReport({ board, grade, subject });
+        sendJson(res, 200, report);
+        return;
+      }
+
+      if ((pathname === '/api/v1/knowledge-bank/search' || pathname === '/api/knowledge-bank/search') && req.method === 'GET') {
+        const query = parsedUrl.searchParams.get('query') || parsedUrl.searchParams.get('q') || undefined;
+        const board = parsedUrl.searchParams.get('board') || undefined;
+        const gradeStr = parsedUrl.searchParams.get('grade');
+        const grade = gradeStr ? parseInt(gradeStr, 10) : undefined;
+        const subject = parsedUrl.searchParams.get('subject') || undefined;
+        const status = (parsedUrl.searchParams.get('status') as any) || undefined;
+        const limit = parseInt(parsedUrl.searchParams.get('limit') || '20', 10);
+        const chapters = icseCbseKnowledgeBank.searchChapters({ query, board, grade, subject, status, limit });
+        sendJson(res, 200, { total: chapters.length, chapters });
+        return;
+      }
+
+      if ((pathname === '/api/v1/knowledge-bank/chapters/verify' || pathname === '/api/knowledge-bank/chapters/verify') && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const chapterId = sanitizeText(body.chapterId || '', 120);
+        if (!chapterId) {
+          sendJson(res, 400, { error: 'chapterId is required.' });
+          return;
+        }
+        const updated = icseCbseKnowledgeBank.verifyAndPublishChapter(chapterId);
+        if (!updated) {
+          sendJson(res, 404, { error: `Chapter ${chapterId} not found.` });
+          return;
+        }
+        sendJson(res, 200, { success: true, chapter: updated });
         return;
       }
 

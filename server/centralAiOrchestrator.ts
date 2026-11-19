@@ -622,8 +622,20 @@ export class LocalCurriculumFallbackAdapter implements BaseAiProvider {
     // Check if prompt asks to solve a linear/quadratic algebraic equation step-by-step
     let algebraStepByStep = '';
     const promptText = req.prompt || '';
-    const linearMatch = promptText.match(/(\d+)\s*x\s*([+-])\s*(\d+)\s*=\s*(\d+)/i);
-    if (linearMatch) {
+    const quadMatch = promptText.match(/(\d*)\s*x(?:\^2|²)\s*([+-])\s*(\d+)\s*x\s*([+-])\s*(\d+)\s*=\s*0/i);
+    const linearMatch = !quadMatch ? promptText.match(/(\d+)\s*x\s*([+-])\s*(\d+)\s*=\s*(\d+)/i) : null;
+    if (quadMatch) {
+      const a = quadMatch[1] ? Number(quadMatch[1]) : 1;
+      const bSign = quadMatch[2] === '-' ? -1 : 1;
+      const b = bSign * Number(quadMatch[3]);
+      const cSign = quadMatch[4] === '-' ? -1 : 1;
+      const c = cSign * Number(quadMatch[5]);
+      const D = b * b - 4 * a * c;
+      const sqrtD = D >= 0 ? Math.sqrt(D) : NaN;
+      const r1 = D >= 0 ? (-b + sqrtD) / (2 * a) : NaN;
+      const r2 = D >= 0 ? (-b - sqrtD) / (2 * a) : NaN;
+      algebraStepByStep = `\n\n### 🧮 Step-by-Step Quadratic Equation Solution\n- **Standard Form**: \`${a}x² ${b >= 0 ? '+' : '-'} ${Math.abs(b)}x ${c >= 0 ? '+' : '-'} ${Math.abs(c)} = 0\` (where \`a = ${a}\`, \`b = ${b}\`, \`c = ${c}\`)\n- **Step 1 (Calculate Discriminant D = b² − 4ac)**: \`D = (${b})² − 4(${a})(${c}) = ${b * b} − ${4 * a * c} = ${D}\` (${D > 0 ? 'D > 0 → Two distinct real roots' : D === 0 ? 'D = 0 → Two equal real roots' : 'D < 0 → No real roots'})\n- **Step 2 (Apply Sridharacharya’s Quadratic Formula)**: \`x = [−b ± √D] / (2a) = [${-b} ± √${D}] / ${2 * a} = [${-b} ± ${sqrtD}] / ${2 * a}\`\n- **Step 3 (Evaluate Roots)**: \`x₁ = (${-b} + ${sqrtD}) / ${2 * a} = ${r1}\` and \`x₂ = (${-b} − ${sqrtD}) / ${2 * a} = ${r2}\``;
+    } else if (linearMatch) {
       const a = Number(linearMatch[1]);
       const op = linearMatch[2];
       const b = Number(linearMatch[3]);

@@ -2,6 +2,7 @@ import { db, getVisualAssets, getResearchJobs, getSyllabusChangeLogs } from './d
 import { unifiedAiOrchestrator } from './unifiedAiOrchestrator.ts';
 import { unifiedKnowledgeRetrieval } from './unifiedKnowledgeRetrieval.ts';
 import { ResearchIntelligenceEngine } from './researchIntelligenceEngine.ts';
+import { icseCbseKnowledgeBank } from './icseCbseKnowledgeBank.ts';
 
 export interface CurriculumBoardCoverage {
   board: 'CBSE' | 'ICSE' | 'AP_STATE_BOARD' | 'TS_STATE_BOARD';
@@ -140,6 +141,7 @@ export interface KnowledgeIntelligenceDashboardReport {
     academicYear: string;
     chaptersCount: number;
   }>;
+  completenessTracker?: ReturnType<typeof icseCbseKnowledgeBank.getCompletenessTrackerReport>;
 }
 
 export class KnowledgeIntelligenceAdminService {
@@ -512,7 +514,8 @@ export class KnowledgeIntelligenceAdminService {
         publisher: s.publisher,
         academicYear: s.academicYear,
         chaptersCount: s.chaptersCount
-      }))
+      })),
+      completenessTracker: icseCbseKnowledgeBank.getCompletenessTrackerReport()
     };
   }
 }
