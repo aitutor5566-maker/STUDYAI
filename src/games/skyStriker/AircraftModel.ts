@@ -277,6 +277,15 @@ export function buildEnemyInterceptorJet(variantIdx = 0): FighterJetRig {
       canopyHex: 0x38bdf8,
       engineGlowHex: 0xc084fc,
       previewGradient: 'linear-gradient(135deg, #312e81, #a855f7)'
+    },
+    {
+      id: 'emerald_falcon',
+      name: 'Solar Raptor',
+      fuselageHex: 0x1e293b,
+      wingAccentHex: 0xf59e0b,
+      canopyHex: 0x38bdf8,
+      engineGlowHex: 0xfbbf24,
+      previewGradient: 'linear-gradient(135deg, #1e293b, #f59e0b)'
     }
   ];
   const rig = buildFighterJet(palettes[variantIdx % palettes.length]);

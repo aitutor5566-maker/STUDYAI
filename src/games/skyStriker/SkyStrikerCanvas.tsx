@@ -198,17 +198,17 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
     const combatSystem = new EnergyCombatSystem(100);
     const enemySquadron = [0, 1, 2].map((idx) => {
       const rig = buildEnemyInterceptorJet(idx);
-      rig.root.scale.setScalar(0.88);
-      rig.root.position.set((idx - 1) * 22, 9 + idx * 2, -55 - idx * 14);
+      rig.root.scale.setScalar(0.82);
+      rig.root.position.set((idx - 1) * 48, 12 + idx * 3, -110 - idx * 24);
       scene.add(rig.root);
       return {
         id: `enemy-jet-${idx}`,
         rig,
         phase: idx * 2.1,
-        attackCooldown: 2.2 + idx * 1.1,
-        baseX: (idx - 1) * 19,
-        baseY: 8 + idx * 2.2,
-        baseZ: -52 - idx * 12
+        attackCooldown: 3.2 + idx * 1.4,
+        baseX: (idx - 1) * 48,
+        baseY: 12 + idx * 3,
+        baseZ: -110 - idx * 24
       };
     });
 
@@ -261,38 +261,37 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
         const pos = new THREE.Vector3(xOffsets[idx], yOffsets[idx], zOffsets[idx]);
         tg.position.copy(pos);
 
-        // 3D Enemy Fighter Jet Aircraft representing this Answer Option (A, B, or C)
-        const jetRig = buildEnemyInterceptorJet(idx);
-        jetRig.root.scale.setScalar(0.95);
+        // 3D Enemy Fighter Jet Aircraft representing this Answer Option (A, B, or C) with randomized livery
+        const skinOffset = Math.abs(q.questionId.charCodeAt(0) || 0);
+        const jetRig = buildEnemyInterceptorJet((idx + skinOffset) % 3);
+        jetRig.root.scale.setScalar(1.05);
         jetRig.root.rotation.y = Math.PI;
         tg.add(jetRig.root);
 
-        // Tactical lock-on reticle rings around the enemy answer aircraft
+        // Subtle tactical lock-on reticle rings (highlighted only when locked/selected so the aircraft is primary)
         const outerRing = new THREE.Mesh(
-          new THREE.TorusGeometry(3.4, 0.12, 12, 36),
-          new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.72 })
+          new THREE.TorusGeometry(2.85, 0.08, 12, 36),
+          new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.22 })
         );
         tg.add(outerRing);
 
         const innerRing = new THREE.Mesh(
-          new THREE.TorusGeometry(2.5, 0.08, 10, 30),
-          new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.55 })
+          new THREE.TorusGeometry(2.1, 0.06, 10, 30),
+          new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.16 })
         );
         tg.add(innerRing);
 
         const coreSphere = new THREE.Mesh(
-          new THREE.OctahedronGeometry(0.45, 1),
+          new THREE.OctahedronGeometry(0.3, 1),
           new THREE.MeshStandardMaterial({
             color: 0x06b6d4,
             emissive: 0x0891b2,
             emissiveIntensity: 0.85,
-            metalness: 0.3,
-            roughness: 0.2,
             transparent: true,
-            opacity: 0.85
+            opacity: 0.0
           })
         );
-        coreSphere.position.set(0, 0.42, -1.2);
+        coreSphere.visible = false;
         tg.add(coreSphere);
 
         // Harmless energy shield (revealed only on incorrect evaluation)
@@ -500,6 +499,48 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
     window.addEventListener('mouseup', onMouseUp);
     renderer.domElement.addEventListener('dblclick', onDblClick);
 
+    // Mobile right-side touch camera free-look
+    let touchLookId: number | null = null;
+    let lastTouchX = 0;
+    let lastTouchY = 0;
+    const onTouchStart = (e: TouchEvent) => {
+      if (pausedRef.current) return;
+      const cw = container.clientWidth || window.innerWidth;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        if (t.clientX > cw * 0.42 && touchLookId === null) {
+          touchLookId = t.identifier;
+          lastTouchX = t.clientX;
+          lastTouchY = t.clientY;
+          break;
+        }
+      }
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (touchLookId === null || pausedRef.current) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        if (t.identifier === touchLookId) {
+          freeLookYaw = THREE.MathUtils.clamp(freeLookYaw - (t.clientX - lastTouchX) * 0.0045, -0.85, 0.85);
+          freeLookPitch = THREE.MathUtils.clamp(freeLookPitch + (t.clientY - lastTouchY) * 0.0035, -0.35, 0.45);
+          lastTouchX = t.clientX;
+          lastTouchY = t.clientY;
+          break;
+        }
+      }
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === touchLookId) {
+          touchLookId = null;
+          break;
+        }
+      }
+    };
+    renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: true });
+    renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: true });
+    renderer.domElement.addEventListener('touchend', onTouchEnd, { passive: true });
+
     // ResizeObserver for genuine fullscreen & orientation handling
     const handleResize = () => {
       if (!container) return;
@@ -682,9 +723,10 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
             t.jetRig.root.rotation.set(pitch, Math.PI + Math.sin(tSec * 0.7) * 0.22, bank);
             t.jetRig.leftAileron.rotation.x = bank * 0.6;
             t.jetRig.rightAileron.rotation.x = -bank * 0.6;
-            (t.outerRing.material as THREE.MeshBasicMaterial).color.setHex(
-              isSel ? 0xfbbf24 : 0x22d3ee
-            );
+            const ringMat = t.outerRing.material as THREE.MeshBasicMaterial;
+            ringMat.color.setHex(isSel ? 0xfbbf24 : 0x22d3ee);
+            ringMat.opacity = isSel ? 0.88 : 0.18;
+            (t.innerRing.material as THREE.MeshBasicMaterial).opacity = isSel ? 0.68 : 0.12;
           }
           t.outerRing.rotation.z += dt * 1.1;
           t.innerRing.rotation.z -= dt * 1.6;
@@ -864,6 +906,9 @@ export const SkyStrikerCanvas: React.FC<SkyStrikerCanvasProps> = ({
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
       renderer.domElement.removeEventListener('dblclick', onDblClick);
+      renderer.domElement.removeEventListener('touchstart', onTouchStart);
+      renderer.domElement.removeEventListener('touchmove', onTouchMove);
+      renderer.domElement.removeEventListener('touchend', onTouchEnd);
       disposeThreeScene(scene, renderer, postPipeline, envTexture);
     };
   }, [worldId, quality, skinId, audioManager, mobileInputRef]);
