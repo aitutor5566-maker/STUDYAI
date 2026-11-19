@@ -6,7 +6,87 @@ export type NinjaCharacterId = 'kage_obsidian' | 'sakura_mist' | 'azure_tempest'
 export type VoxelCharacterId = 'builder_steve' | 'arcane_alex' | 'crystal_knight';
 
 export type NinjaRealmId = 'bamboo_temple' | 'sakura_sanctuary' | 'misty_waterfall_peaks';
-export type MinecraftBiomeId = 'emerald_forest' | 'alpine_snow_peaks' | 'desert_oasis';
+export type MinecraftBiomeId =
+  | 'emerald_forest'
+  | 'mountain_region'
+  | 'desert_oasis'
+  | 'alpine_snow_peaks'
+  | 'village_region'
+  | 'river_islands';
+
+export interface MinecraftTerritoryConfig {
+  id: MinecraftBiomeId;
+  name: string;
+  subtitle: string;
+  groundKind: 'grass' | 'stone' | 'sand' | 'snow';
+  groundHex: string;
+  accentHex: string;
+  skyTopHex: string;
+  skyHorizonHex: string;
+}
+
+export const MINECRAFT_TERRITORIES: MinecraftTerritoryConfig[] = [
+  {
+    id: 'emerald_forest',
+    name: '1. Green Forest',
+    subtitle: 'Trees, grassy hills, woodland paths, flowers & streams',
+    groundKind: 'grass',
+    groundHex: '#4ADE80',
+    accentHex: '#16A34A',
+    skyTopHex: '#0284C7',
+    skyHorizonHex: '#BAE6FD'
+  },
+  {
+    id: 'mountain_region',
+    name: '2. Mountain Region',
+    subtitle: 'Rocky slopes, cliffs, caves & elevated stone pathways',
+    groundKind: 'stone',
+    groundHex: '#64748B',
+    accentHex: '#38BDF8',
+    skyTopHex: '#0369A1',
+    skyHorizonHex: '#E0F2FE'
+  },
+  {
+    id: 'desert_oasis',
+    name: '3. Desert Region',
+    subtitle: 'Sand dunes, cacti, sandstone ruins & oasis water',
+    groundKind: 'sand',
+    groundHex: '#EAB308',
+    accentHex: '#F97316',
+    skyTopHex: '#B45309',
+    skyHorizonHex: '#FDE68A'
+  },
+  {
+    id: 'alpine_snow_peaks',
+    name: '4. Snow Region',
+    subtitle: 'Snow-covered ground, pine trees, frozen lakes & icy hills',
+    groundKind: 'snow',
+    groundHex: '#E2E8F0',
+    accentHex: '#38BDF8',
+    skyTopHex: '#1E3A8A',
+    skyHorizonHex: '#E0F2FE'
+  },
+  {
+    id: 'village_region',
+    name: '5. Village Region',
+    subtitle: 'Small houses, cobblestone paths, bridges, farms & lanterns',
+    groundKind: 'grass',
+    groundHex: '#86EFAC',
+    accentHex: '#F59E0B',
+    skyTopHex: '#0284C7',
+    skyHorizonHex: '#FEF3C7'
+  },
+  {
+    id: 'river_islands',
+    name: '6. River & Island Region',
+    subtitle: 'Water channels, wooden bridges & connected islands',
+    groundKind: 'grass',
+    groundHex: '#34D399',
+    accentHex: '#06B6D4',
+    skyTopHex: '#0E7490',
+    skyHorizonHex: '#CFFAFE'
+  }
+];
 
 export type PlacedBlockKind = 'oak_wood' | 'stone_brick' | 'glow_crystal' | 'sakura_plank';
 export type OptionId = 'A' | 'B' | 'C';
@@ -58,6 +138,13 @@ export interface LiveRealmsHud {
   shrineOptions: Array<{ index: number; id: OptionId; text: string }>;
   activeEnemiesCount: number;
   fpsEstimate: number;
+  playerX?: number;
+  playerZ?: number;
+  objectiveDistanceMeters?: number;
+  objectiveBearingDeg?: number;
+  objectiveLabel?: string;
+  discoveredZones?: string[];
+  npcDialogue?: { name: string; role: string; clue: string } | null;
 }
 
 export interface RealmsAnswerOutcome {

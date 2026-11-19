@@ -115,12 +115,12 @@ export interface StudyRushLevelTheme {
 }
 
 export function getStudyRushLevelTheme(levelNum = 1): StudyRushLevelTheme {
-  const idx = ((Math.max(1, levelNum) - 1) % 5) + 1;
+  const idx = ((Math.max(1, levelNum) - 1) % 6) + 1;
   switch (idx) {
     case 2:
       return {
         level: levelNum,
-        name: 'Physics Laboratory',
+        name: '2. Mountain Region',
         groundKind: 'stone',
         groundColor: '#64748B',
         plazaColor: '#94A3B8',
@@ -130,39 +130,49 @@ export function getStudyRushLevelTheme(levelNum = 1): StudyRushLevelTheme {
     case 3:
       return {
         level: levelNum,
-        name: 'Nature Kingdom',
-        groundKind: 'grass',
-        groundColor: '#34D399',
-        plazaColor: '#D6D3D1',
-        skyTop: '#047857',
-        skyHorizon: '#A7F3D0'
-      };
-    case 4:
-      return {
-        level: levelNum,
-        name: 'Mathematics Oasis',
+        name: '3. Desert Region',
         groundKind: 'sand',
         groundColor: '#EAB308',
         plazaColor: '#FDE68A',
         skyTop: '#B45309',
         skyHorizon: '#FDE68A'
       };
-    case 5:
+    case 4:
       return {
         level: levelNum,
-        name: 'Frost Learning Citadel',
+        name: '4. Snow Region',
         groundKind: 'snow',
         groundColor: '#E2E8F0',
         plazaColor: '#CBD5E1',
         skyTop: '#1E3A8A',
         skyHorizon: '#E0F2FE'
       };
+    case 5:
+      return {
+        level: levelNum,
+        name: '5. Village Region',
+        groundKind: 'grass',
+        groundColor: '#86EFAC',
+        plazaColor: '#D6D3D1',
+        skyTop: '#0284C7',
+        skyHorizon: '#FEF3C7'
+      };
+    case 6:
+      return {
+        level: levelNum,
+        name: '6. River & Island Region',
+        groundKind: 'grass',
+        groundColor: '#34D399',
+        plazaColor: '#CFFAFE',
+        skyTop: '#0E7490',
+        skyHorizon: '#A5F3FC'
+      };
     default:
       return {
         level: levelNum,
-        name: 'Science Village',
+        name: '1. Green Forest',
         groundKind: 'grass',
-        groundColor: '#86EFAC',
+        groundColor: '#4ADE80',
         plazaColor: '#E2E8F0',
         skyTop: '#0284C7',
         skyHorizon: '#BAE6FD'

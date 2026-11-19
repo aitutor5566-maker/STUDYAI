@@ -125,7 +125,7 @@ describe('Multi-level transitions & saved progress', () => {
       machine.startNextLevel();
     }
 
-    expect(levelNames).toEqual(['Science Village', 'Physics Laboratory', 'Nature Kingdom']);
+    expect(levelNames).toEqual(['1. Green Forest', '2. Mountain Region', '3. Desert Region']);
     expect(machine.getSnapshot().level).toBe(4);
   });
 

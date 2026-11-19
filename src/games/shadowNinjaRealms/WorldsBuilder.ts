@@ -42,11 +42,22 @@ export interface CollectibleNode {
   respawnTimer: number;
 }
 
+export interface FriendlyNpcEntity {
+  id: string;
+  name: string;
+  role: string;
+  clue: string;
+  position: THREE.Vector3;
+  group: THREE.Group;
+  indicator: THREE.Mesh;
+}
+
 export interface BuiltRealmsWorld {
   root: THREE.Group;
   colliders: WorldCollider[];
   shrines: ShrineRig[];
   collectibles: CollectibleNode[];
+  npcs: FriendlyNpcEntity[];
   waterNormalMap?: THREE.Texture;
   waterfallTexture?: THREE.Texture;
   updateWater?: (elapsedSeconds: number) => void;
@@ -280,15 +291,18 @@ export function buildRealmsWorld(
   const root = new THREE.Group();
   const colliders: WorldCollider[] = [];
   const collectibles: CollectibleNode[] = [];
+  const npcs: FriendlyNpcEntity[] = [];
   const lanternLights: THREE.PointLight[] = [];
 
   const texRes: 128 | 256 | 512 =
-    graphicsTier === 'low' ? 128 : graphicsTier === 'ultra' || graphicsTier === 'high' ? 512 : 256;
+    tier === 'low' ? 128 : tier === 'ultra' || tier === 'high' ? 512 : 256;
   const groundKind =
     isVoxel && minecraftBiome === 'desert_oasis'
       ? 'sand'
       : isVoxel && minecraftBiome === 'alpine_snow_peaks'
       ? 'snow'
+      : isVoxel && minecraftBiome === 'mountain_region'
+      ? 'stone'
       : 'grass';
   const grassPbr = typeof document !== 'undefined' ? getPbrTextureSet(groundKind, 24, 24, texRes) : null;
   const stonePbr = typeof document !== 'undefined' ? getPbrTextureSet('stone', 12, 12, texRes) : null;
@@ -305,6 +319,12 @@ export function buildRealmsWorld(
     ? '#E2E8F0'
     : minecraftBiome === 'desert_oasis'
     ? '#EAB308'
+    : minecraftBiome === 'mountain_region'
+    ? '#64748B'
+    : minecraftBiome === 'village_region'
+    ? '#86EFAC'
+    : minecraftBiome === 'river_islands'
+    ? '#34D399'
     : '#4ADE80';
 
   const ground = new THREE.Mesh(
@@ -327,7 +347,7 @@ export function buildRealmsWorld(
   const animatedWater = createAnimatedWaterSurface({
     width: 120,
     depth: 9,
-    segments: graphicsTier === 'low' ? 16 : 36,
+    segments: tier === 'low' ? 16 : 36,
     deepColor: 0x0369a1,
     shallowColor: 0x38bdf8,
     skyColor: 0xbae6fd,
@@ -481,6 +501,8 @@ export function buildRealmsWorld(
         ? '#CBD5E1'
         : minecraftBiome === 'desert_oasis'
         ? '#65A30D'
+        : minecraftBiome === 'mountain_region'
+        ? '#0F766E'
         : '#16A34A';
     const treePositions = [
       [-12, -5],
@@ -488,7 +510,9 @@ export function buildRealmsWorld(
       [-16, 8],
       [15, 11],
       [-22, -26],
-      [11, -30]
+      [11, -30],
+      [-28, 14],
+      [26, 15]
     ];
     for (const [tx, tz] of treePositions) {
       const trunk = new THREE.Mesh(
@@ -507,21 +531,30 @@ export function buildRealmsWorld(
       addCollider(colliders, tx, tz, 0.7, 0.7);
     }
 
-    const cottageWall = new THREE.Mesh(
-      new THREE.BoxGeometry(6, 4, 6),
-      new THREE.MeshStandardMaterial({ color: '#B45309', normalMap: woodPbr?.normalMap ?? undefined })
-    );
-    cottageWall.position.set(-14, 2, -32);
-    cottageWall.castShadow = true;
-    const cottageRoof = new THREE.Mesh(
-      new THREE.BoxGeometry(7, 1.4, 7),
-      new THREE.MeshStandardMaterial({ color: '#475569', normalMap: stonePbr?.normalMap ?? undefined })
-    );
-    cottageRoof.position.set(-14, 4.7, -32);
-    cottageRoof.castShadow = true;
-    root.add(cottageWall, cottageRoof);
-    addCollider(colliders, -14, -32, 3.1, 3.1);
+    // 1. Village Region cottages, cobblestone path & farm plots
+    const cottageCoords: Array<[number, number, string]> = [
+      [-14, -32, '#B45309'],
+      [-5, -35, '#9A3412'],
+      [12, 18, '#B45309']
+    ];
+    for (const [cx, cz, wallHex] of cottageCoords) {
+      const cottageWall = new THREE.Mesh(
+        new THREE.BoxGeometry(6, 4, 6),
+        new THREE.MeshStandardMaterial({ color: wallHex, normalMap: woodPbr?.normalMap ?? undefined })
+      );
+      cottageWall.position.set(cx, 2, cz);
+      cottageWall.castShadow = true;
+      const cottageRoof = new THREE.Mesh(
+        new THREE.BoxGeometry(7, 1.4, 7),
+        new THREE.MeshStandardMaterial({ color: '#475569', normalMap: stonePbr?.normalMap ?? undefined })
+      );
+      cottageRoof.position.set(cx, 4.7, cz);
+      cottageRoof.castShadow = true;
+      root.add(cottageWall, cottageRoof);
+      addCollider(colliders, cx, cz, 3.1, 3.1);
+    }
 
+    // 2. Mountain Region Cave Arch, Crystal Ores & Elevated Rocky Steps
     const caveArch = new THREE.Mesh(new THREE.BoxGeometry(8, 5, 5), cliffMat);
     caveArch.position.set(-24, 2.5, -28);
     caveArch.castShadow = true;
@@ -532,6 +565,112 @@ export function buildRealmsWorld(
     );
     crystalOre.position.set(-21.5, 1.4, -25.2);
     root.add(crystalOre);
+
+    // 3. Desert Region Sandstone Ruins & Cacti (East Sector x > 18)
+    const sandPatch = new THREE.Mesh(
+      new THREE.BoxGeometry(26, 0.16, 28),
+      new THREE.MeshStandardMaterial({ color: '#EAB308', roughness: 0.92 })
+    );
+    sandPatch.position.set(28, 0.04, 4);
+    sandPatch.receiveShadow = true;
+    root.add(sandPatch);
+    for (const [cx, cz] of [[24, 9], [31, -2], [35, 12]]) {
+      const cactus = new THREE.Mesh(
+        new THREE.BoxGeometry(0.85, 3.4, 0.85),
+        new THREE.MeshStandardMaterial({ color: '#15803D', roughness: 0.8 })
+      );
+      cactus.position.set(cx, 1.7, cz);
+      cactus.castShadow = true;
+      root.add(cactus);
+      addCollider(colliders, cx, cz, 0.5, 0.5);
+    }
+
+    // 4. Snow Region Frozen Lake & Alpine Pines (South-West Sector x < -18, z > 12)
+    const snowPatch = new THREE.Mesh(
+      new THREE.BoxGeometry(26, 0.16, 26),
+      new THREE.MeshStandardMaterial({ color: '#F1F5F9', roughness: 0.82 })
+    );
+    snowPatch.position.set(-28, 0.04, 22);
+    snowPatch.receiveShadow = true;
+    root.add(snowPatch);
+    const frozenLake = new THREE.Mesh(
+      new THREE.BoxGeometry(11, 0.2, 9),
+      new THREE.MeshPhysicalMaterial({ color: '#7DD3FC', roughness: 0.08, metalness: 0.15, transparent: true, opacity: 0.86 })
+    );
+    frozenLake.position.set(-28, 0.09, 22);
+    root.add(frozenLake);
+
+    // 5. River & Island Region Connected Islands & Wooden Footbridge
+    const riverIsland = new THREE.Mesh(
+      new THREE.BoxGeometry(9, 0.85, 7),
+      new THREE.MeshStandardMaterial({ color: '#22C55E', roughness: 0.85 })
+    );
+    riverIsland.position.set(-14, 0.35, -18);
+    riverIsland.receiveShadow = true;
+    root.add(riverIsland);
+  }
+
+  // Friendly Patrolling Guide NPCs with Clues across Territories
+  const npcSpecs = [
+    {
+      id: 'npc-guide-aria',
+      name: 'Explorer Aria',
+      role: 'Forest & Village Guide',
+      clue: 'Follow the 3D Navigation Arrow above you! Approach any Answer Character and press [E] to test your knowledge.',
+      color: '#F97316',
+      pos: new THREE.Vector3(-4.5, 0, 4.2)
+    },
+    {
+      id: 'npc-geologist-kaito',
+      name: 'Geologist Kaito',
+      role: 'Mountain & Desert Scholar',
+      clue: 'Each territory unlocks new challenges! Gather Wood, Stone & Crystals or press [B] in Minecraft Realms to place blocks.',
+      color: '#0EA5E9',
+      pos: new THREE.Vector3(6.2, 0, 3.5)
+    },
+    {
+      id: 'npc-sage-mira',
+      name: 'River Sage Mira',
+      role: 'Island & Snow Chronicler',
+      clue: 'Look closely at the question prompt at the top — the 3 Answer Guardians patrol near the river bridge!',
+      color: '#10B981',
+      pos: new THREE.Vector3(0, 0, -13.2)
+    }
+  ];
+  for (const ns of npcSpecs) {
+    const npcGroup = new THREE.Group();
+    npcGroup.position.copy(ns.pos);
+    const legs = new THREE.Mesh(
+      new THREE.BoxGeometry(0.52, 0.72, 0.32),
+      new THREE.MeshStandardMaterial({ color: '#1E293B', roughness: 0.75 })
+    );
+    legs.position.y = 0.36;
+    const tunic = new THREE.Mesh(
+      new THREE.BoxGeometry(0.68, 0.82, 0.38),
+      new THREE.MeshStandardMaterial({ color: ns.color, roughness: 0.65 })
+    );
+    tunic.position.y = 1.12;
+    const head = new THREE.Mesh(
+      new THREE.BoxGeometry(0.54, 0.54, 0.54),
+      new THREE.MeshStandardMaterial({ color: '#F1C27D', roughness: 0.7 })
+    );
+    head.position.y = 1.82;
+    const indicator = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.22, 0),
+      new THREE.MeshStandardMaterial({ color: '#FACC15', emissive: '#F59E0B', emissiveIntensity: 1.3 })
+    );
+    indicator.position.y = 2.55;
+    npcGroup.add(legs, tunic, head, indicator);
+    root.add(npcGroup);
+    npcs.push({
+      id: ns.id,
+      name: ns.name,
+      role: ns.role,
+      clue: ns.clue,
+      position: ns.pos.clone(),
+      group: npcGroup,
+      indicator
+    });
   }
 
   for (let i = -4; i <= 4; i++) {
@@ -698,6 +837,7 @@ export function buildRealmsWorld(
     colliders,
     shrines,
     collectibles,
+    npcs,
     waterNormalMap: waterPbr?.normalMap,
     waterfallTexture: waterfallTex,
     updateWater: animatedWater.update,
@@ -707,11 +847,30 @@ export function buildRealmsWorld(
     portalPos,
     portalRing,
     getZoneName: (x: number, z: number) => {
-      if (z < -23) return isVoxel ? 'Crystal Cave & Village' : 'Ancient Pagoda Temple';
-      if (z < -13) return 'Waterfall River Crossing';
-      if (x < -12) return isVoxel ? 'Voxel Timberlands' : 'Bamboo Shadow Grove';
-      if (x > 14) return isVoxel ? 'Frontier Ridge' : 'Waterfall Cliffs';
-      return isVoxel ? 'Minecraft Realms Plaza' : 'Sakura Shrine Courtyard';
+      if (!isVoxel) {
+        if (z < -23) return 'Ancient Pagoda Temple';
+        if (z < -13) return 'Waterfall River Crossing';
+        if (x < -12) return 'Bamboo Shadow Grove';
+        if (x > 14) return 'Waterfall Cliffs';
+        return 'Sakura Shrine Courtyard';
+      }
+      if (z < -23 && x < -15) return 'Mountain Region';
+      if (z < -23) return 'Village Region';
+      if (z < -13) return 'River & Island Region';
+      if (x > 18) return 'Desert Region';
+      if (x < -18 && z > 10) return 'Snow Region';
+      if (x < -12) return 'Green Forest';
+      return minecraftBiome === 'mountain_region'
+        ? 'Mountain Region'
+        : minecraftBiome === 'desert_oasis'
+        ? 'Desert Region'
+        : minecraftBiome === 'alpine_snow_peaks'
+        ? 'Snow Region'
+        : minecraftBiome === 'village_region'
+        ? 'Village Region'
+        : minecraftBiome === 'river_islands'
+        ? 'River & Island Region'
+        : 'Green Forest';
     },
     placeVoxelBlock
   };

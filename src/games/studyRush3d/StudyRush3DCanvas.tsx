@@ -42,6 +42,11 @@ export interface LiveHudSnapshot {
   nearbyPrompt: string | null;
   activeEnemiesCount: number;
   shrineOptions: Array<{ index: number; id: OptionId; text: string }>;
+  playerX?: number;
+  playerZ?: number;
+  objectiveDistanceMeters?: number;
+  objectiveBearingDeg?: number;
+  objectiveLabel?: string;
 }
 
 export interface StudyRush3DCanvasProps {
@@ -309,6 +314,23 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
     const playerRig = buildVoxelPlayer(customization);
     playerRig.group.position.set(0, 0, 11);
     scene.add(playerRig.group);
+
+    // 3D Floating Waypoint Navigation Arrow above player pointing toward next objective
+    const waypointArrowGroup = new THREE.Group();
+    const arrowMat = new THREE.MeshStandardMaterial({
+      color: '#FACC15',
+      emissive: '#F59E0B',
+      emissiveIntensity: 1.4,
+      roughness: 0.2
+    });
+    const arrowShaft = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 0.65), arrowMat);
+    arrowShaft.position.z = -0.15;
+    const arrowHead = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.55, 6), arrowMat);
+    arrowHead.rotation.x = Math.PI / 2;
+    arrowHead.position.z = 0.35;
+    waypointArrowGroup.add(arrowShaft, arrowHead);
+    waypointArrowGroup.position.set(0, 3.1, 11);
+    scene.add(waypointArrowGroup);
 
     // Dynamic entities
     const enemies: ActiveEnemy[] = [];
@@ -600,11 +622,50 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
       renderer.domElement.requestPointerLock?.();
     };
 
+    // Mobile right-side touch drag for smooth independent 3D camera rotation
+    let activeLookTouchId: number | null = null;
+    let lastTouchX = 0;
+    let lastTouchY = 0;
+    const onTouchStart = (e: TouchEvent) => {
+      if (pausedRef.current) return;
+      audioManager.unlock();
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        if (t.clientX > window.innerWidth * 0.36 && activeLookTouchId === null) {
+          activeLookTouchId = t.identifier;
+          lastTouchX = t.clientX;
+          lastTouchY = t.clientY;
+        }
+      }
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (pausedRef.current || activeLookTouchId === null) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        if (t.identifier === activeLookTouchId) {
+          const dx = t.clientX - lastTouchX;
+          const dy = t.clientY - lastTouchY;
+          lastTouchX = t.clientX;
+          lastTouchY = t.clientY;
+          cameraYaw -= dx * 0.0055;
+          cameraPitch = THREE.MathUtils.clamp(cameraPitch + dy * 0.0042, 0.05, 0.78);
+        }
+      }
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === activeLookTouchId) {
+          activeLookTouchId = null;
+        }
+      }
+    };
+
     const clearInputs = () => {
       Object.keys(keys).forEach((k) => {
         keys[k] = false;
       });
       isDraggingLook = false;
+      activeLookTouchId = null;
     };
 
     window.addEventListener('keydown', onKeyDown);
@@ -616,6 +677,10 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
     window.addEventListener('mouseup', onMouseUp);
     window.addEventListener('mousemove', onMouseMove);
     renderer.domElement.addEventListener('dblclick', onDoubleClick);
+    renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: true });
+    renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: true });
+    renderer.domElement.addEventListener('touchend', onTouchEnd, { passive: true });
+    renderer.domElement.addEventListener('touchcancel', onTouchEnd, { passive: true });
 
     const resizeObserver = new ResizeObserver(() => {
       if (!container) return;
@@ -777,6 +842,22 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
         let bestDot = 0.91; // ~24 deg cone
 
         world.answerShrines.forEach((shrine, idx) => {
+          const patrolAng = now * 0.0008 + idx * 2.1;
+          const basePos = [
+            new THREE.Vector3(-7.5, 0, -9.5),
+            new THREE.Vector3(0, 0, -11.5),
+            new THREE.Vector3(7.5, 0, -9.5)
+          ][idx] || shrine.group.position;
+          shrine.group.position.set(
+            basePos.x + Math.cos(patrolAng) * 1.15,
+            Math.abs(Math.sin(now * 0.004 + idx)) * 0.07,
+            basePos.z + Math.sin(patrolAng) * 1.15
+          );
+          if (shrine.group.position.distanceTo(playerPos) < 10.5) {
+            shrine.group.lookAt(playerPos.x, shrine.group.position.y, playerPos.z);
+          } else {
+            shrine.group.rotation.y = -patrolAng;
+          }
           shrine.crystal.rotation.y += dt * 1.4;
           shrine.crystal.position.y = 1.85 + Math.sin(now * 0.0035 + idx) * 0.18;
           shrine.labelMesh.lookAt(camera.position);
@@ -801,6 +882,28 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
             updateShrineLabel(rig, rig.optionId, rig.optionText, idx === targetedShrineIdx);
           });
         }
+
+        // Update 3D Waypoint Navigation Arrow above player pointing toward nearest/targeted Answer Character
+        let nearestShrine = world.answerShrines[0];
+        let minShrineDist = Infinity;
+        for (const s of world.answerShrines) {
+          const d = s.group.position.distanceTo(playerPos);
+          if (d < minShrineDist) {
+            minShrineDist = d;
+            nearestShrine = s;
+          }
+        }
+        const activeTargetShrine =
+          targetedShrineIdx !== null && world.answerShrines[targetedShrineIdx]
+            ? world.answerShrines[targetedShrineIdx]
+            : nearestShrine;
+        const objPos = activeTargetShrine ? activeTargetShrine.group.position : new THREE.Vector3(0, 0, -10);
+        waypointArrowGroup.position.set(
+          playerPos.x,
+          playerPos.y + 3.05 + Math.sin(now * 0.0045) * 0.12,
+          playerPos.z
+        );
+        waypointArrowGroup.lookAt(objPos.x, waypointArrowGroup.position.y, objPos.z);
 
         // 4. Resource Respawn & Bobbing
         for (const res of world.resources) {
@@ -953,6 +1056,11 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
               ? world.answerShrines[targetedShrineIdx].optionId
               : null;
 
+          const objDist = Math.round(objPos.distanceTo(playerPos));
+          const objBearing = Math.round(
+            (Math.atan2(objPos.x - playerPos.x, -(objPos.z - playerPos.z)) * 180) / Math.PI
+          );
+
           callbacksRef.current.onHudUpdate({
             phase: snap.phase,
             nightWave: Math.max(1, dayNightRef.current.nightCount || 1),
@@ -961,7 +1069,14 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
             targetedOptionId: targetedOpt,
             nearbyPrompt,
             activeEnemiesCount: enemies.length,
-            shrineOptions: shrineOptionsRef.current
+            shrineOptions: shrineOptionsRef.current,
+            playerX: Math.round(playerPos.x * 10) / 10,
+            playerZ: Math.round(playerPos.z * 10) / 10,
+            objectiveDistanceMeters: objDist,
+            objectiveBearingDeg: objBearing,
+            objectiveLabel: activeTargetShrine
+              ? `Answer Guardian ${activeTargetShrine.optionId} (${objDist}m)`
+              : `Next Objective (${objDist}m)`
           });
         }
       }
@@ -983,6 +1098,10 @@ export const StudyRush3DCanvas: React.FC<StudyRush3DCanvasProps> = ({
       window.removeEventListener('mouseup', onMouseUp);
       window.removeEventListener('mousemove', onMouseMove);
       renderer.domElement.removeEventListener('dblclick', onDoubleClick);
+      renderer.domElement.removeEventListener('touchstart', onTouchStart);
+      renderer.domElement.removeEventListener('touchmove', onTouchMove);
+      renderer.domElement.removeEventListener('touchend', onTouchEnd);
+      renderer.domElement.removeEventListener('touchcancel', onTouchEnd);
       disposeThreeScene(scene, renderer, postPipeline, envTexture);
       if (renderer.domElement.parentNode === container) {
         container.removeChild(renderer.domElement);

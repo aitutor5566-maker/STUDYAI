@@ -277,6 +277,28 @@ export const ShadowNinjaRealmsCanvas: React.FC<ShadowNinjaRealmsCanvasProps> = (
     shieldBubble.visible = false;
     hero.root.add(shieldBubble);
 
+    // 3D Floating Navigation Waypoint Arrow above/in front of player pointing to next objective
+    const waypointArrowGroup = new THREE.Group();
+    const arrowMat = new THREE.MeshStandardMaterial({
+      color: '#FACC15',
+      emissive: '#F59E0B',
+      emissiveIntensity: 1.35,
+      roughness: 0.2,
+      metalness: 0.4
+    });
+    const arrowShaft = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 0.65), arrowMat);
+    arrowShaft.position.z = -0.15;
+    const arrowHead = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.55, 6), arrowMat);
+    arrowHead.rotation.x = Math.PI / 2;
+    arrowHead.position.z = 0.35;
+    waypointArrowGroup.add(arrowShaft, arrowHead);
+    waypointArrowGroup.position.set(0, 2.75, 8);
+    scene.add(waypointArrowGroup);
+
+    const discoveredZonesSet = new Set<string>(['Green Forest']);
+    let activeNpcDialogue: { name: string; role: string; clue: string } | null = null;
+    let npcDialogueTimer = 0;
+
     const combatSystem = new EnergyCombatSystem(100);
     const movingTargetSys = new MovingAnswerTargetSystem();
     movingTargetsRef.current = movingTargetSys;
@@ -437,6 +459,15 @@ export const ShadowNinjaRealmsCanvas: React.FC<ShadowNinjaRealmsCanvasProps> = (
           return;
         }
       }
+      for (const npc of world.npcs) {
+        if (npc.group.position.distanceTo(playerPos) < 3.8) {
+          audio.playCollect();
+          activeNpcDialogue = { name: npc.name, role: npc.role, clue: npc.clue };
+          npcDialogueTimer = 6.5;
+          spawnSparks(npc.group.position.clone().add(new THREE.Vector3(0, 1.8, 0)), '#38BDF8', 8);
+          return;
+        }
+      }
       if (world.portalPos.distanceTo(playerPos) < 3.6) {
         audio.playNinjaAbility();
         callbacksRef.current.onPortalSwitch?.();
@@ -509,12 +540,54 @@ export const ShadowNinjaRealmsCanvas: React.FC<ShadowNinjaRealmsCanvasProps> = (
       camDist = THREE.MathUtils.clamp(camDist + e.deltaY * 0.006, 5.2, 13.5);
     };
 
+    // Mobile right-side touch drag for smooth independent 3D camera rotation
+    let activeLookTouchId: number | null = null;
+    let lastTouchX = 0;
+    let lastTouchY = 0;
+    const onTouchStart = (e: TouchEvent) => {
+      if (pausedRef.current) return;
+      audio.unlock();
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        if (t.clientX > window.innerWidth * 0.36 && activeLookTouchId === null) {
+          activeLookTouchId = t.identifier;
+          lastTouchX = t.clientX;
+          lastTouchY = t.clientY;
+        }
+      }
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (pausedRef.current || activeLookTouchId === null) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        if (t.identifier === activeLookTouchId) {
+          const dx = t.clientX - lastTouchX;
+          const dy = t.clientY - lastTouchY;
+          lastTouchX = t.clientX;
+          lastTouchY = t.clientY;
+          camYaw -= dx * 0.0055;
+          camPitch = THREE.MathUtils.clamp(camPitch + dy * 0.0042, 0.06, 0.78);
+        }
+      }
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === activeLookTouchId) {
+          activeLookTouchId = null;
+        }
+      }
+    };
+
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
     renderer.domElement.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mouseup', onMouseUp);
     window.addEventListener('mousemove', onMouseMove);
     renderer.domElement.addEventListener('wheel', onWheel, { passive: true });
+    renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: true });
+    renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: true });
+    renderer.domElement.addEventListener('touchend', onTouchEnd, { passive: true });
+    renderer.domElement.addEventListener('touchcancel', onTouchEnd, { passive: true });
 
     const handleResize = () => {
       if (!container) return;
@@ -687,6 +760,52 @@ export const ShadowNinjaRealmsCanvas: React.FC<ShadowNinjaRealmsCanvasProps> = (
           }
         }
 
+        // Friendly NPC patrol & indicator animation
+        world.npcs.forEach((npc, idx) => {
+          const walkA = elapsed * 0.65 + idx * 2.2;
+          npc.group.position.set(
+            npc.position.x + Math.cos(walkA) * 1.1,
+            0,
+            npc.position.z + Math.sin(walkA) * 1.1
+          );
+          if (npc.group.position.distanceTo(playerPos) < 6.5) {
+            npc.group.lookAt(playerPos.x, 0, playerPos.z);
+          } else {
+            npc.group.rotation.y = -walkA;
+          }
+          npc.indicator.rotation.y += dt * 2.1;
+          npc.indicator.position.y = 2.55 + Math.sin(elapsed * 4 + idx) * 0.12;
+        });
+
+        if (npcDialogueTimer > 0) {
+          npcDialogueTimer -= dt;
+          if (npcDialogueTimer <= 0) {
+            activeNpcDialogue = null;
+          }
+        }
+
+        // Update 3D Waypoint Arrow above player pointing to nearest Answer Character
+        let nearestShrine = world.shrines[0];
+        let minShrineDist = Infinity;
+        for (const s of world.shrines) {
+          const d = s.group.position.distanceTo(playerPos);
+          if (d < minShrineDist) {
+            minShrineDist = d;
+            nearestShrine = s;
+          }
+        }
+        const targetShrine =
+          targetedShrineIdx !== null && world.shrines[targetedShrineIdx]
+            ? world.shrines[targetedShrineIdx]
+            : nearestShrine;
+        const objPos = targetShrine ? targetShrine.group.position : new THREE.Vector3(0, 0, -8);
+        waypointArrowGroup.position.set(
+          playerPos.x,
+          playerPos.y + 2.85 + Math.sin(elapsed * 4.5) * 0.12,
+          playerPos.z
+        );
+        waypointArrowGroup.lookAt(objPos.x, waypointArrowGroup.position.y, objPos.z);
+
         if (combatSystem.dodgeActive) {
           const dnx = THREE.MathUtils.clamp(playerPos.x + combatSystem.dodgeDirection.x * 16 * dt, -52, 52);
           const dnz = THREE.MathUtils.clamp(playerPos.z + combatSystem.dodgeDirection.z * 16 * dt, -52, 52);
@@ -792,6 +911,9 @@ export const ShadowNinjaRealmsCanvas: React.FC<ShadowNinjaRealmsCanvasProps> = (
         hudTimer += dt;
         if (hudTimer >= 0.1) {
           hudTimer = 0;
+          const currentZone = world.getZoneName(playerPos.x, playerPos.z);
+          discoveredZonesSet.add(currentZone);
+
           let nearbyPrompt: string | null = null;
           for (const c of world.collectibles) {
             if (!c.collected && c.position.distanceTo(playerPos) < 3.4) {
@@ -799,17 +921,33 @@ export const ShadowNinjaRealmsCanvas: React.FC<ShadowNinjaRealmsCanvasProps> = (
               break;
             }
           }
+          if (!nearbyPrompt) {
+            for (const npc of world.npcs) {
+              if (npc.group.position.distanceTo(playerPos) < 3.8) {
+                nearbyPrompt = `Press [E] to talk to ${npc.name} (${npc.role})`;
+                break;
+              }
+            }
+          }
           if (!nearbyPrompt && world.portalPos.distanceTo(playerPos) < 3.6) {
             nearbyPrompt = `Press [E] to enter Realm Portal (${mode === 'shadow_ninja' ? 'Minecraft Realms' : 'Shadow Ninja'})`;
           }
           if (!nearbyPrompt && targetedShrineIdx !== null) {
             const s = world.shrines[targetedShrineIdx];
-            nearbyPrompt = `Press [E] to answer Shrine ${s.optionId}: ${s.optionText}`;
+            nearbyPrompt = `Press [E] to interact with Answer Guardian ${s.optionId}: ${s.optionText}`;
           }
+
+          const objDist = Math.round(objPos.distanceTo(playerPos));
+          const objBearing = Math.round(
+            (Math.atan2(objPos.x - playerPos.x, -(objPos.z - playerPos.z)) * 180) / Math.PI
+          );
+          const objLabel = targetShrine
+            ? `Answer Guardian ${targetShrine.optionId} (${objDist}m)`
+            : `Next Objective (${objDist}m)`;
 
           callbacksRef.current.onHudUpdate({
             mode,
-            zoneName: world.getZoneName(playerPos.x, playerPos.z),
+            zoneName: currentZone,
             weather: weatherRef.current,
             timeOfDayLabel: skyState.timeLabel,
             nearbyPrompt,
@@ -817,7 +955,14 @@ export const ShadowNinjaRealmsCanvas: React.FC<ShadowNinjaRealmsCanvasProps> = (
             targetedOptionId: targetedShrineIdx !== null ? world.shrines[targetedShrineIdx].optionId : null,
             shrineOptions: shrineOptsRef.current,
             activeEnemiesCount: enemies.length,
-            fpsEstimate: Math.round(fpsSmoothed)
+            fpsEstimate: Math.round(fpsSmoothed),
+            playerX: Math.round(playerPos.x * 10) / 10,
+            playerZ: Math.round(playerPos.z * 10) / 10,
+            objectiveDistanceMeters: objDist,
+            objectiveBearingDeg: objBearing,
+            objectiveLabel: objLabel,
+            discoveredZones: Array.from(discoveredZonesSet),
+            npcDialogue: activeNpcDialogue
           });
         }
       }
@@ -837,6 +982,10 @@ export const ShadowNinjaRealmsCanvas: React.FC<ShadowNinjaRealmsCanvasProps> = (
       window.removeEventListener('mouseup', onMouseUp);
       window.removeEventListener('mousemove', onMouseMove);
       renderer.domElement.removeEventListener('wheel', onWheel);
+      renderer.domElement.removeEventListener('touchstart', onTouchStart);
+      renderer.domElement.removeEventListener('touchmove', onTouchMove);
+      renderer.domElement.removeEventListener('touchend', onTouchEnd);
+      renderer.domElement.removeEventListener('touchcancel', onTouchEnd);
       disposeThreeScene(scene, renderer, postPipeline, envTexture);
       worldRef.current = null;
     };

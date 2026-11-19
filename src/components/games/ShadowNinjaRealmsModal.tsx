@@ -24,6 +24,7 @@ import {
   AdventureMode,
   GraphicsTier,
   LiveRealmsHud,
+  MINECRAFT_TERRITORIES,
   MinecraftBiomeId,
   NINJA_CHARACTERS,
   NinjaCharacterId,
@@ -175,7 +176,14 @@ export const ShadowNinjaRealmsModal: React.FC<ShadowNinjaRealmsModalProps> = ({
         });
         const realmOrder: NinjaRealmId[] = ['bamboo_temple', 'sakura_sanctuary', 'misty_waterfall_peaks'];
         setNinjaRealm((prev) => realmOrder[(realmOrder.indexOf(prev) + 1) % realmOrder.length]);
-        const biomeOrder: MinecraftBiomeId[] = ['emerald_forest', 'alpine_snow_peaks', 'desert_oasis'];
+        const biomeOrder: MinecraftBiomeId[] = [
+          'emerald_forest',
+          'mountain_region',
+          'desert_oasis',
+          'alpine_snow_peaks',
+          'village_region',
+          'river_islands'
+        ];
         setMinecraftBiome((prev) => biomeOrder[(biomeOrder.indexOf(prev) + 1) % biomeOrder.length]);
       }
       const nextIdx = qIndex + 1;
@@ -351,16 +359,19 @@ export const ShadowNinjaRealmsModal: React.FC<ShadowNinjaRealmsModalProps> = ({
                     ))}
                   </div>
                 ) : (
-                  <div className="space-y-1.5">
-                    {(['emerald_forest', 'alpine_snow_peaks', 'desert_oasis'] as MinecraftBiomeId[]).map((b) => (
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                    {MINECRAFT_TERRITORIES.map((t) => (
                       <button
-                        key={b}
-                        onClick={() => setMinecraftBiome(b)}
-                        className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold capitalize ${
-                          minecraftBiome === b ? 'bg-emerald-500/25 border border-emerald-400 text-white' : 'bg-slate-900/60 text-slate-300'
+                        key={t.id}
+                        onClick={() => setMinecraftBiome(t.id)}
+                        className={`w-full text-left px-3 py-1.5 rounded-xl text-xs transition ${
+                          minecraftBiome === t.id
+                            ? 'bg-emerald-500/25 border border-emerald-400 text-white'
+                            : 'bg-slate-900/60 text-slate-300 hover:bg-slate-800'
                         }`}
                       >
-                        {b.replace(/_/g, ' ')}
+                        <div className="font-bold">{t.name}</div>
+                        <div className="text-[10px] text-slate-400 truncate">{t.subtitle}</div>
                       </button>
                     ))}
                   </div>
@@ -517,18 +528,72 @@ export const ShadowNinjaRealmsModal: React.FC<ShadowNinjaRealmsModalProps> = ({
             </div>
           )}
 
-          {/* Mission Objectives & Level Tracker */}
-          <div className="hidden md:block absolute top-20 left-3 w-64 bg-slate-950/75 backdrop-blur-md border border-slate-700/70 rounded-2xl p-3 text-xs pointer-events-none">
-            <div className="flex items-center justify-between font-bold text-cyan-300 mb-1.5">
-              <span>Level {Math.floor(xp / 250) + 1} Explorer</span>
+          {/* Mission Objectives, Navigation Compass & Territory Mini-Map */}
+          <div className="hidden md:block absolute top-20 left-3 w-64 bg-slate-950/80 backdrop-blur-md border border-slate-700/70 rounded-2xl p-3 text-xs pointer-events-none space-y-2">
+            <div className="flex items-center justify-between font-bold text-cyan-300">
+              <span>Level {levelNum} • {mode === 'minecraft_realms' ? '6 Territories' : '3 Realms'}</span>
               <span className="text-amber-300">{xp % 250}/250 XP</span>
+            </div>
+            <div className="p-2 rounded-xl bg-slate-900/80 border border-cyan-500/30 flex items-center justify-between">
+              <div>
+                <div className="text-[10px] uppercase font-bold text-cyan-300">Next Objective Waypoint</div>
+                <div className="font-semibold text-white text-[11px]">{hud.objectiveLabel || 'Approach Answer Guardian'}</div>
+              </div>
+              <div
+                className="w-7 h-7 rounded-full bg-amber-500/20 border border-amber-400 flex items-center justify-center text-amber-300 font-black text-xs"
+                style={{ transform: `rotate(${hud.objectiveBearingDeg || 0}deg)` }}
+                title="Direction to Next Objective"
+              >
+                ▲
+              </div>
             </div>
             <div className="space-y-1 text-[11px] text-slate-300">
               <div>• {mode === 'shadow_ninja' ? 'Collect Scrolls/Crystals' : 'Gather Wood/Stone/Crystals'}: {inventory.scrolls + inventory.crystal + inventory.wood + inventory.stone}/3</div>
-              <div>• Answer Knowledge Shrines: {streak > 0 ? `${streak} Streak` : 'Approach & Press [E]'}</div>
-              <div>• {mode === 'minecraft_realms' ? `Build Voxel Blocks [B]: ${inventory.blocksPlaced}/3` : 'Use Realm Portal (-13, 9) to switch worlds'}</div>
+              <div>• Answer Guardians: {streak > 0 ? `${streak} Streak` : 'Approach & Press [E]'}</div>
+              <div>• Discovered Territories: {(hud.discoveredZones || [hud.zoneName]).length}/6</div>
             </div>
           </div>
+
+          {/* Top-Right Territory Mini-Map */}
+          <div className="hidden sm:block absolute top-20 right-3 w-44 bg-slate-950/80 backdrop-blur-md border border-emerald-400/40 rounded-2xl p-2.5 text-[10px] pointer-events-none">
+            <div className="flex items-center justify-between font-bold text-emerald-300 mb-1">
+              <span>WORLD MINI-MAP</span>
+              <span>{hud.objectiveDistanceMeters ?? 12}m</span>
+            </div>
+            <div className="relative w-full h-28 rounded-xl bg-slate-900 border border-slate-700 overflow-hidden">
+              {/* Territory sectors on mini-map */}
+              <div className="absolute inset-0 grid grid-cols-3 grid-rows-2 opacity-30 text-[7px] font-bold">
+                <div className="bg-slate-600 flex items-center justify-center">MOUNTAIN</div>
+                <div className="bg-amber-700 flex items-center justify-center">VILLAGE</div>
+                <div className="bg-yellow-600 flex items-center justify-center">DESERT</div>
+                <div className="bg-sky-300 text-slate-950 flex items-center justify-center">SNOW</div>
+                <div className="bg-emerald-600 flex items-center justify-center">FOREST</div>
+                <div className="bg-cyan-600 flex items-center justify-center">ISLANDS</div>
+              </div>
+              {/* 3 Answer Guardians markers */}
+              <div className="absolute w-2 h-2 rounded-full bg-amber-400" style={{ left: '38%', top: '42%' }} title="Guardian A" />
+              <div className="absolute w-2 h-2 rounded-full bg-amber-400" style={{ left: '50%', top: '38%' }} title="Guardian B" />
+              <div className="absolute w-2 h-2 rounded-full bg-amber-400" style={{ left: '62%', top: '42%' }} title="Guardian C" />
+              {/* Player live position dot */}
+              <div
+                className="absolute w-2.5 h-2.5 -ml-1 -mt-1 rounded-full bg-cyan-300 ring-2 ring-white shadow"
+                style={{
+                  left: `${Math.max(8, Math.min(92, 50 + ((hud.playerX ?? 0) / 52) * 44))}%`,
+                  top: `${Math.max(8, Math.min(92, 50 + ((hud.playerZ ?? 8) / 52) * 44))}%`
+                }}
+              />
+            </div>
+            <div className="mt-1 text-slate-300 truncate font-semibold">
+              Zone: <span className="text-cyan-300">{hud.zoneName}</span>
+            </div>
+          </div>
+
+          {hud.npcDialogue && (
+            <div className="absolute bottom-36 left-1/2 -translate-x-1/2 max-w-md w-[92%] px-4 py-2.5 rounded-2xl bg-slate-950/90 border border-amber-400/60 text-xs shadow-xl pointer-events-none">
+              <div className="font-black text-amber-300">{hud.npcDialogue.name} • {hud.npcDialogue.role}</div>
+              <div className="text-slate-100 mt-0.5">{hud.npcDialogue.clue}</div>
+            </div>
+          )}
 
           {hud.nearbyPrompt && (
             <div className="absolute bottom-24 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-slate-950/85 border border-cyan-400/50 text-cyan-200 text-xs font-bold">

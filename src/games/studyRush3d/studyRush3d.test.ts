@@ -7,7 +7,7 @@ import {
   validateStudyRushAnswer
 } from './questionBank';
 import { DayNightManager } from './DayNightManager';
-import { getZoneAtPosition } from './WorldManager';
+import { getStudyRushLevelTheme, getZoneAtPosition } from './WorldManager';
 
 describe('STUDY RUSH 3D — SURVIVAL NIGHT Core Systems', () => {
   it('1. Question bank has 64+ questions covering all 8 subjects', () => {
@@ -78,11 +78,21 @@ describe('STUDY RUSH 3D — SURVIVAL NIGHT Core Systems', () => {
     expect(mgr.getPhase()).toBe('night');
   });
 
-  it('5. Open-world zone detection', () => {
+  it('5. Open-world zone detection and 6-territory level progression themes', () => {
     expect(getZoneAtPosition(0, 0)).toBe('village');
     expect(getZoneAtPosition(-30, 0)).toBe('dark_forest');
     expect(getZoneAtPosition(0, -35)).toBe('crystal_cave');
     expect(getZoneAtPosition(32, 0)).toBe('ancient_castle');
     expect(getZoneAtPosition(0, 32)).toBe('science_kingdom');
+
+    const names = [1, 2, 3, 4, 5, 6].map((lvl) => getStudyRushLevelTheme(lvl).name);
+    expect(names).toEqual([
+      '1. Green Forest',
+      '2. Mountain Region',
+      '3. Desert Region',
+      '4. Snow Region',
+      '5. Village Region',
+      '6. River & Island Region'
+    ]);
   });
 });

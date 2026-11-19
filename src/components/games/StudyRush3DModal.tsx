@@ -853,6 +853,11 @@ export const StudyRush3DModal: React.FC<StudyRush3DModalProps> = ({
                 <div style={{ fontSize: '0.7rem', color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 4 }}>
                   <Compass size={11} /> {ZONE_LABELS[hud.zone] || hud.zone}
                 </div>
+                {hud.objectiveLabel && (
+                  <div style={{ fontSize: '0.68rem', color: '#FDE047', fontWeight: 800, marginTop: 2 }}>
+                    ▲ {hud.objectiveLabel}
+                  </div>
+                )}
               </div>
             </div>
 
