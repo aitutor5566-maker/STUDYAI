@@ -1,10 +1,13 @@
 import { describe, it, expect } from 'vitest';
+import * as THREE from 'three';
 import {
   WAR_OF_WORDS_QUESTIONS,
   buildWarOfWordsDeck,
   selectThreeTargets,
   validateWarOfWordsAnswer
 } from './questionBank';
+import { buildAnswerSentinel, buildWorldEnvironment } from './WarriorModels';
+import { WorldId } from './types';
 
 describe('WAR OF WORDS — STUDY RUSH 3D Core Systems', () => {
   it('1. Question bank has 100+ reviewed questions across all 9 English categories', () => {
@@ -76,5 +79,27 @@ describe('WAR OF WORDS — STUDY RUSH 3D Core Systems', () => {
     const missed = [WAR_OF_WORDS_QUESTIONS[0], WAR_OF_WORDS_QUESTIONS[12]];
     const revDeck = buildWarOfWordsDeck('revision_mode', 'All Categories', 'medium', 7, missed);
     expect(revDeck.length).toBe(2);
+  });
+
+  it('5. Builds articulated 3D enemy ninja sentinels and all 6 ninja arena environments', () => {
+    const sentinel = buildAnswerSentinel(0);
+    expect(sentinel.leftLeg).toBeDefined();
+    expect(sentinel.rightLeg).toBeDefined();
+    expect(sentinel.leftArm).toBeDefined();
+    expect(sentinel.rightArm).toBeDefined();
+
+    const worlds: WorldId[] = [
+      'moonlight_valley',
+      'shadow_forest',
+      'ancient_kingdom',
+      'crystal_caverns',
+      'sky_of_knowledge',
+      'training_arena'
+    ];
+    for (const w of worlds) {
+      const scene = new THREE.Scene();
+      const env = buildWorldEnvironment(scene, w, 'low');
+      expect(env.platforms.length).toBeGreaterThanOrEqual(4);
+    }
   });
 });

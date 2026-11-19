@@ -26,7 +26,8 @@ export type WorldId =
   | 'shadow_forest'
   | 'ancient_kingdom'
   | 'crystal_caverns'
-  | 'sky_of_knowledge';
+  | 'sky_of_knowledge'
+  | 'training_arena';
 
 export type DifficultyLevel = 'easy' | 'medium' | 'hard';
 export type GraphicsQuality = 'low' | 'medium' | 'high';

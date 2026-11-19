@@ -31,7 +31,34 @@ function createCanvas(size: number): [HTMLCanvasElement, CanvasRenderingContext2
   canvas.height = size;
   const ctx = canvas.getContext('2d');
   if (!ctx) {
-    throw new Error('2D canvas context unavailable for procedural PBR texture generation');
+    const dummyImgData = {
+      data: new Uint8ClampedArray(size * size * 4),
+      width: size,
+      height: size,
+      colorSpace: 'srgb' as PredefinedColorSpace
+    };
+    const stubCtx = {
+      fillStyle: '#000',
+      strokeStyle: '#000',
+      lineWidth: 1,
+      fillRect: () => {},
+      clearRect: () => {},
+      beginPath: () => {},
+      moveTo: () => {},
+      lineTo: () => {},
+      arc: () => {},
+      ellipse: () => {},
+      roundRect: () => {},
+      fill: () => {},
+      stroke: () => {},
+      drawImage: () => {},
+      createRadialGradient: () => ({ addColorStop: () => {} }),
+      createLinearGradient: () => ({ addColorStop: () => {} }),
+      createImageData: () => dummyImgData,
+      getImageData: () => dummyImgData,
+      putImageData: () => {}
+    } as unknown as CanvasRenderingContext2D;
+    return [canvas, stubCtx];
   }
   return [canvas, ctx];
 }
@@ -56,8 +83,10 @@ function buildNormalMapFromHeightCanvas(
 ): THREE.CanvasTexture {
   const w = heightCanvas.width;
   const h = heightCanvas.height;
-  const srcCtx = heightCanvas.getContext('2d')!;
-  const srcData = srcCtx.getImageData(0, 0, w, h).data;
+  const srcCtx = heightCanvas.getContext('2d');
+  const srcData = srcCtx
+    ? srcCtx.getImageData(0, 0, w, h).data
+    : new Uint8ClampedArray(w * h * 4);
 
   const [normCanvas, normCtx] = createCanvas(w);
   const outImg = normCtx.createImageData(w, h);

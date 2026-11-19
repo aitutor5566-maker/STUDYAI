@@ -72,11 +72,12 @@ const CATEGORIES: EnglishCategory[] = [
 ];
 
 const WORLDS: Array<{ id: WorldId; name: string; subtitle: string }> = [
-  { id: 'moonlight_valley', name: '1. Moonlight Valley', subtitle: 'Ancient stone bridges & glowing moon' },
-  { id: 'shadow_forest', name: '2. Shadow Forest', subtitle: 'Foggy pathways & glowing flora' },
-  { id: 'ancient_kingdom', name: '3. Ancient Kingdom', subtitle: 'Medieval castles & libraries' },
-  { id: 'crystal_caverns', name: '4. Crystal Caverns', subtitle: 'Underground rivers & blue crystals' },
-  { id: 'sky_of_knowledge', name: '5. Sky of Knowledge', subtitle: 'Floating islands & starry bridges' }
+  { id: 'moonlight_valley', name: '1. Bamboo Forest Valley', subtitle: 'Bamboo stalks, stone bridges & silver moon' },
+  { id: 'shadow_forest', name: '2. Night-time Forest', subtitle: 'Foggy shadow pathways & glowing flora' },
+  { id: 'ancient_kingdom', name: '3. Stone Fortress', subtitle: 'Fortress battlements & torchlit columns' },
+  { id: 'crystal_caverns', name: '4. Mountain Temple', subtitle: 'Sacred temple caverns & blue crystals' },
+  { id: 'sky_of_knowledge', name: '5. Traditional Courtyard', subtitle: 'Moonlit dojo courtyard & starry bridges' },
+  { id: 'training_arena', name: '6. Training Arena', subtitle: 'Shinobi practice dojo & wooden platforms' }
 ];
 
 const GAME_MODES: Array<{ id: GameModeId; label: string; desc: string }> = [
@@ -165,8 +166,10 @@ export const WarOfWordsModal: React.FC<WarOfWordsModalProps> = ({
   const [attackSignal, setAttackSignal] = useState(0);
   const [selectNearestSignal, setSelectNearestSignal] = useState(0);
   const [specialSignal, setSpecialSignal] = useState(0);
+  const [dodgeSignal, setDodgeSignal] = useState(0);
+  const [guardSignal, setGuardSignal] = useState(0);
   const startTimeRef = useRef<number>(Date.now());
-  const mobileInputRef = useRef({ moveX: 0, jump: false });
+  const mobileInputRef = useRef({ moveX: 0, moveY: 0, jump: false, dodge: false, guard: false });
 
   const [hud, setHud] = useState<WarHudSnapshot>({
     selectedTargetIndex: null,
@@ -261,7 +264,8 @@ export const WarOfWordsModal: React.FC<WarOfWordsModalProps> = ({
           'shadow_forest',
           'ancient_kingdom',
           'crystal_caverns',
-          'sky_of_knowledge'
+          'sky_of_knowledge',
+          'training_arena'
         ];
         setUnlockedWorlds(nextUnlocked);
         try {
@@ -387,7 +391,15 @@ export const WarOfWordsModal: React.FC<WarOfWordsModalProps> = ({
     } else {
       if (nextState === 'LEVEL_COMPLETE') {
         const nextLvl = progressionRef.current.startNextLevel();
-        const nextWorld: WorldId = worldId === 'moonlight_valley' ? 'shadow_forest' : 'moonlight_valley';
+        const worldOrder: WorldId[] = [
+          'moonlight_valley',
+          'shadow_forest',
+          'ancient_kingdom',
+          'crystal_caverns',
+          'sky_of_knowledge',
+          'training_arena'
+        ];
+        const nextWorld: WorldId = worldOrder[(worldOrder.indexOf(worldId) + 1) % worldOrder.length];
         setWorldId(nextWorld);
         setUnlockedWorlds((prev) => (prev.includes(nextWorld) ? prev : [...prev, nextWorld]));
         saveGameProgress({
@@ -680,6 +692,8 @@ export const WarOfWordsModal: React.FC<WarOfWordsModalProps> = ({
             attackSignal={attackSignal}
             selectNearestSignal={selectNearestSignal}
             specialSignal={specialSignal}
+            dodgeSignal={dodgeSignal}
+            guardSignal={guardSignal}
             mobileInputRef={mobileInputRef}
             onHudUpdate={setHud}
             onAnswerEvaluated={handleAnswerEvaluated}
@@ -785,55 +799,85 @@ export const WarOfWordsModal: React.FC<WarOfWordsModalProps> = ({
               </div>
             )}
             <div style={{ fontSize: '0.7rem', color: '#CBD5E1', background: 'rgba(15,23,42,0.78)', padding: '4px 12px', borderRadius: 99 }}>
-              A/D or Arrows Move • Space Jump • Shift Sprint • E Select • Left-Click Attack • Q Insight • Esc Pause
+              WASD/Arrows Move • Space Jump • C Dodge • R Guard • Shift Sprint • E Select • Click Attack • Q Insight
             </div>
           </div>
 
-          {/* MOBILE & TOUCH CONTROLS */}
-          <div style={{ position: 'absolute', bottom: 48, left: 14, display: 'flex', gap: 8 }}>
-            <button
-              type="button"
-              onTouchStart={() => { mobileInputRef.current.moveX = -1; }}
-              onTouchEnd={() => { mobileInputRef.current.moveX = 0; }}
-              onMouseDown={() => { mobileInputRef.current.moveX = -1; }}
-              onMouseUp={() => { mobileInputRef.current.moveX = 0; }}
-              style={{ width: 46, height: 46, borderRadius: 12, background: 'rgba(15,23,42,0.84)', border: '1px solid #64748B', color: '#FFF', cursor: 'pointer' }}
-              aria-label="Move Left"
-            >
-              <ChevronLeft size={22} />
-            </button>
-            <button
-              type="button"
-              onTouchStart={() => { mobileInputRef.current.moveX = 1; }}
-              onTouchEnd={() => { mobileInputRef.current.moveX = 0; }}
-              onMouseDown={() => { mobileInputRef.current.moveX = 1; }}
-              onMouseUp={() => { mobileInputRef.current.moveX = 0; }}
-              style={{ width: 46, height: 46, borderRadius: 12, background: 'rgba(15,23,42,0.84)', border: '1px solid #64748B', color: '#FFF', cursor: 'pointer' }}
-              aria-label="Move Right"
-            >
-              <ChevronRight size={22} />
-            </button>
+          {/* MOBILE & TOUCH CONTROLS: Left Circular Joystick + Right Jump, Dodge, Guard, Select, Insight & Attack */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 48,
+              left: 16,
+              width: 96,
+              height: 96,
+              borderRadius: '50%',
+              background: 'rgba(15,23,42,0.78)',
+              border: '2px solid rgba(34,211,238,0.45)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              touchAction: 'none'
+            }}
+            onTouchMove={(e) => {
+              const t = e.touches[0];
+              if (!t) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              const dx = (t.clientX - (rect.left + rect.width / 2)) / (rect.width / 2);
+              const dy = (t.clientY - (rect.top + rect.height / 2)) / (rect.height / 2);
+              mobileInputRef.current.moveX = Math.max(-1, Math.min(1, dx));
+              mobileInputRef.current.moveY = Math.max(-1, Math.min(1, dy));
+            }}
+            onTouchEnd={() => {
+              mobileInputRef.current.moveX = 0;
+              mobileInputRef.current.moveY = 0;
+            }}
+          >
+            <div
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: '50%',
+                background: 'rgba(34,211,238,0.8)',
+                boxShadow: '0 0 12px rgba(34,211,238,0.6)'
+              }}
+            />
           </div>
 
-          <div style={{ position: 'absolute', bottom: 48, right: 14, display: 'flex', gap: 8 }}>
+          <div style={{ position: 'absolute', bottom: 48, right: 14, display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 6, maxWidth: 270 }}>
             <button
               type="button"
               onClick={() => { mobileInputRef.current.jump = true; }}
-              style={{ padding: '10px 12px', borderRadius: 12, background: 'rgba(30,41,59,0.9)', border: '1px solid #64748B', color: '#FFF', fontWeight: 800, fontSize: '0.74rem', cursor: 'pointer' }}
+              style={{ padding: '10px 11px', borderRadius: 12, background: 'rgba(30,41,59,0.9)', border: '1px solid #64748B', color: '#FFF', fontWeight: 800, fontSize: '0.72rem', cursor: 'pointer' }}
             >
               JUMP
             </button>
             <button
               type="button"
+              onClick={() => setDodgeSignal((n) => n + 1)}
+              style={{ padding: '10px 11px', borderRadius: 12, background: 'rgba(88,28,135,0.88)', border: '1px solid #A855F7', color: '#FFF', fontWeight: 800, fontSize: '0.72rem', cursor: 'pointer' }}
+            >
+              DODGE
+            </button>
+            <button
+              type="button"
+              onClick={() => setGuardSignal((n) => n + 1)}
+              style={{ padding: '10px 11px', borderRadius: 12, background: 'rgba(30,58,138,0.88)', border: '1px solid #60A5FA', color: '#FFF', fontWeight: 800, fontSize: '0.72rem', cursor: 'pointer' }}
+            >
+              <Shield size={13} style={{ display: 'inline', marginRight: 3 }} />GUARD
+            </button>
+            <button
+              type="button"
               onClick={() => setSelectNearestSignal((n) => n + 1)}
-              style={{ padding: '10px 12px', borderRadius: 12, background: 'rgba(30,41,59,0.9)', border: '1px solid #64748B', color: '#FFF', fontWeight: 800, fontSize: '0.74rem', cursor: 'pointer' }}
+              style={{ padding: '10px 11px', borderRadius: 12, background: 'rgba(30,41,59,0.9)', border: '1px solid #64748B', color: '#FFF', fontWeight: 800, fontSize: '0.72rem', cursor: 'pointer' }}
             >
               SELECT
             </button>
             <button
               type="button"
               onClick={() => setSpecialSignal((n) => n + 1)}
-              style={{ padding: '10px 12px', borderRadius: 12, background: 'rgba(14,116,144,0.9)', border: '1px solid #22D3EE', color: '#FFF', fontWeight: 800, fontSize: '0.74rem', cursor: 'pointer' }}
+              style={{ padding: '10px 11px', borderRadius: 12, background: 'rgba(14,116,144,0.9)', border: '1px solid #22D3EE', color: '#FFF', fontWeight: 800, fontSize: '0.72rem', cursor: 'pointer' }}
+              title="Educational Insight"
             >
               <Zap size={14} />
             </button>

@@ -24,7 +24,13 @@ interface KatanaQuestion {
   questionType: string;
 }
 
-type EnvironmentType = 'moonlit_bamboo_forest' | 'ancient_stone_fortress' | 'mist_mountain_ridge';
+type EnvironmentType =
+  | 'moonlit_bamboo_forest'
+  | 'traditional_courtyard'
+  | 'mist_mountain_ridge'
+  | 'ancient_stone_fortress'
+  | 'night_time_forest'
+  | 'training_arena';
 
 interface EnvironmentConfig {
   id: EnvironmentType;
@@ -58,6 +64,36 @@ const ENVIRONMENTS: Record<EnvironmentType, EnvironmentConfig> = {
     dirLightIntensity: 1.4,
     accentColor: '#38BDF8'
   },
+  traditional_courtyard: {
+    id: 'traditional_courtyard',
+    name: 'Traditional Courtyard',
+    icon: '⛩️',
+    fogColor: 0x170f1c,
+    skyTopColor: '#12081A',
+    skyBottomColor: '#3B1936',
+    groundColor: 0x241623,
+    groundGridColor: 0xf43f5e,
+    ambientColor: 0x4c1d95,
+    ambientIntensity: 0.85,
+    dirLightColor: 0xfda4af,
+    dirLightIntensity: 1.45,
+    accentColor: '#FB7185'
+  },
+  mist_mountain_ridge: {
+    id: 'mist_mountain_ridge',
+    name: 'Mountain Temple',
+    icon: '⛰️',
+    fogColor: 0x0f2027,
+    skyTopColor: '#0F2027',
+    skyBottomColor: '#2C5364',
+    groundColor: 0x13222d,
+    groundGridColor: 0x38bdf8,
+    ambientColor: 0x1e3a47,
+    ambientIntensity: 0.75,
+    dirLightColor: 0xe0f2fe,
+    dirLightIntensity: 1.3,
+    accentColor: '#90E0EF'
+  },
   ancient_stone_fortress: {
     id: 'ancient_stone_fortress',
     name: 'Stone Fortress',
@@ -73,20 +109,35 @@ const ENVIRONMENTS: Record<EnvironmentType, EnvironmentConfig> = {
     dirLightIntensity: 1.5,
     accentColor: '#F97316'
   },
-  mist_mountain_ridge: {
-    id: 'mist_mountain_ridge',
-    name: 'Mountain Ridge',
-    icon: '⛰️',
-    fogColor: 0x0f2027,
-    skyTopColor: '#0F2027',
-    skyBottomColor: '#2C5364',
-    groundColor: 0x13222d,
-    groundGridColor: 0x38bdf8,
-    ambientColor: 0x1e3a47,
-    ambientIntensity: 0.75,
-    dirLightColor: 0xe0f2fe,
-    dirLightIntensity: 1.3,
-    accentColor: '#90E0EF'
+  night_time_forest: {
+    id: 'night_time_forest',
+    name: 'Night-time Forest',
+    icon: '🌙',
+    fogColor: 0x040d1a,
+    skyTopColor: '#020617',
+    skyBottomColor: '#0F172A',
+    groundColor: 0x091526,
+    groundGridColor: 0x1e40af,
+    ambientColor: 0x1e3a8a,
+    ambientIntensity: 0.78,
+    dirLightColor: 0x60a5fa,
+    dirLightIntensity: 1.35,
+    accentColor: '#60A5FA'
+  },
+  training_arena: {
+    id: 'training_arena',
+    name: 'Training Arena',
+    icon: '🥋',
+    fogColor: 0x1c140d,
+    skyTopColor: '#1A110B',
+    skyBottomColor: '#3E2723',
+    groundColor: 0x2b1d12,
+    groundGridColor: 0xd97706,
+    ambientColor: 0x78350f,
+    ambientIntensity: 0.88,
+    dirLightColor: 0xfbbf24,
+    dirLightIntensity: 1.5,
+    accentColor: '#FBBF24'
   }
 };
 
@@ -170,6 +221,19 @@ export const KatanaGameModal: React.FC<{
   const gridHelperRef = useRef<THREE.GridHelper | null>(null);
 
   // Animation controller state
+  const mobileInputRef = useRef<{
+    moveX: number;
+    moveZ: number;
+    jump: boolean;
+    dodge: boolean;
+    guard: boolean;
+  }>({
+    moveX: 0,
+    moveZ: 0,
+    jump: false,
+    dodge: false,
+    guard: false
+  });
   const animStateRef = useRef<{
     time: number;
     warriorAction: 'idle' | 'charging' | 'slashing' | 'parried' | 'returning' | 'victory';
@@ -344,7 +408,7 @@ export const KatanaGameModal: React.FC<{
           decGroup.add(torchLight);
         });
       } else if (envKey === 'mist_mountain_ridge') {
-        // Jagged mountain peaks in distance
+        // Jagged mountain peaks & temple gate in distance
         const peakGeo = new THREE.ConeGeometry(5, 12, 5);
         const peakMat = new THREE.MeshStandardMaterial({
           color: 0x1e293b,
@@ -357,6 +421,38 @@ export const KatanaGameModal: React.FC<{
           peak.position.set(px, 5, pz);
           peak.rotation.y = Math.random() * Math.PI;
           decGroup.add(peak);
+        }
+      } else if (envKey === 'traditional_courtyard') {
+        // Torii Arch & Paper Lanterns
+        const toriiMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.55 });
+        for (const px of [-4.2, 4.2]) {
+          const post = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 6, 10), toriiMat);
+          post.position.set(px, 3, -9);
+          decGroup.add(post);
+        }
+        const beam = new THREE.Mesh(new THREE.BoxGeometry(10.5, 0.5, 0.6), toriiMat);
+        beam.position.set(0, 5.8, -9);
+        decGroup.add(beam);
+      } else if (envKey === 'night_time_forest') {
+        // Ancient shadow pines & glowing blue spirit stones
+        const trunkMat = new THREE.MeshStandardMaterial({ color: 0x1e1b4b, roughness: 0.85 });
+        const crownMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
+        for (let i = 0; i < 16; i++) {
+          const tx = (i % 2 === 0 ? -1 : 1) * (4.5 + (i % 4) * 2.2);
+          const tz = -3 - Math.floor(i / 2) * 2.2;
+          const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.3, 3.5, 8), trunkMat);
+          trunk.position.set(tx, 1.75, tz);
+          const crown = new THREE.Mesh(new THREE.ConeGeometry(1.6, 4.2, 7), crownMat);
+          crown.position.set(tx, 4.5, tz);
+          decGroup.add(trunk, crown);
+        }
+      } else if (envKey === 'training_arena') {
+        // Wooden dojo pillars & practice dummies
+        const woodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.75 });
+        for (const [wx, wz] of [[-5.5, -3], [5.5, -3], [-5.5, -8], [5.5, -8]]) {
+          const post = new THREE.Mesh(new THREE.BoxGeometry(0.65, 5.5, 0.65), woodMat);
+          post.position.set(wx, 2.75, wz);
+          decGroup.add(post);
         }
       }
 
@@ -557,6 +653,31 @@ export const KatanaGameModal: React.FC<{
     rightLeg.position.set(0.2, 0.4, 0);
     warriorGroup.add(rightLeg);
 
+    // Left Arm + Flowing Ninja Scarf + Guard Shield Bubble
+    const leftArm = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.09, 0.08, 0.62, 8),
+      new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5 })
+    );
+    leftArm.position.set(-0.46, 0.95, 0.08);
+    leftArm.rotation.x = -0.35;
+    warriorGroup.add(leftArm);
+
+    const scarf = new THREE.Mesh(
+      new THREE.BoxGeometry(0.28, 0.85, 0.06),
+      new THREE.MeshStandardMaterial({ color: 0xff6a00, emissive: 0x9a3412, emissiveIntensity: 0.35 })
+    );
+    scarf.position.set(0, 1.12, -0.26);
+    scarf.rotation.x = 0.25;
+    warriorGroup.add(scarf);
+
+    const guardBubble = new THREE.Mesh(
+      new THREE.SphereGeometry(1.25, 16, 12),
+      new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.28, wireframe: true })
+    );
+    guardBubble.position.y = 1.05;
+    guardBubble.visible = false;
+    warriorGroup.add(guardBubble);
+
     // Katana Sword Group (Right Arm Attachment)
     const katanaArmGroup = new THREE.Group();
     katanaArmGroup.position.set(0.46, 1.05, 0.1);
@@ -654,6 +775,14 @@ export const KatanaGameModal: React.FC<{
       const sLegR = sLegL.clone();
       sLegR.position.x = 0.18;
       eg.add(sLegL, sLegR);
+
+      const sArmGeo = new THREE.CylinderGeometry(0.09, 0.08, 0.58, 8);
+      const sArmL = new THREE.Mesh(sArmGeo, sTorsoMat);
+      sArmL.position.set(-0.42, 1.05, 0.08);
+      sArmL.rotation.x = -0.4;
+      const sArmR = sArmL.clone();
+      sArmR.position.x = 0.42;
+      eg.add(sArmL, sArmR);
 
       // Shadow Kabuto Helmet with Demonic Horns
       const sHeadGeo = new THREE.SphereGeometry(0.25, 16, 16);
@@ -795,12 +924,19 @@ export const KatanaGameModal: React.FC<{
     let playerFreeX = 0;
     let playerFreeY = 0;
     let playerFreeZ = 3.2;
+    let playerVelX = 0;
     let playerVelY = 0;
+    let playerVelZ = 0;
     let playerGrounded = true;
     let playerFacingY = 0;
+    let dodgeTimer = 0;
+    let guardTimer = 0;
+    let walkPhase = 0;
     let camOrbitYaw = 0;
     let draggingCam = false;
     let lastDragX = 0;
+    let activeTouchId: number | null = null;
+    let lastTouchX = 0;
     const keysDown: Record<string, boolean> = {};
 
     const onMoveKeyDown = (e: KeyboardEvent) => {
@@ -808,6 +944,10 @@ export const KatanaGameModal: React.FC<{
       if (e.code === 'Space' && playerGrounded && animStateRef.current.warriorAction === 'idle') {
         playerVelY = 7.8;
         playerGrounded = false;
+      } else if (e.code === 'KeyC' && dodgeTimer <= 0 && animStateRef.current.warriorAction === 'idle') {
+        dodgeTimer = 0.28;
+      } else if (e.code === 'KeyR' && animStateRef.current.warriorAction === 'idle') {
+        guardTimer = 1.6;
       }
     };
     const onMoveKeyUp = (e: KeyboardEvent) => {
@@ -825,11 +965,41 @@ export const KatanaGameModal: React.FC<{
     const onCamMouseUp = () => {
       draggingCam = false;
     };
+    const onCamTouchStart = (e: TouchEvent) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        if (t.clientX > window.innerWidth * 0.35 && activeTouchId === null) {
+          activeTouchId = t.identifier;
+          lastTouchX = t.clientX;
+        }
+      }
+    };
+    const onCamTouchMove = (e: TouchEvent) => {
+      if (activeTouchId === null) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        if (t.identifier === activeTouchId) {
+          camOrbitYaw = THREE.MathUtils.clamp(camOrbitYaw - (t.clientX - lastTouchX) * 0.005, -0.75, 0.75);
+          lastTouchX = t.clientX;
+        }
+      }
+    };
+    const onCamTouchEnd = (e: TouchEvent) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === activeTouchId) {
+          activeTouchId = null;
+        }
+      }
+    };
     window.addEventListener('keydown', onMoveKeyDown);
     window.addEventListener('keyup', onMoveKeyUp);
     renderer.domElement.addEventListener('mousedown', onCamMouseDown);
     window.addEventListener('mousemove', onCamMouseMove);
     window.addEventListener('mouseup', onCamMouseUp);
+    renderer.domElement.addEventListener('touchstart', onCamTouchStart, { passive: true });
+    renderer.domElement.addEventListener('touchmove', onCamTouchMove, { passive: true });
+    renderer.domElement.addEventListener('touchend', onCamTouchEnd, { passive: true });
+    renderer.domElement.addEventListener('touchcancel', onCamTouchEnd, { passive: true });
 
     const animate = () => {
       frameIdRef.current = requestAnimationFrame(animate);
@@ -876,7 +1046,7 @@ export const KatanaGameModal: React.FC<{
         } else {
           eg.scale.setScalar(1);
         }
-        if (ev.hitPlayer && state.warriorAction === 'idle') {
+        if (ev.hitPlayer && state.warriorAction === 'idle' && guardTimer <= 0 && dodgeTimer <= 0) {
           setPlayerHp((hp) => Math.max(0, hp - Math.round(ev.damageAmount * 0.5)));
         }
       });
@@ -891,15 +1061,57 @@ export const KatanaGameModal: React.FC<{
           if (keysDown['KeyA'] || keysDown['ArrowLeft']) moveX -= 1;
           if (keysDown['KeyS'] || keysDown['ArrowDown']) moveZ += 1;
           if (keysDown['KeyW'] || keysDown['ArrowUp']) moveZ -= 1;
+          if (Math.abs(mobileInputRef.current.moveX) > 0.08) moveX += mobileInputRef.current.moveX;
+          if (Math.abs(mobileInputRef.current.moveZ) > 0.08) moveZ += mobileInputRef.current.moveZ;
 
-          const sprinting = Boolean(keysDown['ShiftLeft'] || keysDown['ShiftRight'] || keysDown['KeyC']);
-          const spd = sprinting ? 8.2 : 5.4;
-          if (moveX !== 0 || moveZ !== 0) {
-            const len = Math.hypot(moveX, moveZ);
-            playerFreeX = THREE.MathUtils.clamp(playerFreeX + (moveX / len) * spd * dt, -7.5, 7.5);
-            playerFreeZ = THREE.MathUtils.clamp(playerFreeZ + (moveZ / len) * spd * dt, -3.8, 5.2);
-            playerFacingY = Math.atan2(-moveX, -moveZ);
+          if (mobileInputRef.current.jump && playerGrounded) {
+            playerVelY = 7.8;
+            playerGrounded = false;
+            mobileInputRef.current.jump = false;
           }
+          if (mobileInputRef.current.dodge && dodgeTimer <= 0) {
+            dodgeTimer = 0.28;
+            mobileInputRef.current.dodge = false;
+          }
+          if (mobileInputRef.current.guard) {
+            guardTimer = 1.6;
+            mobileInputRef.current.guard = false;
+          }
+
+          if (dodgeTimer > 0) dodgeTimer -= dt;
+          if (guardTimer > 0) {
+            guardTimer -= dt;
+            guardBubble.visible = true;
+            guardBubble.rotation.y += dt * 2.4;
+          } else {
+            guardBubble.visible = false;
+          }
+
+          const sprinting = Boolean(keysDown['ShiftLeft'] || keysDown['ShiftRight'] || dodgeTimer > 0);
+          const spd = dodgeTimer > 0 ? 12.5 : sprinting ? 8.2 : 5.4;
+          const len = Math.hypot(moveX, moveZ);
+          const targetVX = len > 0.05 ? (moveX / len) * spd : 0;
+          const targetVZ = len > 0.05 ? (moveZ / len) * spd : 0;
+          playerVelX = THREE.MathUtils.lerp(playerVelX, targetVX, Math.min(1, dt * 16));
+          playerVelZ = THREE.MathUtils.lerp(playerVelZ, targetVZ, Math.min(1, dt * 16));
+          playerFreeX = THREE.MathUtils.clamp(playerFreeX + playerVelX * dt, -7.5, 7.5);
+          playerFreeZ = THREE.MathUtils.clamp(playerFreeZ + playerVelZ * dt, -3.8, 5.2);
+
+          if (len > 0.05) {
+            const targetRot = Math.atan2(-moveX, -moveZ);
+            let diff = targetRot - playerFacingY;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            playerFacingY += diff * Math.min(1, dt * 14);
+            walkPhase += dt * (sprinting ? 14 : 9.5);
+          } else {
+            walkPhase = 0;
+          }
+          const legSwing = len > 0.05 && playerGrounded ? Math.sin(walkPhase) * 0.55 : 0;
+          leftLeg.rotation.x = legSwing;
+          rightLeg.rotation.x = -legSwing;
+          leftArm.rotation.x = -0.35 - legSwing * 0.6;
+          scarf.rotation.x = 0.25 + (len > 0.05 ? 0.32 : Math.sin(state.time * 3) * 0.06);
 
           playerVelY -= 20 * dt;
           playerFreeY += playerVelY * dt;
@@ -1060,6 +1272,10 @@ export const KatanaGameModal: React.FC<{
       renderer.domElement.removeEventListener('mousedown', onCamMouseDown);
       window.removeEventListener('mousemove', onCamMouseMove);
       window.removeEventListener('mouseup', onCamMouseUp);
+      renderer.domElement.removeEventListener('touchstart', onCamTouchStart);
+      renderer.domElement.removeEventListener('touchmove', onCamTouchMove);
+      renderer.domElement.removeEventListener('touchend', onCamTouchEnd);
+      renderer.domElement.removeEventListener('touchcancel', onCamTouchEnd);
       window.removeEventListener('orientationchange', handleResize);
       document.removeEventListener('fullscreenchange', handleResize);
       renderer.dispose();
@@ -1694,6 +1910,95 @@ export const KatanaGameModal: React.FC<{
         </div>
       )}
 
+      {/* 3b. Mobile & Tablet Controls: Left Circular Joystick + Right Jump, Dodge, Guard & Strike */}
+      {!gameOver && (
+        <>
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 18,
+              left: 18,
+              width: 96,
+              height: 96,
+              borderRadius: '50%',
+              background: 'rgba(15, 23, 42, 0.78)',
+              border: '2px solid rgba(56, 189, 248, 0.45)',
+              zIndex: 28,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              touchAction: 'none'
+            }}
+            onTouchMove={(e) => {
+              const t = e.touches[0];
+              if (!t) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              const dx = (t.clientX - (rect.left + rect.width / 2)) / (rect.width / 2);
+              const dy = (t.clientY - (rect.top + rect.height / 2)) / (rect.height / 2);
+              mobileInputRef.current.moveX = Math.max(-1, Math.min(1, dx));
+              mobileInputRef.current.moveZ = Math.max(-1, Math.min(1, dy));
+            }}
+            onTouchEnd={() => {
+              mobileInputRef.current.moveX = 0;
+              mobileInputRef.current.moveZ = 0;
+            }}
+          >
+            <div
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: '50%',
+                background: 'rgba(56, 189, 248, 0.85)',
+                boxShadow: '0 0 12px rgba(56, 189, 248, 0.6)'
+              }}
+            />
+          </div>
+
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 18,
+              right: 18,
+              zIndex: 28,
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'flex-end',
+              gap: 8,
+              maxWidth: 260
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => { mobileInputRef.current.jump = true; }}
+              style={{ padding: '10px 12px', borderRadius: 12, background: 'rgba(15, 23, 42, 0.88)', border: '1.5px solid #38BDF8', color: '#FFFFFF', fontWeight: 800, fontSize: '0.74rem', cursor: 'pointer' }}
+            >
+              JUMP
+            </button>
+            <button
+              type="button"
+              onClick={() => { mobileInputRef.current.dodge = true; }}
+              style={{ padding: '10px 12px', borderRadius: 12, background: 'rgba(88, 28, 135, 0.88)', border: '1.5px solid #A855F7', color: '#FFFFFF', fontWeight: 800, fontSize: '0.74rem', cursor: 'pointer' }}
+            >
+              DODGE [C]
+            </button>
+            <button
+              type="button"
+              onClick={() => { mobileInputRef.current.guard = true; }}
+              style={{ padding: '10px 12px', borderRadius: 12, background: 'rgba(30, 58, 138, 0.88)', border: '1.5px solid #60A5FA', color: '#FFFFFF', fontWeight: 800, fontSize: '0.74rem', cursor: 'pointer' }}
+            >
+              GUARD [R]
+            </button>
+            <button
+              type="button"
+              onClick={() => handleExecuteStrike(hoveredOptionIndex ?? 0)}
+              style={{ padding: '10px 14px', borderRadius: 12, background: '#FF6A00', border: '1.5px solid #FEF08A', color: '#FFFFFF', fontWeight: 900, fontSize: '0.76rem', cursor: 'pointer' }}
+            >
+              STRIKE
+            </button>
+          </div>
+        </>
+      )}
+
       {/* 4. Victory / Defeat Modal Overlay */}
       {gameOver && (
         <div
@@ -1795,7 +2100,14 @@ export const KatanaGameModal: React.FC<{
                 <button
                   type="button"
                   onClick={() => {
-                    const order: EnvironmentType[] = ['moonlit_bamboo_forest', 'ancient_stone_fortress', 'mist_mountain_ridge'];
+                    const order: EnvironmentType[] = [
+                      'moonlit_bamboo_forest',
+                      'traditional_courtyard',
+                      'mist_mountain_ridge',
+                      'ancient_stone_fortress',
+                      'night_time_forest',
+                      'training_arena'
+                    ];
                     const nextEnv = order[(order.indexOf(currentEnvironment) + 1) % order.length];
                     switchEnvironment(nextEnv);
                     loadSession();

@@ -160,6 +160,10 @@ export interface AnswerSentinelRig {
   index: number;
   group: THREE.Group;
   body: THREE.Mesh;
+  leftLeg: THREE.Mesh;
+  rightLeg: THREE.Mesh;
+  leftArm: THREE.Mesh;
+  rightArm: THREE.Mesh;
   ring: THREE.Mesh;
   labelMesh: THREE.Mesh;
   canvas: HTMLCanvasElement;
@@ -257,6 +261,10 @@ export function buildAnswerSentinel(index: number): AnswerSentinelRig {
     index,
     group,
     body,
+    leftLeg: legL,
+    rightLeg: legR,
+    leftArm: armL,
+    rightArm: armR,
     ring,
     labelMesh,
     canvas,
@@ -369,7 +377,8 @@ export function buildWorldEnvironment(
     shadow_forest: { sky: '#061412', fog: '#0A241E', ground: '#0B2E1E', stone: '#3F2E21', accent: '#34D399' },
     ancient_kingdom: { sky: '#140F26', fog: '#21193D', ground: '#1E293B', stone: '#475569', accent: '#F59E0B' },
     crystal_caverns: { sky: '#060F24', fog: '#0B1D40', ground: '#172554', stone: '#1E3A8A', accent: '#38BDF8' },
-    sky_of_knowledge: { sky: '#0C0A24', fog: '#1E1B4B', ground: '#312E81', stone: '#4338CA', accent: '#A855F7' }
+    sky_of_knowledge: { sky: '#0C0A24', fog: '#1E1B4B', ground: '#312E81', stone: '#4338CA', accent: '#A855F7' },
+    training_arena: { sky: '#1A110B', fog: '#2E1E12', ground: '#3B2818', stone: '#78350F', accent: '#FB923C' }
   };
   const theme = themes[worldId];
 

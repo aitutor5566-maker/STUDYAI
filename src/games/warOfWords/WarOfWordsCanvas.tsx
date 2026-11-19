@@ -47,9 +47,14 @@ export interface WarOfWordsCanvasProps {
   attackSignal: number;
   selectNearestSignal: number;
   specialSignal: number;
+  dodgeSignal?: number;
+  guardSignal?: number;
   mobileInputRef: React.MutableRefObject<{
     moveX: number;
+    moveY?: number;
     jump: boolean;
+    dodge?: boolean;
+    guard?: boolean;
   }>;
   onHudUpdate: (hud: WarHudSnapshot) => void;
   onAnswerEvaluated: (outcome: AnswerOutcome) => void;
@@ -76,6 +81,8 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
   attackSignal,
   selectNearestSignal,
   specialSignal,
+  dodgeSignal = 0,
+  guardSignal = 0,
   mobileInputRef,
   onHudUpdate,
   onAnswerEvaluated,
@@ -107,17 +114,22 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
   const triggerAttackRef = useRef<(() => void) | null>(null);
   const triggerSelectNearestRef = useRef<(() => void) | null>(null);
   const triggerSpecialRef = useRef<(() => void) | null>(null);
+  const triggerDodgeRef = useRef<(() => void) | null>(null);
+  const triggerGuardRef = useRef<(() => void) | null>(null);
   const resetPlayerForQuestionRef = useRef<(() => void) | null>(null);
 
-  // Sync new question options onto the 3 Answer Sentinels
+  // Sync new question options onto the 3 Answer Sentinels & randomize enemy Z/X offsets
   useEffect(() => {
     const sentinels = sentinelsRef.current;
     if (sentinels.length !== 3) return;
     const chosen = selectThreeTargets(currentQuestion);
+    const shuffledSlots = [...TARGET_POSITIONS_X].sort(() => Math.random() - 0.5);
     sentinels.forEach((rig, idx) => {
       const opt = chosen[idx] || { id: 'A' as OptionId, text: '...' };
       rig.group.visible = true;
       rig.group.scale.setScalar(1);
+      rig.group.position.x = shuffledSlots[idx];
+      rig.group.position.z = (idx - 1) * 1.1;
       updateSentinelLabel(rig, opt.id, opt.text, false);
     });
     resetPlayerForQuestionRef.current?.();
@@ -134,6 +146,14 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
   useEffect(() => {
     if (specialSignal > 0) triggerSpecialRef.current?.();
   }, [specialSignal]);
+
+  useEffect(() => {
+    if (dodgeSignal > 0) triggerDodgeRef.current?.();
+  }, [dodgeSignal]);
+
+  useEffect(() => {
+    if (guardSignal > 0) triggerGuardRef.current?.();
+  }, [guardSignal]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -269,11 +289,31 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
     let selectedTargetIdx: number | null = null;
     let attackAnimTimer = 0;
     let blockedAnimTimer = 0;
+    let dodgeTimer = 0;
+    let guardTimer = 0;
+    let camOrbitYaw = 0;
+    let isDraggingCam = false;
+    let lastMouseX = 0;
+    let activeTouchId: number | null = null;
+    let lastTouchX = 0;
     let walkPhase = 0;
     let footstepTimer = 0;
     let hudTimer = 0;
     const particles: Particle[] = [];
     const keys: Record<string, boolean> = {};
+
+    const guardBubble = new THREE.Mesh(
+      new THREE.SphereGeometry(1.3, 18, 14),
+      new THREE.MeshBasicMaterial({
+        color: customization.glowColor,
+        transparent: true,
+        opacity: 0.28,
+        wireframe: true
+      })
+    );
+    guardBubble.position.y = 1.1;
+    guardBubble.visible = false;
+    warrior.root.add(guardBubble);
 
     const spawnBurst = (origin: THREE.Vector3, colorHex: string, count: number) => {
       const actualCount = quality === 'low' ? Math.ceil(count / 2) : count;
@@ -340,8 +380,25 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
       if (pausedRef.current) return;
       audioManager.unlock();
       audioManager.playMagicAttack();
-      spawnBurst(new THREE.Vector3(playerX, playerY + 1.4, 0), customization.glowColor, 14);
+      spawnBurst(new THREE.Vector3(playerX, playerY + 1.4, playerZ), customization.glowColor, 14);
       callbacksRef.current.onSpecialPulse();
+    };
+
+    triggerDodgeRef.current = () => {
+      if (pausedRef.current || dodgeTimer > 0) return;
+      audioManager.unlock();
+      audioManager.playJump();
+      dodgeTimer = 0.28;
+      velX = facing * 15.5;
+      spawnBurst(new THREE.Vector3(playerX, playerY + 0.9, playerZ), '#A855F7', 10);
+    };
+
+    triggerGuardRef.current = () => {
+      if (pausedRef.current) return;
+      audioManager.unlock();
+      audioManager.playShieldBlock();
+      guardTimer = 1.8;
+      spawnBurst(new THREE.Vector3(playerX, playerY + 1.1, playerZ), customization.glowColor, 8);
     };
 
     triggerAttackRef.current = () => {
@@ -411,6 +468,12 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
       if (e.code === 'KeyQ') {
         triggerSpecialRef.current?.();
       }
+      if (e.code === 'KeyC') {
+        triggerDodgeRef.current?.();
+      }
+      if (e.code === 'KeyR') {
+        triggerGuardRef.current?.();
+      }
     };
 
     const onKeyUp = (e: KeyboardEvent) => {
@@ -420,7 +483,46 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
     const onMouseDown = (e: MouseEvent) => {
       if (pausedRef.current) return;
       if (e.button === 0) {
+        isDraggingCam = true;
+        lastMouseX = e.clientX;
         triggerAttackRef.current?.();
+      }
+    };
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDraggingCam || pausedRef.current) return;
+      const dx = e.clientX - lastMouseX;
+      lastMouseX = e.clientX;
+      camOrbitYaw = THREE.MathUtils.clamp(camOrbitYaw - dx * 0.004, -0.65, 0.65);
+    };
+    const onMouseUp = () => {
+      isDraggingCam = false;
+    };
+    const onTouchStart = (e: TouchEvent) => {
+      if (pausedRef.current) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        if (t.clientX > window.innerWidth * 0.35 && activeTouchId === null) {
+          activeTouchId = t.identifier;
+          lastTouchX = t.clientX;
+        }
+      }
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (pausedRef.current || activeTouchId === null) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        if (t.identifier === activeTouchId) {
+          const dx = t.clientX - lastTouchX;
+          lastTouchX = t.clientX;
+          camOrbitYaw = THREE.MathUtils.clamp(camOrbitYaw - dx * 0.005, -0.65, 0.65);
+        }
+      }
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === activeTouchId) {
+          activeTouchId = null;
+        }
       }
     };
 
@@ -451,6 +553,12 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
     document.addEventListener('visibilitychange', clearInputs);
     document.addEventListener('fullscreenchange', onFullscreenOrBlur);
     renderer.domElement.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: true });
+    renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: true });
+    renderer.domElement.addEventListener('touchend', onTouchEnd, { passive: true });
+    renderer.domElement.addEventListener('touchcancel', onTouchEnd, { passive: true });
 
     const resizeObs = new ResizeObserver(handleResize);
     resizeObs.observe(container);
@@ -469,10 +577,13 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
         let inputZ = 0;
         if (keys['KeyD'] || keys['ArrowRight']) inputX += 1;
         if (keys['KeyA'] || keys['ArrowLeft']) inputX -= 1;
-        if (keys['KeyS']) inputZ += 1;
-        if (keys['KeyW']) inputZ -= 1;
+        if (keys['KeyS'] || keys['ArrowDown']) inputZ += 1;
+        if (keys['KeyW'] || keys['ArrowUp']) inputZ -= 1;
         if (Math.abs(mobileInputRef.current.moveX) > 0.1) {
           inputX += mobileInputRef.current.moveX;
+        }
+        if (mobileInputRef.current.moveY && Math.abs(mobileInputRef.current.moveY) > 0.1) {
+          inputZ += mobileInputRef.current.moveY;
         }
         if (mobileInputRef.current.jump && isGrounded) {
           velY = 10.6;
@@ -480,13 +591,32 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
           mobileInputRef.current.jump = false;
           audioManager.playJump();
         }
+        if (mobileInputRef.current.dodge) {
+          mobileInputRef.current.dodge = false;
+          triggerDodgeRef.current?.();
+        }
+        if (mobileInputRef.current.guard) {
+          mobileInputRef.current.guard = false;
+          triggerGuardRef.current?.();
+        }
 
-        const sprinting = keys['ShiftLeft'] || keys['ShiftRight'];
-        const maxSpeed = sprinting ? 11.2 : 7.8;
+        if (dodgeTimer > 0) dodgeTimer -= dt;
+        if (guardTimer > 0) {
+          guardTimer -= dt;
+          guardBubble.visible = true;
+          guardBubble.rotation.y += dt * 2.2;
+        } else {
+          guardBubble.visible = false;
+        }
+
+        const sprinting = keys['ShiftLeft'] || keys['ShiftRight'] || dodgeTimer > 0;
+        const maxSpeed = dodgeTimer > 0 ? 15.5 : sprinting ? 11.2 : 7.8;
         const targetVelX = THREE.MathUtils.clamp(inputX, -1, 1) * maxSpeed;
-        const targetVelZ = THREE.MathUtils.clamp(inputZ, -1, 1) * (maxSpeed * 0.75);
+        const targetVelZ = THREE.MathUtils.clamp(inputZ, -1, 1) * (maxSpeed * 0.8);
         const accel = Math.abs(targetVelX) > 0.1 || Math.abs(targetVelZ) > 0.1 ? 38 : 28;
-        velX = THREE.MathUtils.lerp(velX, targetVelX, 1 - Math.exp(-accel * dt));
+        if (dodgeTimer <= 0) {
+          velX = THREE.MathUtils.lerp(velX, targetVelX, 1 - Math.exp(-accel * dt));
+        }
         velZ = THREE.MathUtils.lerp(velZ, targetVelZ, 1 - Math.exp(-accel * dt));
 
         let nextX = THREE.MathUtils.clamp(playerX + velX * dt, -14, 30);
@@ -506,7 +636,11 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
 
         if (Math.abs(inputX) > 0.1 || Math.abs(inputZ) > 0.1) {
           facing = inputX >= 0 ? 1 : -1;
-          facingAngle = Math.atan2(-inputZ, inputX);
+          const targetRot = Math.atan2(-inputZ, inputX);
+          let diff = targetRot - facingAngle;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          facingAngle += diff * Math.min(1, dt * 14);
         }
 
         // 2. Vertical Gravity & Platform Collision
@@ -584,19 +718,33 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
         }
 
         sentinels.forEach((s, idx) => {
-          const tSec = now * 0.0016 + idx * 1.5;
+          const tSec = now * 0.0018 + idx * 1.6;
           const baseX = TARGET_POSITIONS_X[idx];
+          const dToPlayer = Math.hypot(s.group.position.x - playerX, s.group.position.z - playerZ);
           if (idx === 0) {
-            s.group.position.x = baseX + Math.sin(tSec) * 1.1;
-            s.group.position.y = Math.sin(tSec * 1.5) * 0.15;
+            s.group.position.x = baseX + Math.sin(tSec) * 1.3;
+            s.group.position.z = Math.cos(tSec * 0.9) * 1.1;
+            s.group.position.y = Math.abs(Math.sin(tSec * 2.5)) * 0.08;
           } else if (idx === 1) {
-            s.group.position.x = baseX;
-            s.group.position.y = 0.55 + Math.sin(tSec * 1.3) * 0.55;
+            s.group.position.x = baseX + Math.cos(tSec * 0.8) * 0.9;
+            s.group.position.z = Math.sin(tSec * 1.1) * 1.25;
+            s.group.position.y = Math.abs(Math.sin(tSec * 2.2)) * 0.1;
           } else {
-            s.group.position.x = baseX + Math.cos(tSec) * 1.05;
-            s.group.position.y = 0.35 + Math.sin(tSec * 2) * 0.35;
+            s.group.position.x = baseX + Math.cos(tSec) * 1.25;
+            s.group.position.z = -Math.sin(tSec * 0.85) * 1.1;
+            s.group.position.y = Math.abs(Math.cos(tSec * 2.4)) * 0.09;
           }
-          s.body.rotation.y += dt * 0.9;
+          // Articulated enemy limb stride & defensive guard stance when player approaches
+          const enemyWalkSwing = Math.sin(tSec * 3.8) * 0.48;
+          s.leftLeg.rotation.z = enemyWalkSwing;
+          s.rightLeg.rotation.z = -enemyWalkSwing;
+          if (dToPlayer < 6.0) {
+            s.leftArm.rotation.z = 0.85;
+            s.rightArm.rotation.z = 0.85;
+          } else {
+            s.leftArm.rotation.z = 0.35 - enemyWalkSwing * 0.4;
+            s.rightArm.rotation.z = 0.35 + enemyWalkSwing * 0.4;
+          }
           s.ring.rotation.z += dt * (idx === selectedTargetIdx ? 2.2 : 0.6);
         });
 
@@ -624,12 +772,13 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
         cloudLayer.update(dt);
         arcaneParticles.update(dt, now * 0.001, new THREE.Vector3(playerX, playerY + 4, 0));
 
-        const targetCamX = playerX + facing * 3.5;
+        const targetCamX = playerX + facing * 3.2 + Math.sin(camOrbitYaw) * 4.5;
         const targetCamY = Math.max(3.8, playerY + 3.6);
+        const targetCamZ = playerZ + 13.5 * Math.cos(camOrbitYaw);
         camController.update(
           camera,
-          new THREE.Vector3(targetCamX, targetCamY, 13.5),
-          new THREE.Vector3(targetCamX + facing * 1.2, playerY + 1.8, 0),
+          new THREE.Vector3(targetCamX, targetCamY, targetCamZ),
+          new THREE.Vector3(playerX + facing * 1.2, playerY + 1.8, playerZ),
           dt,
           6.5,
           9.0
@@ -671,6 +820,12 @@ export const WarOfWordsCanvas: React.FC<WarOfWordsCanvasProps> = ({
       document.removeEventListener('visibilitychange', clearInputs);
       document.removeEventListener('fullscreenchange', onFullscreenOrBlur);
       renderer.domElement.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      renderer.domElement.removeEventListener('touchstart', onTouchStart);
+      renderer.domElement.removeEventListener('touchmove', onTouchMove);
+      renderer.domElement.removeEventListener('touchend', onTouchEnd);
+      renderer.domElement.removeEventListener('touchcancel', onTouchEnd);
       disposeThreeScene(scene, renderer, postPipeline, envTexture);
       if (renderer.domElement.parentNode === container) {
         container.removeChild(renderer.domElement);
